@@ -24,5 +24,4 @@ module.exports = {
     },
   },
   plugins: [],
-  presets: [require("./node_modules/@shadcn/ui/preset")],
 }; 
