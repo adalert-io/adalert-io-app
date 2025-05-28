@@ -5,19 +5,21 @@ import Image from "next/image";
 import Link from "next/link";
 import LoginForm from "@/app/components/auth/LoginForm";
 import SignupForm from "@/app/components/auth/SignupForm";
-import { Header } from "@/components/layout/header";
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#ffffff]">
-      <Header />
-      <main className="flex flex-1 items-center justify-center">
+      <main className="flex flex-1">
         {isLogin ? (
-          <LoginForm onSwitchToSignup={() => setIsLogin(false)} />
+          <div className="w-full h-full flex-1">
+            <LoginForm onSwitchToSignup={() => setIsLogin(false)} />
+          </div>
         ) : (
-          <SignupForm onSwitchToLogin={() => setIsLogin(true)} />
+          <div className="w-full h-full flex-1">
+            <SignupForm onSwitchToLogin={() => setIsLogin(true)} />
+          </div>
         )}
       </main>
     </div>
