@@ -17,7 +17,7 @@ export default function AuthPage() {
             <LoginForm onSwitchToSignup={() => setIsLogin(false)} />
           </div>
         ) : (
-          <div className="w-full h-full flex-1">
+          <div className="w-full flex-1">
             <SignupForm onSwitchToLogin={() => setIsLogin(true)} />
           </div>
         )}
