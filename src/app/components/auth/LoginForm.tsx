@@ -20,6 +20,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Header } from "@/components/layout/header";
+import { useAuthStore } from "@/lib/store/auth-store";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 const loginFormSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -35,6 +38,9 @@ interface LoginFormProps {
 
 export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
+  const { signIn, signInWithGoogle, loading } = useAuthStore();
+  const router = useRouter();
+
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
     defaultValues: {
@@ -47,9 +53,24 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
 
   const isFormValid = form.formState.isValid;
 
-  function onSubmit(data: LoginFormValues) {
-    // Handle login logic here
-    console.log(data);
+  async function onSubmit(data: LoginFormValues) {
+    try {
+      await signIn(data.email, data.password);
+      toast.success("Logged in successfully!");
+      router.push("/dashboard");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to log in");
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    try {
+      await signInWithGoogle();
+      toast.success("Signed in with Google successfully!");
+      router.push("/dashboard");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to sign in with Google");
+    }
   }
 
   return (
@@ -57,7 +78,7 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
       <Header />
       <div className="mt-[50px] w-full max-w-2xl px-0 flex flex-col items-center justify-center flex-1">
         <Card className="w-full border border-gray-200 rounded-xl bg-white shadow-none p-0">
-          <CardContent className="p-10 md:p-16">
+          <CardContent className="p-8">
             <h1 className="text-3xl font-bold mb-4">
               Log in to <span className="text-blue-600">adAlert.io</span>
             </h1>
@@ -69,6 +90,8 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
               type="button"
               variant="secondary"
               className="w-full flex items-center justify-center py-6 gap-2 bg-gray-100 hover:bg-gray-200 text-gray-900 text-xl font-medium mb-6 border border-gray-200 shadow-none"
+              onClick={handleGoogleSignIn}
+              disabled={loading}
             >
               <span className="mr-2 flex items-center">
                 <svg
@@ -152,22 +175,18 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
                           <Input
                             type={showPassword ? "text" : "password"}
                             placeholder="Password"
-                            className="pl-10 pr-10"
+                            className="pl-10"
                             {...field}
                           />
                           <button
                             type="button"
-                            tabIndex={-1}
-                            className="absolute right-3 top-2.5 text-blue-600 hover:text-main-color-600 transition-colors"
-                            onClick={() => setShowPassword((v) => !v)}
-                            aria-label={
-                              showPassword ? "Hide password" : "Show password"
-                            }
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
                           >
                             {showPassword ? (
-                              <EyeOff className="h-5 w-5 text-blue-600" />
+                              <EyeOff className="h-5 w-5" />
                             ) : (
-                              <Eye className="h-5 w-5 text-blue-600" />
+                              <Eye className="h-5 w-5" />
                             )}
                           </button>
                         </div>
@@ -177,7 +196,25 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
                   )}
                 />
 
-                <div className="flex items-center justify-end mt-2">
+                <div className="flex items-center justify-between">
+                  <FormField
+                    control={form.control}
+                    name="rememberMe"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormLabel className="text-sm font-normal">
+                          Remember me
+                        </FormLabel>
+                      </FormItem>
+                    )}
+                  />
+
                   <Button
                     variant="link"
                     className="px-0 font-normal text-sm text-gray-500 hover:text-blue-600 hover:no-underline focus:no-underline"
@@ -193,9 +230,9 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
                       ? "bg-blue-600 text-white hover:bg-blue-700"
                       : "bg-gray-400 text-white cursor-not-allowed"
                   }`}
-                  disabled={!isFormValid}
+                  disabled={!isFormValid || loading}
                 >
-                  Log in
+                  {loading ? "Logging in..." : "Log in"}
                 </Button>
               </form>
             </Form>
@@ -207,6 +244,7 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
                   variant="link"
                   onClick={onSwitchToSignup}
                   className="px-0 font-normal text-blue-600 cursor-pointer hover:no-underline focus:no-underline"
+                  disabled={loading}
                 >
                   Sign up
                 </Button>
