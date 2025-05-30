@@ -87,9 +87,21 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       set({ loading: true, error: null });
       const provider = new GoogleAuthProvider();
+
+      // Add scopes
+      provider.addScope("https://www.googleapis.com/auth/userinfo.email");
+      provider.addScope("https://www.googleapis.com/auth/userinfo.profile");
+
+      // Set custom parameters
+      provider.setCustomParameters({
+        prompt: "select_account", // Force account selection
+        login_hint: "", // Optional: pre-fill email
+      });
+
       const userCredential = await signInWithPopup(auth, provider);
       set({ user: userCredential.user });
     } catch (err: any) {
+      console.error("Google sign-in error:", err);
       set({ error: err.message });
       throw err;
     } finally {
