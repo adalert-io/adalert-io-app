@@ -30,12 +30,27 @@ import {
   COLLECTIONS,
 } from "@/lib/constants";
 
+interface UserDocument {
+  "Company Admin": any;
+  "Is Google Sign Up": boolean;
+  "Name": string;
+  "User Access": string;
+  "Avatar": string | null;
+  "User Type": string;
+  "Email": string;
+  "modified_at": any;
+  "Telephone": string | null;
+  "uid": string;
+}
+
 interface AuthState {
   user: User | null;
+  userDoc: UserDocument | null;
   loading: boolean;
   error: string | null;
   isFullAccess: boolean;
   setUser: (user: User | null) => void;
+  setUserDoc: (userDoc: UserDocument | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
@@ -45,6 +60,19 @@ interface AuthState {
   sendVerificationEmail: () => Promise<void>;
   sendPasswordReset: (email: string) => Promise<void>;
   checkSubscriptionStatus: (userId: string) => Promise<void>;
+  fetchUserDocument: (userId: string) => Promise<void>;
+}
+
+// Helper function to fetch user document
+async function fetchUserDocument(userId: string): Promise<UserDocument | null> {
+  const userRef = doc(db, COLLECTIONS.USERS, userId);
+  const userDoc = await getDoc(userRef);
+
+  if (!userDoc.exists()) {
+    return null;
+  }
+
+  return userDoc.data() as UserDocument;
 }
 
 // Helper function to check subscription status
@@ -184,15 +212,31 @@ export async function createUserDocuments(
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
+  userDoc: null,
   loading: false,
   error: null,
   isFullAccess: false,
   setUser: (user) => set({ user }),
+  setUserDoc: (userDoc) => set({ userDoc }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
 
+  fetchUserDocument: async (userId: string) => {
+    try {
+      const userDoc = await fetchUserDocument(userId);
+      set({ userDoc });
+    } catch (err: any) {
+      console.error("Error fetching user document:", err);
+      set({ error: err.message });
+    }
+  },
+
   checkSubscriptionStatus: async (userId: string) => {
     try {
+      // First fetch the user document
+      await useAuthStore.getState().fetchUserDocument(userId);
+
+      // Then check subscription status
       const hasFullAccess = await checkSubscriptionStatus(userId);
       set({ isFullAccess: hasFullAccess });
     } catch (err: any) {
@@ -237,8 +281,10 @@ export const useAuthStore = create<AuthState>((set) => ({
       );
       set({ user: userCredential.user });
 
-      // Check subscription status after successful sign in
-      await checkSubscriptionStatus(userCredential.user.uid);
+      // Fetch user document and check subscription status after successful sign in
+      await useAuthStore
+        .getState()
+        .checkSubscriptionStatus(userCredential.user.uid);
     } catch (err: any) {
       set({ error: err.message });
       throw err;
@@ -258,8 +304,8 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       // Set custom parameters
       provider.setCustomParameters({
-        prompt: "select_account", // Force account selection
-        login_hint: "", // Optional: pre-fill email
+        prompt: "select_account",
+        login_hint: "",
       });
 
       const userCredential = await signInWithPopup(auth, provider);
@@ -270,8 +316,8 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       set({ user });
 
-      // Check subscription status after successful sign in
-      await checkSubscriptionStatus(user.uid);
+      // Fetch user document and check subscription status after successful sign in
+      await useAuthStore.getState().checkSubscriptionStatus(user.uid);
     } catch (err: any) {
       console.error("Google sign-in error:", err);
       set({ error: err.message });
@@ -285,7 +331,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       set({ loading: true, error: null });
       await signOut(auth);
-      set({ user: null });
+      set({ user: null, userDoc: null });
     } catch (err: any) {
       set({ error: err.message });
       throw err;
