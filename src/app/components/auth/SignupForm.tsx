@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import {
   EnvelopeClosedIcon,
@@ -53,11 +53,21 @@ interface SignupFormProps {
 }
 
 export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
-  const { signUp, signInWithGoogle, loading, sendVerificationEmail } =
-    useAuthStore();
+  const {
+    signUp,
+    signInWithGoogle,
+    loading,
+    sendVerificationEmail,
+    setRouter,
+  } = useAuthStore();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [showVerificationMessage, setShowVerificationMessage] = useState(false);
+
+  // Set router instance in auth store
+  useEffect(() => {
+    setRouter(router);
+  }, [router, setRouter]);
 
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupFormSchema),
@@ -89,7 +99,6 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
       setIsLoading(true);
       await signInWithGoogle();
       toast.success("Signed in with Google successfully!");
-      router.push("/dashboard");
     } catch (error: any) {
       toast.error(error.message || "Failed to sign in with Google");
     } finally {

@@ -20,6 +20,9 @@ import {
   collection,
   getDoc,
   updateDoc,
+  query,
+  where,
+  getDocs,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import moment from "moment";
@@ -29,6 +32,7 @@ import {
   USER_TYPES,
   COLLECTIONS,
 } from "@/lib/constants";
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 interface UserDocument {
   "Company Admin": any;
@@ -41,6 +45,7 @@ interface UserDocument {
   "modified_at": any;
   "Telephone": string | null;
   "uid": string;
+  "Inviter"?: any; // Optional field for inviter reference
 }
 
 interface AuthState {
@@ -49,10 +54,12 @@ interface AuthState {
   loading: boolean;
   error: string | null;
   isFullAccess: boolean;
+  router: AppRouterInstance | null;
   setUser: (user: User | null) => void;
   setUserDoc: (userDoc: UserDocument | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
+  setRouter: (router: AppRouterInstance) => void;
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
@@ -61,6 +68,7 @@ interface AuthState {
   sendPasswordReset: (email: string) => Promise<void>;
   checkSubscriptionStatus: (userId: string) => Promise<void>;
   fetchUserDocument: (userId: string) => Promise<void>;
+  handlePostAuthNavigation: () => Promise<void>;
 }
 
 // Helper function to fetch user document
@@ -210,16 +218,18 @@ export async function createUserDocuments(
   }
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   userDoc: null,
   loading: false,
   error: null,
   isFullAccess: false,
+  router: null,
   setUser: (user) => set({ user }),
   setUserDoc: (userDoc) => set({ userDoc }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
+  setRouter: (router) => set({ router }),
 
   fetchUserDocument: async (userId: string) => {
     try {
@@ -285,6 +295,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       await useAuthStore
         .getState()
         .checkSubscriptionStatus(userCredential.user.uid);
+
+      // Handle post-auth navigation
+      await useAuthStore.getState().handlePostAuthNavigation();
     } catch (err: any) {
       set({ error: err.message });
       throw err;
@@ -318,6 +331,9 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       // Fetch user document and check subscription status after successful sign in
       await useAuthStore.getState().checkSubscriptionStatus(user.uid);
+
+      // Handle post-auth navigation
+      await useAuthStore.getState().handlePostAuthNavigation();
     } catch (err: any) {
       console.error("Google sign-in error:", err);
       set({ error: err.message });
@@ -375,6 +391,59 @@ export const useAuthStore = create<AuthState>((set) => ({
       throw err;
     } finally {
       set({ loading: false });
+    }
+  },
+
+  handlePostAuthNavigation: async () => {
+    try {
+      const { userDoc, isFullAccess, router } = get();
+      if (!userDoc || !router) return;
+
+      // Build Firestore query for Ads Account collection
+      const adsAccountRef = collection(db, "Ads Account");
+      const companyAdminRef = userDoc["Company Admin"];
+      const userRef = doc(db, COLLECTIONS.USERS, userDoc.uid);
+
+      const adsAccountQuery = query(
+        adsAccountRef,
+        where("User", "==", companyAdminRef),
+        where("Is Connected", "==", true),
+        where("Selected Users", "array-contains", userRef)
+      );
+
+      const adsAccountSnap = await getDocs(adsAccountQuery);
+      const adsAccountCount = adsAccountSnap.size;
+
+      // Check inviter
+      const inviter = userDoc["Inviter"];
+
+      // Navigation logic
+      if (!isFullAccess) {
+        router.push("/settings/account/billing");
+        return;
+      }
+
+      if (adsAccountCount === 0) {
+        if (!inviter) {
+          router.push("/add-ads-account");
+        } else {
+          router.push("/dashboard");
+        }
+        return;
+      }
+
+      if (adsAccountCount === 1) {
+        router.push("/dashboard");
+        return;
+      }
+
+      if (adsAccountCount > 1) {
+        router.push("/summary");
+        return;
+      }
+    } catch (err: any) {
+      console.error("Error in post-auth navigation:", err);
+      set({ error: err.message });
     }
   },
 }));

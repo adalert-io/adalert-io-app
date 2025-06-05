@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { EnvelopeClosedIcon, LockClosedIcon } from "@radix-ui/react-icons";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -38,8 +38,12 @@ interface LoginFormProps {
 
 export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
-  const { signIn, signInWithGoogle, loading } = useAuthStore();
+  const { signIn, signInWithGoogle, loading, setRouter } = useAuthStore();
   const router = useRouter();
+
+  useEffect(() => {
+    setRouter(router);
+  }, [router, setRouter]);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
@@ -57,7 +61,6 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
     try {
       await signIn(data.email, data.password);
       toast.success("Logged in successfully!");
-      router.push("/dashboard");
     } catch (error: any) {
       toast.error(error.message || "Failed to log in");
     }
@@ -67,7 +70,6 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
     try {
       await signInWithGoogle();
       toast.success("Signed in with Google successfully!");
-      router.push("/dashboard");
     } catch (error: any) {
       toast.error(error.message || "Failed to sign in with Google");
     }
