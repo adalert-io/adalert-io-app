@@ -23,6 +23,12 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import moment from "moment";
+import {
+  SUBSCRIPTION_STATUS,
+  SUBSCRIPTION_PERIODS,
+  USER_TYPES,
+  COLLECTIONS,
+} from "@/lib/constants";
 
 interface AuthState {
   user: User | null;
@@ -43,7 +49,7 @@ interface AuthState {
 
 // Helper function to check subscription status
 async function checkSubscriptionStatus(userId: string): Promise<boolean> {
-  const subscriptionRef = doc(db, "subscriptions", userId);
+  const subscriptionRef = doc(db, COLLECTIONS.SUBSCRIPTIONS, userId);
   const subscriptionDoc = await getDoc(subscriptionRef);
 
   if (!subscriptionDoc.exists()) {
@@ -55,15 +61,18 @@ async function checkSubscriptionStatus(userId: string): Promise<boolean> {
   const userStatus = subscriptionData["User Status"];
 
   // Check Trial New status
-  if (userStatus === "Trial New") {
+  if (userStatus === SUBSCRIPTION_STATUS.TRIAL_NEW) {
     const trialStartDate = subscriptionData["Free Trial Start Date"]?.toDate();
     if (trialStartDate) {
-      const trialEndDate = moment(trialStartDate).add(7, "days");
+      const trialEndDate = moment(trialStartDate).add(
+        SUBSCRIPTION_PERIODS.TRIAL_DAYS,
+        "days"
+      );
 
       if (now.isAfter(trialEndDate)) {
         // Update status to Trial Ended
         await updateDoc(subscriptionRef, {
-          "User Status": "Trial Ended",
+          "User Status": SUBSCRIPTION_STATUS.TRIAL_ENDED,
         });
         return false;
       }
@@ -71,16 +80,22 @@ async function checkSubscriptionStatus(userId: string): Promise<boolean> {
   }
 
   // Check Trial Ended or Cancelled status
-  if (userStatus === "Trial Ended" || userStatus === "Cancelled") {
+  if (
+    userStatus === SUBSCRIPTION_STATUS.TRIAL_ENDED ||
+    userStatus === SUBSCRIPTION_STATUS.CANCELLED
+  ) {
     return false;
   }
 
   // Check Payment Failed status
-  if (userStatus === "Payment Failed") {
+  if (userStatus === SUBSCRIPTION_STATUS.PAYMENT_FAILED) {
     const failedStartDate =
       subscriptionData["Stripe Invoice Failed Start Date"]?.toDate();
     if (failedStartDate) {
-      const gracePeriodEnd = moment(failedStartDate).add(3, "days");
+      const gracePeriodEnd = moment(failedStartDate).add(
+        SUBSCRIPTION_PERIODS.PAYMENT_FAILED_GRACE_DAYS,
+        "days"
+      );
 
       if (now.isAfter(gracePeriodEnd)) {
         return false;
@@ -98,7 +113,7 @@ export async function createUserDocuments(
   isGoogleSignUp: boolean = false
 ) {
   // Check if user document already exists
-  const userRef = doc(db, "users", user.uid);
+  const userRef = doc(db, COLLECTIONS.USERS, user.uid);
   const userDoc = await getDoc(userRef);
 
   // Only create documents if they don't exist
@@ -112,7 +127,7 @@ export async function createUserDocuments(
         : user.displayName || user.email?.split("@")[0],
       "User Access": "All ad accounts",
       "Avatar": user.photoURL,
-      "User Type": "Admin",
+      "User Type": USER_TYPES.ADMIN,
       "Email": user.email,
       "modified_at": serverTimestamp(),
       "Telephone": user.phoneNumber,
@@ -120,7 +135,7 @@ export async function createUserDocuments(
     });
 
     // Create authenticationPageTrackers document
-    const authTrackerRef = doc(db, "authenticationPageTrackers", user.uid);
+    const authTrackerRef = doc(db, COLLECTIONS.AUTH_TRACKERS, user.uid);
     await setDoc(authTrackerRef, {
       "Is Ads Account Authenticating": false,
       "Nav To Settings - Ads Account": false,
@@ -128,7 +143,7 @@ export async function createUserDocuments(
     });
 
     // Create alertSettings document
-    const alertSettingsRef = doc(db, "alertSettings", user.uid);
+    const alertSettingsRef = doc(db, COLLECTIONS.ALERT_SETTINGS, user.uid);
     await setDoc(alertSettingsRef, {
       "Level Account": true,
       "Level Ads": true,
@@ -152,17 +167,17 @@ export async function createUserDocuments(
     });
 
     // Create stripeCompanies document
-    const stripeCompaniesRef = doc(db, "stripeCompanies", user.uid);
+    const stripeCompaniesRef = doc(db, COLLECTIONS.STRIPE_COMPANIES, user.uid);
     await setDoc(stripeCompaniesRef, {
       "User": userRef,
     });
 
     // Create subscriptions document
-    const subscriptionsRef = doc(db, "subscriptions", user.uid);
+    const subscriptionsRef = doc(db, COLLECTIONS.SUBSCRIPTIONS, user.uid);
     await setDoc(subscriptionsRef, {
       "User": userRef,
       "Free Trial Start Date": serverTimestamp(),
-      "User Status": "Trial New",
+      "User Status": SUBSCRIPTION_STATUS.TRIAL_NEW,
     });
   }
 }
