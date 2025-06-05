@@ -19,13 +19,16 @@ import {
   serverTimestamp,
   collection,
   getDoc,
+  updateDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
+import moment from "moment";
 
 interface AuthState {
   user: User | null;
   loading: boolean;
   error: string | null;
+  isFullAccess: boolean;
   setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
@@ -35,6 +38,58 @@ interface AuthState {
   logout: () => Promise<void>;
   sendVerificationEmail: () => Promise<void>;
   sendPasswordReset: (email: string) => Promise<void>;
+  checkSubscriptionStatus: (userId: string) => Promise<void>;
+}
+
+// Helper function to check subscription status
+async function checkSubscriptionStatus(userId: string): Promise<boolean> {
+  const subscriptionRef = doc(db, "subscriptions", userId);
+  const subscriptionDoc = await getDoc(subscriptionRef);
+
+  if (!subscriptionDoc.exists()) {
+    return false;
+  }
+
+  const subscriptionData = subscriptionDoc.data();
+  const now = moment();
+  const userStatus = subscriptionData["User Status"];
+
+  // Check Trial New status
+  if (userStatus === "Trial New") {
+    const trialStartDate = subscriptionData["Free Trial Start Date"]?.toDate();
+    if (trialStartDate) {
+      const trialEndDate = moment(trialStartDate).add(7, "days");
+
+      if (now.isAfter(trialEndDate)) {
+        // Update status to Trial Ended
+        await updateDoc(subscriptionRef, {
+          "User Status": "Trial Ended",
+        });
+        return false;
+      }
+    }
+  }
+
+  // Check Trial Ended or Cancelled status
+  if (userStatus === "Trial Ended" || userStatus === "Cancelled") {
+    return false;
+  }
+
+  // Check Payment Failed status
+  if (userStatus === "Payment Failed") {
+    const failedStartDate =
+      subscriptionData["Stripe Invoice Failed Start Date"]?.toDate();
+    if (failedStartDate) {
+      const gracePeriodEnd = moment(failedStartDate).add(3, "days");
+
+      if (now.isAfter(gracePeriodEnd)) {
+        return false;
+      }
+    }
+  }
+
+  // If none of the conditions match, user has full access
+  return true;
 }
 
 // Reusable function to create user documents
@@ -106,7 +161,7 @@ export async function createUserDocuments(
     const subscriptionsRef = doc(db, "subscriptions", user.uid);
     await setDoc(subscriptionsRef, {
       "User": userRef,
-      "Free Trial": serverTimestamp(),
+      "Free Trial Start Date": serverTimestamp(),
       "User Status": "Trial New",
     });
   }
@@ -116,9 +171,20 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   loading: false,
   error: null,
+  isFullAccess: false,
   setUser: (user) => set({ user }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
+
+  checkSubscriptionStatus: async (userId: string) => {
+    try {
+      const hasFullAccess = await checkSubscriptionStatus(userId);
+      set({ isFullAccess: hasFullAccess });
+    } catch (err: any) {
+      console.error("Error checking subscription status:", err);
+      set({ isFullAccess: false });
+    }
+  },
 
   signUp: async (email: string, password: string, fullName: string) => {
     try {
@@ -155,6 +221,9 @@ export const useAuthStore = create<AuthState>((set) => ({
         password
       );
       set({ user: userCredential.user });
+
+      // Check subscription status after successful sign in
+      await checkSubscriptionStatus(userCredential.user.uid);
     } catch (err: any) {
       set({ error: err.message });
       throw err;
@@ -185,6 +254,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       await createUserDocuments(user, true);
 
       set({ user });
+
+      // Check subscription status after successful sign in
+      await checkSubscriptionStatus(user.uid);
     } catch (err: any) {
       console.error("Google sign-in error:", err);
       set({ error: err.message });
