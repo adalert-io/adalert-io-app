@@ -14,6 +14,7 @@ import { auth } from "@/lib/firebase/config";
 import { applyActionCode } from "firebase/auth";
 import { toast } from "sonner";
 import { authConfig } from "@/lib/config/auth-config";
+import { createUserDocuments } from "@/lib/store/auth-store";
 
 export default function VerifyEmailPage() {
   const router = useRouter();
@@ -33,6 +34,15 @@ export default function VerifyEmailPage() {
 
         // Apply the verification code
         await applyActionCode(auth, oobCode);
+
+        // Get the current user
+        const user = auth.currentUser;
+        if (!user) {
+          throw new Error("No user found");
+        }
+
+        // Create user documents after successful verification
+        await createUserDocuments(user, false);
 
         toast.success("Email verified successfully!");
         // Use dynamic redirect URL

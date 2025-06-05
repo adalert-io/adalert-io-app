@@ -13,6 +13,14 @@ import {
   ActionCodeSettings,
 } from "firebase/auth";
 import { authConfig } from "../config/auth-config";
+import {
+  doc,
+  setDoc,
+  serverTimestamp,
+  collection,
+  getDoc,
+} from "firebase/firestore";
+import { db } from "@/lib/firebase/config";
 
 interface AuthState {
   user: User | null;
@@ -27,6 +35,81 @@ interface AuthState {
   logout: () => Promise<void>;
   sendVerificationEmail: () => Promise<void>;
   sendPasswordReset: (email: string) => Promise<void>;
+}
+
+// Reusable function to create user documents
+export async function createUserDocuments(
+  user: User,
+  isGoogleSignUp: boolean = false
+) {
+  // Check if user document already exists
+  const userRef = doc(db, "users", user.uid);
+  const userDoc = await getDoc(userRef);
+
+  // Only create documents if they don't exist
+  if (!userDoc.exists()) {
+    // Create user document
+    await setDoc(userRef, {
+      "Company Admin": userRef,
+      "Is Google Sign Up": isGoogleSignUp,
+      "Name": isGoogleSignUp
+        ? user.displayName
+        : user.displayName || user.email?.split("@")[0],
+      "User Access": "All ad accounts",
+      "Avatar": user.photoURL,
+      "User Type": "Admin",
+      "Email": user.email,
+      "modified_at": serverTimestamp(),
+      "Telephone": user.phoneNumber,
+      "uid": user.uid,
+    });
+
+    // Create authenticationPageTrackers document
+    const authTrackerRef = doc(db, "authenticationPageTrackers", user.uid);
+    await setDoc(authTrackerRef, {
+      "Is Ads Account Authenticating": false,
+      "Nav To Settings - Ads Account": false,
+      "User": userRef,
+    });
+
+    // Create alertSettings document
+    const alertSettingsRef = doc(db, "alertSettings", user.uid);
+    await setDoc(alertSettingsRef, {
+      "Level Account": true,
+      "Level Ads": true,
+      "Level Keyword": true,
+      "Send Email Alerts": true,
+      "Send SMS Alerts": true,
+      "Send Weekly Summaries": true,
+      "Severity Critical": true,
+      "Severity Low": true,
+      "Severity Medium": true,
+      "Type Ad Performance": true,
+      "Type Brand Checker": true,
+      "Type Budget": true,
+      "Type Keyword Performance": true,
+      "Type KPI Trends": true,
+      "Type Landing Page": true,
+      "Type Optimization Score": true,
+      "Type Policy": true,
+      "Type Serving Ads": true,
+      "User": userRef,
+    });
+
+    // Create stripeCompanies document
+    const stripeCompaniesRef = doc(db, "stripeCompanies", user.uid);
+    await setDoc(stripeCompaniesRef, {
+      "User": userRef,
+    });
+
+    // Create subscriptions document
+    const subscriptionsRef = doc(db, "subscriptions", user.uid);
+    await setDoc(subscriptionsRef, {
+      "User": userRef,
+      "Free Trial": serverTimestamp(),
+      "User Status": "Trial New",
+    });
+  }
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -71,9 +154,6 @@ export const useAuthStore = create<AuthState>((set) => ({
         email,
         password
       );
-      if (!userCredential.user.emailVerified) {
-        throw new Error("Please verify your email before signing in");
-      }
       set({ user: userCredential.user });
     } catch (err: any) {
       set({ error: err.message });
@@ -99,7 +179,12 @@ export const useAuthStore = create<AuthState>((set) => ({
       });
 
       const userCredential = await signInWithPopup(auth, provider);
-      set({ user: userCredential.user });
+      const user = userCredential.user;
+
+      // Create user documents
+      await createUserDocuments(user, true);
+
+      set({ user });
     } catch (err: any) {
       console.error("Google sign-in error:", err);
       set({ error: err.message });
