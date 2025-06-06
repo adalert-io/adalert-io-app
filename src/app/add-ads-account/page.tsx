@@ -10,7 +10,7 @@ export default function AddAdsAccount() {
 
   useEffect(() => {
     if (!user) {
-      router.push("/auth/login");
+      router.push("/auth");
     }
   }, [user, router]);
 
