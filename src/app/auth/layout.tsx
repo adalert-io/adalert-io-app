@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { auth } from "@/lib/firebase/config";
@@ -19,6 +19,7 @@ export default function AuthLayout({
     checkSubscriptionStatus,
     handlePostAuthNavigation,
   } = useAuthStore();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Set router instance in auth store
@@ -34,6 +35,7 @@ export default function AuthLayout({
         await checkSubscriptionStatus(firebaseUser.uid);
         await handlePostAuthNavigation();
       }
+      setIsLoading(false);
     });
 
     // Cleanup subscription
@@ -45,6 +47,11 @@ export default function AuthLayout({
     checkSubscriptionStatus,
     handlePostAuthNavigation,
   ]);
+
+  // Show nothing while checking auth state
+  if (isLoading) {
+    return null;
+  }
 
   return <>{children}</>;
 }
