@@ -18,11 +18,24 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/lib/firebase/config";
 
 export default function RedirectPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
+  const { setUser } = useAuthStore();
+
+  // Hydrate Zustand user state from Firebase Auth
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
+      }
+    });
+    return () => unsubscribe();
+  }, [setUser]);
 
   useEffect(() => {
     // Parse query params
@@ -169,6 +182,8 @@ export default function RedirectPage() {
             const page = searchParams.get("page");
             if (page) {
               router.replace(`/${page}`);
+            } else {
+              router.replace("/dashboard");
             }
           }}
         >
