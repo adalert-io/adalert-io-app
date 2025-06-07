@@ -29,6 +29,8 @@ export const COLLECTIONS = {
 } as const;
 
 export const FIREBASE_FN_DOMAINS = {
-  DEV: "adalert-kmotjdlnmq-uc.a.run.app",
-  PROD: "adalert-msrjiafroa-uc.a.run.app",
+  // DEV: "adalert-kmotjdlnmq-uc.a.run.app",
+  DEV: "127.0.0.1:5001/adalertdev/us-central1/test",
+  PROD: "adalert-kmotjdlnmq-uc.a.run.app",
+  // ACTUAL_PROD: "adalert-msrjiafroa-uc.a.run.app",
 };

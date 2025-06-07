@@ -87,7 +87,12 @@ export async function fetchAdsAccounts(userTokenId: string, userId: string) {
       ? FIREBASE_FN_DOMAINS.DEV
       : FIREBASE_FN_DOMAINS.PROD;
 
-  const response = await fetch(`https://${domain}/ads-accounts-fb`, {
+  const path =
+    process.env.NODE_ENV === "development"
+      ? `http://${domain}/ads-accounts-fb`
+      : `https://${domain}/ads-accounts-fb`;
+
+  const response = await fetch(path, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
