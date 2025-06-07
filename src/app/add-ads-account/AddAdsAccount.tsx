@@ -6,12 +6,60 @@ import { InfoCircledIcon } from "@radix-ui/react-icons";
 import { ShieldCheck, CheckCircle } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { useAuthStore } from "@/lib/store/auth-store";
-import { setAdsAccountAuthenticating } from "./helpers";
+import {
+  setAdsAccountAuthenticating,
+  getCurrentUserToken,
+  getAuthTracker,
+  getSubscription,
+  fetchAdsAccounts,
+} from "@/services/ads";
 import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import type {
+  UserToken,
+  AuthTracker,
+  Subscription,
+  AdsAccount,
+} from "@/types/firebaseCollections";
 
 export function AddAdsAccount() {
   const { user } = useAuthStore();
   const searchParams = useSearchParams();
+  const [userToken, setUserToken] = useState<UserToken | null>(null);
+  const [authTracker, setAuthTracker] = useState<AuthTracker | null>(null);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [adsAccounts, setAdsAccounts] = useState<AdsAccount[] | null>(null);
+
+  useEffect(() => {
+    const initializeData = async () => {
+      if (!user) return;
+
+      try {
+        // 1. Get userToken document
+        const token = await getCurrentUserToken(user.uid);
+        setUserToken(token);
+
+        // 2. Get authenticationPageTracker document
+        const tracker = await getAuthTracker(user.uid);
+        setAuthTracker(tracker);
+
+        // 3. Get subscription document
+        const sub = await getSubscription(user.uid);
+        setSubscription(sub);
+
+        // 4. Check conditions and make API call
+        if (token && tracker && tracker["Is Ads Account Authenticating"]) {
+          const data = await fetchAdsAccounts(token.id, user.uid);
+          setAdsAccounts(data);
+          console.log(data);
+        }
+      } catch (error) {
+        console.error("Error initializing data:", error);
+      }
+    };
+
+    initializeData();
+  }, [user]);
 
   const handleConnectGoogleAds = async () => {
     if (!user) return;

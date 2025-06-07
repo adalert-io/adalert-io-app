@@ -27,3 +27,8 @@ export const COLLECTIONS = {
   AUTH_TRACKERS: "authenticationPageTrackers",
   STRIPE_COMPANIES: "stripeCompanies",
 } as const;
+
+export const FIREBASE_FN_DOMAINS = {
+  DEV: "adalert-kmotjdlnmq-uc.a.run.app",
+  PROD: "adalert-msrjiafroa-uc.a.run.app",
+};
