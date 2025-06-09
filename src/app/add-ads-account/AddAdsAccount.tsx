@@ -27,6 +27,16 @@ import type {
   Subscription,
   AdsAccount,
 } from "@/types/firebaseCollections";
+import { toast } from "sonner";
+import {
+  updateDoc,
+  doc,
+  arrayUnion,
+  setDoc,
+  deleteDoc,
+  getDoc,
+} from "firebase/firestore";
+import { db } from "@/lib/firebase/config";
 
 function formatAccountId(id: string) {
   // Format as xxx-xxx-xxxx
@@ -34,7 +44,7 @@ function formatAccountId(id: string) {
 }
 
 export function AddAdsAccount() {
-  const { user } = useAuthStore();
+  const { user, isFullAccess, userDoc } = useAuthStore();
   const searchParams = useSearchParams();
   const [userToken, setUserToken] = useState<UserToken | null>(null);
   const [authTracker, setAuthTracker] = useState<AuthTracker | null>(null);
@@ -43,6 +53,17 @@ export function AddAdsAccount() {
   const [isLoading, setIsLoading] = useState(false);
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [editingValue, setEditingValue] = useState<string>("");
+
+  // Default ads account variable values
+  const DEFAULT_ADS_ACCOUNT_VARIABLE = {
+    "Is Enabled": true,
+    "Is Alert Enabled": true,
+    "Alert Threshold": 0.8,
+    "Alert Frequency": "Daily",
+    "Last Alert Sent": null,
+    "Created At": new Date(),
+    "Updated At": new Date(),
+  };
 
   useEffect(() => {
     const initializeData = async () => {
@@ -65,6 +86,7 @@ export function AddAdsAccount() {
         // 4. Check conditions and make API call
         if (token && tracker && tracker["Is Ads Account Authenticating"]) {
           const data = await fetchAdsAccounts(token.id, user.uid);
+          console.log("data", data);
           // Add IsSelected property to each account for UI state
           setAdsAccounts(
             data.map((acc: any) => ({
@@ -116,9 +138,17 @@ export function AddAdsAccount() {
     // Only allow numbers
     const raw = value.replace(/[^0-9]/g, "");
     setEditingValue(raw);
+    // Calculate daily budget by dividing monthly budget by 30.4 and rounding to 2 decimal places
+    const dailyBudget = Number((Number(raw) / 30.4).toFixed(2));
     setAdsAccounts(
       adsAccounts.map((acc, i) =>
-        i === idx ? { ...acc, ["Monthly Budget"]: raw } : acc
+        i === idx
+          ? {
+              ...acc,
+              ["Monthly Budget"]: raw,
+              ["Daily Budget"]: dailyBudget,
+            }
+          : acc
       )
     );
   };
@@ -140,6 +170,102 @@ export function AddAdsAccount() {
         acc["Is Selected"] &&
         (!acc["Monthly Budget"] || Number(acc["Monthly Budget"]) <= 0)
     ) ?? false;
+
+  const handleConnectAndContinue = async () => {
+    if (!isFullAccess) {
+      toast.warning(
+        "You're unable to connect an ads account(s), either your free trial has ended or you haven't subscribed to adAlert.io"
+      );
+      return;
+    }
+
+    if (!adsAccounts || !user || !userDoc) return;
+
+    try {
+      setIsLoading(true);
+
+      // Step 1: Update Is Connected status for selected accounts
+      const updatedAccounts = adsAccounts.map((acc) => {
+        if (
+          acc["Is Selected"] &&
+          Number(acc["Monthly Budget"]) > 0 &&
+          !acc["Is Connected"]
+        ) {
+          return {
+            ...acc,
+            "Is Connected": true,
+            "User": doc(db, "users", user.uid),
+            // TODO: need to fix the userToken
+            "User Token": doc(db, "userTokens", acc["userToken"]),
+          };
+        }
+        return acc;
+      });
+
+      // Step 2: Update Selected Users for connected accounts
+      const accountsToUpdate = updatedAccounts.filter(
+        (acc) =>
+          acc["Is Selected"] &&
+          Number(acc["Monthly Budget"]) > 0 &&
+          acc["Is Connected"]
+      );
+
+      for (const acc of accountsToUpdate) {
+        if (acc._id) {
+          await updateDoc(doc(db, "adsAccounts", acc._id), {
+            ...acc,
+            "Selected Users": arrayUnion(user.uid),
+          });
+        }
+      }
+
+      // Step 3: Create or update adsAccountVariables documents
+      for (const acc of accountsToUpdate) {
+        if (acc._id) {
+          const adsAccountVarRef = doc(db, "adsAccountVariables", acc._id);
+          const adsAccountVarSnap = await getDoc(adsAccountVarRef);
+
+          if (adsAccountVarSnap.exists()) {
+            // Update existing document
+            await updateDoc(adsAccountVarRef, {
+              "DailyBudget": acc["Daily Budget"] || 0,
+              "MonthlyBudget": acc["Monthly Budget"] || 0,
+            });
+          } else {
+            // Create new document
+            await setDoc(adsAccountVarRef, {
+              "Ads Account": doc(db, "adsAccounts", acc._id),
+              "User": doc(db, "users", user.uid),
+              "DailyBudget": acc["Daily Budget"] || 0,
+              "MonthlyBudget": acc["Monthly Budget"] || 0,
+              ...DEFAULT_ADS_ACCOUNT_VARIABLE,
+            });
+          }
+        }
+      }
+
+      // Step 4: Delete documents for unselected or invalid accounts
+      const accountsToDelete = updatedAccounts.filter(
+        (acc) => !(acc["Is Selected"] && acc["Is Connected"])
+      );
+
+      for (const acc of accountsToDelete) {
+        if (acc._id) {
+          await deleteDoc(doc(db, "adsAccounts", acc._id));
+        }
+      }
+
+      // TODO: Update subscription record
+
+      toast.success("Ads accounts updated successfully");
+      // TODO: Redirect to dashboard page
+    } catch (error) {
+      console.error("Error updating ads accounts:", error);
+      toast.error("Failed to update ads accounts");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -244,9 +370,10 @@ export function AddAdsAccount() {
               <Button
                 size="lg"
                 className="w-full max-w-xs bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold py-6 mb-4"
-                onClick={() => {}}
-                disabled={isConnectContinueDisabled}
+                onClick={handleConnectAndContinue}
+                disabled={isConnectContinueDisabled || isLoading}
               >
+                {isLoading && <Loader2 className="h-5 w-5 animate-spin mr-2" />}
                 Connect and continue
               </Button>
             )}
