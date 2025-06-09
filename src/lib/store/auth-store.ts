@@ -85,16 +85,33 @@ async function fetchUserDocument(userId: string): Promise<UserDocument | null> {
 
 // Helper function to check subscription status
 async function checkSubscriptionStatus(userId: string): Promise<boolean> {
-  const subscriptionRef = doc(db, COLLECTIONS.SUBSCRIPTIONS, userId);
-  const subscriptionDoc = await getDoc(subscriptionRef);
+  // First fetch the user document
+  const userRef = doc(db, COLLECTIONS.USERS, userId);
+  const userDoc = await getDoc(userRef);
 
-  if (!subscriptionDoc.exists()) {
+  if (!userDoc.exists()) {
     return false;
   }
 
+  const userData = userDoc.data();
+  const companyAdminRef = userData["Company Admin"];
+
+  // Query subscriptions collection to find document where User field matches Company Admin
+  const subscriptionsRef = collection(db, COLLECTIONS.SUBSCRIPTIONS);
+  const q = query(subscriptionsRef, where("User", "==", companyAdminRef));
+  const querySnapshot = await getDocs(q);
+
+  if (querySnapshot.empty) {
+    return false;
+  }
+
+  // Get the first matching subscription document
+  const subscriptionDoc = querySnapshot.docs[0];
   const subscriptionData = subscriptionDoc.data();
   const now = moment();
   const userStatus = subscriptionData["User Status"];
+
+  console.log("subscriptionData", subscriptionData);
 
   // Check Trial New status
   if (userStatus === SUBSCRIPTION_STATUS.TRIAL_NEW) {
@@ -107,9 +124,12 @@ async function checkSubscriptionStatus(userId: string): Promise<boolean> {
 
       if (now.isAfter(trialEndDate)) {
         // Update status to Trial Ended
-        await updateDoc(subscriptionRef, {
-          "User Status": SUBSCRIPTION_STATUS.TRIAL_ENDED,
-        });
+        await updateDoc(
+          doc(db, COLLECTIONS.SUBSCRIPTIONS, subscriptionDoc.id),
+          {
+            "User Status": SUBSCRIPTION_STATUS.TRIAL_ENDED,
+          }
+        );
         return false;
       }
     }
@@ -248,6 +268,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       // Then check subscription status
       const hasFullAccess = await checkSubscriptionStatus(userId);
+      console.log("hasFullAccess", hasFullAccess);
       set({ isFullAccess: hasFullAccess });
     } catch (err: any) {
       console.error("Error checking subscription status:", err);
