@@ -19,7 +19,7 @@ import {
   getSubscription,
   fetchAdsAccounts,
 } from "@/services/ads";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type {
   UserToken,
@@ -35,6 +35,7 @@ import {
   setDoc,
   deleteDoc,
   getDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 
@@ -46,6 +47,7 @@ function formatAccountId(id: string) {
 export function AddAdsAccount() {
   const { user, isFullAccess, userDoc } = useAuthStore();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [userToken, setUserToken] = useState<UserToken | null>(null);
   const [authTracker, setAuthTracker] = useState<AuthTracker | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -71,9 +73,11 @@ export function AddAdsAccount() {
       setIsLoading(true);
 
       try {
-        console.log("user: ", user);
-        console.log("userDoc: ", userDoc);
-        console.log("isFullAccess: ", isFullAccess);
+        // If userDoc is null, rerun fetchUserDocument and checkSubscriptionStatus
+        if (!userDoc) {
+          await useAuthStore.getState().fetchUserDocument(user.uid);
+          await useAuthStore.getState().checkSubscriptionStatus(user.uid);
+        }
 
         // 1. Get userToken document
         const token = await getCurrentUserToken(user.uid);
@@ -87,6 +91,9 @@ export function AddAdsAccount() {
         const sub = await getSubscription(user.uid);
         setSubscription(sub);
 
+        console.log("user: ", user);
+        console.log("userDoc: ", userDoc);
+        console.log("isFullAccess: ", isFullAccess);
         console.log("token: ", token);
         console.log("tracker: ", tracker);
         console.log("sub: ", sub);
@@ -114,7 +121,7 @@ export function AddAdsAccount() {
 
   const handleConnectGoogleAds = async () => {
     if (!user) return;
-    await setAdsAccountAuthenticating(user.uid);
+    await setAdsAccountAuthenticating(user.uid, true);
 
     const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     const from = searchParams.get("from");
@@ -155,6 +162,7 @@ export function AddAdsAccount() {
               ...acc,
               ["Monthly Budget"]: raw,
               ["Daily Budget"]: dailyBudget,
+              ["Is Selected"]: Number(raw) >= 0,
             }
           : acc
       )
@@ -180,6 +188,9 @@ export function AddAdsAccount() {
     ) ?? false;
 
   const handleConnectAndContinue = async () => {
+    console.log("userDoc: ", userDoc);
+    console.log("isFullAccess: ", isFullAccess);
+
     if (!isFullAccess) {
       toast.warning(
         "You're unable to connect an ads account(s), either your free trial has ended or you haven't subscribed to adAlert.io"
@@ -194,23 +205,19 @@ export function AddAdsAccount() {
 
       // Step 1: Update Is Connected status for selected accounts
       const updatedAccounts = adsAccounts.map((acc) => {
-        console.log("acc: ");
-        console.log(acc);
-
-        console.log("userToken: ");
-        console.log(userToken);
-
         if (
           acc["Is Selected"] &&
           Number(acc["Monthly Budget"]) > 0 &&
           !acc["Is Connected"] &&
           userToken
         ) {
+          const { ["Created Date"]: _createdDate, ...updatePayload } = acc;
           return {
-            ...acc,
+            ...updatePayload,
             "Is Connected": true,
             "User": doc(db, "users", user.uid),
             "User Token": doc(db, "userTokens", userToken.id),
+            "Monthly Budget": Number(acc["Monthly Budget"]),
           };
         }
         return acc;
@@ -225,10 +232,15 @@ export function AddAdsAccount() {
       );
 
       for (const acc of accountsToUpdate) {
-        if (acc._id) {
+        if (acc._id && userToken) {
+          // Exclude 'Created Date' from the update payload
+          const { ["Created Date"]: _createdDate, ...updatePayload } = acc;
           await updateDoc(doc(db, "adsAccounts", acc._id), {
-            ...acc,
+            ...updatePayload,
             "Selected Users": arrayUnion(user.uid),
+            "User": doc(db, "users", user.uid),
+            "User Token": doc(db, "userTokens", userToken.id),
+            "Monthly Budget": Number(acc["Monthly Budget"]),
           });
         }
       }
@@ -269,10 +281,14 @@ export function AddAdsAccount() {
         }
       }
 
+      // step 5: set isAdsAccountAuthenticating to false
+      await setAdsAccountAuthenticating(user.uid, false);
+
       // TODO: Update subscription record
+      // pge-add-ads-account -> Group Button Continue To Dashboard is clicked -> step 18
 
       toast.success("Ads accounts updated successfully");
-      // TODO: Redirect to dashboard page
+      router.push("/dashboard");
     } catch (error) {
       console.error("Error updating ads accounts:", error);
       toast.error("Failed to update ads accounts");
