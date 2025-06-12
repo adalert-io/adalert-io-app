@@ -71,6 +71,10 @@ export function AddAdsAccount() {
       setIsLoading(true);
 
       try {
+        console.log("user: ", user);
+        console.log("userDoc: ", userDoc);
+        console.log("isFullAccess: ", isFullAccess);
+
         // 1. Get userToken document
         const token = await getCurrentUserToken(user.uid);
         setUserToken(token);
@@ -82,6 +86,10 @@ export function AddAdsAccount() {
         // 3. Get subscription document
         const sub = await getSubscription(user.uid);
         setSubscription(sub);
+
+        console.log("token: ", token);
+        console.log("tracker: ", tracker);
+        console.log("sub: ", sub);
 
         // 4. Check conditions and make API call
         if (token && tracker && tracker["Is Ads Account Authenticating"]) {
@@ -186,17 +194,23 @@ export function AddAdsAccount() {
 
       // Step 1: Update Is Connected status for selected accounts
       const updatedAccounts = adsAccounts.map((acc) => {
+        console.log("acc: ");
+        console.log(acc);
+
+        console.log("userToken: ");
+        console.log(userToken);
+
         if (
           acc["Is Selected"] &&
           Number(acc["Monthly Budget"]) > 0 &&
-          !acc["Is Connected"]
+          !acc["Is Connected"] &&
+          userToken
         ) {
           return {
             ...acc,
             "Is Connected": true,
             "User": doc(db, "users", user.uid),
-            // TODO: need to fix the userToken
-            "User Token": doc(db, "userTokens", acc["userToken"]),
+            "User Token": doc(db, "userTokens", userToken.id),
           };
         }
         return acc;
