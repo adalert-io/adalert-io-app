@@ -15,11 +15,20 @@ import type {
   Subscription,
 } from "@/types/firebaseCollections";
 
-export async function setAdsAccountAuthenticating(userId: string) {
-  const trackerRef = doc(db, "authenticationPageTrackers", userId);
-  const trackerSnap = await getDoc(trackerRef);
-  if (trackerSnap.exists()) {
-    await updateDoc(trackerRef, { "Is Ads Account Authenticating": true });
+export async function setAdsAccountAuthenticating(
+  userId: string,
+  value: boolean
+) {
+  const trackersRef = collection(db, "authenticationPageTrackers");
+  const trackerQuery = query(
+    trackersRef,
+    where("User", "==", doc(db, "users", userId))
+  );
+  const trackerSnap = await getDocs(trackerQuery);
+
+  if (!trackerSnap.empty) {
+    const trackerDoc = trackerSnap.docs[0];
+    await updateDoc(trackerDoc.ref, { "Is Ads Account Authenticating": value });
   }
 }
 
@@ -46,14 +55,19 @@ export async function getCurrentUserToken(
 export async function getAuthTracker(
   userId: string
 ): Promise<AuthTracker | null> {
-  const authTrackerRef = doc(db, "authenticationPageTrackers", userId);
-  const authTrackerSnap = await getDoc(authTrackerRef);
+  const trackersRef = collection(db, "authenticationPageTrackers");
+  const trackerQuery = query(
+    trackersRef,
+    where("User", "==", doc(db, "users", userId))
+  );
+  const trackerSnap = await getDocs(trackerQuery);
 
-  if (!authTrackerSnap.exists()) return null;
+  if (trackerSnap.empty) return null;
 
+  const trackerDoc = trackerSnap.docs[0];
   return {
-    id: authTrackerSnap.id,
-    ...authTrackerSnap.data(),
+    id: trackerDoc.id,
+    ...trackerDoc.data(),
   } as AuthTracker;
 }
 
@@ -66,18 +80,19 @@ export async function getSubscription(
   if (!userDocSnap.exists() || !userDocSnap.data()["Company Admin"])
     return null;
 
-  const subscriptionRef = doc(
-    db,
-    "subscriptions",
-    userDocSnap.data()["Company Admin"].id
+  const subscriptionsRef = collection(db, "subscriptions");
+  const subscriptionQuery = query(
+    subscriptionsRef,
+    where("User", "==", userDocSnap.data()["Company Admin"])
   );
-  const subscriptionSnap = await getDoc(subscriptionRef);
+  const subscriptionSnap = await getDocs(subscriptionQuery);
 
-  if (!subscriptionSnap.exists()) return null;
+  if (subscriptionSnap.empty) return null;
 
+  const subscriptionDoc = subscriptionSnap.docs[0];
   return {
-    id: subscriptionSnap.id,
-    ...subscriptionSnap.data(),
+    id: subscriptionDoc.id,
+    ...subscriptionDoc.data(),
   } as Subscription;
 }
 
