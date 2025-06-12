@@ -25,17 +25,40 @@ export default function RedirectPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
-  const { setUser } = useAuthStore();
+  const { setUser, setUserDoc } = useAuthStore();
+  const { fetchUserDocument, checkSubscriptionStatus } = useAuthStore();
 
-  // Hydrate Zustand user state from Firebase Auth
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log("firebaseUser", firebaseUser);
       if (firebaseUser) {
         setUser(firebaseUser);
+        try {
+          const userDoc = await fetchUserDocument(firebaseUser.uid);
+          setUserDoc(userDoc as any);
+          // if (userDoc) {
+          //   setUserDoc(userDoc);
+          //   // Check subscription status after userDoc is set
+          //   const isFullAccess = await checkSubscriptionStatus(
+          //     firebaseUser.uid
+          //   );
+          //   const path = isFullAccess ? "/dashboard" : "/subscription";
+          //   router.push(path);
+          // } else {
+          //   router.push("/onboarding");
+          // }
+        } catch (error) {
+          console.error("Error fetching user document:", error);
+          router.push("/auth");
+        }
+      } else {
+        console.log("No authenticated user found.");
+        router.push("/auth");
       }
     });
+
     return () => unsubscribe();
-  }, [setUser]);
+  }, [router, setUser, setUserDoc, fetchUserDocument, checkSubscriptionStatus]);
 
   useEffect(() => {
     // Parse query params
@@ -75,24 +98,28 @@ export default function RedirectPage() {
             body: params.toString(),
           });
 
+          const tokenData = await response.json();
+
           if (!response.ok) {
             setError("Failed to get Google token");
             return;
           }
 
-          const tokenData = await response.json();
           const decoded: any = jwtDecode(tokenData.id_token);
 
           // Get authenticated user id (assume from Zustand store)
           console.log("useAuthStore.getState(): ");
           console.log(useAuthStore.getState());
           const { user } = useAuthStore.getState();
+          console.log("user: ", user);
           if (!user) {
+            console.log("No authenticated user found.");
             setError("No authenticated user found.");
             return;
           }
           const userId = user.uid;
           const userRef = doc(db, "users", userId);
+          console.log("userId: ", userId);
 
           // Step 1: Set 'Is Current Token To Fetch Ads Account' to false for all userTokens of this user
           const userTokensRef = collection(db, "userTokens");
@@ -109,6 +136,8 @@ export default function RedirectPage() {
             )
           );
 
+          console.log("finshed step 1");
+
           // Step 2: Get userTokens where Google Email matches decoded.email
           const tokensWithEmailQuery = query(
             userTokensRef,
@@ -116,6 +145,8 @@ export default function RedirectPage() {
             where("Google Email", "==", decoded.email)
           );
           const tokensWithEmailSnap = await getDocs(tokensWithEmailQuery);
+
+          console.log("finshed step 2");
 
           // Step 3: Update or create userToken
           const now = Timestamp.now();
@@ -150,18 +181,25 @@ export default function RedirectPage() {
             });
           }
 
+          console.log("finshed step 3");
+
           // Step 4: Set 'Is Ads Account Authenticating' to true in authenticationPageTrackers
-          const trackerRef = doc(db, "authenticationPageTrackers", userId);
-          await updateDoc(trackerRef, {
-            "Is Ads Account Authenticating": true,
-          });
+          const trackersRef = collection(db, "authenticationPageTrackers");
+          const trackerQuery = query(trackersRef, where("User", "==", userRef));
+          const trackerSnap = await getDocs(trackerQuery);
+
+          if (!trackerSnap.empty) {
+            const trackerDoc = trackerSnap.docs[0];
+            await updateDoc(trackerDoc.ref, {
+              "Is Ads Account Authenticating": true,
+            });
+          }
+
+          console.log("finshed step 4");
 
           // Step 5: Navigate to the page
-          if (page) {
-            router.replace(`/${page}`);
-          } else {
-            router.replace("/dashboard");
-          }
+          const path = page ? `/${page}` : "/dashboard";
+          router.replace(path);
         } catch (err) {
           setError("An error occurred during Google authentication.");
         }
