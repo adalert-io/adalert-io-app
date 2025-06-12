@@ -3,39 +3,311 @@
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { Header } from "@/components/layout/header";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  CheckCircledIcon,
+  DownloadIcon,
+  FileIcon,
+} from "@radix-ui/react-icons";
+import { useState } from "react";
 
 export default function Dashboard() {
   const { user, isFullAccess } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
+    console.log(user);
     if (!user) {
       router.push("/auth");
     }
   }, [user, router]);
 
+  // Placeholder/mock data
+  const metrics = [
+    { label: "CPC", value: "$26.71", change: "+0.78%", changeType: "up" },
+    { label: "CTR", value: "1.18%", change: "+17.53%", changeType: "up" },
+    { label: "CPA", value: "$288.55", change: "+86.07%", changeType: "down" },
+    { label: "Conv.", value: "108.97", change: "-14.2%", changeType: "down" },
+    {
+      label: "Search IS",
+      value: "43.02%",
+      change: "+11.54%",
+      changeType: "up",
+    },
+    {
+      label: "Impr. Top",
+      value: "56.91%",
+      change: "-21.58%",
+      changeType: "down",
+    },
+    { label: "Cost", value: "$31,442.00", change: "+59.65%", changeType: "up" },
+    { label: "Clicks", value: "1,189", change: "+59.6%", changeType: "up" },
+    {
+      label: "Invalid Clicks",
+      value: "92",
+      change: "+35.3%",
+      changeType: "up",
+    },
+    {
+      label: "Impressions",
+      value: "100,295",
+      change: "+34.79%",
+      changeType: "up",
+    },
+  ];
+  const alerts = [
+    {
+      date: "07 Jun",
+      severity: "orange",
+      description:
+        "New ad(s) with average CTR over 50% lower than the campaign's monthly average",
+      type: "Ad Performance",
+      level: "Ads",
+    },
+    {
+      date: "07 Jun",
+      severity: "red",
+      description:
+        "New ad(s) with average CTR over 75% lower than the campaign's monthly average",
+      type: "Ad Performance",
+      level: "Ads",
+    },
+    {
+      date: "07 Jun",
+      severity: "red",
+      description:
+        "New keyword with average CPC over 400% higher than the campaign's weekly average",
+      type: "Keyword Performance",
+      level: "Keyword",
+    },
+    {
+      date: "06 Jun",
+      severity: "orange",
+      description:
+        "New ad(s) with average CTR over 50% lower than the campaign's monthly average",
+      type: "Ad Performance",
+      level: "Ads",
+    },
+    {
+      date: "06 Jun",
+      severity: "yellow",
+      description: "Spend pace is over 33% slower than expected",
+      type: "Budget",
+      level: "Account",
+    },
+    {
+      date: "04 Jun",
+      severity: "orange",
+      description:
+        "New ad(s) with average CTR over 50% lower than the campaign's monthly average",
+      type: "Ad Performance",
+      level: "Ads",
+    },
+    {
+      date: "04 Jun",
+      severity: "yellow",
+      description:
+        "New keyword with average CPC over 100% higher than the campaign's weekly average",
+      type: "Keyword Performance",
+      level: "Keyword",
+    },
+  ];
+  const [selectedRows, setSelectedRows] = useState<number[]>([]);
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Overview Cards */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">Account Overview</h2>
-          <p className="text-gray-600">View your account status and metrics.</p>
+    <div className="min-h-screen bg-[#F5F7FB]">
+      <Header />
+      <main className="max-w-[1440px] mx-auto px-6 py-6">
+        {/* Top Section */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+          <div className="flex items-center gap-3">
+            <span className="bg-[#E9F6EA] text-[#34A853] px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1">
+              <svg width="18" height="18" fill="none" viewBox="0 0 18 18">
+                <g>
+                  <rect width="18" height="18" rx="9" fill="#34A853" />
+                  <path
+                    d="M13.5 6.75l-5.25 5.25-2.25-2.25"
+                    stroke="#fff"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </g>
+              </svg>
+              Showing Ad
+            </span>
+            <span className="text-xl md:text-2xl font-bold text-gray-900">
+              Meehan Law - 182-843-8180
+            </span>
+          </div>
+          <div className="flex gap-4">
+            <Card className="w-32 bg-white border-l-4 border-[#E53935]">
+              <CardContent className="py-3 px-2 flex flex-col items-center">
+                <span className="text-2xl font-bold text-[#E53935]">2</span>
+                <span className="text-xs font-semibold text-gray-700">
+                  Critical
+                </span>
+              </CardContent>
+            </Card>
+            <Card className="w-32 bg-white border-l-4 border-[#FBC02D]">
+              <CardContent className="py-3 px-2 flex flex-col items-center">
+                <span className="text-2xl font-bold text-[#FBC02D]">3</span>
+                <span className="text-xs font-semibold text-gray-700">
+                  Medium
+                </span>
+              </CardContent>
+            </Card>
+            <Card className="w-32 bg-white border-l-4 border-[#FFEB3B]">
+              <CardContent className="py-3 px-2 flex flex-col items-center">
+                <span className="text-2xl font-bold text-[#FFEB3B]">2</span>
+                <span className="text-xs font-semibold text-gray-700">Low</span>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="flex flex-col items-end gap-1 bg-white rounded-2xl shadow-md px-6 py-3 min-w-[270px]">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">Spend MTD</span>
+              <span className="text-lg font-bold text-gray-900">
+                $47,651.95
+              </span>
+              <span className="ml-1 text-green-600">
+                <CheckCircledIcon />
+              </span>
+            </div>
+            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div className="h-2 bg-[#3B82F6]" style={{ width: "35.3%" }} />
+            </div>
+            <div className="flex justify-between w-full text-xs text-gray-500 mt-1">
+              <span>35.3%</span>
+              <span>13 days</span>
+              <span className="font-semibold text-gray-700">
+                Monthly Budget <span className="text-gray-900">$135,000</span>
+              </span>
+            </div>
+            <div className="text-xs text-gray-400 mt-1">
+              Spend Projection: $111,432.25
+            </div>
+          </div>
         </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">Recent Alerts</h2>
-          <p className="text-gray-600">
-            Check your latest alerts and notifications.
-          </p>
+        {/* Metrics Row */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-3 mb-6">
+          {metrics.map((m, i) => (
+            <Card key={m.label} className="bg-white">
+              <CardContent className="py-2 px-2 flex flex-col items-center">
+                <span className="text-base font-bold text-gray-900">
+                  {m.value}
+                </span>
+                <span className="text-xs text-gray-500">{m.label}</span>
+                <span
+                  className={`text-xs font-semibold ${
+                    m.changeType === "up" ? "text-green-600" : "text-red-600"
+                  }`}
+                >
+                  {m.change}
+                </span>
+              </CardContent>
+            </Card>
+          ))}
         </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">Performance</h2>
-          <p className="text-gray-600">Monitor your ads performance metrics.</p>
+        {/* Alerts Table */}
+        <div className="bg-white rounded-2xl shadow-md p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold text-gray-900">Alerts</h2>
+              <span className="text-xs text-gray-400">Settings</span>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="icon">
+                <FileIcon />
+              </Button>
+              <Button variant="outline" size="icon">
+                <DownloadIcon />
+              </Button>
+              <select className="ml-2 border rounded-md px-2 py-1 text-xs">
+                <option>25 rows</option>
+                <option>50 rows</option>
+                <option>100 rows</option>
+              </select>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-xs">
+              <thead>
+                <tr>
+                  <th className="w-8">
+                    <input type="checkbox" />
+                  </th>
+                  <th>Found</th>
+                  <th>Severity</th>
+                  <th>Description</th>
+                  <th>Type</th>
+                  <th>Level</th>
+                </tr>
+              </thead>
+              <tbody>
+                {alerts.map((alert, i) => (
+                  <tr key={i} className="hover:bg-gray-50">
+                    <td>
+                      <input type="checkbox" />
+                    </td>
+                    <td className="text-xs text-gray-500">{alert.date}</td>
+                    <td>
+                      <span
+                        className={`inline-block w-3 h-3 rounded-full ${
+                          alert.severity === "red"
+                            ? "bg-[#E53935]"
+                            : alert.severity === "orange"
+                            ? "bg-[#FBC02D]"
+                            : "bg-[#FFEB3B]"
+                        }`}
+                      ></span>
+                    </td>
+                    <td className="text-xs text-gray-900">
+                      {alert.description}
+                    </td>
+                    <td>
+                      <span className="bg-[#F5F7FB] text-xs px-2 py-1 rounded-lg font-semibold text-gray-700">
+                        {alert.type}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="bg-[#F5F7FB] text-xs px-2 py-1 rounded-lg font-semibold text-gray-700">
+                        {alert.level}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {/* Pagination */}
+          <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
+            <div className="flex items-center gap-2">
+              Go to page:
+              <select className="border rounded-md px-2 py-1">
+                <option>1</option>
+              </select>
+            </div>
+            <div>Page 1 of 1</div>
+            <div className="flex gap-1">
+              <Button variant="ghost" size="icon">
+                &#60;&#60;
+              </Button>
+              <Button variant="ghost" size="icon">
+                &#60;
+              </Button>
+              <Button variant="ghost" size="icon">
+                &#62;
+              </Button>
+              <Button variant="ghost" size="icon">
+                &#62;&#62;
+              </Button>
+            </div>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
