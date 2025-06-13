@@ -144,9 +144,11 @@ export default function Dashboard() {
       cell: ({ row }) => (
         <span
           className={`inline-block w-3 h-3 rounded-full ${
-            row.original.Severity === ALERT_SEVERITIES.CRITICAL
+            row.original.Severity.toLowerCase() ===
+            ALERT_SEVERITIES.CRITICAL.toLowerCase()
               ? `bg-[${ALERT_SEVERITY_COLORS.CRITICAL}]`
-              : row.original.Severity === ALERT_SEVERITIES.MEDIUM
+              : row.original.Severity.toLowerCase() ===
+                ALERT_SEVERITIES.MEDIUM.toLowerCase()
               ? `bg-[${ALERT_SEVERITY_COLORS.MEDIUM}]`
               : `bg-[${ALERT_SEVERITY_COLORS.LOW}]`
           }`}
@@ -204,6 +206,7 @@ export default function Dashboard() {
     const alerts = useDashboardStore((state) => state.alerts);
     console.log("alerts: ", alerts);
     const [expandedRowIds, setExpandedRowIds] = React.useState<string[]>([]);
+    const [pageIndex, setPageIndex] = React.useState(0);
 
     const columns = React.useMemo(
       () => useAlertColumns(expandedRowIds, setExpandedRowIds),
@@ -217,19 +220,24 @@ export default function Dashboard() {
       getPaginationRowModel: getPaginationRowModel(),
       state: {
         pagination: {
-          pageIndex: 0,
+          pageIndex,
           pageSize,
         },
       },
       onPaginationChange: (updater) => {
         if (typeof updater === "function") {
-          const next = updater({ pageIndex: 0, pageSize });
+          const next = updater({ pageIndex, pageSize });
+          setPageIndex(next.pageIndex);
           setPageSize(next.pageSize);
-        } else if (typeof updater === "object" && updater.pageSize) {
-          setPageSize(updater.pageSize);
+        } else {
+          if (updater.pageIndex !== undefined) {
+            setPageIndex(updater.pageIndex);
+          }
+          if (updater.pageSize !== undefined) {
+            setPageSize(updater.pageSize);
+          }
         }
       },
-      manualPagination: false,
       pageCount: Math.ceil(alerts.length / pageSize),
     });
 
