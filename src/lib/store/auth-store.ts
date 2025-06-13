@@ -417,11 +417,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   handlePostAuthNavigation: async () => {
     try {
+      console.log("handlePostAuthNavigation......");
       const { userDoc, isFullAccess, router } = get();
+      console.log("userDoc", userDoc);
+      console.log("isFullAccess", isFullAccess);
       if (!userDoc || !router) return;
 
       // Build Firestore query for Ads Account collection
-      const adsAccountRef = collection(db, "Ads Account");
+      const adsAccountRef = collection(db, COLLECTIONS.ADS_ACCOUNTS);
       const companyAdminRef = userDoc["Company Admin"];
       const userRef = doc(db, COLLECTIONS.USERS, userDoc.uid);
 
@@ -435,30 +438,37 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const adsAccountSnap = await getDocs(adsAccountQuery);
       const adsAccountCount = adsAccountSnap.size;
 
+      console.log("adsAccountCount", adsAccountCount);
+
       // Check inviter
       const inviter = userDoc["Inviter"];
 
       // Navigation logic
       if (!isFullAccess) {
+        console.log("to /settings/account/billing");
         router.push("/settings/account/billing");
         return;
       }
 
       if (adsAccountCount === 0) {
         if (!inviter) {
+          console.log("to /add-ads-account");
           router.push("/add-ads-account");
         } else {
+          console.log("to /dashboard");
           router.push("/dashboard");
         }
         return;
       }
 
       if (adsAccountCount === 1) {
+        console.log("to /dashboard");
         router.push("/dashboard");
         return;
       }
 
       if (adsAccountCount > 1) {
+        console.log("to /summary");
         router.push("/summary");
         return;
       }
