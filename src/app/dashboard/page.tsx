@@ -31,6 +31,7 @@ import {
   ChevronsRight,
   ChevronLeft,
   ChevronRight,
+  XIcon,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ALERT_SEVERITIES, ALERT_SEVERITY_COLORS } from "@/lib/constants/index";
@@ -46,6 +47,11 @@ export default function Dashboard() {
   const fetchAlerts = useDashboardStore((state) => state.fetchAlerts);
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
   const [pageSize, setPageSize] = React.useState(25);
+
+  // --- Search State ---
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   useEffect(() => {
     console.log(user);
@@ -70,6 +76,13 @@ export default function Dashboard() {
       fetchAlerts(currentAdsAccount.id);
     }
   }, [currentAdsAccount, fetchAlerts]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchValue);
+    }, 1500);
+    return () => clearTimeout(handler);
+  }, [searchValue]);
 
   // Placeholder/mock data
   const metrics = [
@@ -199,12 +212,12 @@ export default function Dashboard() {
   function AlertsDataTable({
     pageSize,
     setPageSize,
+    filteredAlerts,
   }: {
     pageSize: number;
     setPageSize: React.Dispatch<React.SetStateAction<number>>;
+    filteredAlerts: any[];
   }) {
-    const alerts = useDashboardStore((state) => state.alerts);
-    console.log("alerts: ", alerts);
     const [expandedRowIds, setExpandedRowIds] = React.useState<string[]>([]);
     const [pageIndex, setPageIndex] = React.useState(0);
 
@@ -214,7 +227,7 @@ export default function Dashboard() {
     );
 
     const table = useReactTable({
-      data: alerts,
+      data: filteredAlerts,
       columns,
       getCoreRowModel: getCoreRowModel(),
       getPaginationRowModel: getPaginationRowModel(),
@@ -238,7 +251,7 @@ export default function Dashboard() {
           }
         }
       },
-      pageCount: Math.ceil(alerts.length / pageSize),
+      pageCount: Math.ceil(filteredAlerts.length / pageSize),
     });
 
     return (
@@ -346,6 +359,17 @@ export default function Dashboard() {
   const lowCount = alerts.filter(
     (a) => a.Severity === ALERT_SEVERITIES.LOW
   ).length;
+
+  // --- Filtering ---
+  const filteredAlerts = React.useMemo(() => {
+    if (!debouncedSearch) return alerts;
+    const lower = debouncedSearch.toLowerCase();
+    return alerts.filter(
+      (item) =>
+        item["Alert"]?.toLowerCase().includes(lower) ||
+        item["Long Description"]?.toLowerCase().includes(lower)
+    );
+  }, [alerts, debouncedSearch]);
 
   return (
     <div className="min-h-screen bg-[#F5F7FB]">
@@ -456,7 +480,35 @@ export default function Dashboard() {
               <span className="text-xs text-gray-400">Settings</span>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="icon">
+              {/* Search UI */}
+              {showSearch && (
+                <div className="flex items-center border rounded-lg px-3 py-1 bg-white shadow-sm focus-within:ring-2 focus-within:ring-blue-200 transition-all">
+                  <input
+                    className="outline-none border-none bg-transparent text-sm text-gray-500 placeholder-gray-400 flex-1 min-w-[180px]"
+                    placeholder="Search for alerts"
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
+                    autoFocus
+                  />
+                  {searchValue && (
+                    <button
+                      type="button"
+                      className="ml-1 text-gray-400 hover:text-gray-600"
+                      onClick={() => setSearchValue("")}
+                      aria-label="Clear search"
+                    >
+                      <XIcon className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
+              )}
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setShowSearch((v) => !v)}
+                className={showSearch ? "border-blue-200" : ""}
+                aria-label="Show search"
+              >
                 <MagnifyingGlassIcon className="w-6 h-6 text-[#015AFD]" />
               </Button>
               <Button variant="outline" size="icon">
@@ -498,7 +550,11 @@ export default function Dashboard() {
               </select>
             </div>
           </div>
-          <AlertsDataTable pageSize={pageSize} setPageSize={setPageSize} />
+          <AlertsDataTable
+            pageSize={pageSize}
+            setPageSize={setPageSize}
+            filteredAlerts={filteredAlerts}
+          />
         </div>
       </main>
     </div>
