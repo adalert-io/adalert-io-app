@@ -38,6 +38,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
+import { COLLECTIONS } from "@/lib/constants";
 
 function formatAccountId(id: string) {
   // Format as xxx-xxx-xxxx
@@ -237,7 +238,8 @@ export function AddAdsAccount() {
           const { ["Created Date"]: _createdDate, ...updatePayload } = acc;
           await updateDoc(doc(db, "adsAccounts", acc._id), {
             ...updatePayload,
-            "Selected Users": arrayUnion(user.uid),
+            // TODO: need to check if it stores the user reference
+            "Selected Users": arrayUnion(doc(db, COLLECTIONS.USERS, user.uid)),
             "User": doc(db, "users", user.uid),
             "User Token": doc(db, "userTokens", userToken.id),
             "Monthly Budget": Number(acc["Monthly Budget"]),
