@@ -27,6 +27,7 @@ export const COLLECTIONS = {
   ALERT_SETTINGS: "alertSettings",
   AUTH_TRACKERS: "authenticationPageTrackers",
   STRIPE_COMPANIES: "stripeCompanies",
+  ALERTS: "alerts",
 } as const;
 
 export const FIREBASE_FN_DOMAINS = {
@@ -34,4 +35,16 @@ export const FIREBASE_FN_DOMAINS = {
   DEV: "127.0.0.1:5001/adalertdev/us-central1/test",
   PROD: "adalert-kmotjdlnmq-uc.a.run.app",
   // ACTUAL_PROD: "adalert-msrjiafroa-uc.a.run.app",
+};
+
+export const ALERT_SEVERITIES = {
+  CRITICAL: "Critical",
+  MEDIUM: "Medium",
+  LOW: "Low",
+};
+
+export const ALERT_SEVERITY_COLORS = {
+  CRITICAL: "#E53935",
+  MEDIUM: "#FBC02D",
+  LOW: "#FFEB3B",
 };
