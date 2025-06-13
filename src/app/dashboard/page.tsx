@@ -2,7 +2,7 @@
 
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,18 +11,60 @@ import {
   DownloadIcon,
   FileIcon,
 } from "@radix-ui/react-icons";
-import { useState } from "react";
+import { useUserAdsAccountsStore } from "@/lib/store/user-ads-accounts-store";
+import type { AdsAccount } from "@/lib/store/user-ads-accounts-store";
+import { useDashboardStore } from "@/lib/store/dashboard-store";
+import * as React from "react";
+import {
+  useReactTable,
+  getCoreRowModel,
+  getPaginationRowModel,
+  flexRender,
+  ColumnDef,
+} from "@tanstack/react-table";
+import {
+  ChevronDown,
+  ChevronUp,
+  ChevronsLeft,
+  ChevronsRight,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ALERT_SEVERITIES, ALERT_SEVERITY_COLORS } from "@/lib/constants/index";
 
 export default function Dashboard() {
-  const { user, isFullAccess } = useAuthStore();
+  const { user } = useAuthStore();
   const router = useRouter();
+  const { selectedAdsAccount, userAdsAccounts } = useUserAdsAccountsStore();
+  const [currentAdsAccount, setCurrentAdsAccount] = useState<AdsAccount | null>(
+    null
+  );
+  const fetchAlerts = useDashboardStore((state) => state.fetchAlerts);
 
   useEffect(() => {
     console.log(user);
     if (!user) {
       router.push("/auth");
+      return;
     }
-  }, [user, router]);
+    // Set currentAdsAccount based on store
+    if (selectedAdsAccount) {
+      setCurrentAdsAccount(selectedAdsAccount);
+    } else if (userAdsAccounts && userAdsAccounts.length > 0) {
+      setCurrentAdsAccount(userAdsAccounts[0]);
+    } else {
+      setCurrentAdsAccount(null);
+    }
+
+    console.log("selectedAdsAccount: ", selectedAdsAccount);
+  }, [user, router, selectedAdsAccount, userAdsAccounts]);
+
+  useEffect(() => {
+    if (currentAdsAccount) {
+      fetchAlerts(currentAdsAccount.id);
+    }
+  }, [currentAdsAccount, fetchAlerts]);
 
   // Placeholder/mock data
   const metrics = [
@@ -57,64 +99,235 @@ export default function Dashboard() {
       changeType: "up",
     },
   ];
-  const alerts = [
+
+  const [selectedRows, setSelectedRows] = useState<number[]>([]);
+
+  // Alerts Table Columns
+  const useAlertColumns = (
+    expandedRowIds: string[],
+    setExpandedRowIds: React.Dispatch<React.SetStateAction<string[]>>
+  ): ColumnDef<any>[] => [
     {
-      date: "07 Jun",
-      severity: "orange",
-      description:
-        "New ad(s) with average CTR over 50% lower than the campaign's monthly average",
-      type: "Ad Performance",
-      level: "Ads",
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
     },
     {
-      date: "07 Jun",
-      severity: "red",
-      description:
-        "New ad(s) with average CTR over 75% lower than the campaign's monthly average",
-      type: "Ad Performance",
-      level: "Ads",
+      accessorKey: "date",
+      header: "Found",
+      cell: ({ row }) => <span>{row.original.date}</span>,
     },
     {
-      date: "07 Jun",
-      severity: "red",
-      description:
-        "New keyword with average CPC over 400% higher than the campaign's weekly average",
-      type: "Keyword Performance",
-      level: "Keyword",
+      accessorKey: "severity",
+      header: "Severity",
+      cell: ({ row }) => (
+        <span
+          className={`inline-block w-3 h-3 rounded-full ${
+            row.original.Severity === ALERT_SEVERITIES.CRITICAL
+              ? `bg-[${ALERT_SEVERITY_COLORS.CRITICAL}]`
+              : row.original.Severity === ALERT_SEVERITIES.MEDIUM
+              ? `bg-[${ALERT_SEVERITY_COLORS.MEDIUM}]`
+              : `bg-[${ALERT_SEVERITY_COLORS.LOW}]`
+          }`}
+        />
+      ),
     },
     {
-      date: "06 Jun",
-      severity: "orange",
-      description:
-        "New ad(s) with average CTR over 50% lower than the campaign's monthly average",
-      type: "Ad Performance",
-      level: "Ads",
+      accessorKey: "description",
+      header: "Description",
+      cell: ({ row }) => <span>{row.original.Alert}</span>,
     },
     {
-      date: "06 Jun",
-      severity: "yellow",
-      description: "Spend pace is over 33% slower than expected",
-      type: "Budget",
-      level: "Account",
+      accessorKey: "type",
+      header: "Type",
+      cell: ({ row }) => <span>{row.original.Type}</span>,
     },
     {
-      date: "04 Jun",
-      severity: "orange",
-      description:
-        "New ad(s) with average CTR over 50% lower than the campaign's monthly average",
-      type: "Ad Performance",
-      level: "Ads",
+      accessorKey: "level",
+      header: "Level",
+      cell: ({ row }) => <span>{row.original.Level}</span>,
     },
     {
-      date: "04 Jun",
-      severity: "yellow",
-      description:
-        "New keyword with average CPC over 100% higher than the campaign's weekly average",
-      type: "Keyword Performance",
-      level: "Keyword",
+      id: "expand",
+      header: "",
+      cell: ({ row }) => {
+        const isExpanded = expandedRowIds.includes(row.id);
+        return (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              setExpandedRowIds((ids: string[]) =>
+                isExpanded
+                  ? ids.filter((id: string) => id !== row.id)
+                  : [...ids, row.id]
+              );
+            }}
+          >
+            {isExpanded ? <ChevronUp /> : <ChevronDown />}
+          </Button>
+        );
+      },
+      enableSorting: false,
+      enableHiding: false,
     },
   ];
-  const [selectedRows, setSelectedRows] = useState<number[]>([]);
+
+  function AlertsDataTable() {
+    const alerts = useDashboardStore((state) => state.alerts);
+    console.log("alerts: ", alerts);
+    const [expandedRowIds, setExpandedRowIds] = React.useState<string[]>([]);
+    const [pageSize, setPageSize] = React.useState(10);
+
+    const columns = React.useMemo(
+      () => useAlertColumns(expandedRowIds, setExpandedRowIds),
+      [expandedRowIds]
+    );
+
+    const table = useReactTable({
+      data: alerts,
+      columns,
+      getCoreRowModel: getCoreRowModel(),
+      getPaginationRowModel: getPaginationRowModel(),
+      state: {
+        pagination: {
+          pageIndex: 0,
+          pageSize,
+        },
+      },
+      onPaginationChange: (updater) => {
+        if (typeof updater === "function") {
+          const next = updater({ pageIndex: 0, pageSize });
+          setPageSize(next.pageSize);
+        } else if (typeof updater === "object" && updater.pageSize) {
+          setPageSize(updater.pageSize);
+        }
+      },
+      manualPagination: false,
+      pageCount: Math.ceil(alerts.length / pageSize),
+    });
+
+    return (
+      <div className="rounded-md border">
+        <table className="min-w-full text-xs">
+          <thead>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <th key={header.id} className="px-2 py-2 text-left">
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody>
+            {table.getRowModel().rows.map((row) => (
+              <React.Fragment key={row.id}>
+                <tr className="hover:bg-gray-50">
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id} className="px-2 py-2 align-top">
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </td>
+                  ))}
+                </tr>
+                {expandedRowIds.includes(row.id) && (
+                  <tr>
+                    <td
+                      colSpan={columns.length}
+                      className="bg-[#FAFAFA] px-4 py-4"
+                    >
+                      <div
+                        className="prose max-w-none text-sm"
+                        dangerouslySetInnerHTML={{
+                          __html: row.original["Long Description"] || "",
+                        }}
+                      />
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            ))}
+          </tbody>
+        </table>
+        {/* Pagination Controls */}
+        <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
+          <div className="flex items-center gap-2">
+            Rows per page:
+            <select
+              className="border rounded-md px-2 py-1"
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+            >
+              {[10, 20, 25, 50, 100].map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            Page {table.getState().pagination.pageIndex + 1} of{" "}
+            {table.getPageCount()}
+          </div>
+          <div className="flex gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => table.setPageIndex(0)}
+              disabled={!table.getCanPreviousPage()}
+            >
+              <ChevronsLeft className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+              disabled={!table.getCanNextPage()}
+            >
+              <ChevronsRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F5F7FB]">
@@ -232,80 +445,7 @@ export default function Dashboard() {
               </select>
             </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-xs">
-              <thead>
-                <tr>
-                  <th className="w-8">
-                    <input type="checkbox" />
-                  </th>
-                  <th>Found</th>
-                  <th>Severity</th>
-                  <th>Description</th>
-                  <th>Type</th>
-                  <th>Level</th>
-                </tr>
-              </thead>
-              <tbody>
-                {alerts.map((alert, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
-                    <td>
-                      <input type="checkbox" />
-                    </td>
-                    <td className="text-xs text-gray-500">{alert.date}</td>
-                    <td>
-                      <span
-                        className={`inline-block w-3 h-3 rounded-full ${
-                          alert.severity === "red"
-                            ? "bg-[#E53935]"
-                            : alert.severity === "orange"
-                            ? "bg-[#FBC02D]"
-                            : "bg-[#FFEB3B]"
-                        }`}
-                      ></span>
-                    </td>
-                    <td className="text-xs text-gray-900">
-                      {alert.description}
-                    </td>
-                    <td>
-                      <span className="bg-[#F5F7FB] text-xs px-2 py-1 rounded-lg font-semibold text-gray-700">
-                        {alert.type}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="bg-[#F5F7FB] text-xs px-2 py-1 rounded-lg font-semibold text-gray-700">
-                        {alert.level}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {/* Pagination */}
-          <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
-            <div className="flex items-center gap-2">
-              Go to page:
-              <select className="border rounded-md px-2 py-1">
-                <option>1</option>
-              </select>
-            </div>
-            <div>Page 1 of 1</div>
-            <div className="flex gap-1">
-              <Button variant="ghost" size="icon">
-                &#60;&#60;
-              </Button>
-              <Button variant="ghost" size="icon">
-                &#60;
-              </Button>
-              <Button variant="ghost" size="icon">
-                &#62;
-              </Button>
-              <Button variant="ghost" size="icon">
-                &#62;&#62;
-              </Button>
-            </div>
-          </div>
+          <AlertsDataTable />
         </div>
       </main>
     </div>
