@@ -10,7 +10,9 @@ import {
   CheckCircledIcon,
   DownloadIcon,
   FileIcon,
+  MagnifyingGlassIcon,
 } from "@radix-ui/react-icons";
+import { Filter } from "lucide-react";
 import { useUserAdsAccountsStore } from "@/lib/store/user-ads-accounts-store";
 import type { AdsAccount } from "@/lib/store/user-ads-accounts-store";
 import { useDashboardStore } from "@/lib/store/dashboard-store";
@@ -32,6 +34,7 @@ import {
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ALERT_SEVERITIES, ALERT_SEVERITY_COLORS } from "@/lib/constants/index";
+import moment from "moment";
 
 export default function Dashboard() {
   const { user } = useAuthStore();
@@ -41,6 +44,8 @@ export default function Dashboard() {
     null
   );
   const fetchAlerts = useDashboardStore((state) => state.fetchAlerts);
+  const [selectedRows, setSelectedRows] = useState<number[]>([]);
+  const [pageSize, setPageSize] = React.useState(25);
 
   useEffect(() => {
     console.log(user);
@@ -100,8 +105,6 @@ export default function Dashboard() {
     },
   ];
 
-  const [selectedRows, setSelectedRows] = useState<number[]>([]);
-
   // Alerts Table Columns
   const useAlertColumns = (
     expandedRowIds: string[],
@@ -129,7 +132,11 @@ export default function Dashboard() {
     {
       accessorKey: "date",
       header: "Found",
-      cell: ({ row }) => <span>{row.original.date}</span>,
+      cell: ({ row }) => {
+        const dateObj = row.original["Date Found"]?.toDate?.();
+        const formatted = dateObj ? moment(dateObj).format("DD MMM") : "-";
+        return <span>{formatted}</span>;
+      },
     },
     {
       accessorKey: "severity",
@@ -187,11 +194,16 @@ export default function Dashboard() {
     },
   ];
 
-  function AlertsDataTable() {
+  function AlertsDataTable({
+    pageSize,
+    setPageSize,
+  }: {
+    pageSize: number;
+    setPageSize: React.Dispatch<React.SetStateAction<number>>;
+  }) {
     const alerts = useDashboardStore((state) => state.alerts);
     console.log("alerts: ", alerts);
     const [expandedRowIds, setExpandedRowIds] = React.useState<string[]>([]);
-    const [pageSize, setPageSize] = React.useState(10);
 
     const columns = React.useMemo(
       () => useAlertColumns(expandedRowIds, setExpandedRowIds),
@@ -272,20 +284,7 @@ export default function Dashboard() {
         </table>
         {/* Pagination Controls */}
         <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
-          <div className="flex items-center gap-2">
-            Rows per page:
-            <select
-              className="border rounded-md px-2 py-1"
-              value={pageSize}
-              onChange={(e) => setPageSize(Number(e.target.value))}
-            >
-              {[10, 20, 25, 50, 100].map((size) => (
-                <option key={size} value={size}>
-                  {size}
-                </option>
-              ))}
-            </select>
-          </div>
+          <div />
           <div>
             Page {table.getState().pagination.pageIndex + 1} of{" "}
             {table.getPageCount()}
@@ -329,6 +328,17 @@ export default function Dashboard() {
     );
   }
 
+  const alerts = useDashboardStore((state) => state.alerts);
+  const criticalCount = alerts.filter(
+    (a) => a.Severity === ALERT_SEVERITIES.CRITICAL
+  ).length;
+  const mediumCount = alerts.filter(
+    (a) => a.Severity === ALERT_SEVERITIES.MEDIUM
+  ).length;
+  const lowCount = alerts.filter(
+    (a) => a.Severity === ALERT_SEVERITIES.LOW
+  ).length;
+
   return (
     <div className="min-h-screen bg-[#F5F7FB]">
       <Header />
@@ -358,7 +368,9 @@ export default function Dashboard() {
           <div className="flex gap-4">
             <Card className="w-32 bg-white border-l-4 border-[#E53935]">
               <CardContent className="py-3 px-2 flex flex-col items-center">
-                <span className="text-2xl font-bold text-[#E53935]">2</span>
+                <span className="text-2xl font-bold text-[#E53935]">
+                  {criticalCount}
+                </span>
                 <span className="text-xs font-semibold text-gray-700">
                   Critical
                 </span>
@@ -366,7 +378,9 @@ export default function Dashboard() {
             </Card>
             <Card className="w-32 bg-white border-l-4 border-[#FBC02D]">
               <CardContent className="py-3 px-2 flex flex-col items-center">
-                <span className="text-2xl font-bold text-[#FBC02D]">3</span>
+                <span className="text-2xl font-bold text-[#FBC02D]">
+                  {mediumCount}
+                </span>
                 <span className="text-xs font-semibold text-gray-700">
                   Medium
                 </span>
@@ -374,7 +388,9 @@ export default function Dashboard() {
             </Card>
             <Card className="w-32 bg-white border-l-4 border-[#FFEB3B]">
               <CardContent className="py-3 px-2 flex flex-col items-center">
-                <span className="text-2xl font-bold text-[#FFEB3B]">2</span>
+                <span className="text-2xl font-bold text-[#FFEB3B]">
+                  {lowCount}
+                </span>
                 <span className="text-xs font-semibold text-gray-700">Low</span>
               </CardContent>
             </Card>
@@ -433,19 +449,48 @@ export default function Dashboard() {
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="icon">
+                <MagnifyingGlassIcon className="w-6 h-6 text-[#015AFD]" />
+              </Button>
+              <Button variant="outline" size="icon">
+                <Filter className="w-6 h-6 text-[#015AFD]" />
+              </Button>
+              <Button variant="outline" size="icon" className="relative">
+                <FileIcon className="w-6 h-6 text-[#015AFD]" />
+                <span
+                  className="absolute bottom-0 right-0 text-[8px] font-bold text-[#015AFD] leading-none pr-[2px] pb-[1px] pointer-events-none"
+                  style={{ letterSpacing: "0.5px" }}
+                >
+                  PDF
+                </span>
+              </Button>
+              <Button variant="outline" size="icon" className="relative">
+                <FileIcon className="w-6 h-6 text-[#015AFD]" />
+                <span
+                  className="absolute bottom-0 right-0 text-[8px] font-bold text-[#015AFD] leading-none pr-[2px] pb-[1px] pointer-events-none"
+                  style={{ letterSpacing: "0.5px" }}
+                >
+                  CSV
+                </span>
+              </Button>
+              {/* <Button variant="outline" size="icon">
                 <FileIcon />
               </Button>
               <Button variant="outline" size="icon">
                 <DownloadIcon />
-              </Button>
-              <select className="ml-2 border rounded-md px-2 py-1 text-xs">
-                <option>25 rows</option>
-                <option>50 rows</option>
-                <option>100 rows</option>
+              </Button> */}
+              <select
+                className="ml-2 border rounded-md px-2 py-1 text-xs"
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+              >
+                <option value={15}>15 rows</option>
+                <option value={25}>25 rows</option>
+                <option value={50}>50 rows</option>
+                <option value={100}>100 rows</option>
               </select>
             </div>
           </div>
-          <AlertsDataTable />
+          <AlertsDataTable pageSize={pageSize} setPageSize={setPageSize} />
         </div>
       </main>
     </div>
