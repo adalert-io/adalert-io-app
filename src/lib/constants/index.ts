@@ -22,6 +22,7 @@ export const USER_TYPES = {
 // Collection Names
 export const COLLECTIONS = {
   USERS: "users",
+  ADS_ACCOUNTS: "adsAccounts",
   SUBSCRIPTIONS: "subscriptions",
   ALERT_SETTINGS: "alertSettings",
   AUTH_TRACKERS: "authenticationPageTrackers",
