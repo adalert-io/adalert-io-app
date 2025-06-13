@@ -34,7 +34,7 @@ import {
 } from "@/lib/constants";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
-interface UserDocument {
+export interface UserDocument {
   "Company Admin": any;
   "Is Google Sign Up": boolean;
   "Name": string;

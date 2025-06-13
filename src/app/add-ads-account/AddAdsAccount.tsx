@@ -39,6 +39,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { COLLECTIONS } from "@/lib/constants";
+import { useUserAdsAccountsStore } from "@/lib/store/user-ads-accounts-store";
 
 function formatAccountId(id: string) {
   // Format as xxx-xxx-xxxx
@@ -56,6 +57,9 @@ export function AddAdsAccount() {
   const [isLoading, setIsLoading] = useState(false);
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [editingValue, setEditingValue] = useState<string>("");
+  const fetchUserAdsAccounts = useUserAdsAccountsStore(
+    (state) => state.fetchUserAdsAccounts
+  );
 
   // Default ads account variable values
   const DEFAULT_ADS_ACCOUNT_VARIABLE = {
@@ -286,8 +290,10 @@ export function AddAdsAccount() {
       // step 5: set isAdsAccountAuthenticating to false
       await setAdsAccountAuthenticating(user.uid, false);
 
-      // TODO: Update subscription record
-      // pge-add-ads-account -> Group Button Continue To Dashboard is clicked -> step 18
+      // step 6: update ads accounts in Zustand store
+      if (userDoc) {
+        await fetchUserAdsAccounts(userDoc);
+      }
 
       toast.success("Ads accounts updated successfully");
       router.push("/dashboard");
