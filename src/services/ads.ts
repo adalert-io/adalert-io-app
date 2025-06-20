@@ -14,6 +14,7 @@ import type {
   AuthTracker,
   Subscription,
 } from "@/types/firebaseCollections";
+import { getFirebaseFnPath } from "@/lib/utils";
 
 export async function setAdsAccountAuthenticating(
   userId: string,
@@ -97,15 +98,7 @@ export async function getSubscription(
 }
 
 export async function fetchAdsAccounts(userTokenId: string, userId: string) {
-  const domain =
-    process.env.NODE_ENV === "development"
-      ? FIREBASE_FN_DOMAINS.DEV
-      : FIREBASE_FN_DOMAINS.PROD;
-
-  const path =
-    process.env.NODE_ENV === "development"
-      ? `http://${domain}/ads-accounts-fb`
-      : `https://${domain}/ads-accounts-fb`;
+  const path = getFirebaseFnPath("ads-accounts-fb");
 
   const response = await fetch(path, {
     method: "POST",

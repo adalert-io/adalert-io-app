@@ -16,6 +16,7 @@ import { Filter } from "lucide-react";
 import { useUserAdsAccountsStore } from "@/lib/store/user-ads-accounts-store";
 import type { AdsAccount } from "@/lib/store/user-ads-accounts-store";
 import { useDashboardStore } from "@/lib/store/dashboard-store";
+import { useAlertOptionSetsStore } from "@/lib/store/alert-option-sets-store";
 import * as React from "react";
 import {
   useReactTable,
@@ -44,7 +45,21 @@ export default function Dashboard() {
   const [currentAdsAccount, setCurrentAdsAccount] = useState<AdsAccount | null>(
     null
   );
-  const fetchAlerts = useDashboardStore((state) => state.fetchAlerts);
+  const {
+    fetchAlerts,
+    fetchOrCreateDashboardDaily,
+    fetchSpendMtd,
+    fetchSpendMtdIndicator,
+    fetchKpiData,
+    fetchCurrencySymbol,
+    triggerShowingAdsLabel,
+    dashboardDaily,
+    spendMtdLoading,
+    spendMtdIndicatorLoading,
+    kpiDataLoading,
+    currencySymbolLoading,
+  } = useDashboardStore();
+  const { alertOptionSets, fetchAlertOptionSets } = useAlertOptionSetsStore();
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
   const [pageSize, setPageSize] = React.useState(25);
 
@@ -74,8 +89,61 @@ export default function Dashboard() {
   useEffect(() => {
     if (currentAdsAccount) {
       fetchAlerts(currentAdsAccount.id);
+      // Fetch or create dashboardDaily document
+      fetchOrCreateDashboardDaily(currentAdsAccount.id);
+      // Trigger the showing ads label check
+      triggerShowingAdsLabel(currentAdsAccount);
+      // Fetch currency symbol if it's missing
+      if (!currentAdsAccount["Currency Symbol"]) {
+        fetchCurrencySymbol(currentAdsAccount);
+      }
     }
-  }, [currentAdsAccount, fetchAlerts]);
+  }, [
+    currentAdsAccount,
+    fetchAlerts,
+    fetchOrCreateDashboardDaily,
+    fetchCurrencySymbol,
+    triggerShowingAdsLabel,
+  ]);
+
+  // Fetch spend MTD after dashboardDaily is set
+  useEffect(() => {
+    if (
+      dashboardDaily &&
+      currentAdsAccount &&
+      dashboardDaily["Spend MTD"] === undefined &&
+      !spendMtdLoading
+    ) {
+      fetchSpendMtd(currentAdsAccount);
+    }
+  }, [dashboardDaily, currentAdsAccount, fetchSpendMtd, spendMtdLoading]);
+
+  useEffect(() => {
+    if (
+      dashboardDaily &&
+      currentAdsAccount &&
+      dashboardDaily["Spend MTD Indicator Alert"] === undefined &&
+      !spendMtdIndicatorLoading
+    ) {
+      fetchSpendMtdIndicator(currentAdsAccount);
+    }
+  }, [
+    dashboardDaily,
+    currentAdsAccount,
+    fetchSpendMtdIndicator,
+    spendMtdIndicatorLoading,
+  ]);
+
+  useEffect(() => {
+    if (
+      dashboardDaily &&
+      currentAdsAccount &&
+      !dashboardDaily["Is KPI Fetched"] &&
+      !kpiDataLoading
+    ) {
+      fetchKpiData(currentAdsAccount);
+    }
+  }, [dashboardDaily, currentAdsAccount, fetchKpiData, kpiDataLoading]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -431,7 +499,16 @@ export default function Dashboard() {
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500">Spend MTD</span>
               <span className="text-lg font-bold text-gray-900">
-                $47,651.95
+                {spendMtdLoading
+                  ? "Loading..."
+                  : dashboardDaily?.["Spend MTD"] != null
+                  ? `${
+                      currentAdsAccount?.["Currency Symbol"] || "$"
+                    }${dashboardDaily["Spend MTD"].toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}`
+                  : "N/A"}
               </span>
               <span className="ml-1 text-green-600">
                 <CheckCircledIcon />
@@ -444,11 +521,15 @@ export default function Dashboard() {
               <span>35.3%</span>
               <span>13 days</span>
               <span className="font-semibold text-gray-700">
-                Monthly Budget <span className="text-gray-900">$135,000</span>
+                Monthly Budget{" "}
+                <span className="text-gray-900">
+                  {currentAdsAccount?.["Currency Symbol"] || "$"}135,000
+                </span>
               </span>
             </div>
             <div className="text-xs text-gray-400 mt-1">
-              Spend Projection: $111,432.25
+              Spend Projection: {currentAdsAccount?.["Currency Symbol"] || "$"}
+              111,432.25
             </div>
           </div>
         </div>

@@ -28,6 +28,9 @@ export const COLLECTIONS = {
   AUTH_TRACKERS: "authenticationPageTrackers",
   STRIPE_COMPANIES: "stripeCompanies",
   ALERTS: "alerts",
+  DASHBOARD_DAILIES: "dashboardDailies",
+  ALERT_OPTION_SETS: "alertOptionSets",
+  DASHBOARD_SHOWING_ADS: "dashboardShowingAds",
 } as const;
 
 export const FIREBASE_FN_DOMAINS = {

@@ -1,11 +1,19 @@
 import { create } from "zustand";
-import { collection, doc, getDocs, query, where } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDocs,
+  query,
+  where,
+  updateDoc,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { COLLECTIONS } from "@/lib/constants";
 import { UserDocument } from "./auth-store";
 
 export interface AdsAccount {
   id: string;
+  "Currency Symbol"?: string;
   [key: string]: any;
 }
 
@@ -16,6 +24,10 @@ interface UserAdsAccountsState {
   error: string | null;
   fetchUserAdsAccounts: (userDoc: UserDocument) => Promise<void>;
   setSelectedAdsAccount: (account: AdsAccount | null) => void;
+  updateAdAccountCurrencySymbol: (
+    accountId: string,
+    symbol: string
+  ) => Promise<void>;
 }
 
 export const useUserAdsAccountsStore = create<UserAdsAccountsState>((set) => ({
@@ -25,6 +37,38 @@ export const useUserAdsAccountsStore = create<UserAdsAccountsState>((set) => ({
   error: null,
 
   setSelectedAdsAccount: (account) => set({ selectedAdsAccount: account }),
+
+  updateAdAccountCurrencySymbol: async (accountId: string, symbol: string) => {
+    try {
+      const accountRef = doc(db, COLLECTIONS.ADS_ACCOUNTS, accountId);
+      await updateDoc(accountRef, { "Currency Symbol": symbol });
+
+      set((state) => {
+        console.log("accountId: ", accountId);
+        console.log("state.userAdsAccounts: ", state.userAdsAccounts);
+
+        const updateUserAdsAccounts = state.userAdsAccounts.map((account) => {
+          if (account.id === accountId) {
+            return { ...account, "Currency Symbol": symbol };
+          }
+          return account;
+        });
+
+        const updatedSelectedAccount =
+          state.selectedAdsAccount?.id === accountId
+            ? { ...state.selectedAdsAccount, "Currency Symbol": symbol }
+            : state.selectedAdsAccount;
+
+        return {
+          userAdsAccounts: updateUserAdsAccounts,
+          selectedAdsAccount: updatedSelectedAccount,
+        };
+      });
+    } catch (error: any) {
+      console.error("Failed to update currency symbol in Firestore:", error);
+      set({ error: error.message });
+    }
+  },
 
   fetchUserAdsAccounts: async (userDoc) => {
     set({ loading: true, error: null });
