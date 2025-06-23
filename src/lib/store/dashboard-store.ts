@@ -4,6 +4,7 @@ import {
   getDocs,
   query,
   where,
+  orderBy,
   doc,
   DocumentReference,
   Timestamp,
@@ -25,6 +26,7 @@ export interface Alert {
   "Long Description": string;
   "Long Description Plain Text": string;
   Severity: string;
+  "Is Archived"?: boolean;
   // [key: string]: any;
 }
 
@@ -106,6 +108,7 @@ export interface DashboardDaily {
 interface DashboardState {
   alerts: Alert[];
   dashboardDaily: DashboardDaily | null;
+  adsLabel: any | null;
   loading: boolean;
   spendMtdLoading: boolean;
   spendMtdIndicatorLoading: boolean;
@@ -124,6 +127,7 @@ interface DashboardState {
 export const useDashboardStore = create<DashboardState>((set, get) => ({
   alerts: [],
   dashboardDaily: null,
+  adsLabel: null,
   loading: false,
   spendMtdLoading: false,
   spendMtdIndicatorLoading: false,
@@ -142,7 +146,8 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
           "Ads Account",
           "==",
           doc(db, COLLECTIONS.ADS_ACCOUNTS, adsAccountId)
-        )
+        ),
+        orderBy("Date Found", "desc")
       );
       const alertsSnap = await getDocs(alertsQuery);
       const alerts: Alert[] = alertsSnap.docs.map(
@@ -484,10 +489,31 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
             adsAccountId: adsAccountId,
           }),
         });
+
+        // After creating the record, fetch it and store in adsLabel state
+        const updatedQuerySnapshot = await getDocs(q);
+        if (updatedQuerySnapshot.size > 0) {
+          const firstRecord = updatedQuerySnapshot.docs[0];
+          const adsLabelData = {
+            id: firstRecord.id,
+            ...firstRecord.data(),
+          };
+          console.log("Fetched ads label data after creation:", adsLabelData);
+          set({ adsLabel: adsLabelData });
+        }
       } else {
         console.log(
           "'Dashboard Showing Ads' record already exists for the current hour. Skipping label check."
         );
+        
+        // Store the existing record in adsLabel state
+        const firstRecord = querySnapshot.docs[0];
+        const adsLabelData = {
+          id: firstRecord.id,
+          ...firstRecord.data(),
+        };
+        console.log("Fetched existing ads label data:", adsLabelData);
+        set({ adsLabel: adsLabelData });
       }
     } catch (error: any) {
       console.error("Error in triggerShowingAdsLabel:", error);
