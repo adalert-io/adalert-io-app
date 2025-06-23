@@ -37,6 +37,12 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { ALERT_SEVERITIES, ALERT_SEVERITY_COLORS } from "@/lib/constants/index";
 import moment from "moment";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { FilterPopover, FilterState } from "./FilterPopover";
 
 export default function Dashboard() {
   const { user } = useAuthStore();
@@ -67,6 +73,22 @@ export default function Dashboard() {
   const [showSearch, setShowSearch] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  // --- Filter State ---
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filters, setFilters] = useState<FilterState>({
+    severity: [
+      ALERT_SEVERITIES.CRITICAL,
+      ALERT_SEVERITIES.MEDIUM,
+      ALERT_SEVERITIES.LOW,
+    ],
+    label: "Unarchive",
+    timeRange: "All Time",
+  });
+
+  const handleFilterChange = (newFilters: Partial<FilterState>) => {
+    setFilters((prev) => ({ ...prev, ...newFilters }));
+  };
 
   useEffect(() => {
     console.log(user);
@@ -418,26 +440,52 @@ export default function Dashboard() {
   }
 
   const alerts = useDashboardStore((state) => state.alerts);
-  const criticalCount = alerts.filter(
-    (a) => a.Severity === ALERT_SEVERITIES.CRITICAL
-  ).length;
-  const mediumCount = alerts.filter(
-    (a) => a.Severity === ALERT_SEVERITIES.MEDIUM
-  ).length;
-  const lowCount = alerts.filter(
-    (a) => a.Severity === ALERT_SEVERITIES.LOW
-  ).length;
 
   // --- Filtering ---
   const filteredAlerts = React.useMemo(() => {
-    if (!debouncedSearch) return alerts;
     const lower = debouncedSearch.toLowerCase();
-    return alerts.filter(
-      (item) =>
-        item["Alert"]?.toLowerCase().includes(lower) ||
-        item["Long Description"]?.toLowerCase().includes(lower)
-    );
-  }, [alerts, debouncedSearch]);
+
+    return alerts.filter((alert) => {
+      // Severity
+      const severityMatch =
+        filters.severity.length === 0
+          ? false
+          : filters.severity.includes(alert.Severity);
+
+      // Label
+      const labelMatch =
+        filters.label === "Unarchive"
+          ? !alert["Is Archived"]
+          : alert["Is Archived"] === true;
+
+      // Time Range
+      let timeRangeMatch = true;
+      if (filters.timeRange !== "All Time") {
+        const days = filters.timeRange === "Last 7 days" ? 7 : 30;
+        const cutoffDate = moment().subtract(days, "days");
+        const dateFound = alert["Date Found"]?.toDate?.();
+        timeRangeMatch = dateFound ? moment(dateFound).isAfter(cutoffDate) : false;
+      }
+
+      // Search
+      const searchMatch =
+        !debouncedSearch ||
+        (alert["Alert"]?.toLowerCase().includes(lower) ||
+          alert["Long Description"]?.toLowerCase().includes(lower));
+
+      return severityMatch && labelMatch && timeRangeMatch && searchMatch;
+    });
+  }, [alerts, debouncedSearch, filters]);
+
+  const criticalCount = filteredAlerts.filter(
+    (a) => a.Severity === ALERT_SEVERITIES.CRITICAL
+  ).length;
+  const mediumCount = filteredAlerts.filter(
+    (a) => a.Severity === ALERT_SEVERITIES.MEDIUM
+  ).length;
+  const lowCount = filteredAlerts.filter(
+    (a) => a.Severity === ALERT_SEVERITIES.LOW
+  ).length;
 
   return (
     <div className="min-h-screen bg-[#F5F7FB]">
@@ -592,9 +640,21 @@ export default function Dashboard() {
               >
                 <MagnifyingGlassIcon className="w-6 h-6 text-[#015AFD]" />
               </Button>
-              <Button variant="outline" size="icon">
-                <Filter className="w-6 h-6 text-[#015AFD]" />
-              </Button>
+              <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <Filter className="w-6 h-6 text-[#015AFD]" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                  <FilterPopover
+                    filterState={filters}
+                    onFilterChange={handleFilterChange}
+                    onClose={() => setIsFilterOpen(false)}
+                  />
+                </PopoverContent>
+              </Popover>
+
               <Button variant="outline" size="icon" className="relative">
                 <FileIcon className="w-6 h-6 text-[#015AFD]" />
                 <span
