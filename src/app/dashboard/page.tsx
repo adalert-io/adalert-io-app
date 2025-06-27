@@ -140,6 +140,7 @@ export default function Dashboard() {
     fetchCurrencySymbol,
     triggerShowingAdsLabel,
     dashboardDaily,
+    adsLabel,
     spendMtdLoading,
     spendMtdIndicatorLoading,
     kpiDataLoading,
@@ -540,20 +541,54 @@ export default function Dashboard() {
         {/* Top Section */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
-            <span className="bg-[#E9F6EA] text-[#34A853] px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1">
-              <svg width="18" height="18" fill="none" viewBox="0 0 18 18">
-                <g>
-                  <rect width="18" height="18" rx="9" fill="#34A853" />
-                  <path
-                    d="M13.5 6.75l-5.25 5.25-2.25-2.25"
-                    stroke="#fff"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </g>
-              </svg>
-              Showing Ad
+            <span className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 ${
+              !adsLabel 
+                ? "bg-[#E9F6EA] text-[#7A7D9C]"
+                : adsLabel["Is Showing Ads"] 
+                ? "bg-[#E9F6EA] text-[#34A853]" 
+                : "bg-[#ffebee] text-[#ee1b23]"
+            }`}>
+              {!adsLabel ? (
+                <svg width="18" height="18" fill="none" viewBox="0 0 18 18">
+                  <g>
+                    <rect width="18" height="18" rx="9" fill="#7A7D9C" />
+                    <path
+                      d="M9 3v3l2 2"
+                      stroke="#fff"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </g>
+                </svg>
+              ) : adsLabel["Is Showing Ads"] ? (
+                <svg width="18" height="18" fill="none" viewBox="0 0 18 18">
+                  <g>
+                    <rect width="18" height="18" rx="9" fill="#34A853" />
+                    <path
+                      d="M13.5 6.75l-5.25 5.25-2.25-2.25"
+                      stroke="#fff"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </g>
+                </svg>
+              ) : (
+                <svg width="18" height="18" fill="none" viewBox="0 0 18 18">
+                  <g>
+                    <rect width="18" height="18" rx="9" fill="#ee1b23" />
+                    <path
+                      d="M12 6l-6 6M6 6l6 6"
+                      stroke="#fff"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </g>
+                </svg>
+              )}
+              {!adsLabel ? "Checking" : adsLabel["Is Showing Ads"] ? "Showing Ad" : "Not Showing Ad"}
             </span>
             <span className="text-xl md:text-2xl font-bold text-gray-900">
               Meehan Law - 182-843-8180
