@@ -625,7 +625,7 @@ export default function Dashboard() {
             </Card>
           </div>
           {/* Spend MTD / Monthly Budget Card - pixel-perfect UI */}
-          <Card className="bg-[#F5F8FF] border border-[#E3E8F0] rounded-xl shadow-none p-0 w-[370px] h-[180px] gap-2 flex flex-col justify-between">
+          <Card className="bg-[#F5F8FF] border border-[#E3E8F0] rounded-xl shadow-none p-0 w-[370px] h-[160px] gap-2 flex flex-col justify-between">
             <div className="flex justify-between items-start px-4 pt-4">
               <div className="flex flex-col gap-1">
                 <span className="text-xs text-[#7A7D9C] font-medium flex items-center gap-1">
@@ -672,7 +672,7 @@ export default function Dashboard() {
               </div>
             </div>
             {/* Progress bar section */}
-            <div className="relative px-4 mt-2">
+            <div className="relative px-4 mt-2" style={{ height: 48 }}>
               {(() => {
                 const spend = Number(dashboardDaily?.["Spend MTD"] ?? 0);
                 const budget = Number(currentAdsAccount?.["Monthly Budget"] ?? 1);
@@ -692,29 +692,23 @@ export default function Dashboard() {
                       <span className="text-white text-xs font-semibold select-none" style={{ textShadow: "0 1px 2px #156CFF" }}>{percent.toFixed(1)}%</span>
                     </div>
                     {/* Vertical line for current day */}
-                    <div className="absolute top-0 h-5" style={{ left: `calc(${dayPercent}% - 1px)` }}>
-                      <div className="w-0.5 h-5 bg-[#232360] rounded" />
+                    <div className="absolute top-1 h-4" style={{ left: `calc(${dayPercent}% - 1px)` }}>
+                      <div className="w-0.5 h-4 bg-[#7A7D9C] rounded" />
+                    </div>
+                    {/* Day label under the vertical line */}
+                    <div className="absolute left-0" style={{ top: 20, width: '100%' }}>
+                      <div style={{ position: 'absolute', left: `calc(${dayPercent}% - 12px)` }}>
+                        <span className="text-[13px] text-[#7A7D9C] font-semibold select-none">{day}</span>
+                        <span className="text-[11px] text-[#7A7D9C] font-semibold select-none ml-1">days</span>
+                      </div>
                     </div>
                   </div>
                 );
               })()}
             </div>
-            {/* Day label and Spend Projection */}
-            <div className="flex justify-between items-end px-4 pb-3 pt-1">
-              <div className="relative" style={{ width: "100%" }}>
-                {(() => {
-                  const now = moment();
-                  const day = now.date();
-                  const daysInMonth = now.daysInMonth();
-                  const dayPercent = (day / daysInMonth) * 100;
-                  return (
-                    <div className="absolute" style={{ left: `calc(${dayPercent}% - 10px)` }}>
-                      <span className="text-[11px] text-[#7A7D9C] font-semibold select-none">{day} days</span>
-                    </div>
-                  );
-                })()}
-              </div>
-              <span className="text-xs text-[#7A7D9C] font-medium ml-auto">
+            {/* Spend Projection */}
+            <div className="flex justify-end items-end px-4 pb-3 pt-1">
+              <span className="text-xs text-[#7A7D9C] font-medium">
                 Spend Projection: {currentAdsAccount?.["Currency Symbol"] || "$"}
                 {(() => {
                   const spend = Number(dashboardDaily?.["Spend MTD"] ?? 0);
