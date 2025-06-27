@@ -15,3 +15,4 @@ export const authConfig = {
     return `${baseUrl}/auth?mode=login`;
   },
 };
+ 

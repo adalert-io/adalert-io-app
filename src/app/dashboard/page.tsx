@@ -44,6 +44,86 @@ import {
 } from "@/components/ui/popover";
 import { FilterPopover, FilterState } from "./FilterPopover";
 
+const KPI_PERIODS = [
+  { label: "7 days vs. prior", key: "7" },
+  { label: "30 days vs. prior", key: "30" },
+  { label: "90 days vs. prior", key: "90" },
+];
+
+const KPI_FIELDS = [
+  { label: "CPC", value: (d: Record<string, any>, k: string) => d?.[`cpc${k}`], pct: (d: Record<string, any>, k: string) => d?.[`cpcPercentage${k}`], pctRedIfPositive: true, isMoney: true },
+  { label: "CTR", value: (d: Record<string, any>, k: string) => d?.[`ctr${k}`], pct: (d: Record<string, any>, k: string) => d?.[`ctrPercentage${k}`], pctRedIfPositive: false, isPercent: true },
+  { label: "CPA", value: (d: Record<string, any>, k: string) => d?.[`cpa${k}`], pct: (d: Record<string, any>, k: string) => d?.[`cpaPercentage${k}`], pctRedIfPositive: true, isMoney: true },
+  { label: "Conv.", value: (d: Record<string, any>, k: string) => d?.[`conversions${k}`], pct: (d: Record<string, any>, k: string) => d?.[`conversionsPercentage${k}`], pctRedIfPositive: false },
+  { label: "Search IS", value: (d: Record<string, any>, k: string) => d?.[`searchImpressionShare${k}`], pct: (d: Record<string, any>, k: string) => d?.[`searchImpressionSharePercentage${k}`], pctRedIfPositive: false, isPercent: true },
+  { label: "Impr. Top", value: (d: Record<string, any>, k: string) => d?.[`topImpressionPercentage${k}`], pct: (d: Record<string, any>, k: string) => d?.[`topImpressionPercentagePercentage${k}`], pctRedIfPositive: false, isPercent: true },
+  { label: "Cost", value: (d: Record<string, any>, k: string) => d?.[`costMicros${k}`], pct: (d: Record<string, any>, k: string) => d?.[`costMicrosPercentage${k}`], pctRedIfPositive: true, isMoney: true },
+  { label: "Clicks", value: (d: Record<string, any>, k: string) => d?.[`interactions${k}`], pct: (d: Record<string, any>, k: string) => d?.[`interactionsPercentage${k}`], pctRedIfPositive: false },
+  { label: "Invalid Clicks", value: (d: Record<string, any>, k: string) => d?.[`invalidClicks${k}`], pct: (d: Record<string, any>, k: string) => d?.[`invalidClicksPercentage${k}`], pctRedIfPositive: false },
+  { label: "Impressions", value: (d: Record<string, any>, k: string) => d?.[`impressions${k}`], pct: (d: Record<string, any>, k: string) => d?.[`impressionsPercentage${k}`], pctRedIfPositive: false },
+];
+
+function KpiMetricsRow({ dashboardDaily, currencySymbol }: { dashboardDaily: any, currencySymbol: string }) {
+  const [activePeriod, setActivePeriod] = React.useState("7");
+
+  return (
+    <div className="mb-6">
+      <div className="flex gap-2 mb-3">
+        {KPI_PERIODS.map((p) => (
+          <button
+            key={p.key}
+            type="button"
+            className={`px-4 py-2 rounded-lg font-semibold border transition-colors text-sm ${
+              activePeriod === p.key
+                ? "bg-[#015AFD] text-white border-[#015AFD]"
+                : "bg-white text-[#015AFD] border-[#015AFD] hover:bg-blue-50"
+            }`}
+            onClick={() => setActivePeriod(p.key)}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-3">
+        {KPI_FIELDS.map((field) => {
+          let value = field.value(dashboardDaily, activePeriod);
+          let pct = field.pct(dashboardDaily, activePeriod);
+          let pctColor = "text-black";
+          if (value === null || value === undefined || value === 0) {
+            value = 0;
+            pct = 0;
+          }
+          if (pct !== 0) {
+            if (field.pctRedIfPositive) {
+              pctColor = pct > 0 ? "text-red-600" : pct < 0 ? "text-green-600" : "text-black";
+            } else {
+              pctColor = pct > 0 ? "text-green-600" : pct < 0 ? "text-red-600" : "text-black";
+            }
+          }
+          let valueDisplay = value;
+          if (field.isMoney) {
+            valueDisplay = `${currencySymbol}${Number(value).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+          } else if (field.isPercent) {
+            valueDisplay = `${Number(value).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
+          } else {
+            valueDisplay = Number(value).toLocaleString("en-US");
+          }
+          let pctDisplay = pct === 0 ? "0%" : `${pct > 0 ? "+" : ""}${Number(pct).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
+          return (
+            <Card key={field.label} className="bg-white">
+              <CardContent className="py-2 px-2 flex flex-col items-center">
+                <span className="text-base font-bold text-gray-900">{valueDisplay}</span>
+                <span className="text-xs font-semibold text-gray-900">{field.label}</span>
+                <span className={`text-xs font-semibold ${pctColor}`}>{pctDisplay}</span>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const { user } = useAuthStore();
   const router = useRouter();
@@ -173,40 +253,6 @@ export default function Dashboard() {
     }, 1500);
     return () => clearTimeout(handler);
   }, [searchValue]);
-
-  // Placeholder/mock data
-  const metrics = [
-    { label: "CPC", value: "$26.71", change: "+0.78%", changeType: "up" },
-    { label: "CTR", value: "1.18%", change: "+17.53%", changeType: "up" },
-    { label: "CPA", value: "$288.55", change: "+86.07%", changeType: "down" },
-    { label: "Conv.", value: "108.97", change: "-14.2%", changeType: "down" },
-    {
-      label: "Search IS",
-      value: "43.02%",
-      change: "+11.54%",
-      changeType: "up",
-    },
-    {
-      label: "Impr. Top",
-      value: "56.91%",
-      change: "-21.58%",
-      changeType: "down",
-    },
-    { label: "Cost", value: "$31,442.00", change: "+59.65%", changeType: "up" },
-    { label: "Clicks", value: "1,189", change: "+59.6%", changeType: "up" },
-    {
-      label: "Invalid Clicks",
-      value: "92",
-      change: "+35.3%",
-      changeType: "up",
-    },
-    {
-      label: "Impressions",
-      value: "100,295",
-      change: "+34.79%",
-      changeType: "up",
-    },
-  ];
 
   // Alerts Table Columns
   const useAlertColumns = (
@@ -582,25 +628,7 @@ export default function Dashboard() {
           </div>
         </div>
         {/* Metrics Row */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-3 mb-6">
-          {metrics.map((m, i) => (
-            <Card key={m.label} className="bg-white">
-              <CardContent className="py-2 px-2 flex flex-col items-center">
-                <span className="text-base font-bold text-gray-900">
-                  {m.value}
-                </span>
-                <span className="text-xs text-gray-500">{m.label}</span>
-                <span
-                  className={`text-xs font-semibold ${
-                    m.changeType === "up" ? "text-green-600" : "text-red-600"
-                  }`}
-                >
-                  {m.change}
-                </span>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <KpiMetricsRow dashboardDaily={dashboardDaily} currencySymbol={currentAdsAccount?.["Currency Symbol"] || "$"} />
         {/* Alerts Table */}
         <div className="bg-white rounded-2xl shadow-md p-4">
           <div className="flex items-center justify-between mb-2">
@@ -701,3 +729,4 @@ export default function Dashboard() {
     </div>
   );
 }
+ 
