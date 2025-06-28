@@ -54,6 +54,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { saveAs } from "file-saver";
+import type { Alert } from "@/lib/store/dashboard-store";
 
 const KPI_PERIODS = [
   { label: "7 days vs. prior", key: "7" },
@@ -157,6 +158,7 @@ export default function Dashboard() {
     kpiDataLoading,
     currencySymbolLoading,
     updateMonthlyBudget,
+    archiveAlerts,
   } = useDashboardStore();
   const { alertOptionSets, fetchAlertOptionSets } = useAlertOptionSetsStore();
   
@@ -672,6 +674,8 @@ export default function Dashboard() {
     saveAs(blob, "alerts.csv");
   };
 
+  const [isArchiving, setIsArchiving] = useState(false);
+
   return (
     <div className="min-h-screen bg-[#F5F7FB]">
       <Header />
@@ -928,6 +932,33 @@ export default function Dashboard() {
                 </TooltipContent>
               </Tooltip>
               <span className="text-xs text-gray-400">Settings</span>
+              {/* Selection bar inline with heading */}
+              {selectedAlerts.length > 0 && (
+                <div className="flex items-center gap-2 ml-4">
+                  <span className="font-semibold text-sm text-[#232360]">{selectedAlerts.length} Selected</span>
+                  <span className="h-5 border-l border-gray-200 mx-1" />
+                  <Button
+                    className="bg-[#156CFF] hover:bg-[#156CFF]/90 text-white font-semibold h-7 px-3 py-1 rounded-md text-xs"
+                    disabled={isArchiving}
+                    onClick={async () => {
+                      setIsArchiving(true);
+                      try {
+                        const shouldArchive = filters.label === "Unarchive";
+                        if (selectedAdsAccount) {
+                          await archiveAlerts(selectedAlerts.filter((a): a is Alert => !!a && typeof a.id === 'string').map(a => a.id), shouldArchive, selectedAdsAccount.id);
+                        }
+                        setSelectedAlertIds([]);
+                      } catch (err) {
+                        console.error("Failed to update alerts", err);
+                      } finally {
+                        setIsArchiving(false);
+                      }
+                    }}
+                  >
+                    {filters.label === "Unarchive" ? "Archive" : "Unarchive"}
+                  </Button>
+                </div>
+              )}
             </div>
             <div className="flex gap-2">
               {/* Search UI */}

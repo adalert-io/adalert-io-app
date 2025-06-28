@@ -11,6 +11,7 @@ import {
   setDoc,
   updateDoc,
   getDoc,
+  writeBatch,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { COLLECTIONS } from "@/lib/constants";
@@ -125,6 +126,7 @@ interface DashboardState {
   fetchCurrencySymbol: (adsAccount: any) => Promise<void>;
   triggerShowingAdsLabel: (adsAccount: any) => Promise<void>;
   updateMonthlyBudget: (adsAccountId: string, newMonthlyBudget: number, currentMonthlyBudget: number) => Promise<boolean>;
+  archiveAlerts: (alertIds: string[], shouldArchive: boolean, adsAccountId: string) => Promise<void>;
 }
 
 export const useDashboardStore = create<DashboardState>((set, get) => ({
@@ -576,5 +578,16 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       console.error("Failed to update monthly budget", err);
       return false;
     }
+  },
+
+  archiveAlerts: async (alertIds: string[], shouldArchive: boolean, adsAccountId: string) => {
+    const { fetchAlerts } = get();
+    const batch = writeBatch(db);
+    alertIds.forEach(id => {
+      const ref = doc(db, COLLECTIONS.ALERTS, id);
+      batch.update(ref, { "Is Archived": shouldArchive });
+    });
+    await batch.commit();
+    await fetchAlerts(adsAccountId);
   },
 }));
