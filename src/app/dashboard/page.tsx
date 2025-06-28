@@ -515,21 +515,46 @@ export default function Dashboard() {
                     </td>
                   ))}
                 </tr>
-                {expandedRowIds.includes(row.id) && (
-                  <tr>
-                    <td
-                      colSpan={columns.length}
-                      className="bg-[#FAFAFA] px-4 py-4"
-                    >
-                      <div
-                        className="prose max-w-none text-sm"
-                        dangerouslySetInnerHTML={{
-                          __html: row.original["Long Description"] || "",
-                        }}
-                      />
-                    </td>
-                  </tr>
-                )}
+                {expandedRowIds.includes(row.id) && (() => {
+                  // Find the index of the Description column
+                  const descriptionColIdx = columns.findIndex(
+                    (col) => (col as any).accessorKey === "description" || col.id === "description"
+                  );
+                  // Find the indexes of the Checkbox, Found, and Severity columns
+                  const checkboxColIdx = columns.findIndex(
+                    (col) => col.id === "select"
+                  );
+                  // Find the indexes of the Found and Severity columns
+                  const foundColIdx = columns.findIndex(
+                    (col) => (col as any).accessorKey === "date" || col.id === "date"
+                  );
+                  const severityColIdx = columns.findIndex(
+                    (col) => (col as any).accessorKey === "severity" || col.id === "severity"
+                  );
+                  // If not found, fallback to 0
+                  const startIdx = descriptionColIdx >= 0 ? descriptionColIdx : 0;
+                  const colSpan = columns.length - startIdx;
+                  return (
+                    <tr>
+                      {/* Columns before Description, fill bg for Found and Severity */}
+                      {Array.from({ length: startIdx }).map((_, i) => {
+                        const isCheckbox = i === checkboxColIdx;
+                        const isFound = i === foundColIdx;
+                        const isSeverity = i === severityColIdx;
+                        return <td key={i} className={isCheckbox || isFound || isSeverity ? "bg-[#FAFAFA]" : undefined} />;
+                      })}
+                      {/* Description content */}
+                      <td colSpan={colSpan} className="bg-[#FAFAFA] px-4 py-4">
+                        <div
+                          className="prose max-w-none text-sm"
+                          dangerouslySetInnerHTML={{
+                            __html: row.original["Long Description"] || "",
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })()}
               </React.Fragment>
             ))}
           </tbody>
