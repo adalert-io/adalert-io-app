@@ -33,6 +33,7 @@ import {
   ChevronLeft,
   ChevronRight,
   XIcon,
+  AlertTriangle,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ALERT_SEVERITIES, ALERT_SEVERITY_COLORS } from "@/lib/constants/index";
@@ -630,9 +631,19 @@ export default function Dashboard() {
               <div className="flex flex-col gap-1">
                 <span className="text-xs text-[#7A7D9C] font-medium flex items-center gap-1">
                   Spend MTD
-                  <span className="ml-1 cursor-pointer" title="Month-to-date spend">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="7" cy="7" r="7" fill="#E3E8F0"/><text x="7" y="10" textAnchor="middle" fontSize="9" fill="#7A7D9C" fontFamily="Arial">i</text></svg>
-                  </span>
+                  <div className="relative group">
+                    <button
+                      type="button"
+                      className="ml-1 p-0.5 rounded hover:bg-[#E3E8F0] transition-colors"
+                      aria-label="Spend MTD information"
+                    >
+                      <AlertTriangle className="w-3 h-3 text-[#7A7D9C]" />
+                    </button>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 w-80">
+                      The actual amount can differ between users' dashboards based on API call times and could be different from what you see on the ads account, with up to a few hours' difference.
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                  </div>
                 </span>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-[18px] leading-none font-bold text-[#232360]">
@@ -726,8 +737,21 @@ export default function Dashboard() {
         {/* Alerts Table */}
         <div className="bg-white rounded-2xl shadow-md p-4">
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <h2 className="text-lg font-bold text-gray-900">Alerts</h2>
+              <div className="relative group">
+                <button
+                  type="button"
+                  className="p-0.5 rounded hover:bg-gray-100 transition-colors"
+                  aria-label="Alerts information"
+                >
+                  <AlertTriangle className="w-3 h-3 text-gray-400" />
+                </button>
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 w-80">
+                  There might be data discrepancies between the results shown in the adAlert dashboard and what's reported by the ad vendor due to retroactive data updates made by the vendor.
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                </div>
+              </div>
               <span className="text-xs text-gray-400">Settings</span>
             </div>
             <div className="flex gap-2">
