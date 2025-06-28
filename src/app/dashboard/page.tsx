@@ -699,9 +699,21 @@ export default function Dashboard() {
                     {/* Progress bar fill */}
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 h-5 rounded-full bg-[#156CFF]" style={{ width: `${percent}%`, minWidth: percent > 0 ? 8 : 0 }} />
                     {/* Percentage label */}
-                    <div className="absolute left-0 top-0 w-full h-5 flex items-center justify-center pointer-events-none">
-                      <span className="text-white text-xs font-semibold select-none" style={{ textShadow: "0 1px 2px #156CFF" }}>{percent.toFixed(1)}%</span>
-                    </div>
+                    {percent < 15 ? (
+                      <span
+                        className="absolute top-0 left-0 h-6 flex items-center text-black text-xs font-semibold select-none"
+                        style={{ left: `calc(${percent}% + 8px)` }}
+                      >
+                        {percent.toFixed(1)}%
+                      </span>
+                    ) : (
+                      <span
+                        className="absolute top-0 h-6 flex items-center text-white text-xs font-semibold select-none"
+                        style={{ left: `calc(${percent / 2}% )`, transform: 'translateX(-50%)' }}
+                      >
+                        {percent.toFixed(1)}%
+                      </span>
+                    )}
                     {/* Vertical line for current day */}
                     <div className="absolute top-1 h-4" style={{ left: `calc(${dayPercent}% - 1px)` }}>
                       <div className="w-0.5 h-4 bg-[#7A7D9C] rounded" />
