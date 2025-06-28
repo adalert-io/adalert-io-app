@@ -45,6 +45,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { FilterPopover, FilterState } from "./FilterPopover";
+import { doc, updateDoc, query, collection, getDocs, where } from "firebase/firestore";
+import { db } from "@/lib/firebase/config";
+import { COLLECTIONS } from "@/lib/constants";
 
 const KPI_PERIODS = [
   { label: "7 days vs. prior", key: "7" },
@@ -147,6 +150,7 @@ export default function Dashboard() {
     spendMtdIndicatorLoading,
     kpiDataLoading,
     currencySymbolLoading,
+    updateMonthlyBudget,
   } = useDashboardStore();
   const { alertOptionSets, fetchAlertOptionSets } = useAlertOptionSetsStore();
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
@@ -171,6 +175,39 @@ export default function Dashboard() {
 
   const handleFilterChange = (newFilters: Partial<FilterState>) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
+  };
+
+  // 1. Add state at the top of the Dashboard component
+  const [isEditingBudget, setIsEditingBudget] = useState(false);
+  const [budgetInput, setBudgetInput] = useState<string>(currentAdsAccount?.["Monthly Budget"]?.toString() || "");
+  const [isUpdatingBudget, setIsUpdatingBudget] = useState(false);
+
+  // 2. Add handler for Pencil1Icon click
+  const handleEditBudget = () => {
+    setBudgetInput(currentAdsAccount?.["Monthly Budget"]?.toString() || "");
+    setIsEditingBudget(true);
+  };
+
+  // 3. Add handler for Confirm
+  const handleConfirmBudget = async () => {
+    if (!currentAdsAccount || !budgetInput) return;
+    const monthlyBudget = Math.max(0, Number(budgetInput));
+    setIsUpdatingBudget(true);
+    try {
+      const updated = await updateMonthlyBudget(
+        currentAdsAccount.id,
+        monthlyBudget,
+        Number(currentAdsAccount["Monthly Budget"])
+      );
+      if (updated) {
+        setCurrentAdsAccount((prev) => prev ? ({ ...prev, "Monthly Budget": monthlyBudget, "Daily Budget": Number((monthlyBudget / 30.4).toFixed(2)) }) : prev);
+      }
+      setIsEditingBudget(false);
+    } catch (err) {
+      console.error("Failed to update budget", err);
+    } finally {
+      setIsUpdatingBudget(false);
+    }
   };
 
   useEffect(() => {
@@ -672,13 +709,35 @@ export default function Dashboard() {
                   Monthly Budget
                 </span>
                 <div className="flex items-center gap-1 mt-1">
-                  <button type="button" className="p-0.5 rounded hover:bg-[#E3E8F0] transition-colors" aria-label="Edit budget">
-                    <Pencil1Icon className="w-4 h-4 text-[#7A7D9C]" />
-                  </button>
-                  <span className="text-[18px] leading-none font-bold text-[#232360]">
-                    {currentAdsAccount?.["Currency Symbol"] || "$"}
-                    {currentAdsAccount?.["Monthly Budget"] != null ? Number(currentAdsAccount["Monthly Budget"]).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : "--"}
-                  </span>
+                  {isEditingBudget ? (
+                    <>
+                      <Button
+                        className="bg-[#156CFF] hover:bg-[#156CFF]/90 text-white font-semibold px-4 py-2 rounded-lg text-sm"
+                        onClick={handleConfirmBudget}
+                        disabled={isUpdatingBudget || !budgetInput || Number(budgetInput) < 0}
+                      >
+                        Confirm
+                      </Button>
+                      <input
+                        type="number"
+                        min={0}
+                        className="ml-2 border border-[#E3E8F0] rounded-lg px-4 py-2 text-lg font-bold text-right w-24 outline-none focus:border-blue-400"
+                        value={budgetInput}
+                        onChange={e => setBudgetInput(e.target.value.replace(/[^0-9.]/g, ""))}
+                        disabled={isUpdatingBudget}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <button type="button" className="p-0.5 rounded hover:bg-[#E3E8F0] transition-colors" aria-label="Edit budget" onClick={handleEditBudget}>
+                        <Pencil1Icon className="w-4 h-4 text-[#7A7D9C]" />
+                      </button>
+                      <span className="text-[18px] leading-none font-bold text-[#232360]">
+                        {currentAdsAccount?.["Currency Symbol"] || "$"}
+                        {currentAdsAccount?.["Monthly Budget"] != null ? Number(currentAdsAccount["Monthly Budget"]).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : "--"}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

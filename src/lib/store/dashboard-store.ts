@@ -9,6 +9,8 @@ import {
   DocumentReference,
   Timestamp,
   setDoc,
+  updateDoc,
+  getDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { COLLECTIONS } from "@/lib/constants";
@@ -122,6 +124,7 @@ interface DashboardState {
   fetchKpiData: (adsAccount: any) => Promise<void>;
   fetchCurrencySymbol: (adsAccount: any) => Promise<void>;
   triggerShowingAdsLabel: (adsAccount: any) => Promise<void>;
+  updateMonthlyBudget: (adsAccountId: string, newMonthlyBudget: number, currentMonthlyBudget: number) => Promise<boolean>;
 }
 
 export const useDashboardStore = create<DashboardState>((set, get) => ({
@@ -518,6 +521,60 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     } catch (error: any) {
       console.error("Error in triggerShowingAdsLabel:", error);
       set({ error: error.message });
+    }
+  },
+
+  updateMonthlyBudget: async (adsAccountId: string, newMonthlyBudget: number, currentMonthlyBudget: number) => {
+    if (newMonthlyBudget === currentMonthlyBudget) return false;
+    const dailyBudget = Number((newMonthlyBudget / 30.4).toFixed(2));
+    try {
+      // Update ads account
+      const accountRef = doc(db, COLLECTIONS.ADS_ACCOUNTS, adsAccountId);
+      await updateDoc(accountRef, {
+        "Monthly Budget": newMonthlyBudget,
+        "Daily Budget": dailyBudget,
+      });
+      // Update adsAccountVariables
+      const adsAccountVarQuery = query(
+        collection(db, "adsAccountVariables"),
+        where("Ads Account", "==", accountRef)
+      );
+      const adsAccountVarSnap = await getDocs(adsAccountVarQuery);
+      if (!adsAccountVarSnap.empty) {
+        const adsAccountVarRef = adsAccountVarSnap.docs[0].ref;
+        await updateDoc(adsAccountVarRef, {
+          "MonthlyBudget": newMonthlyBudget,
+          "DailyBudget": dailyBudget,
+        });
+      }
+      // Fetch the updated ads account
+      const updatedDoc = await getDoc(doc(db, COLLECTIONS.ADS_ACCOUNTS, adsAccountId));
+      let updatedAccount = null;
+      if (updatedDoc.exists()) {
+        updatedAccount = { id: updatedDoc.id, ...updatedDoc.data() };
+        // Update selectedAdsAccount in user-ads-accounts-store
+        useUserAdsAccountsStore.getState().setSelectedAdsAccount(updatedAccount);
+      }
+      // Update local state for dashboardDaily if needed
+      const currentDashboardDaily = get().dashboardDaily;
+      if (currentDashboardDaily && updatedAccount) {
+        set({
+          dashboardDaily: {
+            ...currentDashboardDaily,
+            "Monthly Budget": (updatedAccount as any)["Monthly Budget"],
+            "Daily Budget": (updatedAccount as any)["Daily Budget"],
+          },
+        });
+      }
+      // Refetch with the fresh account object
+      if (updatedAccount) {
+        await get().fetchSpendMtd(updatedAccount);
+        await get().fetchSpendMtdIndicator(updatedAccount);
+      }
+      return true;
+    } catch (err) {
+      console.error("Failed to update monthly budget", err);
+      return false;
     }
   },
 }));
