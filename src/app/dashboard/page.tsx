@@ -48,6 +48,11 @@ import { FilterPopover, FilterState } from "./FilterPopover";
 import { doc, updateDoc, query, collection, getDocs, where } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { COLLECTIONS } from "@/lib/constants";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const KPI_PERIODS = [
   { label: "7 days vs. prior", key: "7" },
@@ -681,19 +686,21 @@ export default function Dashboard() {
               <div className="flex flex-col gap-1">
                 <span className="text-xs text-[#7A7D9C] font-medium flex items-center gap-1">
                   Spend MTD
-                  <div className="relative group">
-                    <button
-                      type="button"
-                      className="ml-1 p-0.5 rounded hover:bg-[#E3E8F0] transition-colors"
-                      aria-label="Spend MTD information"
-                    >
-                      <AlertTriangle className="w-3 h-3 text-[#7A7D9C]" />
-                    </button>
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 w-80">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        className="ml-1 p-0.5 rounded hover:bg-[#E3E8F0] transition-colors"
+                        aria-label="Spend MTD information"
+                        tabIndex={0}
+                      >
+                        <AlertTriangle className="w-3 h-3 text-[#7A7D9C]" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" align="center" className="max-w-xs text-xs">
                       The actual amount can differ between users' dashboards based on API call times and could be different from what you see on the ads account, with up to a few hours' difference.
-                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-                    </div>
-                  </div>
+                    </TooltipContent>
+                  </Tooltip>
                 </span>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-[18px] leading-none font-bold text-[#232360]">
@@ -823,19 +830,21 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1">
               <h2 className="text-lg font-bold text-gray-900">Alerts</h2>
-              <div className="relative group">
-                <button
-                  type="button"
-                  className="p-0.5 rounded hover:bg-gray-100 transition-colors"
-                  aria-label="Alerts information"
-                >
-                  <AlertTriangle className="w-3 h-3 text-gray-400" />
-                </button>
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 w-80">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="p-0.5 rounded hover:bg-gray-100 transition-colors"
+                    aria-label="Alerts information"
+                    tabIndex={0}
+                  >
+                    <AlertTriangle className="w-3 h-3 text-gray-400" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" align="center" className="max-w-xs text-xs">
                   There might be data discrepancies between the results shown in the adAlert dashboard and what's reported by the ad vendor due to retroactive data updates made by the vendor.
-                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-                </div>
-              </div>
+                </TooltipContent>
+              </Tooltip>
               <span className="text-xs text-gray-400">Settings</span>
             </div>
             <div className="flex gap-2">
