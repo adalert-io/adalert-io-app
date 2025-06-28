@@ -16,7 +16,7 @@ import {
 import { db } from "@/lib/firebase/config";
 import { COLLECTIONS } from "@/lib/constants";
 import moment from "moment";
-import { getFirebaseFnPath } from "@/lib/utils";
+import { getFirebaseFnPath, formatAccountNumber } from "@/lib/utils";
 import { useAlertOptionSetsStore } from "./alert-option-sets-store";
 import { useUserAdsAccountsStore } from "./user-ads-accounts-store";
 
@@ -127,6 +127,7 @@ interface DashboardState {
   triggerShowingAdsLabel: (adsAccount: any) => Promise<void>;
   updateMonthlyBudget: (adsAccountId: string, newMonthlyBudget: number, currentMonthlyBudget: number) => Promise<boolean>;
   archiveAlerts: (alertIds: string[], shouldArchive: boolean, adsAccountId: string) => Promise<void>;
+  generateAlertsPdf: (selectedAdsAccount: any) => Promise<void>;
 }
 
 export const useDashboardStore = create<DashboardState>((set, get) => ({
@@ -589,5 +590,56 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     });
     await batch.commit();
     await fetchAlerts(adsAccountId);
+  },
+
+  generateAlertsPdf: async (selectedAdsAccount: any) => {
+    try {
+      const { alerts } = get();
+      // Get the 10 most recent alerts
+      const recentAlerts = alerts.slice(0, 10);
+      // Build alertsStr
+      const alertsStr = recentAlerts.map((alert, idx) => `${idx + 1} ${alert["Alert"]}`).join("\n");
+      // Construct the message
+      const message = `\nYou are a Pay-Per-Click professional. Based on the list of 10 Google Ads alerts below, suggest a course of action to improve results. Write a plan with steps to take—what to do first, second, etc. Base your suggestions on authoritative sources and professionals in PPC. Write the plan in order of priority, from the most urgent and important to the least. Be specific yet concise. Treat multiple alerts for the same KPI as one. Only write the action plan, with no extra text before or after, no acknowledgment of the prompt, and no conclusion summary. Provide the content in short paragraphs with one bold heading each. Don't use list style at all.\n\nList of 10 Google Ads alerts: ${alertsStr}\n`;
+      // Call chatGPT endpoint
+      const chatGptPath = getFirebaseFnPath('chatGPT');
+      const chatGptRes = await fetch(chatGptPath, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message }),
+      });
+      if (!chatGptRes.ok) throw new Error('Failed to get ChatGPT response');
+      const chatGptData = await chatGptRes.json();
+      const content = chatGptData?.choices?.[0]?.message?.content;
+      if (!content) throw new Error('No content from ChatGPT');
+      // Call get-chatgpt-pdf endpoint
+      const pdfPath = getFirebaseFnPath('get-chatgpt-pdf');
+      const formattedAccountNumber = formatAccountNumber(selectedAdsAccount["Id"]);
+      const pdfRes = await fetch(pdfPath, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: content,
+          accountName: selectedAdsAccount["Account Name Editable"],
+          accountNumber: formattedAccountNumber,
+        }),
+      });
+      if (!pdfRes.ok) throw new Error('Failed to get PDF');
+      const blob = await pdfRes.blob();
+      // Download the file
+      const fileName = `${selectedAdsAccount["Account Name Editable"] || 'alerts-plan'}.pdf`;
+      if (typeof window !== 'undefined') {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      console.error('Failed to generate PDF', err);
+    }
   },
 }));

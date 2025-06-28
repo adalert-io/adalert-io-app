@@ -55,6 +55,7 @@ import {
 } from "@/components/ui/tooltip";
 import { saveAs } from "file-saver";
 import type { Alert } from "@/lib/store/dashboard-store";
+import { formatAccountNumber } from "@/lib/utils";
 
 const KPI_PERIODS = [
   { label: "7 days vs. prior", key: "7" },
@@ -159,6 +160,7 @@ export default function Dashboard() {
     currencySymbolLoading,
     updateMonthlyBudget,
     archiveAlerts,
+    generateAlertsPdf,
   } = useDashboardStore();
   const { alertOptionSets, fetchAlertOptionSets } = useAlertOptionSetsStore();
   
@@ -675,6 +677,7 @@ export default function Dashboard() {
   };
 
   const [isArchiving, setIsArchiving] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   return (
     <div className="min-h-screen bg-[#F5F7FB]">
@@ -733,7 +736,9 @@ export default function Dashboard() {
               {!adsLabel ? "Checking" : adsLabel["Is Showing Ads"] ? "Showing Ad" : "Not Showing Ad"}
             </span>
             <span className="text-xl md:text-2xl font-bold text-gray-900">
-              Meehan Law - 182-843-8180
+              {currentAdsAccount?.["Account Name Editable"] || "-"}
+              {" - "}
+              {currentAdsAccount?.["Id"] ? formatAccountNumber(currentAdsAccount["Id"]) : ""}
             </span>
           </div>
           <div className="flex gap-4">
@@ -1007,7 +1012,23 @@ export default function Dashboard() {
                 </PopoverContent>
               </Popover>
 
-              <Button variant="outline" size="icon" className="relative">
+              <Button
+                variant="outline"
+                size="icon"
+                className="relative"
+                disabled={isGeneratingPdf}
+                onClick={async () => {
+                  if (!selectedAdsAccount) return;
+                  setIsGeneratingPdf(true);
+                  try {
+                    await generateAlertsPdf(selectedAdsAccount);
+                  } catch (err) {
+                    console.error('Failed to generate PDF', err);
+                  } finally {
+                    setIsGeneratingPdf(false);
+                  }
+                }}
+              >
                 <FileIcon className="w-6 h-6 text-[#015AFD]" />
                 <span
                   className="absolute bottom-0 right-0 text-[8px] font-bold text-[#015AFD] leading-none pr-[2px] pb-[1px] pointer-events-none"
@@ -1015,6 +1036,11 @@ export default function Dashboard() {
                 >
                   PDF
                 </span>
+                {isGeneratingPdf && (
+                  <span className="absolute inset-0 flex items-center justify-center bg-white/60">
+                    <svg className="animate-spin h-4 w-4 text-[#015AFD]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>
+                  </span>
+                )}
               </Button>
               <Button
                 variant="outline"

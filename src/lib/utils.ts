@@ -19,3 +19,8 @@ export function getFirebaseFnPath(subPath: string) {
 
   return path;
 }
+
+export function formatAccountNumber(accountNumber: string): string {
+  if (!/^[0-9]{10}$/.test(accountNumber)) return accountNumber;
+  return `${accountNumber.slice(0,3)}-${accountNumber.slice(3,6)}-${accountNumber.slice(6)}`;
+}
