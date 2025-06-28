@@ -2,7 +2,7 @@
 
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -210,6 +210,8 @@ export default function Dashboard() {
     }
   };
 
+  const lastFetchedAccountId = useRef<string | null>(null);
+
   useEffect(() => {
     console.log(user);
     if (!user) {
@@ -229,19 +231,21 @@ export default function Dashboard() {
   }, [user, router, selectedAdsAccount, userAdsAccounts]);
 
   useEffect(() => {
-    if (currentAdsAccount) {
+    if (
+      currentAdsAccount &&
+      currentAdsAccount.id !== lastFetchedAccountId.current
+    ) {
       fetchAlerts(currentAdsAccount.id);
-      // Fetch or create dashboardDaily document
       fetchOrCreateDashboardDaily(currentAdsAccount.id);
-      // Trigger the showing ads label check
       triggerShowingAdsLabel(currentAdsAccount);
-      // Fetch currency symbol if it's missing
       if (!currentAdsAccount["Currency Symbol"]) {
         fetchCurrencySymbol(currentAdsAccount);
       }
+      lastFetchedAccountId.current = currentAdsAccount.id;
     }
+    // If only budget fields change, skip the fetches!
   }, [
-    currentAdsAccount,
+    currentAdsAccount?.id, // Only depend on the ID, not the whole object
     fetchAlerts,
     fetchOrCreateDashboardDaily,
     fetchCurrencySymbol,
