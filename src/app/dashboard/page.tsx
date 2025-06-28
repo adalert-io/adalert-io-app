@@ -2,7 +2,7 @@
 
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -53,6 +53,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { saveAs } from "file-saver";
 
 const KPI_PERIODS = [
   { label: "7 days vs. prior", key: "7" },
@@ -158,7 +159,9 @@ export default function Dashboard() {
     updateMonthlyBudget,
   } = useDashboardStore();
   const { alertOptionSets, fetchAlertOptionSets } = useAlertOptionSetsStore();
-  const [selectedRows, setSelectedRows] = useState<number[]>([]);
+  
+  // Replace selectedRows with selectedAlertIds for better performance and to avoid infinite loops
+  const [selectedAlertIds, setSelectedAlertIds] = useState<string[]>([]);
   const [pageSize, setPageSize] = React.useState(25);
 
   // --- Search State ---
@@ -398,10 +401,14 @@ export default function Dashboard() {
     pageSize,
     setPageSize,
     filteredAlerts,
+    selectedAlertIds,
+    setSelectedAlertIds,
   }: {
     pageSize: number;
     setPageSize: React.Dispatch<React.SetStateAction<number>>;
     filteredAlerts: any[];
+    selectedAlertIds: string[];
+    setSelectedAlertIds: React.Dispatch<React.SetStateAction<string[]>>;
   }) {
     const [expandedRowIds, setExpandedRowIds] = React.useState<string[]>([]);
     const [pageIndex, setPageIndex] = React.useState(0);
@@ -410,6 +417,25 @@ export default function Dashboard() {
       () => useAlertColumns(expandedRowIds, setExpandedRowIds),
       [expandedRowIds]
     );
+
+    // Create a stable rowSelection object based on selectedAlertIds
+    const rowSelection = useMemo(() => {
+      const selection: Record<string, boolean> = {};
+      selectedAlertIds.forEach(id => {
+        selection[id] = true;
+      });
+      return selection;
+    }, [selectedAlertIds]);
+
+    // Handle row selection changes from the table
+    const handleRowSelectionChange = React.useCallback((updater: any) => {
+      const newSelection = typeof updater === 'function' ? updater(rowSelection) : updater;
+      
+      // Convert the selection object to an array of selected IDs
+      const newSelectedIds = Object.keys(newSelection).filter(key => newSelection[key]);
+      console.log('Row selection changed:', { newSelection, newSelectedIds });
+      setSelectedAlertIds(newSelectedIds);
+    }, [rowSelection, setSelectedAlertIds]);
 
     const table = useReactTable({
       data: filteredAlerts,
@@ -421,6 +447,7 @@ export default function Dashboard() {
           pageIndex,
           pageSize,
         },
+        rowSelection,
       },
       onPaginationChange: (updater) => {
         if (typeof updater === "function") {
@@ -436,7 +463,22 @@ export default function Dashboard() {
           }
         }
       },
+      onRowSelectionChange: handleRowSelectionChange,
+      enableRowSelection: true,
       pageCount: Math.ceil(filteredAlerts.length / pageSize),
+      // Use the alert ID as the row ID instead of the table's internal ID
+      getRowId: (row) => {
+        // Add safety check for row.original and id
+        if (!row.original) {
+          console.warn('Row original is undefined:', row);
+          return row.id || Math.random().toString();
+        }
+        if (!row.original.id) {
+          console.warn('Row original.id is undefined:', row.original);
+          return row.id || Math.random().toString();
+        }
+        return row.original.id;
+      },
     });
 
     return (
@@ -572,6 +614,21 @@ export default function Dashboard() {
     });
   }, [alerts, debouncedSearch, filters]);
 
+  // Derive selected alert objects from selectedAlertIds
+  const selectedAlerts = useMemo(() => {
+    // Debug: Log the first few alerts to see their structure
+    if (filteredAlerts.length > 0) {
+      console.log('First alert structure:', filteredAlerts[0]);
+      console.log('All alert IDs:', filteredAlerts.map(alert => alert.id));
+    }
+    
+    const alerts = selectedAlertIds
+      .map(id => filteredAlerts.find(alert => alert.id === id))
+      .filter(Boolean);
+    console.log('Selected alerts derived:', { selectedAlertIds, filteredAlertsLength: filteredAlerts.length, selectedAlertsLength: alerts.length });
+    return alerts;
+  }, [selectedAlertIds, filteredAlerts]);
+
   const criticalCount = filteredAlerts.filter(
     (a) => a.Severity === ALERT_SEVERITIES.CRITICAL
   ).length;
@@ -589,6 +646,31 @@ export default function Dashboard() {
       budgetInputRef.current.focus();
     }
   }, [isEditingBudget]);
+
+  // Add a helper to format date
+  function formatDate(date: any) {
+    if (!date) return "";
+    if (typeof date.toDate === "function") {
+      return moment(date.toDate()).format("YYYY-MM-DD");
+    }
+    return moment(date).format("YYYY-MM-DD");
+  }
+
+  const handleDownloadCsv = () => {
+    if (selectedAlerts.length === 0) return;
+    const csvRows = [
+      ["Alert", "Date Found", "Is Archived", "Severity"],
+      ...selectedAlerts.map(alert => [
+        alert?.["Alert"],
+        formatDate(alert?.["Date Found"]),
+        alert?.["Is Archived"] ? "Yes" : "No",
+        alert?.["Severity"]
+      ])
+    ];
+    const csvContent = csvRows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    saveAs(blob, "alerts.csv");
+  };
 
   return (
     <div className="min-h-screen bg-[#F5F7FB]">
@@ -903,7 +985,13 @@ export default function Dashboard() {
                   PDF
                 </span>
               </Button>
-              <Button variant="outline" size="icon" className="relative">
+              <Button
+                variant="outline"
+                size="icon"
+                className="relative"
+                disabled={selectedAlerts.length === 0}
+                onClick={handleDownloadCsv}
+              >
                 <FileIcon className="w-6 h-6 text-[#015AFD]" />
                 <span
                   className="absolute bottom-0 right-0 text-[8px] font-bold text-[#015AFD] leading-none pr-[2px] pb-[1px] pointer-events-none"
@@ -912,12 +1000,6 @@ export default function Dashboard() {
                   CSV
                 </span>
               </Button>
-              {/* <Button variant="outline" size="icon">
-                <FileIcon />
-              </Button>
-              <Button variant="outline" size="icon">
-                <DownloadIcon />
-              </Button> */}
               <select
                 className="ml-2 border rounded-md px-2 py-1 text-xs"
                 value={pageSize}
@@ -934,6 +1016,8 @@ export default function Dashboard() {
             pageSize={pageSize}
             setPageSize={setPageSize}
             filteredAlerts={filteredAlerts}
+            selectedAlertIds={selectedAlertIds}
+            setSelectedAlertIds={setSelectedAlertIds}
           />
         </div>
       </main>
