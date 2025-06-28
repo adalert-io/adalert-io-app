@@ -577,6 +577,14 @@ export default function Dashboard() {
     (a) => a.Severity === ALERT_SEVERITIES.LOW
   ).length;
 
+  const budgetInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (isEditingBudget && budgetInputRef.current) {
+      budgetInputRef.current.focus();
+    }
+  }, [isEditingBudget]);
+
   return (
     <div className="min-h-screen bg-[#F5F7FB]">
       <Header />
@@ -716,16 +724,17 @@ export default function Dashboard() {
                   {isEditingBudget ? (
                     <>
                       <Button
-                        className="bg-[#156CFF] hover:bg-[#156CFF]/90 text-white font-semibold px-4 py-2 rounded-lg text-sm"
+                        className="bg-[#156CFF] hover:bg-[#156CFF]/90 text-white font-semibold px-2 py-1 rounded-md text-xs h-7 min-w-[60px]"
                         onClick={handleConfirmBudget}
                         disabled={isUpdatingBudget || !budgetInput || Number(budgetInput) < 0}
                       >
                         Confirm
                       </Button>
                       <input
+                        ref={budgetInputRef}
                         type="number"
                         min={0}
-                        className="ml-2 border border-[#E3E8F0] rounded-lg px-4 py-2 text-lg font-bold text-right w-24 outline-none focus:border-blue-400"
+                        className="ml-2 border border-[#E3E8F0] rounded-md px-2 py-1 text-base font-bold text-right w-16 outline-none focus:border-blue-400 h-7"
                         value={budgetInput}
                         onChange={e => setBudgetInput(e.target.value.replace(/[^0-9.]/g, ""))}
                         disabled={isUpdatingBudget}
