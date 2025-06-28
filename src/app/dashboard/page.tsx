@@ -11,6 +11,7 @@ import {
   DownloadIcon,
   FileIcon,
   MagnifyingGlassIcon,
+  Pencil1Icon,
 } from "@radix-ui/react-icons";
 import { Filter } from "lucide-react";
 import { useUserAdsAccountsStore } from "@/lib/store/user-ads-accounts-store";
@@ -672,8 +673,7 @@ export default function Dashboard() {
                 </span>
                 <div className="flex items-center gap-1 mt-1">
                   <button type="button" className="p-0.5 rounded hover:bg-[#E3E8F0] transition-colors" aria-label="Edit budget">
-                    {/* Pencil SVG */}
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.013 2.287a1.5 1.5 0 0 1 2.121 2.122l-7.07 7.07a1 1 0 0 1-.354.23l-2.5.833a.25.25 0 0 1-.316-.316l.833-2.5a1 1 0 0 1 .23-.354l7.07-7.07Zm1.415 1.415-1.13-1.13a.5.5 0 0 0-.707 0l-.707.707 1.837 1.837.707-.707a.5.5 0 0 0 0-.707ZM3.5 10.5l-.5 1.5 1.5-.5 7.07-7.07-1-1L3.5 10.5Z" fill="#7A7D9C"/></svg>
+                    <Pencil1Icon className="w-4 h-4 text-[#7A7D9C]" />
                   </button>
                   <span className="text-[18px] leading-none font-bold text-[#232360]">
                     {currentAdsAccount?.["Currency Symbol"] || "$"}
