@@ -933,9 +933,12 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="flex w-full flex-row justify-between items-stretch gap-8 mb-6">
+        <div
+          className="flex w-full flex-col md:flex-row justify-between items-stretch gap-8 mb-6 md:flex-row md:gap-8"
+          style={{ minWidth: 0 }}
+        >
           {/* Row 2: Cards in a row (Critical, Medium, Low, Spend MTD/Budget) */}
-          <div className="flex gap-4 flex-grow max-w-[830px]">
+          <div className="flex gap-4 flex-grow max-w-[830px] w-full">
             <Card className="w-32 bg-white border-l-4 border-[#E53935] flex-grow">
               <CardContent className="h-full flex flex-col items-center justify-center p-4">
                 <span className="text-4xl font-bold text-[#E53935]">
@@ -967,9 +970,9 @@ export default function Dashboard() {
               </CardContent>
             </Card>
           </div>
-          <div className="flex flex-grow-0 flex-shrink-0 justify-end">
+          <div className="flex flex-grow-0 flex-shrink-0 justify-end w-full md:w-auto mt-4 md:mt-0">
             {/* Spend MTD / Monthly Budget Card - now in the same row */}
-            <Card className="bg-[#F5F8FF] border border-[#E3E8F0] rounded-xl shadow-none p-0 w-[370px] h-[160px] gap-2 flex flex-col justify-between">
+            <Card className="bg-[#F5F8FF] border border-[#E3E8F0] rounded-xl shadow-none p-0 w-full md:w-[370px] h-[160px] gap-2 flex flex-col justify-between">
               <div className="flex justify-between items-start px-4 pt-4">
                 <div className="flex flex-col gap-1">
                   <span className="text-xs text-[#7A7D9C] font-medium flex items-center gap-1">
