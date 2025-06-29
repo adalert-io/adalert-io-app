@@ -36,7 +36,10 @@ export const useUserAdsAccountsStore = create<UserAdsAccountsState>((set) => ({
   loading: false,
   error: null,
 
-  setSelectedAdsAccount: (account) => set({ selectedAdsAccount: account }),
+  setSelectedAdsAccount: (account) => set((state) => {
+    if (state.selectedAdsAccount?.id === account?.id) return state;
+    return { selectedAdsAccount: account };
+  }),
 
   updateAdAccountCurrencySymbol: async (accountId: string, symbol: string) => {
     try {

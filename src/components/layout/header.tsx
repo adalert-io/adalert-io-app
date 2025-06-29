@@ -28,9 +28,16 @@ export function Header() {
 
   // Dropdown handler
   const handleSelectAccount = (account: any) => {
-    setSelectedAdsAccount(account);
-    setDropdownOpen(false);
-    router.push('/dashboard');
+    if (!selectedAdsAccount || selectedAdsAccount.id !== account.id) {
+      setSelectedAdsAccount(account);
+      setDropdownOpen(false);
+      router.push('/dashboard');
+    } else {
+      setDropdownOpen(false);
+      if (!pathname || !pathname.startsWith('/dashboard')) {
+        router.push('/dashboard');
+      }
+    }
   };
 
   // Avatar fallback

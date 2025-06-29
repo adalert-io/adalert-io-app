@@ -141,9 +141,6 @@ export default function Dashboard() {
   const { user } = useAuthStore();
   const router = useRouter();
   const { selectedAdsAccount, userAdsAccounts } = useUserAdsAccountsStore();
-  const [currentAdsAccount, setCurrentAdsAccount] = useState<AdsAccount | null>(
-    null
-  );
   const {
     fetchAlerts,
     fetchOrCreateDashboardDaily,
@@ -161,6 +158,8 @@ export default function Dashboard() {
     updateMonthlyBudget,
     archiveAlerts,
     generateAlertsPdf,
+    lastFetchedAccountId,
+    setLastFetchedAccountId,
   } = useDashboardStore();
   const { alertOptionSets, fetchAlertOptionSets } = useAlertOptionSetsStore();
   
@@ -191,29 +190,27 @@ export default function Dashboard() {
 
   // 1. Add state at the top of the Dashboard component
   const [isEditingBudget, setIsEditingBudget] = useState(false);
-  const [budgetInput, setBudgetInput] = useState<string>(currentAdsAccount?.["Monthly Budget"]?.toString() || "");
+  const [budgetInput, setBudgetInput] = useState<string>(selectedAdsAccount?.["Monthly Budget"]?.toString() || "");
   const [isUpdatingBudget, setIsUpdatingBudget] = useState(false);
 
   // 2. Add handler for Pencil1Icon click
   const handleEditBudget = () => {
-    setBudgetInput(currentAdsAccount?.["Monthly Budget"]?.toString() || "");
+    setBudgetInput(selectedAdsAccount?.["Monthly Budget"]?.toString() || "");
     setIsEditingBudget(true);
   };
 
   // 3. Add handler for Confirm
   const handleConfirmBudget = async () => {
-    if (!currentAdsAccount || !budgetInput) return;
+    if (!selectedAdsAccount || !budgetInput) return;
     const monthlyBudget = Math.max(0, Number(budgetInput));
     setIsUpdatingBudget(true);
     try {
       const updated = await updateMonthlyBudget(
-        currentAdsAccount.id,
+        selectedAdsAccount.id,
         monthlyBudget,
-        Number(currentAdsAccount["Monthly Budget"])
+        Number(selectedAdsAccount["Monthly Budget"])
       );
-      if (updated) {
-        setCurrentAdsAccount((prev) => prev ? ({ ...prev, "Monthly Budget": monthlyBudget, "Daily Budget": Number((monthlyBudget / 30.4).toFixed(2)) }) : prev);
-      }
+      // No need to update selectedAdsAccount locally, store will update if needed
       setIsEditingBudget(false);
     } catch (err) {
       console.error("Failed to update budget", err);
@@ -222,72 +219,55 @@ export default function Dashboard() {
     }
   };
 
-  const lastFetchedAccountId = useRef<string | null>(null);
-
   useEffect(() => {
     console.log(user);
     if (!user) {
       router.push("/auth");
       return;
     }
-    // Set currentAdsAccount based on store
-    if (selectedAdsAccount) {
-      setCurrentAdsAccount(selectedAdsAccount);
-    } else if (userAdsAccounts && userAdsAccounts.length > 0) {
-      setCurrentAdsAccount(userAdsAccounts[0]);
-    } else {
-      setCurrentAdsAccount(null);
-    }
-
     console.log("selectedAdsAccount: ", selectedAdsAccount);
-  }, [user, router, selectedAdsAccount, userAdsAccounts]);
+  }, [user, router, selectedAdsAccount]);
 
   useEffect(() => {
     if (
-      currentAdsAccount &&
-      currentAdsAccount.id !== lastFetchedAccountId.current
+      selectedAdsAccount &&
+      selectedAdsAccount.id !== lastFetchedAccountId
     ) {
-      fetchAlerts(currentAdsAccount.id);
-      fetchOrCreateDashboardDaily(currentAdsAccount.id);
-      triggerShowingAdsLabel(currentAdsAccount);
-      if (!currentAdsAccount["Currency Symbol"]) {
-        fetchCurrencySymbol(currentAdsAccount);
+      fetchAlerts(selectedAdsAccount.id);
+      fetchOrCreateDashboardDaily(selectedAdsAccount.id);
+      triggerShowingAdsLabel(selectedAdsAccount);
+      if (!selectedAdsAccount["Currency Symbol"]) {
+        fetchCurrencySymbol(selectedAdsAccount);
       }
-      lastFetchedAccountId.current = currentAdsAccount.id;
+      setLastFetchedAccountId(selectedAdsAccount.id);
     }
     // If only budget fields change, skip the fetches!
-  }, [
-    currentAdsAccount?.id, // Only depend on the ID, not the whole object
-    fetchAlerts,
-    fetchOrCreateDashboardDaily,
-    fetchCurrencySymbol,
-    triggerShowingAdsLabel,
-  ]);
+  }, [selectedAdsAccount?.id, fetchAlerts, fetchOrCreateDashboardDaily, fetchCurrencySymbol, triggerShowingAdsLabel, lastFetchedAccountId, setLastFetchedAccountId]);
 
   // Fetch spend MTD after dashboardDaily is set
   useEffect(() => {
     if (
       dashboardDaily &&
-      currentAdsAccount &&
+      selectedAdsAccount &&
       dashboardDaily["Spend MTD"] === undefined &&
       !spendMtdLoading
     ) {
-      fetchSpendMtd(currentAdsAccount);
+      fetchSpendMtd(selectedAdsAccount);
     }
-  }, [dashboardDaily, currentAdsAccount, fetchSpendMtd, spendMtdLoading]);
+  }, [dashboardDaily, selectedAdsAccount, fetchSpendMtd, spendMtdLoading]);
 
   useEffect(() => {
     if (
       dashboardDaily &&
-      currentAdsAccount &&
+      selectedAdsAccount &&
       dashboardDaily["Spend MTD Indicator Alert"] === undefined &&
       !spendMtdIndicatorLoading
     ) {
-      fetchSpendMtdIndicator(currentAdsAccount);
+      fetchSpendMtdIndicator(selectedAdsAccount);
     }
   }, [
     dashboardDaily,
-    currentAdsAccount,
+    selectedAdsAccount,
     fetchSpendMtdIndicator,
     spendMtdIndicatorLoading,
   ]);
@@ -295,13 +275,13 @@ export default function Dashboard() {
   useEffect(() => {
     if (
       dashboardDaily &&
-      currentAdsAccount &&
+      selectedAdsAccount &&
       !dashboardDaily["Is KPI Fetched"] &&
       !kpiDataLoading
     ) {
-      fetchKpiData(currentAdsAccount);
+      fetchKpiData(selectedAdsAccount);
     }
-  }, [dashboardDaily, currentAdsAccount, fetchKpiData, kpiDataLoading]);
+  }, [dashboardDaily, selectedAdsAccount, fetchKpiData, kpiDataLoading]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -474,11 +454,11 @@ export default function Dashboard() {
       getRowId: (row) => {
         // Add safety check for row.original and id
         if (!row.original) {
-          console.warn('Row original is undefined:', row);
+          // console.warn('Row original is undefined:', row);
           return row.id || Math.random().toString();
         }
         if (!row.original.id) {
-          console.warn('Row original.id is undefined:', row.original);
+          // console.warn('Row original.id is undefined:', row.original);
           return row.id || Math.random().toString();
         }
         return row.original.id;
@@ -648,7 +628,7 @@ export default function Dashboard() {
     // Debug: Log the first few alerts to see their structure
     if (filteredAlerts.length > 0) {
       console.log('First alert structure:', filteredAlerts[0]);
-      console.log('All alert IDs:', filteredAlerts.map(alert => alert.id));
+      // console.log('All alert IDs:', filteredAlerts.map(alert => alert.id));
     }
     
     const alerts = selectedAlertIds
@@ -761,9 +741,9 @@ export default function Dashboard() {
               {!adsLabel ? "Checking" : adsLabel["Is Showing Ads"] ? "Showing Ad" : "Not Showing Ad"}
             </span>
             <span className="text-xl md:text-2xl font-bold text-gray-900">
-              {currentAdsAccount?.["Account Name Editable"] || "-"}
+              {selectedAdsAccount?.["Account Name Editable"] || "-"}
               {" - "}
-              {currentAdsAccount?.["Id"] ? formatAccountNumber(currentAdsAccount["Id"]) : ""}
+              {selectedAdsAccount?.["Id"] ? formatAccountNumber(selectedAdsAccount["Id"]) : ""}
             </span>
           </div>
           <div className="flex gap-4">
@@ -823,7 +803,7 @@ export default function Dashboard() {
                     {spendMtdLoading
                       ? "--"
                       : dashboardDaily?.["Spend MTD"] != null
-                      ? `${currentAdsAccount?.["Currency Symbol"] || "$"}${Number(dashboardDaily["Spend MTD"]).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                      ? `${selectedAdsAccount?.["Currency Symbol"] || "$"}${Number(dashboardDaily["Spend MTD"]).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                       : "--"}
                   </span>
                   {/* Dot color logic */}
@@ -869,8 +849,8 @@ export default function Dashboard() {
                         <Pencil1Icon className="w-4 h-4 text-[#7A7D9C]" />
                       </button>
                       <span className="text-[18px] leading-none font-bold text-[#232360]">
-                        {currentAdsAccount?.["Currency Symbol"] || "$"}
-                        {currentAdsAccount?.["Monthly Budget"] != null ? Number(currentAdsAccount["Monthly Budget"]).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : "--"}
+                        {selectedAdsAccount?.["Currency Symbol"] || "$"}
+                        {selectedAdsAccount?.["Monthly Budget"] != null ? Number(selectedAdsAccount["Monthly Budget"]).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : "--"}
                       </span>
                     </>
                   )}
@@ -881,7 +861,7 @@ export default function Dashboard() {
             <div className="relative px-4 mt-2" style={{ height: 48 }}>
               {(() => {
                 const spend = Number(dashboardDaily?.["Spend MTD"] ?? 0);
-                const budget = Number(currentAdsAccount?.["Monthly Budget"] ?? 1);
+                const budget = Number(selectedAdsAccount?.["Monthly Budget"] ?? 1);
                 const percent = budget ? Math.min((spend / budget) * 100, 100) : 0;
                 const now = moment();
                 const day = now.date();
@@ -927,7 +907,7 @@ export default function Dashboard() {
             {/* Spend Projection */}
             <div className="flex justify-end items-end px-4 pb-3 pt-1">
               <span className="text-xs text-[#7A7D9C] font-medium">
-                Spend Projection: {currentAdsAccount?.["Currency Symbol"] || "$"}
+                Spend Projection: {selectedAdsAccount?.["Currency Symbol"] || "$"}
                 {(() => {
                   const spend = Number(dashboardDaily?.["Spend MTD"] ?? 0);
                   const now = moment();
@@ -940,7 +920,7 @@ export default function Dashboard() {
           </Card>
         </div>
         {/* Metrics Row */}
-        <KpiMetricsRow dashboardDaily={dashboardDaily} currencySymbol={currentAdsAccount?.["Currency Symbol"] || "$"} />
+        <KpiMetricsRow dashboardDaily={dashboardDaily} currencySymbol={selectedAdsAccount?.["Currency Symbol"] || "$"} />
         {/* Alerts Table */}
         <div className="bg-white rounded-2xl shadow-md p-4">
           <div className="flex items-center justify-between mb-2">

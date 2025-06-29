@@ -118,6 +118,8 @@ interface DashboardState {
   kpiDataLoading: boolean;
   currencySymbolLoading: boolean;
   error: string | null;
+  lastFetchedAccountId: string | null;
+  setLastFetchedAccountId: (id: string) => void;
   fetchAlerts: (adsAccountId: string) => Promise<void>;
   fetchOrCreateDashboardDaily: (adsAccountId: string) => Promise<void>;
   fetchSpendMtd: (adsAccount: any) => Promise<void>;
@@ -140,6 +142,8 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   kpiDataLoading: false,
   currencySymbolLoading: false,
   error: null,
+  lastFetchedAccountId: null,
+  setLastFetchedAccountId: (id) => set({ lastFetchedAccountId: id }),
 
   fetchAlerts: async (adsAccountId: string) => {
     console.log("useDashboardStore - adsAccountId: ", adsAccountId);
