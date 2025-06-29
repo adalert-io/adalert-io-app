@@ -894,8 +894,19 @@ export default function Dashboard() {
                       <div className="w-0.5 h-4 bg-[#7A7D9C] rounded" />
                     </div>
                     {/* Day label under the vertical line */}
-                    <div className="absolute left-0" style={{ top: 20, width: '100%' }}>
-                      <div style={{ position: 'absolute', left: `calc(${dayPercent}% - 12px)` }}>
+                    <div
+                      className="absolute left-0"
+                      style={{ top: 20, width: '100%' }}
+                    >
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left:
+                            dayPercent > 93
+                              ? 'calc(100% - 48px)' // clamp to right edge minus label width
+                              : `calc(${dayPercent}% - 12px)`,
+                        }}
+                      >
                         <span className="text-[13px] text-[#7A7D9C] font-semibold select-none">{day}</span>
                         <span className="text-[11px] text-[#7A7D9C] font-semibold select-none ml-1">days</span>
                       </div>
