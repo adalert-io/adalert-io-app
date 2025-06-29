@@ -45,7 +45,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { FilterPopover, FilterState } from "./FilterPopover";
-import { doc, updateDoc, query, collection, getDocs, where } from "firebase/firestore";
+import {
+  doc,
+  updateDoc,
+  query,
+  collection,
+  getDocs,
+  where,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { COLLECTIONS } from "@/lib/constants";
 import {
@@ -64,19 +71,89 @@ const KPI_PERIODS = [
 ];
 
 const KPI_FIELDS = [
-  { label: "CPC", value: (d: Record<string, any>, k: string) => d?.[`cpc${k}`], pct: (d: Record<string, any>, k: string) => d?.[`cpcPercentage${k}`], pctRedIfPositive: true, isMoney: true },
-  { label: "CTR", value: (d: Record<string, any>, k: string) => d?.[`ctr${k}`], pct: (d: Record<string, any>, k: string) => d?.[`ctrPercentage${k}`], pctRedIfPositive: false, isPercent: true },
-  { label: "CPA", value: (d: Record<string, any>, k: string) => d?.[`cpa${k}`], pct: (d: Record<string, any>, k: string) => d?.[`cpaPercentage${k}`], pctRedIfPositive: true, isMoney: true },
-  { label: "Conv.", value: (d: Record<string, any>, k: string) => d?.[`conversions${k}`], pct: (d: Record<string, any>, k: string) => d?.[`conversionsPercentage${k}`], pctRedIfPositive: false },
-  { label: "Search IS", value: (d: Record<string, any>, k: string) => d?.[`searchImpressionShare${k}`], pct: (d: Record<string, any>, k: string) => d?.[`searchImpressionSharePercentage${k}`], pctRedIfPositive: false, isPercent: true },
-  { label: "Impr. Top", value: (d: Record<string, any>, k: string) => d?.[`topImpressionPercentage${k}`], pct: (d: Record<string, any>, k: string) => d?.[`topImpressionPercentagePercentage${k}`], pctRedIfPositive: false, isPercent: true },
-  { label: "Cost", value: (d: Record<string, any>, k: string) => d?.[`costMicros${k}`], pct: (d: Record<string, any>, k: string) => d?.[`costMicrosPercentage${k}`], pctRedIfPositive: true, isMoney: true },
-  { label: "Clicks", value: (d: Record<string, any>, k: string) => d?.[`interactions${k}`], pct: (d: Record<string, any>, k: string) => d?.[`interactionsPercentage${k}`], pctRedIfPositive: false },
-  { label: "Invalid Clicks", value: (d: Record<string, any>, k: string) => d?.[`invalidClicks${k}`], pct: (d: Record<string, any>, k: string) => d?.[`invalidClicksPercentage${k}`], pctRedIfPositive: false },
-  { label: "Impressions", value: (d: Record<string, any>, k: string) => d?.[`impressions${k}`], pct: (d: Record<string, any>, k: string) => d?.[`impressionsPercentage${k}`], pctRedIfPositive: false },
+  {
+    label: "CPC",
+    value: (d: Record<string, any>, k: string) => d?.[`cpc${k}`],
+    pct: (d: Record<string, any>, k: string) => d?.[`cpcPercentage${k}`],
+    pctRedIfPositive: true,
+    isMoney: true,
+  },
+  {
+    label: "CTR",
+    value: (d: Record<string, any>, k: string) => d?.[`ctr${k}`],
+    pct: (d: Record<string, any>, k: string) => d?.[`ctrPercentage${k}`],
+    pctRedIfPositive: false,
+    isPercent: true,
+  },
+  {
+    label: "CPA",
+    value: (d: Record<string, any>, k: string) => d?.[`cpa${k}`],
+    pct: (d: Record<string, any>, k: string) => d?.[`cpaPercentage${k}`],
+    pctRedIfPositive: true,
+    isMoney: true,
+  },
+  {
+    label: "Conv.",
+    value: (d: Record<string, any>, k: string) => d?.[`conversions${k}`],
+    pct: (d: Record<string, any>, k: string) =>
+      d?.[`conversionsPercentage${k}`],
+    pctRedIfPositive: false,
+  },
+  {
+    label: "Search IS",
+    value: (d: Record<string, any>, k: string) =>
+      d?.[`searchImpressionShare${k}`],
+    pct: (d: Record<string, any>, k: string) =>
+      d?.[`searchImpressionSharePercentage${k}`],
+    pctRedIfPositive: false,
+    isPercent: true,
+  },
+  {
+    label: "Impr. Top",
+    value: (d: Record<string, any>, k: string) =>
+      d?.[`topImpressionPercentage${k}`],
+    pct: (d: Record<string, any>, k: string) =>
+      d?.[`topImpressionPercentagePercentage${k}`],
+    pctRedIfPositive: false,
+    isPercent: true,
+  },
+  {
+    label: "Cost",
+    value: (d: Record<string, any>, k: string) => d?.[`costMicros${k}`],
+    pct: (d: Record<string, any>, k: string) => d?.[`costMicrosPercentage${k}`],
+    pctRedIfPositive: true,
+    isMoney: true,
+  },
+  {
+    label: "Clicks",
+    value: (d: Record<string, any>, k: string) => d?.[`interactions${k}`],
+    pct: (d: Record<string, any>, k: string) =>
+      d?.[`interactionsPercentage${k}`],
+    pctRedIfPositive: false,
+  },
+  {
+    label: "Invalid Clicks",
+    value: (d: Record<string, any>, k: string) => d?.[`invalidClicks${k}`],
+    pct: (d: Record<string, any>, k: string) =>
+      d?.[`invalidClicksPercentage${k}`],
+    pctRedIfPositive: false,
+  },
+  {
+    label: "Impressions",
+    value: (d: Record<string, any>, k: string) => d?.[`impressions${k}`],
+    pct: (d: Record<string, any>, k: string) =>
+      d?.[`impressionsPercentage${k}`],
+    pctRedIfPositive: false,
+  },
 ];
 
-function KpiMetricsRow({ dashboardDaily, currencySymbol }: { dashboardDaily: any, currencySymbol: string }) {
+function KpiMetricsRow({
+  dashboardDaily,
+  currencySymbol,
+}: {
+  dashboardDaily: any;
+  currencySymbol: string;
+}) {
   const [activePeriod, setActivePeriod] = React.useState("7");
 
   return (
@@ -108,26 +185,54 @@ function KpiMetricsRow({ dashboardDaily, currencySymbol }: { dashboardDaily: any
           }
           if (pct !== 0) {
             if (field.pctRedIfPositive) {
-              pctColor = pct > 0 ? "text-red-600" : pct < 0 ? "text-green-600" : "text-black";
+              pctColor =
+                pct > 0
+                  ? "text-red-600"
+                  : pct < 0
+                  ? "text-green-600"
+                  : "text-black";
             } else {
-              pctColor = pct > 0 ? "text-green-600" : pct < 0 ? "text-red-600" : "text-black";
+              pctColor =
+                pct > 0
+                  ? "text-green-600"
+                  : pct < 0
+                  ? "text-red-600"
+                  : "text-black";
             }
           }
           let valueDisplay = value;
           if (field.isMoney) {
-            valueDisplay = `${currencySymbol}${Number(value).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            valueDisplay = `${currencySymbol}${Number(value).toLocaleString(
+              "en-US",
+              { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+            )}`;
           } else if (field.isPercent) {
-            valueDisplay = `${Number(value).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
+            valueDisplay = `${Number(value).toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}%`;
           } else {
             valueDisplay = Number(value).toLocaleString("en-US");
           }
-          let pctDisplay = pct === 0 ? "0%" : `${pct > 0 ? "+" : ""}${Number(pct).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
+          let pctDisplay =
+            pct === 0
+              ? "0%"
+              : `${pct > 0 ? "+" : ""}${Number(pct).toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}%`;
           return (
             <Card key={field.label} className="bg-white">
               <CardContent className="py-2 px-2 flex flex-col items-center">
-                <span className="text-base font-bold text-gray-900">{valueDisplay}</span>
-                <span className="text-xs font-semibold text-gray-900">{field.label}</span>
-                <span className={`text-xs font-semibold ${pctColor}`}>{pctDisplay}</span>
+                <span className="text-base font-bold text-gray-900">
+                  {valueDisplay}
+                </span>
+                <span className="text-xs font-semibold text-gray-900">
+                  {field.label}
+                </span>
+                <span className={`text-xs font-semibold ${pctColor}`}>
+                  {pctDisplay}
+                </span>
               </CardContent>
             </Card>
           );
@@ -162,7 +267,7 @@ export default function Dashboard() {
     setLastFetchedAccountId,
   } = useDashboardStore();
   const { alertOptionSets, fetchAlertOptionSets } = useAlertOptionSetsStore();
-  
+
   // Replace selectedRows with selectedAlertIds for better performance and to avoid infinite loops
   const [selectedAlertIds, setSelectedAlertIds] = useState<string[]>([]);
   const [pageSize, setPageSize] = React.useState(25);
@@ -190,7 +295,9 @@ export default function Dashboard() {
 
   // 1. Add state at the top of the Dashboard component
   const [isEditingBudget, setIsEditingBudget] = useState(false);
-  const [budgetInput, setBudgetInput] = useState<string>(selectedAdsAccount?.["Monthly Budget"]?.toString() || "");
+  const [budgetInput, setBudgetInput] = useState<string>(
+    selectedAdsAccount?.["Monthly Budget"]?.toString() || ""
+  );
   const [isUpdatingBudget, setIsUpdatingBudget] = useState(false);
 
   // 2. Add handler for Pencil1Icon click
@@ -229,10 +336,7 @@ export default function Dashboard() {
   }, [user, router, selectedAdsAccount]);
 
   useEffect(() => {
-    if (
-      selectedAdsAccount &&
-      selectedAdsAccount.id !== lastFetchedAccountId
-    ) {
+    if (selectedAdsAccount && selectedAdsAccount.id !== lastFetchedAccountId) {
       fetchAlerts(selectedAdsAccount.id);
       fetchOrCreateDashboardDaily(selectedAdsAccount.id);
       triggerShowingAdsLabel(selectedAdsAccount);
@@ -242,7 +346,15 @@ export default function Dashboard() {
       setLastFetchedAccountId(selectedAdsAccount.id);
     }
     // If only budget fields change, skip the fetches!
-  }, [selectedAdsAccount?.id, fetchAlerts, fetchOrCreateDashboardDaily, fetchCurrencySymbol, triggerShowingAdsLabel, lastFetchedAccountId, setLastFetchedAccountId]);
+  }, [
+    selectedAdsAccount?.id,
+    fetchAlerts,
+    fetchOrCreateDashboardDaily,
+    fetchCurrencySymbol,
+    triggerShowingAdsLabel,
+    lastFetchedAccountId,
+    setLastFetchedAccountId,
+  ]);
 
   // Fetch spend MTD after dashboardDaily is set
   useEffect(() => {
@@ -405,21 +517,27 @@ export default function Dashboard() {
     // Create a stable rowSelection object based on selectedAlertIds
     const rowSelection = useMemo(() => {
       const selection: Record<string, boolean> = {};
-      selectedAlertIds.forEach(id => {
+      selectedAlertIds.forEach((id) => {
         selection[id] = true;
       });
       return selection;
     }, [selectedAlertIds]);
 
     // Handle row selection changes from the table
-    const handleRowSelectionChange = React.useCallback((updater: any) => {
-      const newSelection = typeof updater === 'function' ? updater(rowSelection) : updater;
-      
-      // Convert the selection object to an array of selected IDs
-      const newSelectedIds = Object.keys(newSelection).filter(key => newSelection[key]);
-      console.log('Row selection changed:', { newSelection, newSelectedIds });
-      setSelectedAlertIds(newSelectedIds);
-    }, [rowSelection, setSelectedAlertIds]);
+    const handleRowSelectionChange = React.useCallback(
+      (updater: any) => {
+        const newSelection =
+          typeof updater === "function" ? updater(rowSelection) : updater;
+
+        // Convert the selection object to an array of selected IDs
+        const newSelectedIds = Object.keys(newSelection).filter(
+          (key) => newSelection[key]
+        );
+        console.log("Row selection changed:", { newSelection, newSelectedIds });
+        setSelectedAlertIds(newSelectedIds);
+      },
+      [rowSelection, setSelectedAlertIds]
+    );
 
     const table = useReactTable({
       data: filteredAlerts,
@@ -495,46 +613,65 @@ export default function Dashboard() {
                     </td>
                   ))}
                 </tr>
-                {expandedRowIds.includes(row.id) && (() => {
-                  // Find the index of the Description column
-                  const descriptionColIdx = columns.findIndex(
-                    (col) => (col as any).accessorKey === "description" || col.id === "description"
-                  );
-                  // Find the indexes of the Checkbox, Found, and Severity columns
-                  const checkboxColIdx = columns.findIndex(
-                    (col) => col.id === "select"
-                  );
-                  // Find the indexes of the Found and Severity columns
-                  const foundColIdx = columns.findIndex(
-                    (col) => (col as any).accessorKey === "date" || col.id === "date"
-                  );
-                  const severityColIdx = columns.findIndex(
-                    (col) => (col as any).accessorKey === "severity" || col.id === "severity"
-                  );
-                  // If not found, fallback to 0
-                  const startIdx = descriptionColIdx >= 0 ? descriptionColIdx : 0;
-                  const colSpan = columns.length - startIdx;
-                  return (
-                    <tr>
-                      {/* Columns before Description, fill bg for Found and Severity */}
-                      {Array.from({ length: startIdx }).map((_, i) => {
-                        const isCheckbox = i === checkboxColIdx;
-                        const isFound = i === foundColIdx;
-                        const isSeverity = i === severityColIdx;
-                        return <td key={i} className={isCheckbox || isFound || isSeverity ? "bg-[#FAFAFA]" : undefined} />;
-                      })}
-                      {/* Description content */}
-                      <td colSpan={colSpan} className="bg-[#FAFAFA] px-4 py-4">
-                        <div
-                          className="prose max-w-none text-sm"
-                          dangerouslySetInnerHTML={{
-                            __html: row.original["Long Description"] || "",
-                          }}
-                        />
-                      </td>
-                    </tr>
-                  );
-                })()}
+                {expandedRowIds.includes(row.id) &&
+                  (() => {
+                    // Find the index of the Description column
+                    const descriptionColIdx = columns.findIndex(
+                      (col) =>
+                        (col as any).accessorKey === "description" ||
+                        col.id === "description"
+                    );
+                    // Find the indexes of the Checkbox, Found, and Severity columns
+                    const checkboxColIdx = columns.findIndex(
+                      (col) => col.id === "select"
+                    );
+                    // Find the indexes of the Found and Severity columns
+                    const foundColIdx = columns.findIndex(
+                      (col) =>
+                        (col as any).accessorKey === "date" || col.id === "date"
+                    );
+                    const severityColIdx = columns.findIndex(
+                      (col) =>
+                        (col as any).accessorKey === "severity" ||
+                        col.id === "severity"
+                    );
+                    // If not found, fallback to 0
+                    const startIdx =
+                      descriptionColIdx >= 0 ? descriptionColIdx : 0;
+                    const colSpan = columns.length - startIdx;
+                    return (
+                      <tr>
+                        {/* Columns before Description, fill bg for Found and Severity */}
+                        {Array.from({ length: startIdx }).map((_, i) => {
+                          const isCheckbox = i === checkboxColIdx;
+                          const isFound = i === foundColIdx;
+                          const isSeverity = i === severityColIdx;
+                          return (
+                            <td
+                              key={i}
+                              className={
+                                isCheckbox || isFound || isSeverity
+                                  ? "bg-[#FAFAFA]"
+                                  : undefined
+                              }
+                            />
+                          );
+                        })}
+                        {/* Description content */}
+                        <td
+                          colSpan={colSpan}
+                          className="bg-[#FAFAFA] px-4 py-4"
+                        >
+                          <div
+                            className="prose max-w-none text-sm"
+                            dangerouslySetInnerHTML={{
+                              __html: row.original["Long Description"] || "",
+                            }}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })()}
               </React.Fragment>
             ))}
           </tbody>
@@ -610,14 +747,16 @@ export default function Dashboard() {
         const days = filters.timeRange === "Last 7 days" ? 7 : 30;
         const cutoffDate = moment().subtract(days, "days");
         const dateFound = alert["Date Found"]?.toDate?.();
-        timeRangeMatch = dateFound ? moment(dateFound).isAfter(cutoffDate) : false;
+        timeRangeMatch = dateFound
+          ? moment(dateFound).isAfter(cutoffDate)
+          : false;
       }
 
       // Search
       const searchMatch =
         !debouncedSearch ||
-        (alert["Alert"]?.toLowerCase().includes(lower) ||
-          alert["Long Description"]?.toLowerCase().includes(lower));
+        alert["Alert"]?.toLowerCase().includes(lower) ||
+        alert["Long Description"]?.toLowerCase().includes(lower);
 
       return severityMatch && labelMatch && timeRangeMatch && searchMatch;
     });
@@ -627,14 +766,18 @@ export default function Dashboard() {
   const selectedAlerts = useMemo(() => {
     // Debug: Log the first few alerts to see their structure
     if (filteredAlerts.length > 0) {
-      console.log('First alert structure:', filteredAlerts[0]);
+      console.log("First alert structure:", filteredAlerts[0]);
       // console.log('All alert IDs:', filteredAlerts.map(alert => alert.id));
     }
-    
+
     const alerts = selectedAlertIds
-      .map(id => filteredAlerts.find(alert => alert.id === id))
+      .map((id) => filteredAlerts.find((alert) => alert.id === id))
       .filter(Boolean);
-    console.log('Selected alerts derived:', { selectedAlertIds, filteredAlertsLength: filteredAlerts.length, selectedAlertsLength: alerts.length });
+    console.log("Selected alerts derived:", {
+      selectedAlertIds,
+      filteredAlertsLength: filteredAlerts.length,
+      selectedAlertsLength: alerts.length,
+    });
     return alerts;
   }, [selectedAlertIds, filteredAlerts]);
 
@@ -669,14 +812,18 @@ export default function Dashboard() {
     if (selectedAlerts.length === 0) return;
     const csvRows = [
       ["Alert", "Date Found", "Is Archived", "Severity"],
-      ...selectedAlerts.map(alert => [
+      ...selectedAlerts.map((alert) => [
         alert?.["Alert"],
         formatDate(alert?.["Date Found"]),
         alert?.["Is Archived"] ? "Yes" : "No",
-        alert?.["Severity"]
-      ])
+        alert?.["Severity"],
+      ]),
     ];
-    const csvContent = csvRows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const csvContent = csvRows
+      .map((row) =>
+        row.map((field) => `"${String(field).replace(/"/g, '""')}"`).join(",")
+      )
+      .join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     saveAs(blob, "alerts.csv");
   };
@@ -689,249 +836,359 @@ export default function Dashboard() {
       <Header />
       <main className="max-w-[1440px] mx-auto px-6 py-6">
         {/* Top Section */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-          <div className="flex items-center gap-3">
-            <span className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 ${
-              !adsLabel 
-                ? "bg-[#E9F6EA] text-[#7A7D9C]"
-                : adsLabel["Is Showing Ads"] 
-                ? "bg-[#E9F6EA] text-[#34A853]" 
-                : "bg-[#ffebee] text-[#ee1b23]"
-            }`}>
-              {!adsLabel ? (
-                <svg width="18" height="18" fill="none" viewBox="0 0 18 18">
-                  <g>
-                    <rect width="18" height="18" rx="9" fill="#7A7D9C" />
-                    <path
-                      d="M9 3v3l2 2"
-                      stroke="#fff"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </g>
-                </svg>
-              ) : adsLabel["Is Showing Ads"] ? (
-                <svg width="18" height="18" fill="none" viewBox="0 0 18 18">
-                  <g>
-                    <rect width="18" height="18" rx="9" fill="#34A853" />
-                    <path
-                      d="M13.5 6.75l-5.25 5.25-2.25-2.25"
-                      stroke="#fff"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </g>
-                </svg>
-              ) : (
-                <svg width="18" height="18" fill="none" viewBox="0 0 18 18">
-                  <g>
-                    <rect width="18" height="18" rx="9" fill="#ee1b23" />
-                    <path
-                      d="M12 6l-6 6M6 6l6 6"
-                      stroke="#fff"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </g>
-                </svg>
-              )}
-              {!adsLabel ? "Checking" : adsLabel["Is Showing Ads"] ? "Showing Ad" : "Not Showing Ad"}
-            </span>
-            <span className="text-xl md:text-2xl font-bold text-gray-900">
-              {selectedAdsAccount?.["Account Name Editable"] || "-"}
-              {" - "}
-              {selectedAdsAccount?.["Id"] ? formatAccountNumber(selectedAdsAccount["Id"]) : ""}
-            </span>
+        <div className="flex flex-col md:flex-row gap-4 mb-6 w-full">
+          <div className="flex flex-col gap-2 w-full">
+            <div className="flex items-center gap-3">
+              <span
+                className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 ${
+                  !adsLabel
+                    ? "bg-[#E9F6EA] text-[#7A7D9C]"
+                    : adsLabel["Is Showing Ads"]
+                    ? "bg-[#E9F6EA] text-[#34A853]"
+                    : "bg-[#ffebee] text-[#ee1b23]"
+                }`}
+              >
+                {!adsLabel ? (
+                  <svg width="18" height="18" fill="none" viewBox="0 0 18 18">
+                    <g>
+                      <rect width="18" height="18" rx="9" fill="#7A7D9C" />
+                      <path
+                        d="M9 3v3l2 2"
+                        stroke="#fff"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </g>
+                  </svg>
+                ) : adsLabel["Is Showing Ads"] ? (
+                  <svg width="18" height="18" fill="none" viewBox="0 0 18 18">
+                    <g>
+                      <rect width="18" height="18" rx="9" fill="#34A853" />
+                      <path
+                        d="M13.5 6.75l-5.25 5.25-2.25-2.25"
+                        stroke="#fff"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </g>
+                  </svg>
+                ) : (
+                  <svg width="18" height="18" fill="none" viewBox="0 0 18 18">
+                    <g>
+                      <rect width="18" height="18" rx="9" fill="#ee1b23" />
+                      <path
+                        d="M12 6l-6 6M6 6l6 6"
+                        stroke="#fff"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </g>
+                  </svg>
+                )}
+                {!adsLabel
+                  ? "Checking"
+                  : adsLabel["Is Showing Ads"]
+                  ? "Showing Ad"
+                  : "Not Showing Ad"}
+              </span>
+              <span className="text-xl md:text-2xl font-bold text-gray-900">
+                {selectedAdsAccount?.["Account Name Editable"] || "-"}
+                {" - "}
+                {selectedAdsAccount?.["Id"]
+                  ? formatAccountNumber(selectedAdsAccount["Id"])
+                  : ""}
+              </span>
+              {/* Analyzing badge (if present in original lines 749-778) */}
+              {/* Place any analyzing/loading badge here if it was in the original code */}
+            </div>
+            {/* Place any additional code from 749-778 here if needed */}
           </div>
-          <div className="flex gap-4">
-            <Card className="w-32 bg-white border-l-4 border-[#E53935]">
-              <CardContent className="py-3 px-2 flex flex-col items-center">
-                <span className="text-2xl font-bold text-[#E53935]">
+        </div>
+
+        <div className="flex w-full flex-row justify-between items-stretch gap-8 mb-6">
+          {/* Row 2: Cards in a row (Critical, Medium, Low, Spend MTD/Budget) */}
+          <div className="flex gap-4 flex-grow max-w-[830px]">
+            <Card className="w-32 bg-white border-l-4 border-[#E53935] flex-grow">
+              <CardContent className="h-full flex flex-col items-center justify-center p-4">
+                <span className="text-4xl font-bold text-[#E53935]">
                   {criticalCount}
                 </span>
-                <span className="text-xs font-semibold text-gray-700">
+                <span className="text-lg font-semibold text-gray-700 mt-2">
                   Critical
                 </span>
               </CardContent>
             </Card>
-            <Card className="w-32 bg-white border-l-4 border-[#FBC02D]">
-              <CardContent className="py-3 px-2 flex flex-col items-center">
-                <span className="text-2xl font-bold text-[#FBC02D]">
+            <Card className="w-32 bg-white border-l-4 border-[#FBC02D] flex-grow">
+              <CardContent className="h-full flex flex-col items-center justify-center p-4">
+                <span className="text-4xl font-bold text-[#FBC02D]">
                   {mediumCount}
                 </span>
-                <span className="text-xs font-semibold text-gray-700">
+                <span className="text-lg font-semibold text-gray-700 mt-2">
                   Medium
                 </span>
               </CardContent>
             </Card>
-            <Card className="w-32 bg-white border-l-4 border-[#FFEB3B]">
-              <CardContent className="py-3 px-2 flex flex-col items-center">
-                <span className="text-2xl font-bold text-[#FFEB3B]">
+            <Card className="w-32 bg-white border-l-4 border-[#FFEB3B] flex-grow">
+              <CardContent className="h-full flex flex-col items-center justify-center p-4">
+                <span className="text-4xl font-bold text-[#FFEB3B]">
                   {lowCount}
                 </span>
-                <span className="text-xs font-semibold text-gray-700">Low</span>
+                <span className="text-lg font-semibold text-gray-700 mt-2">
+                  Low
+                </span>
               </CardContent>
             </Card>
           </div>
-          {/* Spend MTD / Monthly Budget Card - pixel-perfect UI */}
-          <Card className="bg-[#F5F8FF] border border-[#E3E8F0] rounded-xl shadow-none p-0 w-[370px] h-[160px] gap-2 flex flex-col justify-between">
-            <div className="flex justify-between items-start px-4 pt-4">
-              <div className="flex flex-col gap-1">
-                <span className="text-xs text-[#7A7D9C] font-medium flex items-center gap-1">
-                  Spend MTD
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        className="ml-1 p-0.5 rounded hover:bg-[#E3E8F0] transition-colors"
-                        aria-label="Spend MTD information"
-                        tabIndex={0}
+          <div className="flex flex-grow-0 flex-shrink-0 justify-end">
+            {/* Spend MTD / Monthly Budget Card - now in the same row */}
+            <Card className="bg-[#F5F8FF] border border-[#E3E8F0] rounded-xl shadow-none p-0 w-[370px] h-[160px] gap-2 flex flex-col justify-between">
+              <div className="flex justify-between items-start px-4 pt-4">
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs text-[#7A7D9C] font-medium flex items-center gap-1">
+                    Spend MTD
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          className="ml-1 p-0.5 rounded hover:bg-[#E3E8F0] transition-colors"
+                          aria-label="Spend MTD information"
+                          tabIndex={0}
+                        >
+                          <AlertTriangle className="w-3 h-3 text-[#7A7D9C]" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="top"
+                        align="center"
+                        className="max-w-xs text-xs"
                       >
-                        <AlertTriangle className="w-3 h-3 text-[#7A7D9C]" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" align="center" className="max-w-xs text-xs">
-                      The actual amount can differ between users' dashboards based on API call times and could be different from what you see on the ads account, with up to a few hours' difference.
-                    </TooltipContent>
-                  </Tooltip>
-                </span>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-[18px] leading-none font-bold text-[#232360]">
-                    {spendMtdLoading
-                      ? "--"
-                      : dashboardDaily?.["Spend MTD"] != null
-                      ? `${selectedAdsAccount?.["Currency Symbol"] || "$"}${Number(dashboardDaily["Spend MTD"]).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                      : "--"}
+                        The actual amount can differ between users' dashboards
+                        based on API call times and could be different from what
+                        you see on the ads account, with up to a few hours'
+                        difference.
+                      </TooltipContent>
+                    </Tooltip>
                   </span>
-                  {/* Dot color logic */}
-                  <span className="ml-1 mt-1">
-                    {(() => {
-                      const key = dashboardDaily?.["Spend MTD Indicator Alert"]?.["Key"];
-                      let color = "#1BC47D"; // green default
-                      if (["AccountIsOverPacing33PercentToDate", "AccountIsUnderPacing33PercentToDate"].includes(key)) color = "#EDE41B";
-                      if (["AccountIsOverPacing50PercentToDate", "AccountIsUnderPacing50PercentToDate"].includes(key)) color = "#FF7F26";
-                      if (["AccountIsOverPacing75PercentToDate", "AccountIsUnderPacing75PercentToDate"].includes(key)) color = "#EE1B23";
-                      return <span className="inline-block w-3 h-3 rounded-full" style={{ background: color }} />;
-                    })()}
-                  </span>
-                </div>
-              </div>
-              <div className="flex flex-col items-end gap-1">
-                <span className="text-xs text-[#7A7D9C] font-medium flex items-center gap-1">
-                  Monthly Budget
-                </span>
-                <div className="flex items-center gap-1 mt-1">
-                  {isEditingBudget ? (
-                    <>
-                      <Button
-                        className="bg-[#156CFF] hover:bg-[#156CFF]/90 text-white font-semibold px-2 py-1 rounded-md text-xs h-7 min-w-[60px]"
-                        onClick={handleConfirmBudget}
-                        disabled={isUpdatingBudget || !budgetInput || Number(budgetInput) < 0}
-                      >
-                        Confirm
-                      </Button>
-                      <input
-                        ref={budgetInputRef}
-                        type="number"
-                        min={0}
-                        className="ml-2 border border-[#E3E8F0] rounded-md px-2 py-1 text-base font-bold text-right w-16 outline-none focus:border-blue-400 h-7"
-                        value={budgetInput}
-                        onChange={e => setBudgetInput(e.target.value.replace(/[^0-9.]/g, ""))}
-                        disabled={isUpdatingBudget}
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <button type="button" className="p-0.5 rounded hover:bg-[#E3E8F0] transition-colors" aria-label="Edit budget" onClick={handleEditBudget}>
-                        <Pencil1Icon className="w-4 h-4 text-[#7A7D9C]" />
-                      </button>
-                      <span className="text-[18px] leading-none font-bold text-[#232360]">
-                        {selectedAdsAccount?.["Currency Symbol"] || "$"}
-                        {selectedAdsAccount?.["Monthly Budget"] != null ? Number(selectedAdsAccount["Monthly Budget"]).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : "--"}
-                      </span>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-            {/* Progress bar section */}
-            <div className="relative px-4 mt-2" style={{ height: 48 }}>
-              {(() => {
-                const spend = Number(dashboardDaily?.["Spend MTD"] ?? 0);
-                const budget = Number(selectedAdsAccount?.["Monthly Budget"] ?? 1);
-                const percent = budget ? Math.min((spend / budget) * 100, 100) : 0;
-                const now = moment();
-                const day = now.date();
-                const daysInMonth = now.daysInMonth();
-                const dayPercent = (day / daysInMonth) * 100;
-                return (
-                  <div className="relative w-full h-6 flex items-center">
-                    {/* Progress bar bg */}
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-5 rounded-full bg-white border border-[#E3E8F0]" />
-                    {/* Progress bar fill */}
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 h-5 rounded-full bg-[#156CFF]" style={{ width: `${percent}%`, minWidth: percent > 0 ? 8 : 0 }} />
-                    {/* Percentage label */}
-                    {percent < 15 ? (
-                      <span
-                        className="absolute top-0 left-0 h-6 flex items-center text-black text-xs font-semibold select-none"
-                        style={{ left: `calc(${percent}% + 8px)` }}
-                      >
-                        {percent.toFixed(1)}%
-                      </span>
-                    ) : (
-                      <span
-                        className="absolute top-0 h-6 flex items-center text-white text-xs font-semibold select-none"
-                        style={{ left: `calc(${percent / 2}% )`, transform: 'translateX(-50%)' }}
-                      >
-                        {percent.toFixed(1)}%
-                      </span>
-                    )}
-                    {/* Vertical line for current day */}
-                    <div className="absolute top-1 h-4" style={{ left: `calc(${dayPercent}% - 1px)` }}>
-                      <div className="w-0.5 h-4 bg-[#7A7D9C] rounded" />
-                    </div>
-                    {/* Day label under the vertical line */}
-                    <div
-                      className="absolute left-0"
-                      style={{ top: 20, width: '100%' }}
-                    >
-                      <div
-                        style={{
-                          position: 'absolute',
-                          left:
-                            dayPercent > 93
-                              ? 'calc(100% - 48px)' // clamp to right edge minus label width
-                              : `calc(${dayPercent}% - 12px)`,
-                        }}
-                      >
-                        <span className="text-[13px] text-[#7A7D9C] font-semibold select-none">{day}</span>
-                        <span className="text-[11px] text-[#7A7D9C] font-semibold select-none ml-1">days</span>
-                      </div>
-                    </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[18px] leading-none font-bold text-[#232360]">
+                      {spendMtdLoading
+                        ? "--"
+                        : dashboardDaily?.["Spend MTD"] != null
+                        ? `${
+                            selectedAdsAccount?.["Currency Symbol"] || "$"
+                          }${Number(dashboardDaily["Spend MTD"]).toLocaleString(
+                            "en-US",
+                            {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }
+                          )}`
+                        : "--"}
+                    </span>
+                    {/* Dot color logic */}
+                    <span className="ml-1 mt-1">
+                      {(() => {
+                        const key =
+                          dashboardDaily?.["Spend MTD Indicator Alert"]?.[
+                            "Key"
+                          ];
+                        let color = "#1BC47D"; // green default
+                        if (
+                          [
+                            "AccountIsOverPacing33PercentToDate",
+                            "AccountIsUnderPacing33PercentToDate",
+                          ].includes(key)
+                        )
+                          color = "#EDE41B";
+                        if (
+                          [
+                            "AccountIsOverPacing50PercentToDate",
+                            "AccountIsUnderPacing50PercentToDate",
+                          ].includes(key)
+                        )
+                          color = "#FF7F26";
+                        if (
+                          [
+                            "AccountIsOverPacing75PercentToDate",
+                            "AccountIsUnderPacing75PercentToDate",
+                          ].includes(key)
+                        )
+                          color = "#EE1B23";
+                        return (
+                          <span
+                            className="inline-block w-3 h-3 rounded-full"
+                            style={{ background: color }}
+                          />
+                        );
+                      })()}
+                    </span>
                   </div>
-                );
-              })()}
-            </div>
-            {/* Spend Projection */}
-            <div className="flex justify-end items-end px-4 pb-3 pt-1">
-              <span className="text-xs text-[#7A7D9C] font-medium">
-                Spend Projection: {selectedAdsAccount?.["Currency Symbol"] || "$"}
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <span className="text-xs text-[#7A7D9C] font-medium flex items-center gap-1">
+                    Monthly Budget
+                  </span>
+                  <div className="flex items-center gap-1 mt-1">
+                    {isEditingBudget ? (
+                      <>
+                        <Button
+                          className="bg-[#156CFF] hover:bg-[#156CFF]/90 text-white font-semibold px-2 py-1 rounded-md text-xs h-7 min-w-[60px]"
+                          onClick={handleConfirmBudget}
+                          disabled={
+                            isUpdatingBudget ||
+                            !budgetInput ||
+                            Number(budgetInput) < 0
+                          }
+                        >
+                          Confirm
+                        </Button>
+                        <input
+                          ref={budgetInputRef}
+                          type="number"
+                          min={0}
+                          className="ml-2 border border-[#E3E8F0] rounded-md px-2 py-1 text-base font-bold text-right w-16 outline-none focus:border-blue-400 h-7"
+                          value={budgetInput}
+                          onChange={(e) =>
+                            setBudgetInput(
+                              e.target.value.replace(/[^0-9.]/g, "")
+                            )
+                          }
+                          disabled={isUpdatingBudget}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          className="p-0.5 rounded hover:bg-[#E3E8F0] transition-colors"
+                          aria-label="Edit budget"
+                          onClick={handleEditBudget}
+                        >
+                          <Pencil1Icon className="w-4 h-4 text-[#7A7D9C]" />
+                        </button>
+                        <span className="text-[18px] leading-none font-bold text-[#232360]">
+                          {selectedAdsAccount?.["Currency Symbol"] || "$"}
+                          {selectedAdsAccount?.["Monthly Budget"] != null
+                            ? Number(
+                                selectedAdsAccount["Monthly Budget"]
+                              ).toLocaleString("en-US", {
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              })
+                            : "--"}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {/* Progress bar section */}
+              <div className="relative px-4 mt-2" style={{ height: 48 }}>
                 {(() => {
                   const spend = Number(dashboardDaily?.["Spend MTD"] ?? 0);
+                  const budget = Number(
+                    selectedAdsAccount?.["Monthly Budget"] ?? 1
+                  );
+                  const percent = budget
+                    ? Math.min((spend / budget) * 100, 100)
+                    : 0;
                   const now = moment();
                   const day = now.date();
-                  const projection = day ? (spend / day) * 30.4 : 0;
-                  return projection.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                  const daysInMonth = now.daysInMonth();
+                  const dayPercent = (day / daysInMonth) * 100;
+                  return (
+                    <div className="relative w-full h-6 flex items-center">
+                      {/* Progress bar bg */}
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-5 rounded-full bg-white border border-[#E3E8F0]" />
+                      {/* Progress bar fill */}
+                      <div
+                        className="absolute left-0 top-1/2 -translate-y-1/2 h-5 rounded-full bg-[#156CFF]"
+                        style={{
+                          width: `${percent}%`,
+                          minWidth: percent > 0 ? 8 : 0,
+                        }}
+                      />
+                      {/* Percentage label */}
+                      {percent < 15 ? (
+                        <span
+                          className="absolute top-0 left-0 h-6 flex items-center text-black text-xs font-semibold select-none"
+                          style={{ left: `calc(${percent}% + 8px)` }}
+                        >
+                          {percent.toFixed(1)}%
+                        </span>
+                      ) : (
+                        <span
+                          className="absolute top-0 h-6 flex items-center text-white text-xs font-semibold select-none"
+                          style={{
+                            left: `calc(${percent / 2}% )`,
+                            transform: "translateX(-50%)",
+                          }}
+                        >
+                          {percent.toFixed(1)}%
+                        </span>
+                      )}
+                      {/* Vertical line for current day */}
+                      <div
+                        className="absolute top-1 h-4"
+                        style={{ left: `calc(${dayPercent}% - 1px)` }}
+                      >
+                        <div className="w-0.5 h-4 bg-[#7A7D9C] rounded" />
+                      </div>
+                      {/* Day label under the vertical line */}
+                      <div
+                        className="absolute left-0"
+                        style={{ top: 20, width: "100%" }}
+                      >
+                        <div
+                          style={{
+                            position: "absolute",
+                            left:
+                              dayPercent > 93
+                                ? "calc(100% - 48px)" // clamp to right edge minus label width
+                                : `calc(${dayPercent}% - 12px)`,
+                          }}
+                        >
+                          <span className="text-[13px] text-[#7A7D9C] font-semibold select-none">
+                            {day}
+                          </span>
+                          <span className="text-[11px] text-[#7A7D9C] font-semibold select-none ml-1">
+                            days
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
                 })()}
-              </span>
-            </div>
-          </Card>
+              </div>
+              {/* Spend Projection */}
+              <div className="flex justify-end items-end px-4 pb-3 pt-1">
+                <span className="text-xs text-[#7A7D9C] font-medium">
+                  Spend Projection:{" "}
+                  {selectedAdsAccount?.["Currency Symbol"] || "$"}
+                  {(() => {
+                    const spend = Number(dashboardDaily?.["Spend MTD"] ?? 0);
+                    const now = moment();
+                    const day = now.date();
+                    const projection = day ? (spend / day) * 30.4 : 0;
+                    return projection.toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    });
+                  })()}
+                </span>
+              </div>
+            </Card>
+          </div>
         </div>
+
         {/* Metrics Row */}
-        <KpiMetricsRow dashboardDaily={dashboardDaily} currencySymbol={selectedAdsAccount?.["Currency Symbol"] || "$"} />
+        <KpiMetricsRow
+          dashboardDaily={dashboardDaily}
+          currencySymbol={selectedAdsAccount?.["Currency Symbol"] || "$"}
+        />
         {/* Alerts Table */}
         <div className="bg-white rounded-2xl shadow-md p-4">
           <div className="flex items-center justify-between mb-2">
@@ -948,15 +1205,23 @@ export default function Dashboard() {
                     <AlertTriangle className="w-3 h-3 text-gray-400" />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="top" align="center" className="max-w-xs text-xs">
-                  There might be data discrepancies between the results shown in the adAlert dashboard and what's reported by the ad vendor due to retroactive data updates made by the vendor.
+                <TooltipContent
+                  side="top"
+                  align="center"
+                  className="max-w-xs text-xs"
+                >
+                  There might be data discrepancies between the results shown in
+                  the adAlert dashboard and what's reported by the ad vendor due
+                  to retroactive data updates made by the vendor.
                 </TooltipContent>
               </Tooltip>
               <span className="text-xs text-gray-400">Settings</span>
               {/* Selection bar inline with heading */}
               {selectedAlerts.length > 0 && (
                 <div className="flex items-center gap-2 ml-4">
-                  <span className="font-semibold text-sm text-[#232360]">{selectedAlerts.length} Selected</span>
+                  <span className="font-semibold text-sm text-[#232360]">
+                    {selectedAlerts.length} Selected
+                  </span>
                   <span className="h-5 border-l border-gray-200 mx-1" />
                   <Button
                     className="bg-[#156CFF] hover:bg-[#156CFF]/90 text-white font-semibold h-7 px-3 py-1 rounded-md text-xs"
@@ -966,7 +1231,16 @@ export default function Dashboard() {
                       try {
                         const shouldArchive = filters.label === "Unarchive";
                         if (selectedAdsAccount) {
-                          await archiveAlerts(selectedAlerts.filter((a): a is Alert => !!a && typeof a.id === 'string').map(a => a.id), shouldArchive, selectedAdsAccount.id);
+                          await archiveAlerts(
+                            selectedAlerts
+                              .filter(
+                                (a): a is Alert =>
+                                  !!a && typeof a.id === "string"
+                              )
+                              .map((a) => a.id),
+                            shouldArchive,
+                            selectedAdsAccount.id
+                          );
                         }
                         setSelectedAlertIds([]);
                       } catch (err) {
@@ -1039,7 +1313,7 @@ export default function Dashboard() {
                   try {
                     await generateAlertsPdf(selectedAdsAccount);
                   } catch (err) {
-                    console.error('Failed to generate PDF', err);
+                    console.error("Failed to generate PDF", err);
                   } finally {
                     setIsGeneratingPdf(false);
                   }
@@ -1054,7 +1328,26 @@ export default function Dashboard() {
                 </span>
                 {isGeneratingPdf && (
                   <span className="absolute inset-0 flex items-center justify-center bg-white/60">
-                    <svg className="animate-spin h-4 w-4 text-[#015AFD]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>
+                    <svg
+                      className="animate-spin h-4 w-4 text-[#015AFD]"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v8z"
+                      />
+                    </svg>
                   </span>
                 )}
               </Button>
@@ -1097,4 +1390,3 @@ export default function Dashboard() {
     </div>
   );
 }
- 
