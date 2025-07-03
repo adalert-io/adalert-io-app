@@ -241,7 +241,7 @@ export async function createUserDocuments(
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   userDoc: null,
-  loading: false,
+  loading: true,
   error: null,
   isFullAccess: false,
   router: null,
