@@ -295,8 +295,17 @@ export function AddAdsAccount() {
         await fetchUserAdsAccounts(userDoc);
       }
 
+      // step 7: check number of ads accounts and navigate accordingly
+      const updatedAdsAccounts = useUserAdsAccountsStore.getState().userAdsAccounts;
+      const connectedAccountsCount = updatedAdsAccounts.filter(acc => acc["Is Connected"]).length;
+
       toast.success("Ads accounts updated successfully");
-      router.push("/dashboard");
+      
+      if (connectedAccountsCount > 1) {
+        router.push("/summary");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (error) {
       console.error("Error updating ads accounts:", error);
       toast.error("Failed to update ads accounts");
