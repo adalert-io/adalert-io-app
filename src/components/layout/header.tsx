@@ -144,7 +144,7 @@ export function Header() {
               <Button variant="ghost" size="icon" className="text-blue-600" aria-label="Add" onClick={() => router.push('/add-ads-account')}>
                 <Plus className="w-5 h-5" />
               </Button>
-              <Button variant="ghost" size="icon" className="text-blue-600" aria-label="Stats">
+              <Button variant="ghost" size="icon" className="text-blue-600" aria-label="Stats" onClick={() => router.push('/summary')}>
                 <BarChart2 className="w-5 h-5" />
               </Button>
               <Button variant="ghost" size="icon" className="text-blue-600" aria-label="Help">
