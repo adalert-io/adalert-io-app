@@ -275,6 +275,14 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
           "Updated dashboardDaily with spend MTD:",
           updatedDashboardDaily
         );
+        
+        // Update the Firestore document
+        const dashboardDailyRef = doc(db, COLLECTIONS.DASHBOARD_DAILIES, currentDashboardDaily.id);
+        await updateDoc(dashboardDailyRef, {
+          "Spend MTD": result.spendMtd,
+          "Modified Date": Timestamp.now(),
+        });
+        
         set({ dashboardDaily: updatedDashboardDaily, spendMtdLoading: false });
       } else {
         set({ spendMtdLoading: false });
@@ -342,6 +350,14 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
           "Spend MTD Indicator Alert": indicatorAlert || null,
           "Last Fetch Spend MTD": Timestamp.now(),
         };
+        // Update the Firestore document
+        const dashboardDailyRef = doc(db, COLLECTIONS.DASHBOARD_DAILIES, currentDashboardDaily.id);
+        await updateDoc(dashboardDailyRef, {
+          "Spend MTD Indicator Alert": indicatorAlert || null,
+          "Last Fetch Spend MTD": Timestamp.now(),
+          "Modified Date": Timestamp.now(),
+        });
+        
         set({
           dashboardDaily: updatedDashboardDaily,
           spendMtdIndicatorLoading: false,
@@ -399,6 +415,14 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
           ...result,
           "Is KPI Fetched": true,
         };
+        // Update the Firestore document
+        const dashboardDailyRef = doc(db, COLLECTIONS.DASHBOARD_DAILIES, currentDashboardDaily.id);
+        await updateDoc(dashboardDailyRef, {
+          ...result,
+          "Is KPI Fetched": true,
+          "Modified Date": Timestamp.now(),
+        });
+        
         set({
           dashboardDaily: updatedDashboardDaily,
           kpiDataLoading: false,
@@ -430,6 +454,11 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     try {
       const path = getFirebaseFnPath("dashboard-customer-currency-symbol-fb");
       const userTokenRef = adsAccount["User Token"] as DocumentReference;
+
+      console.log('adsAccount: ', adsAccount);
+      console.log('userTokenRef.id: ', userTokenRef.id);
+      console.log('adsAccount.Id: ', adsAccount.Id);
+      console.log('adsAccount["Manager Account Id"]: ', adsAccount["Manager Account Id"]);
 
       const response = await fetch(path, {
         method: "POST",
