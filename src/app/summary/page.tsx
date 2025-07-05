@@ -162,7 +162,7 @@ export default function Summary() {
                     {/* Name */}
                     <td className="px-4 py-3 font-semibold text-gray-900">
                       {acc.accountName}
-                      <span className="ml-2 text-xs text-[#7A7D9C]">{formatAccountNumber(acc.id)}</span>
+                      <span className="ml-2 text-xs text-[#7A7D9C]">{formatAccountNumber(acc['Id'])}</span>
                     </td>
                     {/* Showing Ads */}
                     <td className="px-4 py-3">
@@ -238,17 +238,7 @@ export default function Summary() {
                           </div>
                         </div>
                         {/* Dot color */}
-                        <span className="inline-block w-3 h-3 rounded-full" style={{ background: getDotColor(acc.spendMtdIndicatorKey) }} />
-                      </div>
-                      {/* Spend/Projection */}
-                      <div className="flex justify-between items-end mt-1">
-                        <span className="text-xs text-[#7A7D9C] font-medium">
-                          {acc.currencySymbol}
-                          {acc.spendMtd != null ? Number(acc.spendMtd).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "--"}
-                        </span>
-                        <span className="text-xs text-[#7A7D9C] font-medium">
-                          Budget: {acc.currencySymbol}{acc.monthlyBudget != null ? Number(acc.monthlyBudget).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : "--"}
-                        </span>
+                        <span className="inline-block w-2 h-2 rounded-full" style={{ background: getDotColor(acc.spendMtdIndicatorKey) }} />
                       </div>
                     </td>
                   </tr>

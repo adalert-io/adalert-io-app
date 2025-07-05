@@ -9,6 +9,7 @@ import type { DashboardDaily } from "@/lib/store/dashboard-store";
 
 export interface SummaryAdsAccount {
   id: string;
+  Id: string;
   isConnected: boolean;
   accountName: string;
   showingAds: boolean | null;
@@ -104,7 +105,29 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
             where("Date", "<=", endOfHour)
           );
           const showingAdsSnap = await getDocs(showingAdsQuery);
-          if (!showingAdsSnap.empty) {
+          
+          if (showingAdsSnap.size === 0) {
+            // No record exists for the current hour, trigger label check
+            console.log("No 'Dashboard Showing Ads' record for the current hour. Triggering label check.");
+            const path = getFirebaseFnPath("dashboard-display-showing-ads-label-fb");
+            
+            await fetch(path, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                adsAccountId: account.id,
+              }),
+            });
+            
+            // After creating the record, fetch it
+            const updatedShowingAdsSnap = await getDocs(showingAdsQuery);
+            if (!updatedShowingAdsSnap.empty) {
+              showingAds = updatedShowingAdsSnap.docs[0].data()["Is Showing Ads"] ?? null;
+            }
+          } else {
+            // Record already exists, use it
             showingAds = showingAdsSnap.docs[0].data()["Is Showing Ads"] ?? null;
           }
 
@@ -134,8 +157,9 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
 
           return {
             id: account.id,
+            Id: account["Id"],
             isConnected: !!account["Is Connected"],
-            accountName: account["Account Name Original"] || account["name"] || "-",
+            accountName: account["Account Name Editable"] || account["Account Name Original"] || "-",
             showingAds,
             impact: { critical, medium, low },
             spendMtd,
