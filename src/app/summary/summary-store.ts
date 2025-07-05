@@ -33,6 +33,7 @@ export interface SummaryAdsAccount {
 
 interface SummaryStoreState {
   accounts: SummaryAdsAccount[];
+  allAdsAccounts: any[];
   loading: boolean;
   error: string | null;
   fetchSummaryAccounts: (userDoc: any) => Promise<void>;
@@ -40,6 +41,7 @@ interface SummaryStoreState {
 
 export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
   accounts: [],
+  allAdsAccounts: [],
   loading: false,
   error: null,
 
@@ -171,7 +173,7 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
           } as SummaryAdsAccount;
         })
       );
-      set({ accounts: fetchAll, loading: false });
+      set({ accounts: fetchAll, allAdsAccounts: adsAccounts, loading: false });
     } catch (err: any) {
       set({ error: err.message, loading: false });
     }
