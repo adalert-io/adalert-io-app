@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
 import { Header } from "@/components/layout/header";
 import { useSummaryStore } from "./summary-store";
+import { useUserAdsAccountsStore } from "@/lib/store/user-ads-accounts-store";
 import { formatAccountNumber } from "@/lib/utils";
 import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,8 @@ import { ALERT_SEVERITY_COLORS } from "@/lib/constants";
 export default function Summary() {
   const { user, userDoc, loading } = useAuthStore();
   const router = useRouter();
-  const { accounts, loading: summaryLoading, fetchSummaryAccounts } = useSummaryStore();
+  const { accounts, allAdsAccounts, loading: summaryLoading, fetchSummaryAccounts } = useSummaryStore();
+  const { setSelectedAdsAccount, userAdsAccounts } = useUserAdsAccountsStore();
 
   // Table state
   const [searchValue, setSearchValue] = useState("");
@@ -64,6 +66,19 @@ export default function Summary() {
     if (["AccountIsOverPacing75PercentToDate", "AccountIsUnderPacing75PercentToDate"].includes(key || "")) return "#EE1B23";
     return "#1BC47D";
   }
+
+  // Handle row click
+  const handleRowClick = (acc: any) => {
+    if (acc.isConnected) {
+      // Find the ads account from allAdsAccounts where id matches
+      const matchingAccount = allAdsAccounts.find(account => account.id === acc.id);
+      // console.log('matchingAccount: ', matchingAccount);
+      if (matchingAccount) {
+        setSelectedAdsAccount(matchingAccount);
+        router.push("/dashboard");
+      }
+    }
+  };
 
   // Show loading spinner/message if auth is loading or userDoc is loading
   if (loading || (user && !userDoc)) {
@@ -144,7 +159,11 @@ export default function Summary() {
                 </tr>
               ) : (
                 pagedAccounts.map((acc) => (
-                  <tr key={acc.id} className="border-b hover:bg-gray-50">
+                  <tr 
+                    key={acc.id} 
+                    className={`border-b hover:bg-gray-50 ${acc.isConnected ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                    onClick={() => handleRowClick(acc)}
+                  >
                     {/* Connected */}
                     <td className="px-4 py-3">
                       {acc.isConnected ? (
