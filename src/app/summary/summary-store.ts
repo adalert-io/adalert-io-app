@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { collection, getDocs, query, where, doc, DocumentReference, Timestamp } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, DocumentReference, Timestamp, setDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { COLLECTIONS, ALERT_SEVERITIES } from "@/lib/constants";
 import moment from "moment";
@@ -80,6 +80,20 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
           let dashboardDaily: DashboardDaily | null = null;
           if (!dashboardDailySnap.empty) {
             dashboardDaily = { id: dashboardDailySnap.docs[0].id, ...dashboardDailySnap.docs[0].data() } as DashboardDaily;
+          } else {
+            // Document doesn't exist, create a new one
+            const newDashboardDailyRef = doc(collection(db, COLLECTIONS.DASHBOARD_DAILIES));
+            const now = Timestamp.now();
+
+            const newDashboardDailyData = {
+              id: newDashboardDailyRef.id,
+              "Ads Account": doc(db, COLLECTIONS.ADS_ACCOUNTS, account.id),
+              "Created Date": now,
+              "Modified Date": now,
+            };
+
+            await setDoc(newDashboardDailyRef, newDashboardDailyData);
+            dashboardDaily = newDashboardDailyData as DashboardDaily;
           }
 
           // Fetch spend MTD
@@ -91,8 +105,59 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
             // Optionally, call the spend MTD endpoint if needed
             spendMtd = null;
           }
+
           if (dashboardDaily && dashboardDaily["Spend MTD Indicator Alert"]) {
             spendMtdIndicatorKey = dashboardDaily["Spend MTD Indicator Alert"]?.["Key"] || null;
+          } else if (dashboardDaily && !dashboardDaily["Spend MTD Indicator Alert"]) {
+            // No spend MTD indicator exists, fetch it
+            try {
+              // Ensure alertOptionSets are loaded before proceeding
+              const { alertOptionSets, fetchAlertOptionSets } = useAlertOptionSetsStore.getState();
+              if (alertOptionSets.length === 0) {
+                await fetchAlertOptionSets();
+              }
+              const freshAlertOptionSets = useAlertOptionSetsStore.getState().alertOptionSets;
+
+              const path = getFirebaseFnPath("dashboard-spendMtd-indicator-fb");
+              const userTokenRef = account["User Token"] as DocumentReference;
+
+              const response = await fetch(path, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  adsAccountId: account.Id,
+                  adsAccountManagerAccountId: account["Manager Account Id"],
+                  userTokenId: userTokenRef.id,
+                  monthlyBudget: account["Monthly Budget"],
+                  dailyBudget: account["Daily Budget"],
+                }),
+              });
+
+              console.log('response: ', response);
+
+              if (response.ok) {
+                const result = await response.json();
+                console.log('result: ', result);
+                const indicatorAlert = freshAlertOptionSets.find(
+                  (item) => item["Key"] === result.alert
+                );
+                
+                // Update the dashboardDaily document
+                const dashboardDailyRef = doc(db, COLLECTIONS.DASHBOARD_DAILIES, dashboardDaily.id);
+                await updateDoc(dashboardDailyRef, {
+                  "Spend MTD Indicator Alert": indicatorAlert || null,
+                  "Last Fetch Spend MTD": Timestamp.now(),
+                  "Modified Date": Timestamp.now(),
+                });
+
+                spendMtdIndicatorKey = indicatorAlert?.["Key"] || null;
+              }
+            } catch (error) {
+              console.error("Error fetching spend MTD indicator:", error);
+              spendMtdIndicatorKey = null;
+            }
           }
 
           // Fetch showing ads label
