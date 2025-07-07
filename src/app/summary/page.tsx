@@ -16,7 +16,7 @@ import { XIcon } from "lucide-react";
 export default function Summary() {
   const { user, userDoc, loading } = useAuthStore();
   const router = useRouter();
-  const { accounts, allAdsAccounts, loading: summaryLoading, fetchSummaryAccounts } = useSummaryStore();
+  const { accounts, allAdsAccounts, loading: summaryLoading, isRefreshing, fetchSummaryAccounts } = useSummaryStore();
   const { setSelectedAdsAccount, userAdsAccounts } = useUserAdsAccountsStore();
 
   // Table state
@@ -97,6 +97,21 @@ export default function Summary() {
     );
   }
 
+  // Show loading only if no data exists
+  if (summaryLoading && accounts.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F5F7FB]">
+        <div className="flex flex-col items-center gap-4">
+          <svg className="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+          </svg>
+          <span className="text-lg text-[#7A7D9C] font-semibold">Loading accounts...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#F5F7FB]">
       <Header />
@@ -104,7 +119,19 @@ export default function Summary() {
         {/* Top header row */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
           <div className="flex flex-col items-start w-full md:w-auto">
-            <h1 className="text-3xl font-bold text-gray-900">Ad Accounts</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-gray-900">Ad Accounts</h1>
+              {/* Show refreshing indicator inline */}
+              {isRefreshing && (
+                <div className="flex items-center gap-2 px-2 py-1 bg-blue-50 border border-blue-200 rounded-lg">
+                  <svg className="animate-spin h-3 w-3 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                  <span className="text-xs text-blue-700 font-medium">Updating data...</span>
+                </div>
+              )}
+            </div>
             <p className="text-[#7A7D9C] text-base mt-1">
               We have already prioritized the work for you. Start form the top row and work your way down.
             </p>
@@ -171,7 +198,7 @@ export default function Summary() {
               </tr>
             </thead>
             <tbody>
-              {summaryLoading ? (
+              {summaryLoading && accounts.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center py-8 text-gray-400">Loading accounts...</td>
                 </tr>

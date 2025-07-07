@@ -36,6 +36,7 @@ interface SummaryStoreState {
   allAdsAccounts: any[];
   loading: boolean;
   error: string | null;
+  isRefreshing: boolean;
   fetchSummaryAccounts: (userDoc: any) => Promise<void>;
 }
 
@@ -44,9 +45,20 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
   allAdsAccounts: [],
   loading: false,
   error: null,
+  isRefreshing: false,
 
   fetchSummaryAccounts: async (userDoc) => {
-    set({ loading: true, error: null });
+    // Check if we already have data - if so, this is a background refresh
+    const hasExistingData = get().accounts.length > 0;
+    
+    if (hasExistingData) {
+      // Background refresh - don't show loading, just set refreshing flag
+      set({ isRefreshing: true });
+    } else {
+      // Initial load - show loading
+      set({ loading: true, error: null });
+    }
+
     try {
       // 1. Fetch all selected ads accounts for the company admin
       const adsAccountRef = collection(db, COLLECTIONS.ADS_ACCOUNTS);
@@ -238,9 +250,9 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
           } as SummaryAdsAccount;
         })
       );
-      set({ accounts: fetchAll, allAdsAccounts: adsAccounts, loading: false });
+      set({ accounts: fetchAll, allAdsAccounts: adsAccounts, loading: false, isRefreshing: false });
     } catch (err: any) {
-      set({ error: err.message, loading: false });
+      set({ error: err.message, loading: false, isRefreshing: false });
     }
   },
 })); 
