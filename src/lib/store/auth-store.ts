@@ -270,6 +270,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const hasFullAccess = await checkSubscriptionStatus(userId);
       console.log("hasFullAccess", hasFullAccess);
       set({ isFullAccess: hasFullAccess });
+
+      // After fetching user document and checking subscription, fetch user ads accounts
+      const currentUserDoc = get().userDoc;
+      if (currentUserDoc) {
+        const { useUserAdsAccountsStore } = await import("./user-ads-accounts-store");
+        await useUserAdsAccountsStore.getState().fetchUserAdsAccounts(currentUserDoc);
+      }
     } catch (err: any) {
       console.error("Error checking subscription status:", err);
       set({ isFullAccess: false });

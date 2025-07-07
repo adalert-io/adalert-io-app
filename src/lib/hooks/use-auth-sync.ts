@@ -6,21 +6,31 @@ import { useAuthStore } from "../store/auth-store";
 export function useAuthSync() {
   const setUser = useAuthStore((state) => state.setUser);
   const setLoading = useAuthStore((state) => state.setLoading);
-  const fetchUserDocument = useAuthStore((state) => state.fetchUserDocument);
+  const checkSubscriptionStatus = useAuthStore((state) => state.checkSubscriptionStatus);
+  const handlePostAuthNavigation = useAuthStore((state) => state.handlePostAuthNavigation);
   const user = useAuthStore((state) => state.user);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setUser(firebaseUser);
+      
+      if (firebaseUser) {
+        // Check subscription status and handle navigation
+        // This will also fetch user ads accounts
+        await checkSubscriptionStatus(firebaseUser.uid);
+        await handlePostAuthNavigation();
+      }
+      
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [setUser, setLoading]);
+  }, [setUser, setLoading, checkSubscriptionStatus, handlePostAuthNavigation]);
 
   useEffect(() => {
     if (user) {
-      fetchUserDocument(user.uid);
+      // This is handled in the onAuthStateChanged callback above
+      // No need to duplicate the logic here
     }
-  }, [user, fetchUserDocument]);
+  }, [user]);
 }

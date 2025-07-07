@@ -34,21 +34,13 @@ export default function RedirectPage() {
       if (firebaseUser) {
         setUser(firebaseUser);
         try {
-          const userDoc = await fetchUserDocument(firebaseUser.uid);
-          setUserDoc(userDoc as any);
-          // if (userDoc) {
-          //   setUserDoc(userDoc);
-          //   // Check subscription status after userDoc is set
-          //   const isFullAccess = await checkSubscriptionStatus(
-          //     firebaseUser.uid
-          //   );
-          //   const path = isFullAccess ? "/dashboard" : "/subscription";
-          //   router.push(path);
-          // } else {
-          //   router.push("/onboarding");
-          // }
+          // Use the proper authentication flow that includes checking subscription status
+          // and fetching user ads accounts
+          const { checkSubscriptionStatus, handlePostAuthNavigation } = useAuthStore.getState();
+          await checkSubscriptionStatus(firebaseUser.uid);
+          await handlePostAuthNavigation();
         } catch (error) {
-          console.error("Error fetching user document:", error);
+          console.error("Error in authentication flow:", error);
           router.push("/auth");
         }
       } else {
@@ -58,7 +50,7 @@ export default function RedirectPage() {
     });
 
     return () => unsubscribe();
-  }, [router, setUser, setUserDoc, fetchUserDocument, checkSubscriptionStatus]);
+  }, [router, setUser, setUserDoc]);
 
   useEffect(() => {
     // Parse query params
