@@ -972,7 +972,7 @@ export default function Dashboard() {
           </div>
           <div className="flex flex-grow-0 flex-shrink-0 justify-end w-full md:w-auto mt-4 md:mt-0">
             {/* Spend MTD / Monthly Budget Card - now in the same row */}
-            <Card className="bg-[#F5F8FF] border border-[#E3E8F0] rounded-xl shadow-none p-0 w-full md:w-[370px] h-[160px] gap-2 flex flex-col justify-between">
+            <Card className="bg-[#F5F8FF] border border-[#E3E8F0] rounded-xl shadow-none p-0 w-full md:w-[400px] h-[160px] gap-2 flex flex-col justify-between">
               <div className="flex justify-between items-start px-4 pt-4">
                 <div className="flex flex-col gap-1">
                   <span className="text-xs text-[#7A7D9C] font-medium flex items-center gap-1">
@@ -1063,7 +1063,7 @@ export default function Dashboard() {
                     {isEditingBudget ? (
                       <>
                         <Button
-                          className="bg-[#156CFF] hover:bg-[#156CFF]/90 text-white font-semibold px-2 py-1 rounded-md text-xs h-7 min-w-[60px]"
+                          className="bg-[#156CFF] hover:bg-[#156CFF]/90 text-white font-semibold px-1 py-0.5 rounded-md text-xs h-6 min-w-[50px]"
                           onClick={handleConfirmBudget}
                           disabled={
                             isUpdatingBudget ||
@@ -1077,7 +1077,7 @@ export default function Dashboard() {
                           ref={budgetInputRef}
                           type="number"
                           min={0}
-                          className="ml-2 border border-[#E3E8F0] rounded-md px-2 py-1 text-base font-bold text-right w-16 outline-none focus:border-blue-400 h-7"
+                          className="ml-2 border border-[#E3E8F0] rounded-md px-2 py-1 text-sm font-bold text-right w-28 outline-none focus:border-blue-400 h-7"
                           value={budgetInput}
                           onChange={(e) =>
                             setBudgetInput(
