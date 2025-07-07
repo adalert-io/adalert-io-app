@@ -28,6 +28,7 @@ interface UserAdsAccountsState {
     accountId: string,
     symbol: string
   ) => Promise<void>;
+  updateAdAccount: (accountId: string, updates: Partial<AdsAccount>) => void;
 }
 
 export const useUserAdsAccountsStore = create<UserAdsAccountsState>((set) => ({
@@ -37,7 +38,8 @@ export const useUserAdsAccountsStore = create<UserAdsAccountsState>((set) => ({
   error: null,
 
   setSelectedAdsAccount: (account) => set((state) => {
-    if (state.selectedAdsAccount?.id === account?.id) return state;
+    // Allow updates even if the ID is the same, as the account data might have changed
+    // (e.g., budget values updated)
     return { selectedAdsAccount: account };
   }),
 
@@ -109,5 +111,26 @@ export const useUserAdsAccountsStore = create<UserAdsAccountsState>((set) => ({
     } catch (err: any) {
       set({ error: err.message, loading: false });
     }
+  },
+
+  updateAdAccount: (accountId: string, updates: Partial<AdsAccount>) => {
+    set((state) => {
+      const updatedUserAdsAccounts = state.userAdsAccounts.map((account) => {
+        if (account.id === accountId) {
+          return { ...account, ...updates };
+        }
+        return account;
+      });
+
+      const updatedSelectedAccount =
+        state.selectedAdsAccount?.id === accountId
+          ? { ...state.selectedAdsAccount, ...updates }
+          : state.selectedAdsAccount;
+
+      return {
+        userAdsAccounts: updatedUserAdsAccounts,
+        selectedAdsAccount: updatedSelectedAccount,
+      };
+    });
   },
 }));

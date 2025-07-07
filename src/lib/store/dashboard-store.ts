@@ -590,6 +590,11 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         updatedAccount = { id: updatedDoc.id, ...updatedDoc.data() };
         // Update selectedAdsAccount in user-ads-accounts-store
         useUserAdsAccountsStore.getState().setSelectedAdsAccount(updatedAccount);
+        // Also update the account in the userAdsAccounts array
+        useUserAdsAccountsStore.getState().updateAdAccount(adsAccountId, {
+          "Monthly Budget": newMonthlyBudget,
+          "Daily Budget": dailyBudget,
+        });
       }
       // Update local state for dashboardDaily if needed
       const currentDashboardDaily = get().dashboardDaily;
@@ -602,6 +607,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
           },
         });
       }
+
       // Refetch with the fresh account object
       if (updatedAccount) {
         await get().fetchSpendMtd(updatedAccount);
