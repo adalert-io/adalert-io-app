@@ -1,14 +1,10 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, Search, Trash2, Edit2, User, ChevronDown } from 'lucide-react';
-
-const USERS = [
-  { email: 'info@webds.com', name: 'Ashar Elran', accessLevel: 'Admin', access: 'All ad accounts' },
-  { email: 'janica@webds.com', name: 'Janica', accessLevel: 'Manager', access: 'All ad accounts' },
-  { email: 'mzhou@decodifi.uk', name: 'Ming', accessLevel: 'Admin', access: 'All ad accounts' },
-];
+import { useAlertSettingsStore } from '@/lib/store/alert-settings-store';
+import { useAuthStore } from '@/lib/store/auth-store';
 
 const ADS_ACCOUNTS = [
   'Better Barber',
@@ -22,6 +18,14 @@ export default function UsersSubtab() {
   const [role, setRole] = useState<'Admin' | 'Manager'>('Admin');
   const [adsDropdownOpen, setAdsDropdownOpen] = useState(false);
   const [selectedAds, setSelectedAds] = useState<string[]>([]);
+  const { userDoc } = useAuthStore();
+  const { users, fetchUsers } = useAlertSettingsStore();
+
+  useEffect(() => {
+    if (userDoc && userDoc['Company Admin']) {
+      fetchUsers(userDoc['Company Admin']);
+    }
+  }, [userDoc, fetchUsers]);
 
   return (
     <div className="bg-white rounded-2xl shadow-md p-8 min-h-[600px]">
@@ -58,14 +62,14 @@ export default function UsersSubtab() {
                 </tr>
               </thead>
               <tbody>
-                {USERS.map((user, i) => (
-                  <tr key={user.email} className="border-b last:border-0">
+                {users.map((user) => (
+                  <tr key={user.id} className="border-b last:border-0">
                     <td className="px-6 py-3 whitespace-nowrap">{user.email}</td>
-                    <td className="px-6 py-3 whitespace-nowrap">{user.name}</td>
+                    <td className="px-6 py-3 whitespace-nowrap">{user.Name}</td>
                     <td className="px-6 py-3 whitespace-nowrap">
-                      <span className={`inline-block px-3 py-1 rounded-md text-white text-xs font-bold ${user.accessLevel === 'Admin' ? 'bg-blue-700' : 'bg-blue-400'}`}>{user.accessLevel}</span>
+                      <span className={`inline-block px-3 py-1 rounded-md text-white text-xs font-bold ${user['User Type'] === 'Admin' ? 'bg-blue-700' : 'bg-blue-400'}`}>{user['User Type']}</span>
                     </td>
-                    <td className="px-6 py-3 whitespace-nowrap">{user.access}</td>
+                    <td className="px-6 py-3 whitespace-nowrap">{user['User Access']}</td>
                     <td className="px-6 py-3 flex gap-2 items-center">
                       <button className="text-blue-600 hover:text-blue-800"><Edit2 className="w-5 h-5" /></button>
                       <button className="text-red-500 hover:text-red-700"><Trash2 className="w-5 h-5" /></button>

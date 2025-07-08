@@ -32,13 +32,24 @@ export interface AlertSettings {
   'Type Serving Ads': boolean;
 }
 
+export interface UserRow {
+  id: string;
+  email: string;
+  Name: string;
+  'User Type': string;
+  'User Access': string;
+}
+
 interface AlertSettingsState {
   alertSettings: AlertSettings | null;
   loading: boolean;
   error: string | null;
   loadedUserId: string | null;
+  users: UserRow[];
+  usersLoaded: boolean;
   fetchAlertSettings: (userId: string) => Promise<void>;
   updateAlertSettings: (userId: string, updates: Partial<AlertSettings>) => Promise<void>;
+  fetchUsers: (companyAdminRef: any) => Promise<void>;
 }
 
 export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
@@ -46,6 +57,8 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
   loading: false,
   error: null,
   loadedUserId: null,
+  users: [],
+  usersLoaded: false,
   fetchAlertSettings: async (userId: string) => {
     if (get().loadedUserId === userId && get().alertSettings) return;
     set({ loading: true, error: null });
@@ -80,6 +93,25 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       } else {
         set({ loading: false });
       }
+    } catch (error: any) {
+      set({ error: error.message, loading: false });
+    }
+  },
+  fetchUsers: async (companyAdminRef: any) => {
+    if (get().usersLoaded) return;
+    set({ loading: true, error: null });
+    try {
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('Company Admin', '==', companyAdminRef));
+      const snap = await getDocs(q);
+      const users: UserRow[] = snap.docs.map(docSnap => ({
+        id: docSnap.id,
+        email: docSnap.data().email,
+        Name: docSnap.data().Name,
+        'User Type': docSnap.data()['User Type'],
+        'User Access': docSnap.data()['User Access'],
+      }));
+      set({ users, usersLoaded: true, loading: false });
     } catch (error: any) {
       set({ error: error.message, loading: false });
     }
