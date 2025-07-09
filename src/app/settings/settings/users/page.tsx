@@ -1,10 +1,18 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Search, Trash2, Edit2, User, ChevronDown } from 'lucide-react';
+import { ChevronLeft, Search, Trash2, Edit2, User, ChevronDown, ChevronUp, ChevronsLeft, ChevronsRight, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon } from 'lucide-react';
 import { useAlertSettingsStore } from '@/lib/store/alert-settings-store';
 import { useAuthStore } from '@/lib/store/auth-store';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  useReactTable,
+  getCoreRowModel,
+  getPaginationRowModel,
+  flexRender,
+  ColumnDef,
+} from "@tanstack/react-table";
 
 const ADS_ACCOUNTS = [
   'Better Barber',
@@ -18,6 +26,7 @@ export default function UsersSubtab() {
   const [role, setRole] = useState<'Admin' | 'Manager'>('Admin');
   const [adsDropdownOpen, setAdsDropdownOpen] = useState(false);
   const [selectedAds, setSelectedAds] = useState<string[]>([]);
+  const [pageSize, setPageSize] = useState(25);
   const { userDoc } = useAuthStore();
   const { users, fetchUsers } = useAlertSettingsStore();
 
@@ -26,6 +35,169 @@ export default function UsersSubtab() {
       fetchUsers(userDoc['Company Admin']);
     }
   }, [userDoc, fetchUsers]);
+
+  // Users Table Columns
+  const columns: ColumnDef<any>[] = [
+    {
+      accessorKey: "email",
+      header: "Email",
+      cell: ({ row }) => <span>{row.original.email}</span>,
+    },
+    {
+      accessorKey: "Name",
+      header: "Name",
+      cell: ({ row }) => <span>{row.original.Name}</span>,
+    },
+    {
+      accessorKey: "User Type",
+      header: "Access Level",
+      cell: ({ row }) => (
+        <span className={`inline-block px-3 py-1 rounded-md text-white text-xs font-bold ${row.original['User Type'] === 'Admin' ? 'bg-blue-700' : 'bg-blue-400'}`}>
+          {row.original['User Type']}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "User Access",
+      header: "Access",
+      cell: ({ row }) => <span>{row.original['User Access']}</span>,
+    },
+    {
+      id: "actions",
+      header: "",
+      cell: ({ row }) => (
+        <div className="flex gap-2 items-center">
+          <button className="text-blue-600 hover:text-blue-800">
+            <Edit2 className="w-5 h-5" />
+          </button>
+          <button className="text-red-500 hover:text-red-700">
+            <Trash2 className="w-5 h-5" />
+          </button>
+        </div>
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+  ];
+
+  function UsersDataTable() {
+    const [pageIndex, setPageIndex] = useState(0);
+
+    const table = useReactTable({
+      data: users,
+      columns,
+      getCoreRowModel: getCoreRowModel(),
+      getPaginationRowModel: getPaginationRowModel(),
+      state: {
+        pagination: {
+          pageIndex,
+          pageSize,
+        },
+      },
+      onPaginationChange: (updater) => {
+        if (typeof updater === "function") {
+          const next = updater({ pageIndex, pageSize });
+          setPageIndex(next.pageIndex);
+          setPageSize(next.pageSize);
+        } else {
+          if (updater.pageIndex !== undefined) {
+            setPageIndex(updater.pageIndex);
+          }
+          if (updater.pageSize !== undefined) {
+            setPageSize(updater.pageSize);
+          }
+        }
+      },
+      pageCount: Math.ceil(users.length / pageSize),
+      getRowId: (row) => {
+        // Add safety check for row.original and id
+        if (!row.original) {
+          return row.id || Math.random().toString();
+        }
+        if (!row.original.id) {
+          return row.id || Math.random().toString();
+        }
+        return row.original.id;
+      },
+    });
+
+    return (
+      <div className="rounded-md border">
+        <table className="min-w-full text-xs">
+          <thead>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <th key={header.id} className="px-2 py-2 text-left">
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody>
+            {table.getRowModel().rows.map((row) => (
+              <tr key={row.id} className="hover:bg-gray-50">
+                {row.getVisibleCells().map((cell) => (
+                  <td key={cell.id} className="px-2 py-2 align-top">
+                    {flexRender(
+                      cell.column.columnDef.cell,
+                      cell.getContext()
+                    )}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {/* Pagination Controls */}
+        <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
+          <div />
+          <div>
+            Page {table.getState().pagination.pageIndex + 1} of{" "}
+            {table.getPageCount()}
+          </div>
+          <div className="flex gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => table.setPageIndex(0)}
+              disabled={!table.getCanPreviousPage()}
+            >
+              <ChevronsLeft className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              <ChevronLeftIcon className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              <ChevronRightIcon className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+              disabled={!table.getCanNextPage()}
+            >
+              <ChevronsRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-2xl shadow-md p-8 min-h-[600px]">
@@ -42,55 +214,19 @@ export default function UsersSubtab() {
                 <Input placeholder="Search..." className="pl-10 pr-4 w-40" />
                 <Search className="absolute left-3 top-2.5 w-4 h-4 text-blue-600" />
               </div>
-              <div className="relative">
-                <Button variant="outline" className="flex items-center gap-2 px-4 py-2 border-blue-200 text-blue-600 font-semibold bg-white">
-                  25 rows <ChevronDown className="w-4 h-4 ml-1" />
-                </Button>
-                {/* Dropdown for rows per page (not implemented) */}
-              </div>
+              <select
+                className="border rounded-md px-2 py-1 text-xs"
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+              >
+                <option value={15}>15 rows</option>
+                <option value={25}>25 rows</option>
+                <option value={50}>50 rows</option>
+                <option value={100}>100 rows</option>
+              </select>
             </div>
           </div>
-          <div className="overflow-x-auto rounded-xl border border-gray-100">
-            <table className="min-w-full text-left text-base">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 font-semibold text-gray-500">Email</th>
-                  <th className="px-6 py-3 font-semibold text-gray-500">Name</th>
-                  <th className="px-6 py-3 font-semibold text-gray-500">Access Level</th>
-                  <th className="px-6 py-3 font-semibold text-gray-500">Access</th>
-                  <th className="px-6 py-3"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user) => (
-                  <tr key={user.id} className="border-b last:border-0">
-                    <td className="px-6 py-3 whitespace-nowrap">{user.email}</td>
-                    <td className="px-6 py-3 whitespace-nowrap">{user.Name}</td>
-                    <td className="px-6 py-3 whitespace-nowrap">
-                      <span className={`inline-block px-3 py-1 rounded-md text-white text-xs font-bold ${user['User Type'] === 'Admin' ? 'bg-blue-700' : 'bg-blue-400'}`}>{user['User Type']}</span>
-                    </td>
-                    <td className="px-6 py-3 whitespace-nowrap">{user['User Access']}</td>
-                    <td className="px-6 py-3 flex gap-2 items-center">
-                      <button className="text-blue-600 hover:text-blue-800"><Edit2 className="w-5 h-5" /></button>
-                      <button className="text-red-500 hover:text-red-700"><Trash2 className="w-5 h-5" /></button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {/* Pagination */}
-          <div className="flex items-center justify-center gap-2 mt-8">
-            <span>Go to page:</span>
-            <select className="border rounded px-2 py-1 text-base">
-              <option>1</option>
-            </select>
-            <span>Page 1 of 1</span>
-            <button className="text-gray-400 px-1">{'|<'}</button>
-            <button className="text-gray-400 px-1">{'<'}</button>
-            <button className="text-gray-400 px-1">{'>'}</button>
-            <button className="text-gray-400 px-1">{'>|'}</button>
-          </div>
+          <UsersDataTable />
         </>
       )}
       {screen === 'add' && (
