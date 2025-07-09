@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Search, Trash2, Edit2, User, ChevronDown, ChevronUp, ChevronsLeft, ChevronsRight, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon } from 'lucide-react';
+import { ChevronLeft, Search, Trash2, Edit2, User, ChevronDown, ChevronUp, ChevronsLeft, ChevronsRight, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, XIcon } from 'lucide-react';
 import { useAlertSettingsStore } from '@/lib/store/alert-settings-store';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -13,6 +13,7 @@ import {
   flexRender,
   ColumnDef,
 } from "@tanstack/react-table";
+import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
 
 const ADS_ACCOUNTS = [
   'Better Barber',
@@ -27,6 +28,9 @@ export default function UsersSubtab() {
   const [adsDropdownOpen, setAdsDropdownOpen] = useState(false);
   const [selectedAds, setSelectedAds] = useState<string[]>([]);
   const [pageSize, setPageSize] = useState(25);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const { userDoc } = useAuthStore();
   const { users, fetchUsers } = useAlertSettingsStore();
 
@@ -35,6 +39,14 @@ export default function UsersSubtab() {
       fetchUsers(userDoc['Company Admin']);
     }
   }, [userDoc, fetchUsers]);
+
+  // Debounce search value
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchValue);
+    }, 1500);
+    return () => clearTimeout(handler);
+  }, [searchValue]);
 
   // Users Table Columns
   const columns: ColumnDef<any>[] = [
@@ -80,11 +92,26 @@ export default function UsersSubtab() {
     },
   ];
 
+  // Filter users based on search
+  const filteredUsers = useMemo(() => {
+    const lower = debouncedSearch.toLowerCase();
+
+    return users.filter((user) => {
+      // Search in email and name
+      const searchMatch =
+        !debouncedSearch ||
+        user.email?.toLowerCase().includes(lower) ||
+        user.Name?.toLowerCase().includes(lower);
+
+      return searchMatch;
+    });
+  }, [users, debouncedSearch]);
+
   function UsersDataTable() {
     const [pageIndex, setPageIndex] = useState(0);
 
     const table = useReactTable({
-      data: users,
+      data: filteredUsers,
       columns,
       getCoreRowModel: getCoreRowModel(),
       getPaginationRowModel: getPaginationRowModel(),
@@ -108,7 +135,7 @@ export default function UsersSubtab() {
           }
         }
       },
-      pageCount: Math.ceil(users.length / pageSize),
+      pageCount: Math.ceil(filteredUsers.length / pageSize),
       getRowId: (row) => {
         // Add safety check for row.original and id
         if (!row.original) {
@@ -210,10 +237,37 @@ export default function UsersSubtab() {
               <User className="w-5 h-5" /> Add New User
             </Button>
             <div className="flex-1 flex items-center justify-end gap-2">
-              <div className="relative">
-                <Input placeholder="Search..." className="pl-10 pr-4 w-40" />
-                <Search className="absolute left-3 top-2.5 w-4 h-4 text-blue-600" />
-              </div>
+              {/* Search UI */}
+              {showSearch && (
+                <div className="flex items-center border rounded-lg px-3 py-1 bg-white shadow-sm focus-within:ring-2 focus-within:ring-blue-200 transition-all">
+                  <input
+                    className="outline-none border-none bg-transparent text-sm text-gray-500 placeholder-gray-400 flex-1 min-w-[180px]"
+                    placeholder="Search for users"
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
+                    autoFocus
+                  />
+                  {searchValue && (
+                    <button
+                      type="button"
+                      className="ml-1 text-gray-400 hover:text-gray-600"
+                      onClick={() => setSearchValue("")}
+                      aria-label="Clear search"
+                    >
+                      <XIcon className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
+              )}
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setShowSearch((v) => !v)}
+                className={showSearch ? "border-blue-200" : ""}
+                aria-label="Show search"
+              >
+                <MagnifyingGlassIcon className="w-6 h-6 text-[#015AFD]" />
+              </Button>
               <select
                 className="border rounded-md px-2 py-1 text-xs"
                 value={pageSize}
