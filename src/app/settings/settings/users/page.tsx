@@ -1,11 +1,25 @@
 "use client";
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft, Search, Trash2, Edit2, User, ChevronDown, ChevronUp, ChevronsLeft, ChevronsRight, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, XIcon } from 'lucide-react';
-import { useAlertSettingsStore } from '@/lib/store/alert-settings-store';
-import { useAuthStore } from '@/lib/store/auth-store';
-import { Checkbox } from '@/components/ui/checkbox';
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  ChevronLeft,
+  Search,
+  Trash2,
+  Edit2,
+  User,
+  ChevronDown,
+  ChevronUp,
+  ChevronsLeft,
+  ChevronsRight,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
+  XIcon,
+  Plus,
+} from "lucide-react";
+import { useAlertSettingsStore } from "@/lib/store/alert-settings-store";
+import { useAuthStore } from "@/lib/store/auth-store";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   useReactTable,
   getCoreRowModel,
@@ -16,15 +30,15 @@ import {
 import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
 
 const ADS_ACCOUNTS = [
-  'Better Barber',
-  'McGrath Kavinoky LLP',
-  'Meehan Law',
+  "Better Barber",
+  "McGrath Kavinoky LLP",
+  "Meehan Law",
   // ... more accounts
 ];
 
 export default function UsersSubtab() {
-  const [screen, setScreen] = useState<'list' | 'add'>('list');
-  const [role, setRole] = useState<'Admin' | 'Manager'>('Admin');
+  const [screen, setScreen] = useState<"list" | "add">("list");
+  const [role, setRole] = useState<"Admin" | "Manager">("Admin");
   const [adsDropdownOpen, setAdsDropdownOpen] = useState(false);
   const [selectedAds, setSelectedAds] = useState<string[]>([]);
   const [pageSize, setPageSize] = useState(25);
@@ -35,8 +49,8 @@ export default function UsersSubtab() {
   const { users, fetchUsers } = useAlertSettingsStore();
 
   useEffect(() => {
-    if (userDoc && userDoc['Company Admin']) {
-      fetchUsers(userDoc['Company Admin']);
+    if (userDoc && userDoc["Company Admin"]) {
+      fetchUsers(userDoc["Company Admin"]);
     }
   }, [userDoc, fetchUsers]);
 
@@ -64,15 +78,21 @@ export default function UsersSubtab() {
       accessorKey: "User Type",
       header: "Access Level",
       cell: ({ row }) => (
-        <span className={`inline-block px-3 py-1 rounded-md text-white text-xs font-bold ${row.original['User Type'] === 'Admin' ? 'bg-blue-700' : 'bg-blue-400'}`}>
-          {row.original['User Type']}
+        <span
+          className={`inline-block px-3 py-1 rounded-md text-white text-xs font-bold ${
+            row.original["User Type"] === "Admin"
+              ? "bg-blue-700"
+              : "bg-blue-400"
+          }`}
+        >
+          {row.original["User Type"]}
         </span>
       ),
     },
     {
       accessorKey: "User Access",
       header: "Access",
-      cell: ({ row }) => <span>{row.original['User Access']}</span>,
+      cell: ({ row }) => <span>{row.original["User Access"]}</span>,
     },
     {
       id: "actions",
@@ -170,10 +190,7 @@ export default function UsersSubtab() {
               <tr key={row.id} className="hover:bg-gray-50">
                 {row.getVisibleCells().map((cell) => (
                   <td key={cell.id} className="px-2 py-2 align-top">
-                    {flexRender(
-                      cell.column.columnDef.cell,
-                      cell.getContext()
-                    )}
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}
               </tr>
@@ -228,13 +245,20 @@ export default function UsersSubtab() {
 
   return (
     <div className="bg-white rounded-2xl shadow-md p-8 min-h-[600px]">
-      {screen === 'list' && (
+      {screen === "list" && (
         <>
           <h2 className="text-2xl font-bold mb-1">Users</h2>
-          <p className="text-gray-500 mb-6">Add, remove, or edit user including user access level and accounts access.</p>
+          <p className="text-gray-500 mb-6">
+            Add, remove, or edit user including user access level and accounts
+            access.
+          </p>
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
-            <Button variant="outline" className="flex items-center gap-2 w-full sm:w-auto justify-center text-blue-600 font-semibold bg-blue-50 border-blue-200" onClick={() => setScreen('add')}>
-              <User className="w-5 h-5" /> Add New User
+            <Button
+              variant="outline"
+              className="flex items-center gap-2 w-full sm:w-auto justify-center text-blue-600 font-semibold bg-blue-50 border-blue-200"
+              onClick={() => setScreen("add")}
+            >
+              <Plus className="w-5 h-5" /> Add New User
             </Button>
             <div className="flex-1 flex items-center justify-end gap-2">
               {/* Search UI */}
@@ -283,9 +307,12 @@ export default function UsersSubtab() {
           <UsersDataTable />
         </>
       )}
-      {screen === 'add' && (
+      {screen === "add" && (
         <div className="w-full">
-          <button className="flex items-center gap-2 text-blue-600 mb-6" onClick={() => setScreen('list')}>
+          <button
+            className="flex items-center gap-2 text-blue-600 mb-6"
+            onClick={() => setScreen("list")}
+          >
             <ChevronLeft className="w-5 h-5" /> Back to Accounts
           </button>
           <h2 className="text-2xl font-bold mb-6">Add New User</h2>
@@ -297,8 +324,16 @@ export default function UsersSubtab() {
               </div>
               {/* Role dropdown */}
               <div className="relative">
-                <button type="button" className="flex items-center w-full border rounded-md px-3 py-2 bg-white text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-200" onClick={() => setRole(role === 'Admin' ? 'Manager' : 'Admin')}>
-                  <span className="flex items-center gap-2"><User className="w-5 h-5 text-blue-400" /> {role}</span>
+                <button
+                  type="button"
+                  className="flex items-center w-full border rounded-md px-3 py-2 bg-white text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  onClick={() =>
+                    setRole(role === "Admin" ? "Manager" : "Admin")
+                  }
+                >
+                  <span className="flex items-center gap-2">
+                    <User className="w-5 h-5 text-blue-400" /> {role}
+                  </span>
                   <ChevronDown className="ml-auto w-4 h-4 text-blue-400" />
                 </button>
                 {/* Dropdown options (mock) */}
@@ -308,32 +343,61 @@ export default function UsersSubtab() {
               <div className="relative">
                 <button
                   type="button"
-                  className={`flex items-center w-full border rounded-md px-3 py-2 bg-white text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-200 ${role === 'Admin' ? 'opacity-60 cursor-not-allowed' : ''}`}
-                  disabled={role === 'Admin'}
-                  onClick={() => role === 'Manager' && setAdsDropdownOpen(v => !v)}
+                  className={`flex items-center w-full border rounded-md px-3 py-2 bg-white text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-200 ${
+                    role === "Admin" ? "opacity-60 cursor-not-allowed" : ""
+                  }`}
+                  disabled={role === "Admin"}
+                  onClick={() =>
+                    role === "Manager" && setAdsDropdownOpen((v) => !v)
+                  }
                 >
-                  <span className="flex items-center gap-2"><User className="w-5 h-5 text-blue-400" />
-                    {role === 'Admin' ? 'All Ad Accounts' : `${selectedAds.length}/6 selected`}
+                  <span className="flex items-center gap-2">
+                    <User className="w-5 h-5 text-blue-400" />
+                    {role === "Admin"
+                      ? "All Ad Accounts"
+                      : `${selectedAds.length}/6 selected`}
                   </span>
                   <ChevronDown className="ml-auto w-4 h-4 text-blue-400" />
                 </button>
                 {/* Multi-select dropdown (mock) */}
-                {adsDropdownOpen && role === 'Manager' && (
+                {adsDropdownOpen && role === "Manager" && (
                   <div className="absolute z-10 mt-1 w-full bg-white border rounded shadow-lg p-3">
                     <div className="flex items-center gap-2 mb-2">
-                      <Input placeholder="Search for ads accounts" className="h-8" />
+                      <Input
+                        placeholder="Search for ads accounts"
+                        className="h-8"
+                      />
                     </div>
                     <div className="flex items-center gap-2 mb-2 text-xs text-blue-600">
-                      <button className="underline" onClick={() => setSelectedAds(ADS_ACCOUNTS)}>Select All</button>
-                      <button className="underline" onClick={() => setSelectedAds([])}>Clear All</button>
+                      <button
+                        className="underline"
+                        onClick={() => setSelectedAds(ADS_ACCOUNTS)}
+                      >
+                        Select All
+                      </button>
+                      <button
+                        className="underline"
+                        onClick={() => setSelectedAds([])}
+                      >
+                        Clear All
+                      </button>
                     </div>
                     <div className="max-h-32 overflow-y-auto flex flex-col gap-1">
-                      {ADS_ACCOUNTS.map(acc => (
-                        <label key={acc} className="flex items-center gap-2 cursor-pointer text-base">
+                      {ADS_ACCOUNTS.map((acc) => (
+                        <label
+                          key={acc}
+                          className="flex items-center gap-2 cursor-pointer text-base"
+                        >
                           <input
                             type="checkbox"
                             checked={selectedAds.includes(acc)}
-                            onChange={() => setSelectedAds(selectedAds.includes(acc) ? selectedAds.filter(a => a !== acc) : [...selectedAds, acc])}
+                            onChange={() =>
+                              setSelectedAds(
+                                selectedAds.includes(acc)
+                                  ? selectedAds.filter((a) => a !== acc)
+                                  : [...selectedAds, acc]
+                              )
+                            }
                           />
                           {acc}
                         </label>
@@ -342,7 +406,12 @@ export default function UsersSubtab() {
                   </div>
                 )}
               </div>
-              <Button className="bg-blue-300 text-white text-lg font-bold px-12 py-3 rounded shadow-md mt-4" disabled>Save</Button>
+              <Button
+                className="bg-blue-300 text-white text-lg font-bold px-12 py-3 rounded shadow-md mt-4"
+                disabled
+              >
+                Save
+              </Button>
             </div>
             {/* Avatar placeholder */}
             <div className="flex-1 flex items-center justify-center">
@@ -355,4 +424,4 @@ export default function UsersSubtab() {
       )}
     </div>
   );
-} 
+}
