@@ -16,6 +16,8 @@ import {
   ChevronRight as ChevronRightIcon,
   XIcon,
   Plus,
+  Mail,
+  Users,
 } from "lucide-react";
 import { useAlertSettingsStore } from "@/lib/store/alert-settings-store";
 import { useAuthStore } from "@/lib/store/auth-store";
@@ -321,7 +323,7 @@ export default function UsersSubtab() {
             <div className="flex-1 flex flex-col gap-4 max-w-md">
               <div className="relative">
                 <Input placeholder="Email" className="pl-10" />
-                <User className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
+                <Mail className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
               </div>
               {/* Role dropdown */}
               <div className="relative">
@@ -373,7 +375,7 @@ export default function UsersSubtab() {
                   }
                 >
                   <span className="flex items-center gap-2">
-                    <User className="w-5 h-5 text-blue-400" />
+                    <Users className="w-5 h-5 text-blue-400" />
                     {role === "Admin"
                       ? "All Ad Accounts"
                       : `${selectedAds.length}/6 selected`}
