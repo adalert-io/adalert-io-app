@@ -40,6 +40,7 @@ export default function UsersSubtab() {
   const [screen, setScreen] = useState<"list" | "add">("list");
   const [role, setRole] = useState<"Admin" | "Manager">("Admin");
   const [adsDropdownOpen, setAdsDropdownOpen] = useState(false);
+  const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [selectedAds, setSelectedAds] = useState<string[]>([]);
   const [pageSize, setPageSize] = useState(25);
   const [showSearch, setShowSearch] = useState(false);
@@ -327,17 +328,37 @@ export default function UsersSubtab() {
                 <button
                   type="button"
                   className="flex items-center w-full border rounded-md px-3 py-2 bg-white text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-200"
-                  onClick={() =>
-                    setRole(role === "Admin" ? "Manager" : "Admin")
-                  }
+                  onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
                 >
                   <span className="flex items-center gap-2">
                     <User className="w-5 h-5 text-blue-400" /> {role}
                   </span>
                   <ChevronDown className="ml-auto w-4 h-4 text-blue-400" />
                 </button>
-                {/* Dropdown options (mock) */}
-                {/* <div className="absolute z-10 mt-1 w-full bg-white border rounded shadow-lg">...</div> */}
+                {roleDropdownOpen && (
+                  <div className="absolute z-10 mt-1 w-full bg-white border rounded shadow-lg">
+                    <div className="py-1">
+                      <button
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+                        onClick={() => {
+                          setRole("Admin");
+                          setRoleDropdownOpen(false);
+                        }}
+                      >
+                        Admin
+                      </button>
+                      <button
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+                        onClick={() => {
+                          setRole("Manager");
+                          setRoleDropdownOpen(false);
+                        }}
+                      >
+                        Manager
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
               {/* Ads accounts dropdown */}
               <div className="relative">
