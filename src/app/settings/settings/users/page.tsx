@@ -19,7 +19,7 @@ import {
   Mail,
   Users,
 } from "lucide-react";
-import { useAlertSettingsStore } from "@/lib/store/alert-settings-store";
+import { useAlertSettingsStore } from "@/lib/store/settings-store";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { Checkbox } from "@/components/ui/checkbox";
 import {

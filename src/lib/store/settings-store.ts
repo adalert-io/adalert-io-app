@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { db } from '@/lib/firebase/config';
+import { create } from "zustand";
+import { db } from "@/lib/firebase/config";
 import {
   collection,
   query,
@@ -7,37 +7,37 @@ import {
   getDocs,
   updateDoc,
   doc,
-} from 'firebase/firestore';
-import { User } from 'firebase/auth';
+} from "firebase/firestore";
+import { User } from "firebase/auth";
 
 export interface AlertSettings {
   id: string;
-  'Level Account': boolean;
-  'Level Ads': boolean;
-  'Level Keyword': boolean;
-  'Send Email Alerts': boolean;
-  'Send SMS Alerts': boolean;
-  'Send Weekly Summaries': boolean;
-  'Severity Critical': boolean;
-  'Severity Low': boolean;
-  'Severity Medium': boolean;
-  'Type Ad Performance': boolean;
-  'Type Brand Checker': boolean;
-  'Type Budget': boolean;
-  'Type KPI Trends': boolean;
-  'Type Keyword Performance': boolean;
-  'Type Landing Page': boolean;
-  'Type Optimization Score': boolean;
-  'Type Policy': boolean;
-  'Type Serving Ads': boolean;
+  "Level Account": boolean;
+  "Level Ads": boolean;
+  "Level Keyword": boolean;
+  "Send Email Alerts": boolean;
+  "Send SMS Alerts": boolean;
+  "Send Weekly Summaries": boolean;
+  "Severity Critical": boolean;
+  "Severity Low": boolean;
+  "Severity Medium": boolean;
+  "Type Ad Performance": boolean;
+  "Type Brand Checker": boolean;
+  "Type Budget": boolean;
+  "Type KPI Trends": boolean;
+  "Type Keyword Performance": boolean;
+  "Type Landing Page": boolean;
+  "Type Optimization Score": boolean;
+  "Type Policy": boolean;
+  "Type Serving Ads": boolean;
 }
 
 export interface UserRow {
   id: string;
   email: string;
   Name: string;
-  'User Type': string;
-  'User Access': string;
+  "User Type": string;
+  "User Access": string;
 }
 
 interface AlertSettingsState {
@@ -48,7 +48,10 @@ interface AlertSettingsState {
   users: UserRow[];
   usersLoaded: boolean;
   fetchAlertSettings: (userId: string) => Promise<void>;
-  updateAlertSettings: (userId: string, updates: Partial<AlertSettings>) => Promise<void>;
+  updateAlertSettings: (
+    userId: string,
+    updates: Partial<AlertSettings>
+  ) => Promise<void>;
   fetchUsers: (companyAdminRef: any) => Promise<void>;
 }
 
@@ -63,13 +66,17 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     if (get().loadedUserId === userId && get().alertSettings) return;
     set({ loading: true, error: null });
     try {
-      const alertSettingsRef = collection(db, 'alertSettings');
-      const userRef = doc(db, 'users', userId);
-      const q = query(alertSettingsRef, where('User', '==', userRef));
+      const alertSettingsRef = collection(db, "alertSettings");
+      const userRef = doc(db, "users", userId);
+      const q = query(alertSettingsRef, where("User", "==", userRef));
       const snap = await getDocs(q);
       if (!snap.empty) {
         const docSnap = snap.docs[0];
-        set({ alertSettings: { id: docSnap.id, ...docSnap.data() } as AlertSettings, loading: false, loadedUserId: userId });
+        set({
+          alertSettings: { id: docSnap.id, ...docSnap.data() } as AlertSettings,
+          loading: false,
+          loadedUserId: userId,
+        });
       } else {
         set({ alertSettings: null, loading: false, loadedUserId: userId });
       }
@@ -77,12 +84,15 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       set({ error: error.message, loading: false });
     }
   },
-  updateAlertSettings: async (userId: string, updates: Partial<AlertSettings>) => {
+  updateAlertSettings: async (
+    userId: string,
+    updates: Partial<AlertSettings>
+  ) => {
     set({ loading: true, error: null });
     try {
-      const alertSettingsRef = collection(db, 'alertSettings');
-      const userRef = doc(db, 'users', userId);
-      const q = query(alertSettingsRef, where('User', '==', userRef));
+      const alertSettingsRef = collection(db, "alertSettings");
+      const userRef = doc(db, "users", userId);
+      const q = query(alertSettingsRef, where("User", "==", userRef));
       const snap = await getDocs(q);
       if (!snap.empty) {
         const docSnap = snap.docs[0];
@@ -101,19 +111,19 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     if (get().usersLoaded) return;
     set({ loading: true, error: null });
     try {
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef, where('Company Admin', '==', companyAdminRef));
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("Company Admin", "==", companyAdminRef));
       const snap = await getDocs(q);
-      const users: UserRow[] = snap.docs.map(docSnap => ({
+      const users: UserRow[] = snap.docs.map((docSnap) => ({
         id: docSnap.id,
         email: docSnap.data().email,
         Name: docSnap.data().Name,
-        'User Type': docSnap.data()['User Type'],
-        'User Access': docSnap.data()['User Access'],
+        "User Type": docSnap.data()["User Type"],
+        "User Access": docSnap.data()["User Access"],
       }));
       set({ users, usersLoaded: true, loading: false });
     } catch (error: any) {
       set({ error: error.message, loading: false });
     }
   },
-})); 
+}));
