@@ -9,6 +9,7 @@ import {
   doc,
 } from "firebase/firestore";
 import { User } from "firebase/auth";
+import { formatAccountNumber } from "../utils";
 
 export interface AlertSettings {
   id: string;
@@ -40,6 +41,12 @@ export interface UserRow {
   "User Access": string;
 }
 
+export interface AdsAccount {
+  id: string;
+  name: string;
+  // Add other fields as needed
+}
+
 interface AlertSettingsState {
   alertSettings: AlertSettings | null;
   loading: boolean;
@@ -47,12 +54,15 @@ interface AlertSettingsState {
   loadedUserId: string | null;
   users: UserRow[];
   usersLoaded: boolean;
+  adsAccounts: AdsAccount[];
+  adsAccountsLoaded: boolean;
   fetchAlertSettings: (userId: string) => Promise<void>;
   updateAlertSettings: (
     userId: string,
     updates: Partial<AlertSettings>
   ) => Promise<void>;
   fetchUsers: (companyAdminRef: any) => Promise<void>;
+  fetchAdsAccounts: (companyAdminRef: any) => Promise<void>;
 }
 
 export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
@@ -62,6 +72,8 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
   loadedUserId: null,
   users: [],
   usersLoaded: false,
+  adsAccounts: [],
+  adsAccountsLoaded: false,
   fetchAlertSettings: async (userId: string) => {
     if (get().loadedUserId === userId && get().alertSettings) return;
     set({ loading: true, error: null });
@@ -122,6 +134,29 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         "User Access": docSnap.data()["User Access"],
       }));
       set({ users, usersLoaded: true, loading: false });
+    } catch (error: any) {
+      set({ error: error.message, loading: false });
+    }
+  },
+  fetchAdsAccounts: async (companyAdminRef: any) => {
+    if (get().adsAccountsLoaded) return;
+    set({ loading: true, error: null });
+    try {
+      const adsAccountsRef = collection(db, "adsAccounts");
+      const q = query(
+        adsAccountsRef,
+        where("User", "==", companyAdminRef),
+        where("Is Connected", "==", true)
+      );
+      const snap = await getDocs(q);
+      const adsAccounts: AdsAccount[] = snap.docs.map((docSnap) => ({
+        id: docSnap.id,
+        name:
+          docSnap.data()["Account Name Editable"] ||
+          docSnap.data()["Account Name Original"] ||
+          formatAccountNumber(docSnap.data()["Id"]),
+      }));
+      set({ adsAccounts, adsAccountsLoaded: true, loading: false });
     } catch (error: any) {
       set({ error: error.message, loading: false });
     }

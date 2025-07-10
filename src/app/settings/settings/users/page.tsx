@@ -31,12 +31,7 @@ import {
 } from "@tanstack/react-table";
 import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
 
-const ADS_ACCOUNTS = [
-  "Better Barber",
-  "McGrath Kavinoky LLP",
-  "Meehan Law",
-  // ... more accounts
-];
+// Removed hardcoded ADS_ACCOUNTS - now using fetched data from store
 
 export default function UsersSubtab() {
   const [screen, setScreen] = useState<"list" | "add">("list");
@@ -48,14 +43,18 @@ export default function UsersSubtab() {
   const [showSearch, setShowSearch] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [adsSearchValue, setAdsSearchValue] = useState("");
+  const [debouncedAdsSearch, setDebouncedAdsSearch] = useState("");
   const { userDoc } = useAuthStore();
-  const { users, fetchUsers } = useAlertSettingsStore();
+  const { users, fetchUsers, adsAccounts, fetchAdsAccounts } =
+    useAlertSettingsStore();
 
   useEffect(() => {
     if (userDoc && userDoc["Company Admin"]) {
       fetchUsers(userDoc["Company Admin"]);
+      fetchAdsAccounts(userDoc["Company Admin"]);
     }
-  }, [userDoc, fetchUsers]);
+  }, [userDoc, fetchUsers, fetchAdsAccounts]);
 
   // Debounce search value
   useEffect(() => {
@@ -64,6 +63,14 @@ export default function UsersSubtab() {
     }, 1500);
     return () => clearTimeout(handler);
   }, [searchValue]);
+
+  // Debounce ads search value
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedAdsSearch(adsSearchValue);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [adsSearchValue]);
 
   // Users Table Columns
   const columns: ColumnDef<any>[] = [
@@ -129,6 +136,18 @@ export default function UsersSubtab() {
       return searchMatch;
     });
   }, [users, debouncedSearch]);
+
+  // Filter ads accounts based on search
+  const filteredAdsAccounts = useMemo(() => {
+    const lower = debouncedAdsSearch.toLowerCase();
+
+    return adsAccounts.filter((account) => {
+      const searchMatch =
+        !debouncedAdsSearch || account.name?.toLowerCase().includes(lower);
+
+      return searchMatch;
+    });
+  }, [adsAccounts, debouncedAdsSearch]);
 
   function UsersDataTable() {
     const [pageIndex, setPageIndex] = useState(0);
@@ -378,7 +397,7 @@ export default function UsersSubtab() {
                     <Users className="w-5 h-5 text-blue-400" />
                     {role === "Admin"
                       ? "All Ad Accounts"
-                      : `${selectedAds.length}/6 selected`}
+                      : `${selectedAds.length}/${adsAccounts.length} selected`}
                   </span>
                   <ChevronDown className="ml-auto w-4 h-4 text-blue-400" />
                 </button>
@@ -389,12 +408,18 @@ export default function UsersSubtab() {
                       <Input
                         placeholder="Search for ads accounts"
                         className="h-8"
+                        value={adsSearchValue}
+                        onChange={(e) => setAdsSearchValue(e.target.value)}
                       />
                     </div>
                     <div className="flex items-center gap-2 mb-2 text-xs text-blue-600">
                       <button
                         className="underline"
-                        onClick={() => setSelectedAds(ADS_ACCOUNTS)}
+                        onClick={() =>
+                          setSelectedAds(
+                            filteredAdsAccounts.map((acc) => acc.name)
+                          )
+                        }
                       >
                         Select All
                       </button>
@@ -406,23 +431,23 @@ export default function UsersSubtab() {
                       </button>
                     </div>
                     <div className="max-h-32 overflow-y-auto flex flex-col gap-1">
-                      {ADS_ACCOUNTS.map((acc) => (
+                      {filteredAdsAccounts.map((acc) => (
                         <label
-                          key={acc}
+                          key={acc.id}
                           className="flex items-center gap-2 cursor-pointer text-base"
                         >
                           <input
                             type="checkbox"
-                            checked={selectedAds.includes(acc)}
+                            checked={selectedAds.includes(acc.name)}
                             onChange={() =>
                               setSelectedAds(
-                                selectedAds.includes(acc)
-                                  ? selectedAds.filter((a) => a !== acc)
-                                  : [...selectedAds, acc]
+                                selectedAds.includes(acc.name)
+                                  ? selectedAds.filter((a) => a !== acc.name)
+                                  : [...selectedAds, acc.name]
                               )
                             }
                           />
-                          {acc}
+                          {acc.name}
                         </label>
                       ))}
                     </div>
