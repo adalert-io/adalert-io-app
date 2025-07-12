@@ -44,6 +44,7 @@ export interface UserRow {
 export interface AdsAccount {
   id: string;
   name: string;
+  "Selected Users"?: any[]; // Array of user references
   // Add other fields as needed
 }
 
@@ -155,6 +156,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           docSnap.data()["Account Name Editable"] ||
           docSnap.data()["Account Name Original"] ||
           formatAccountNumber(docSnap.data()["Id"]),
+        "Selected Users": docSnap.data()["Selected Users"],
       }));
       set({ adsAccounts, adsAccountsLoaded: true, loading: false });
     } catch (error: any) {

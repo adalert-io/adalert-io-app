@@ -33,8 +33,12 @@ import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
 
 // Removed hardcoded ADS_ACCOUNTS - now using fetched data from store
 
+const checkboxClass =
+  "data-[state=checked]:bg-blue-700 data-[state=checked]:border-blue-700";
+
 export default function UsersSubtab() {
-  const [screen, setScreen] = useState<"list" | "add">("list");
+  const [screen, setScreen] = useState<"list" | "add" | "edit">("list");
+  const [editingUser, setEditingUser] = useState<any>(null);
   const [role, setRole] = useState<"Admin" | "Manager">("Admin");
   const [adsDropdownOpen, setAdsDropdownOpen] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
@@ -48,6 +52,22 @@ export default function UsersSubtab() {
   const { userDoc } = useAuthStore();
   const { users, fetchUsers, adsAccounts, fetchAdsAccounts } =
     useAlertSettingsStore();
+
+  // Helper function to check if current user has access to an ads account
+  const hasUserAccessToAccount = useCallback(
+    (account: any) => {
+      if (!userDoc?.uid || !account["Selected Users"]) return false;
+
+      return account["Selected Users"].some((userRef: any) => {
+        // Check if the userRef is a Firestore document reference
+        // Firestore references have a path property that includes the document ID
+        return (
+          userRef.path?.includes(userDoc.uid) || userRef.id === userDoc.uid
+        );
+      });
+    },
+    [userDoc]
+  );
 
   useEffect(() => {
     if (userDoc && userDoc["Company Admin"]) {
@@ -71,6 +91,22 @@ export default function UsersSubtab() {
     }, 300);
     return () => clearTimeout(handler);
   }, [adsSearchValue]);
+
+  // Populate form data when editing user
+  useEffect(() => {
+    if (screen === "edit" && editingUser) {
+      setRole(editingUser["User Type"] || "Admin");
+
+      // Check which ads accounts the current user has access to
+      if (userDoc && userDoc.uid) {
+        const userSelectedAds = adsAccounts
+          .filter((account) => hasUserAccessToAccount(account))
+          .map((account) => account.name);
+
+        setSelectedAds(userSelectedAds);
+      }
+    }
+  }, [screen, editingUser, userDoc, adsAccounts, hasUserAccessToAccount]);
 
   // Users Table Columns
   const columns: ColumnDef<any>[] = [
@@ -109,7 +145,14 @@ export default function UsersSubtab() {
       header: "",
       cell: ({ row }) => (
         <div className="flex gap-2 items-center">
-          <button className="text-blue-600 hover:text-blue-800">
+          <button
+            className="text-blue-600 hover:text-blue-800"
+            onClick={() => {
+              setEditingUser(row.original);
+              setRole(row.original["User Type"] || "Admin");
+              setScreen("edit");
+            }}
+          >
             <Edit2 className="w-5 h-5" />
           </button>
           <button className="text-red-500 hover:text-red-700">
@@ -329,19 +372,31 @@ export default function UsersSubtab() {
           <UsersDataTable />
         </>
       )}
-      {screen === "add" && (
+      {(screen === "add" || screen === "edit") && (
         <div className="w-full">
           <button
             className="flex items-center gap-2 text-blue-600 mb-6"
-            onClick={() => setScreen("list")}
+            onClick={() => {
+              setScreen("list");
+              setEditingUser(null);
+              setRole("Admin");
+              setSelectedAds([]);
+            }}
           >
-            <ChevronLeft className="w-5 h-5" /> Back to Accounts
+            <ChevronLeft className="w-5 h-5" /> Back to Users
           </button>
-          <h2 className="text-2xl font-bold mb-6">Add New User</h2>
+          <h2 className="text-2xl font-bold mb-6">
+            {screen === "add" ? "Add New User" : "Edit User"}
+          </h2>
           <div className="flex flex-col md:flex-row gap-8">
             <div className="flex-1 flex flex-col gap-4 max-w-md">
               <div className="relative">
-                <Input placeholder="Email" className="pl-10" />
+                <Input
+                  placeholder="Email"
+                  className="pl-10"
+                  defaultValue={editingUser?.email || ""}
+                  disabled={screen === "edit"}
+                />
                 <Mail className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
               </div>
               {/* Role dropdown */}
@@ -436,16 +491,18 @@ export default function UsersSubtab() {
                           key={acc.id}
                           className="flex items-center gap-2 cursor-pointer text-base"
                         >
-                          <input
-                            type="checkbox"
+                          <Checkbox
+                            className={checkboxClass}
                             checked={selectedAds.includes(acc.name)}
-                            onChange={() =>
-                              setSelectedAds(
-                                selectedAds.includes(acc.name)
-                                  ? selectedAds.filter((a) => a !== acc.name)
-                                  : [...selectedAds, acc.name]
-                              )
-                            }
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedAds([...selectedAds, acc.name]);
+                              } else {
+                                setSelectedAds(
+                                  selectedAds.filter((a) => a !== acc.name)
+                                );
+                              }
+                            }}
                           />
                           {acc.name}
                         </label>
@@ -458,7 +515,7 @@ export default function UsersSubtab() {
                 className="bg-blue-300 text-white text-lg font-bold px-12 py-3 rounded shadow-md mt-4"
                 disabled
               >
-                Save
+                {screen === "add" ? "Save" : "Update"}
               </Button>
             </div>
             {/* Avatar placeholder */}
