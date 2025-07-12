@@ -521,6 +521,17 @@ export default function UsersSubtab() {
                   </div>
                 )}
               </div>
+              {screen === "edit" && (
+                <div className="flex items-center gap-2">
+                  <Checkbox className={checkboxClass} id="notify-user" />
+                  <label
+                    htmlFor="notify-user"
+                    className="text-base font-medium select-none"
+                  >
+                    Notify the user
+                  </label>
+                </div>
+              )}
               <Button
                 className="bg-blue-300 text-white text-lg font-bold px-12 py-3 rounded shadow-md mt-4"
                 disabled
