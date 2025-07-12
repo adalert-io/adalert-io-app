@@ -18,6 +18,7 @@ import {
   Plus,
   Mail,
   Users,
+  Camera,
 } from "lucide-react";
 import { useAlertSettingsStore } from "@/lib/store/settings-store";
 import { useAuthStore } from "@/lib/store/auth-store";
@@ -396,6 +397,10 @@ export default function UsersSubtab() {
                     placeholder="Name"
                     className="pl-10"
                     defaultValue={editingUser?.Name || ""}
+                    disabled={
+                      editingUser?.["Is Google Sign Up"] === true &&
+                      userDoc?.uid !== editingUser?.uid
+                    }
                   />
                   <User className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
                 </div>
@@ -539,10 +544,38 @@ export default function UsersSubtab() {
                 {screen === "add" ? "Save" : "Update"}
               </Button>
             </div>
-            {/* Avatar placeholder */}
+            {/* Avatar */}
             <div className="flex-1 flex items-center justify-center">
-              <div className="w-48 h-48 border rounded-xl flex items-center justify-center bg-gray-50">
-                <User className="w-24 h-24 text-gray-400" />
+              <div className="relative w-48 h-48 flex items-center justify-center">
+                <div className="w-full h-full border rounded-xl overflow-hidden bg-gray-50 flex items-center justify-center">
+                  {screen === "edit" && editingUser?.Avatar ? (
+                    <img
+                      src={editingUser.Avatar}
+                      alt={`${editingUser.Name || "User"} avatar`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = "/images/default-avatar.png";
+                      }}
+                    />
+                  ) : (
+                    <img
+                      src="/images/default-avatar.png"
+                      alt="Default avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </div>
+                {/* Camera icon button */}
+                {screen === "edit" && (
+                  <button
+                    type="button"
+                    className="absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-1/2 bg-gray-200 hover:bg-gray-300 border-4 border-white rounded-full w-12 h-12 flex items-center justify-center shadow-md z-50"
+                    aria-label="Change avatar"
+                    style={{ zIndex: 50 }}
+                  >
+                    <Camera className="w-6 h-6 text-blue-600" />
+                  </button>
+                )}
               </div>
             </div>
           </div>
