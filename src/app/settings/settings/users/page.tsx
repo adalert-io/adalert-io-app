@@ -31,6 +31,7 @@ import {
   ColumnDef,
 } from "@tanstack/react-table";
 import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
+import React, { useRef } from "react";
 
 // Removed hardcoded ADS_ACCOUNTS - now using fetched data from store
 
@@ -53,6 +54,17 @@ export default function UsersSubtab() {
   const { userDoc } = useAuthStore();
   const { users, fetchUsers, adsAccounts, fetchAdsAccounts } =
     useAlertSettingsStore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+  // Clean up object URL when component unmounts or avatarPreview changes
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+    };
+  }, [avatarPreview]);
 
   // Helper function to check if current user has access to an ads account
   const hasUserAccessToAccount = useCallback(
@@ -309,6 +321,37 @@ export default function UsersSubtab() {
     );
   }
 
+  // Disable logic for avatar upload
+  const isAvatarUploadDisabled =
+    screen === "edit" &&
+    editingUser?.["Is Google Sign Up"] === true &&
+    userDoc?.uid !== editingUser?.uid;
+
+  // Handler to trigger file input
+  const handleAvatarClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+
+    // todo: uncomment this when avatar upload is implemented
+    // if (!isAvatarUploadDisabled && fileInputRef.current) {
+    //   fileInputRef.current.click();
+    // }
+  };
+
+  // Handler for file change (implement upload logic as needed)
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+      const url = URL.createObjectURL(file);
+      setAvatarPreview(url);
+      // TODO: handle upload to server if needed
+    }
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-md p-8 min-h-[600px]">
       {screen === "list" && (
@@ -382,6 +425,7 @@ export default function UsersSubtab() {
               setEditingUser(null);
               setRole("Admin");
               setSelectedAds([]);
+              setAvatarPreview(null); // Reset avatar preview on back
             }}
           >
             <ChevronLeft className="w-5 h-5" /> Back to Users
@@ -548,9 +592,10 @@ export default function UsersSubtab() {
             <div className="flex-1 flex items-center justify-center">
               <div className="relative w-48 h-48 flex items-center justify-center">
                 <div className="w-full h-full border rounded-xl overflow-hidden bg-gray-50 flex items-center justify-center">
-                  {screen === "edit" && editingUser?.Avatar ? (
+                  {screen === "edit" &&
+                  (avatarPreview || editingUser?.Avatar) ? (
                     <img
-                      src={editingUser.Avatar}
+                      src={avatarPreview || editingUser.Avatar}
                       alt={`${editingUser.Name || "User"} avatar`}
                       className="w-full h-full object-cover"
                       onError={(e) => {
@@ -572,10 +617,19 @@ export default function UsersSubtab() {
                     className="absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-1/2 bg-gray-200 hover:bg-gray-300 border-4 border-white rounded-full w-12 h-12 flex items-center justify-center shadow-md z-50"
                     aria-label="Change avatar"
                     style={{ zIndex: 50 }}
+                    onClick={handleAvatarClick}
                   >
                     <Camera className="w-6 h-6 text-blue-600" />
                   </button>
                 )}
+                {/* Hidden file input */}
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
               </div>
             </div>
           </div>
@@ -584,3 +638,6 @@ export default function UsersSubtab() {
     </div>
   );
 }
+
+// todo: put it back to button of camera and the hidden input
+// disabled={isAvatarUploadDisabled}
