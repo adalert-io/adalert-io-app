@@ -390,6 +390,16 @@ export default function UsersSubtab() {
           </h2>
           <div className="flex flex-col md:flex-row gap-8">
             <div className="flex-1 flex flex-col gap-4 max-w-md">
+              {screen === "edit" && (
+                <div className="relative">
+                  <Input
+                    placeholder="Name"
+                    className="pl-10"
+                    defaultValue={editingUser?.Name || ""}
+                  />
+                  <User className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
+                </div>
+              )}
               <div className="relative">
                 <Input
                   placeholder="Email"
