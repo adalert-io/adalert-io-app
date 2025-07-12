@@ -56,6 +56,7 @@ export default function UsersSubtab() {
     useAlertSettingsStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
 
   // Clean up object URL when component unmounts or avatarPreview changes
   useEffect(() => {
@@ -109,6 +110,7 @@ export default function UsersSubtab() {
   useEffect(() => {
     if (screen === "edit" && editingUser) {
       setRole(editingUser["User Type"] || "Admin");
+      setEmail(editingUser.email || "");
 
       // Check which ads accounts the current user has access to
       if (userDoc && userDoc.uid) {
@@ -118,6 +120,8 @@ export default function UsersSubtab() {
 
         setSelectedAds(userSelectedAds);
       }
+    } else if (screen === "add") {
+      setEmail("");
     }
   }, [screen, editingUser, userDoc, adsAccounts, hasUserAccessToAccount]);
 
@@ -352,6 +356,8 @@ export default function UsersSubtab() {
     }
   };
 
+  const isSaveDisabled = !email || !role;
+
   return (
     <div className="bg-white rounded-2xl shadow-md p-8 min-h-[600px]">
       {screen === "list" && (
@@ -453,7 +459,8 @@ export default function UsersSubtab() {
                 <Input
                   placeholder="Email"
                   className="pl-10"
-                  defaultValue={editingUser?.email || ""}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   disabled={screen === "edit"}
                 />
                 <Mail className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
@@ -583,7 +590,7 @@ export default function UsersSubtab() {
               )}
               <Button
                 className="bg-blue-300 text-white text-lg font-bold px-12 py-3 rounded shadow-md mt-4"
-                disabled
+                disabled={isSaveDisabled}
               >
                 {screen === "add" ? "Save" : "Update"}
               </Button>
