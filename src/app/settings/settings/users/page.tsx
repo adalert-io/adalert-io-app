@@ -19,6 +19,7 @@ import {
   Mail,
   Users,
   Camera,
+  UserCircle,
 } from "lucide-react";
 import { useAlertSettingsStore } from "@/lib/store/settings-store";
 import { useAuthStore } from "@/lib/store/auth-store";
@@ -452,7 +453,7 @@ export default function UsersSubtab() {
                       userDoc?.uid !== editingUser?.uid
                     }
                   />
-                  <User className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
+                  <UserCircle className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
                 </div>
               )}
               <div className="relative">
