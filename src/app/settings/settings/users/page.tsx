@@ -142,7 +142,7 @@ export default function UsersSubtab() {
       if (userDoc && userDoc.uid) {
         const userSelectedAds = adsAccounts
           .filter((account) => hasUserAccessToAccount(account))
-          .map((account) => account.name);
+          .map((account) => account.id);
 
         setSelectedAds(userSelectedAds);
       }
@@ -395,7 +395,8 @@ export default function UsersSubtab() {
           currentAvatarUrl: editingUser.Avatar,
         },
         notifyUser,
-        editingUser
+        editingUser,
+        selectedAds
       );
 
       // Show success message
@@ -606,7 +607,7 @@ export default function UsersSubtab() {
                         className="underline"
                         onClick={() =>
                           setSelectedAds(
-                            filteredAdsAccounts.map((acc) => acc.name)
+                            filteredAdsAccounts.map((acc) => acc.id)
                           )
                         }
                       >
@@ -627,13 +628,13 @@ export default function UsersSubtab() {
                         >
                           <Checkbox
                             className={checkboxClass}
-                            checked={selectedAds.includes(acc.name)}
+                            checked={selectedAds.includes(acc.id)}
                             onCheckedChange={(checked) => {
                               if (checked) {
-                                setSelectedAds([...selectedAds, acc.name]);
+                                setSelectedAds([...selectedAds, acc.id]);
                               } else {
                                 setSelectedAds(
-                                  selectedAds.filter((a) => a !== acc.name)
+                                  selectedAds.filter((a) => a !== acc.id)
                                 );
                               }
                             }}

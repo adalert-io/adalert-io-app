@@ -69,8 +69,9 @@ interface AlertSettingsState {
     updates: Partial<AlertSettings>
   ) => Promise<void>;
   fetchUsers: (companyAdminRef: any) => Promise<void>;
-  refreshUsers: (companyAdminRef: any) => Promise<void>;
   fetchAdsAccounts: (companyAdminRef: any) => Promise<void>;
+  refreshUsers: (companyAdminRef: any) => Promise<void>;
+  refreshAdsAccounts: (companyAdminRef: any) => Promise<void>;
   updateUser: (
     userId: string,
     updates: {
@@ -80,7 +81,13 @@ interface AlertSettingsState {
       currentAvatarUrl?: string | null;
     },
     notifyUser?: boolean,
-    currentUserDoc?: any
+    currentUserDoc?: any,
+    selectedAds?: string[]
+  ) => Promise<void>;
+  updateAdsAccountsSelectedUsers: (
+    userId: string,
+    userType: string,
+    selectedAds: string[]
   ) => Promise<void>;
   sendUserUpdateNotification: (
     toEmail: string,
@@ -210,39 +217,110 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       set({ error: error.message, loading: false });
     }
   },
-  sendUserUpdateNotification: async (
-    toEmail: string,
-    toName: string,
-    userName: string,
-    updaterUserType: string,
-    updaterUserName: string
+  refreshAdsAccounts: async (companyAdminRef: any) => {
+    set({ loading: true, error: null });
+    try {
+      const adsAccountsRef = collection(db, "adsAccounts");
+      const q = query(
+        adsAccountsRef,
+        where("User", "==", companyAdminRef),
+        where("Is Connected", "==", true)
+      );
+      const snap = await getDocs(q);
+      const adsAccounts: AdsAccount[] = snap.docs.map((docSnap) => ({
+        id: docSnap.id,
+        name:
+          docSnap.data()["Account Name Editable"] ||
+          docSnap.data()["Account Name Original"] ||
+          formatAccountNumber(docSnap.data()["Id"]),
+        "Selected Users": docSnap.data()["Selected Users"],
+      }));
+      set({ adsAccounts, adsAccountsLoaded: true, loading: false });
+    } catch (error: any) {
+      set({ error: error.message, loading: false });
+    }
+  },
+  updateAdsAccountsSelectedUsers: async (
+    userId: string,
+    userType: string,
+    selectedAds: string[]
   ) => {
     try {
-      const response = await fetch("/api/send-email", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          toEmail,
-          toName,
-          tags: {
-            UserName: userName,
-            UpdaterUserType: updaterUserType,
-            UpdaterUserName: updaterUserName,
-          },
-        }),
-      });
+      const userRef = doc(db, "users", userId);
+      const { useAuthStore } = await import("./auth-store");
+      const userDoc = useAuthStore.getState().userDoc;
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to send email notification");
+      if (userType === "Admin") {
+        // For Admin: Add user to all ads accounts
+        const adsAccountsRef = collection(db, "adsAccounts");
+        const q = query(
+          adsAccountsRef,
+          where("User", "==", userDoc?.["Company Admin"]),
+          where("Is Connected", "==", true)
+        );
+        const snap = await getDocs(q);
+
+        const updatePromises = snap.docs.map(async (docSnap) => {
+          const currentSelectedUsers = docSnap.data()["Selected Users"] || [];
+          const userAlreadySelected = currentSelectedUsers.some(
+            (user: any) => user.id === userId || user.path?.includes(userId)
+          );
+
+          if (!userAlreadySelected) {
+            return updateDoc(docSnap.ref, {
+              "Selected Users": [...currentSelectedUsers, userRef],
+            });
+          }
+        });
+
+        await Promise.all(updatePromises.filter(Boolean));
+      } else if (userType === "Manager") {
+        // For Manager: Add user to selected ads accounts and remove from others
+        const adsAccountsRef = collection(db, "adsAccounts");
+        const q = query(
+          adsAccountsRef,
+          where("User", "==", userDoc?.["Company Admin"]),
+          where("Is Connected", "==", true)
+        );
+        const snap = await getDocs(q);
+
+        const updatePromises = snap.docs.map(async (docSnap) => {
+          const accountId = docSnap.id;
+          const currentSelectedUsers = docSnap.data()["Selected Users"] || [];
+          const userAlreadySelected = currentSelectedUsers.some(
+            (user: any) => user.id === userId || user.path?.includes(userId)
+          );
+
+          if (selectedAds.includes(accountId)) {
+            // Add user to selected ads accounts
+            if (!userAlreadySelected) {
+              return updateDoc(docSnap.ref, {
+                "Selected Users": [...currentSelectedUsers, userRef],
+              });
+            }
+          } else {
+            // Remove user from non-selected ads accounts
+            if (userAlreadySelected) {
+              const updatedSelectedUsers = currentSelectedUsers.filter(
+                (user: any) =>
+                  user.id !== userId && !user.path?.includes(userId)
+              );
+              return updateDoc(docSnap.ref, {
+                "Selected Users": updatedSelectedUsers,
+              });
+            }
+          }
+        });
+
+        await Promise.all(updatePromises.filter(Boolean));
       }
 
-      const result = await response.json();
-      console.log("Email notification sent successfully:", result);
+      // Refresh ads accounts to update the state with latest data
+      if (userDoc && userDoc["Company Admin"]) {
+        await get().refreshAdsAccounts(userDoc["Company Admin"]);
+      }
     } catch (error) {
-      console.error("Error sending email notification:", error);
+      console.error("Error updating ads accounts selected users:", error);
       throw error;
     }
   },
@@ -255,7 +333,8 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       currentAvatarUrl?: string | null;
     },
     notifyUser?: boolean,
-    currentUserDoc?: any
+    currentUserDoc?: any,
+    selectedAds?: string[]
   ) => {
     set({ loading: true, error: null });
     try {
@@ -308,6 +387,15 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
 
       await updateDoc(userRef, updateData);
 
+      // Update ads accounts selected users based on role
+      if (updates["User Type"] && selectedAds) {
+        await get().updateAdsAccountsSelectedUsers(
+          userId,
+          updates["User Type"],
+          selectedAds
+        );
+      }
+
       // Send email notification if requested
       if (notifyUser && currentUserDoc) {
         const { useAuthStore } = await import("./auth-store");
@@ -338,6 +426,42 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       set({ loading: false });
     } catch (error: any) {
       set({ error: error.message, loading: false });
+      throw error;
+    }
+  },
+  sendUserUpdateNotification: async (
+    toEmail: string,
+    toName: string,
+    userName: string,
+    updaterUserType: string,
+    updaterUserName: string
+  ) => {
+    try {
+      const response = await fetch("/api/send-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          toEmail,
+          toName,
+          tags: {
+            UserName: userName,
+            UpdaterUserType: updaterUserType,
+            UpdaterUserName: updaterUserName,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to send email notification");
+      }
+
+      const result = await response.json();
+      console.log("Email notification sent successfully:", result);
+    } catch (error) {
+      console.error("Error sending email notification:", error);
       throw error;
     }
   },
