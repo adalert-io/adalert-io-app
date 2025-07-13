@@ -361,14 +361,9 @@ export default function UsersSubtab() {
 
   // Handler to trigger file input
   const handleAvatarClick = () => {
-    if (fileInputRef.current) {
+    if (!isAvatarUploadDisabled && fileInputRef.current) {
       fileInputRef.current.click();
     }
-
-    // todo: uncomment this when avatar upload is implemented
-    // if (!isAvatarUploadDisabled && fileInputRef.current) {
-    //   fileInputRef.current.click();
-    // }
   };
 
   // Handler for file change (implement upload logic as needed)
@@ -715,6 +710,7 @@ export default function UsersSubtab() {
                     aria-label="Change avatar"
                     style={{ zIndex: 50 }}
                     onClick={handleAvatarClick}
+                    disabled={isAvatarUploadDisabled}
                   >
                     <Camera className="w-6 h-6 text-blue-600" />
                   </button>
@@ -726,6 +722,7 @@ export default function UsersSubtab() {
                   ref={fileInputRef}
                   className="hidden"
                   onChange={handleFileChange}
+                  disabled={isAvatarUploadDisabled}
                 />
               </div>
             </div>
@@ -735,6 +732,3 @@ export default function UsersSubtab() {
     </div>
   );
 }
-
-// todo: put it back to button of camera and the hidden input
-// disabled={isAvatarUploadDisabled}
