@@ -99,13 +99,18 @@ export default function AcceptInvitation({
       );
       // 2. Create user documents
       await createUserDocuments(userCredential.user, false, false);
-      // 3. Update invitation status
+      // 3. Update user document to set Company Admin
+      await updateDoc(doc(db, "users", userCredential.user.uid), {
+        "Company Admin": invitation.companyAdmin,
+        Name: formData.name,
+      });
+      // 4. Update invitation status
       await updateDoc(doc(db, "invitations", invitationId), {
         status: "accepted",
         acceptedAt: serverTimestamp(),
         acceptedBy: userCredential.user.uid,
       });
-      // 4. Set up ads accounts access
+      // 5. Set up ads accounts access
       if (invitation.selectedAds && invitation.selectedAds.length > 0) {
         const userRef = doc(db, "users", userCredential.user.uid);
 
@@ -136,7 +141,7 @@ export default function AcceptInvitation({
           }
         }
       }
-      // 5. Log the user in
+      // 6. Log the user in
       await signInWithEmailAndPassword(
         auth,
         invitation.email,
