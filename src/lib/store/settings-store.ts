@@ -78,7 +78,16 @@ interface AlertSettingsState {
       "User Type"?: string;
       avatarFile?: File | null;
       currentAvatarUrl?: string | null;
-    }
+    },
+    notifyUser?: boolean,
+    currentUserDoc?: any
+  ) => Promise<void>;
+  sendUserUpdateNotification: (
+    toEmail: string,
+    toName: string,
+    userName: string,
+    updaterUserType: string,
+    updaterUserName: string
   ) => Promise<void>;
 }
 
@@ -201,6 +210,42 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       set({ error: error.message, loading: false });
     }
   },
+  sendUserUpdateNotification: async (
+    toEmail: string,
+    toName: string,
+    userName: string,
+    updaterUserType: string,
+    updaterUserName: string
+  ) => {
+    try {
+      const response = await fetch("/api/send-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          toEmail,
+          toName,
+          tags: {
+            UserName: userName,
+            UpdaterUserType: updaterUserType,
+            UpdaterUserName: updaterUserName,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to send email notification");
+      }
+
+      const result = await response.json();
+      console.log("Email notification sent successfully:", result);
+    } catch (error) {
+      console.error("Error sending email notification:", error);
+      throw error;
+    }
+  },
   updateUser: async (
     userId: string,
     updates: {
@@ -208,7 +253,9 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       "User Type"?: string;
       avatarFile?: File | null;
       currentAvatarUrl?: string | null;
-    }
+    },
+    notifyUser?: boolean,
+    currentUserDoc?: any
   ) => {
     set({ loading: true, error: null });
     try {
@@ -261,6 +308,21 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
 
       await updateDoc(userRef, updateData);
 
+      // Send email notification if requested
+      if (notifyUser && currentUserDoc) {
+        const { useAuthStore } = await import("./auth-store");
+        const userDoc = useAuthStore.getState().userDoc;
+        if (userDoc) {
+          await get().sendUserUpdateNotification(
+            currentUserDoc.email,
+            currentUserDoc.Name,
+            updates.Name || currentUserDoc.Name,
+            userDoc["User Type"],
+            userDoc.Name
+          );
+        }
+      }
+
       // Refresh users list by calling fetchUsers
       // We need to get the company admin ref from the current user
       const currentUser = get().users.find((user) => user.id === userId);
@@ -270,7 +332,6 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         const userDoc = useAuthStore.getState().userDoc;
         if (userDoc && userDoc["Company Admin"]) {
           await get().refreshUsers(userDoc["Company Admin"]);
-          console.log("upated.....");
         }
       }
 

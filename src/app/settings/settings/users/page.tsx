@@ -63,6 +63,7 @@ export default function UsersSubtab() {
   const [name, setName] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [notifyUser, setNotifyUser] = useState(false);
 
   // Clean up object URL when component unmounts or avatarPreview changes
   useEffect(() => {
@@ -135,6 +136,7 @@ export default function UsersSubtab() {
       setRole(editingUser["User Type"] || "Admin");
       setEmail(editingUser.email || "");
       setName(editingUser.Name || "");
+      setNotifyUser(editingUser.NotifyUser || false);
 
       // Check which ads accounts the current user has access to
       if (userDoc && userDoc.uid) {
@@ -147,6 +149,7 @@ export default function UsersSubtab() {
     } else if (screen === "add") {
       setEmail("");
       setName("");
+      setNotifyUser(false);
     }
   }, [screen, editingUser, userDoc, adsAccounts, hasUserAccessToAccount]);
 
@@ -388,12 +391,17 @@ export default function UsersSubtab() {
     try {
       setIsSaving(true);
 
-      await updateUser(editingUser.id, {
-        Name: name,
-        "User Type": role,
-        avatarFile: avatarFile,
-        currentAvatarUrl: editingUser.Avatar,
-      });
+      await updateUser(
+        editingUser.id,
+        {
+          Name: name,
+          "User Type": role,
+          avatarFile: avatarFile,
+          currentAvatarUrl: editingUser.Avatar,
+        },
+        notifyUser,
+        editingUser
+      );
 
       // Show success message
       toast.success("User updated successfully!");
@@ -407,6 +415,7 @@ export default function UsersSubtab() {
       setAvatarFile(null);
       setName("");
       setEmail("");
+      setNotifyUser(false);
     } catch (error: any) {
       console.error("Error updating user:", error);
       toast.error(error.message || "Failed to update user");
@@ -494,6 +503,7 @@ export default function UsersSubtab() {
               setAvatarFile(null);
               setName("");
               setEmail("");
+              setNotifyUser(false);
             }}
           >
             <ChevronLeft className="w-5 h-5" /> Back to Users
@@ -642,7 +652,14 @@ export default function UsersSubtab() {
               </div>
               {screen === "edit" && (
                 <div className="flex items-center gap-2">
-                  <Checkbox className={checkboxClass} id="notify-user" />
+                  <Checkbox
+                    className={checkboxClass}
+                    id="notify-user"
+                    checked={notifyUser}
+                    onCheckedChange={(checked) =>
+                      setNotifyUser(checked === true)
+                    }
+                  />
                   <label
                     htmlFor="notify-user"
                     className="text-base font-medium select-none"
