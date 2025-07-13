@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { db } from "@/lib/firebase/config";
+import { db, storage } from "@/lib/firebase/config";
 import {
   collection,
   query,
@@ -8,6 +8,12 @@ import {
   updateDoc,
   doc,
 } from "firebase/firestore";
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject,
+} from "firebase/storage";
 import { User } from "firebase/auth";
 import { formatAccountNumber } from "../utils";
 
@@ -63,7 +69,17 @@ interface AlertSettingsState {
     updates: Partial<AlertSettings>
   ) => Promise<void>;
   fetchUsers: (companyAdminRef: any) => Promise<void>;
+  refreshUsers: (companyAdminRef: any) => Promise<void>;
   fetchAdsAccounts: (companyAdminRef: any) => Promise<void>;
+  updateUser: (
+    userId: string,
+    updates: {
+      Name?: string;
+      "User Type"?: string;
+      avatarFile?: File | null;
+      currentAvatarUrl?: string | null;
+    }
+  ) => Promise<void>;
 }
 
 export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
@@ -141,6 +157,26 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       set({ error: error.message, loading: false });
     }
   },
+  refreshUsers: async (companyAdminRef: any) => {
+    set({ loading: true, error: null });
+    try {
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("Company Admin", "==", companyAdminRef));
+      const snap = await getDocs(q);
+      const users: UserRow[] = snap.docs.map((docSnap) => ({
+        id: docSnap.id,
+        email: docSnap.data().email,
+        Name: docSnap.data().Name,
+        "User Type": docSnap.data()["User Type"],
+        "User Access": docSnap.data()["User Access"],
+        "Avatar": docSnap.data()["Avatar"],
+        "Is Google Sign Up": docSnap.data()["Is Google Sign Up"],
+      }));
+      set({ users, usersLoaded: true, loading: false });
+    } catch (error: any) {
+      set({ error: error.message, loading: false });
+    }
+  },
   fetchAdsAccounts: async (companyAdminRef: any) => {
     if (get().adsAccountsLoaded) return;
     set({ loading: true, error: null });
@@ -163,6 +199,85 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       set({ adsAccounts, adsAccountsLoaded: true, loading: false });
     } catch (error: any) {
       set({ error: error.message, loading: false });
+    }
+  },
+  updateUser: async (
+    userId: string,
+    updates: {
+      Name?: string;
+      "User Type"?: string;
+      avatarFile?: File | null;
+      currentAvatarUrl?: string | null;
+    }
+  ) => {
+    set({ loading: true, error: null });
+    try {
+      let avatarUrl = updates.currentAvatarUrl;
+
+      // Handle avatar upload if a new file is provided
+      if (updates.avatarFile) {
+        // Upload new avatar
+        const avatarRef = ref(
+          storage,
+          `avatars/${userId}/${updates.avatarFile.name}`
+        );
+        await uploadBytes(avatarRef, updates.avatarFile);
+        avatarUrl = await getDownloadURL(avatarRef);
+
+        // Delete old avatar if it exists and is different from the new one
+        if (
+          updates.currentAvatarUrl &&
+          updates.currentAvatarUrl !== avatarUrl
+        ) {
+          try {
+            // Extract the file path from the Firebase Storage URL
+            const url = new URL(updates.currentAvatarUrl);
+            const pathMatch = url.pathname.match(/\/o\/(.+?)\?/);
+            if (pathMatch) {
+              const filePath = decodeURIComponent(pathMatch[1]);
+              const oldAvatarRef = ref(storage, filePath);
+              await deleteObject(oldAvatarRef);
+            }
+          } catch (error) {
+            // Ignore errors when deleting old avatar (file might not exist)
+            console.warn("Could not delete old avatar:", error);
+          }
+        }
+      }
+
+      // Update user document
+      const userRef = doc(db, "users", userId);
+      const updateData: any = {};
+
+      if (updates.Name !== undefined) {
+        updateData.Name = updates.Name;
+      }
+      if (updates["User Type"] !== undefined) {
+        updateData["User Type"] = updates["User Type"];
+      }
+      if (avatarUrl !== undefined) {
+        updateData.Avatar = avatarUrl;
+      }
+
+      await updateDoc(userRef, updateData);
+
+      // Refresh users list by calling fetchUsers
+      // We need to get the company admin ref from the current user
+      const currentUser = get().users.find((user) => user.id === userId);
+      if (currentUser) {
+        // Get the company admin ref from the auth store
+        const { useAuthStore } = await import("./auth-store");
+        const userDoc = useAuthStore.getState().userDoc;
+        if (userDoc && userDoc["Company Admin"]) {
+          await get().refreshUsers(userDoc["Company Admin"]);
+          console.log("upated.....");
+        }
+      }
+
+      set({ loading: false });
+    } catch (error: any) {
+      set({ error: error.message, loading: false });
+      throw error;
     }
   },
 }));

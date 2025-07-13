@@ -20,6 +20,7 @@ import {
   Users,
   Camera,
   UserCircle,
+  Loader2,
 } from "lucide-react";
 import { useAlertSettingsStore } from "@/lib/store/settings-store";
 import { useAuthStore } from "@/lib/store/auth-store";
@@ -33,6 +34,7 @@ import {
 } from "@tanstack/react-table";
 import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
 import React, { useRef } from "react";
+import { toast } from "sonner";
 
 // Removed hardcoded ADS_ACCOUNTS - now using fetched data from store
 
@@ -53,11 +55,14 @@ export default function UsersSubtab() {
   const [adsSearchValue, setAdsSearchValue] = useState("");
   const [debouncedAdsSearch, setDebouncedAdsSearch] = useState("");
   const { userDoc } = useAuthStore();
-  const { users, fetchUsers, adsAccounts, fetchAdsAccounts } =
+  const { users, fetchUsers, adsAccounts, fetchAdsAccounts, updateUser } =
     useAlertSettingsStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Clean up object URL when component unmounts or avatarPreview changes
   useEffect(() => {
@@ -67,6 +72,23 @@ export default function UsersSubtab() {
       }
     };
   }, [avatarPreview]);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (
+        !target.closest(".role-dropdown") &&
+        !target.closest(".ads-dropdown")
+      ) {
+        setRoleDropdownOpen(false);
+        setAdsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Helper function to check if current user has access to an ads account
   const hasUserAccessToAccount = useCallback(
@@ -112,6 +134,7 @@ export default function UsersSubtab() {
     if (screen === "edit" && editingUser) {
       setRole(editingUser["User Type"] || "Admin");
       setEmail(editingUser.email || "");
+      setName(editingUser.Name || "");
 
       // Check which ads accounts the current user has access to
       if (userDoc && userDoc.uid) {
@@ -123,6 +146,7 @@ export default function UsersSubtab() {
       }
     } else if (screen === "add") {
       setEmail("");
+      setName("");
     }
   }, [screen, editingUser, userDoc, adsAccounts, hasUserAccessToAccount]);
 
@@ -353,11 +377,45 @@ export default function UsersSubtab() {
       }
       const url = URL.createObjectURL(file);
       setAvatarPreview(url);
-      // TODO: handle upload to server if needed
+      setAvatarFile(file);
     }
   };
 
-  const isSaveDisabled = !email || !role;
+  // Handle save button click
+  const handleSave = async () => {
+    if (!editingUser || isSaving) return;
+
+    try {
+      setIsSaving(true);
+
+      await updateUser(editingUser.id, {
+        Name: name,
+        "User Type": role,
+        avatarFile: avatarFile,
+        currentAvatarUrl: editingUser.Avatar,
+      });
+
+      // Show success message
+      toast.success("User updated successfully!");
+
+      // Navigate back to list mode
+      setScreen("list");
+      setEditingUser(null);
+      setRole("Admin");
+      setSelectedAds([]);
+      setAvatarPreview(null);
+      setAvatarFile(null);
+      setName("");
+      setEmail("");
+    } catch (error: any) {
+      console.error("Error updating user:", error);
+      toast.error(error.message || "Failed to update user");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const isSaveDisabled = !email || !role || isSaving;
 
   return (
     <div className="bg-white rounded-2xl shadow-md p-8 min-h-[600px]">
@@ -432,7 +490,10 @@ export default function UsersSubtab() {
               setEditingUser(null);
               setRole("Admin");
               setSelectedAds([]);
-              setAvatarPreview(null); // Reset avatar preview on back
+              setAvatarPreview(null);
+              setAvatarFile(null);
+              setName("");
+              setEmail("");
             }}
           >
             <ChevronLeft className="w-5 h-5" /> Back to Users
@@ -447,7 +508,8 @@ export default function UsersSubtab() {
                   <Input
                     placeholder="Name"
                     className="pl-10"
-                    defaultValue={editingUser?.Name || ""}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
                     disabled={
                       editingUser?.["Is Google Sign Up"] === true &&
                       userDoc?.uid !== editingUser?.uid
@@ -467,7 +529,7 @@ export default function UsersSubtab() {
                 <Mail className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
               </div>
               {/* Role dropdown */}
-              <div className="relative">
+              <div className="relative role-dropdown">
                 <button
                   type="button"
                   className="flex items-center w-full border rounded-md px-3 py-2 bg-white text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-200"
@@ -504,7 +566,7 @@ export default function UsersSubtab() {
                 )}
               </div>
               {/* Ads accounts dropdown */}
-              <div className="relative">
+              <div className="relative ads-dropdown">
                 <button
                   type="button"
                   className={`flex items-center w-full border rounded-md px-3 py-2 bg-white text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-200 ${
@@ -592,8 +654,18 @@ export default function UsersSubtab() {
               <Button
                 className="bg-blue-300 text-white text-lg font-bold px-12 py-3 rounded shadow-md mt-4"
                 disabled={isSaveDisabled}
+                onClick={screen === "edit" ? handleSave : undefined}
               >
-                {screen === "add" ? "Save" : "Update"}
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : screen === "add" ? (
+                  "Save"
+                ) : (
+                  "Update"
+                )}
               </Button>
             </div>
             {/* Avatar */}
