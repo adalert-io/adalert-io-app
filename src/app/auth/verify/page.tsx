@@ -42,7 +42,7 @@ export default function VerifyEmailPage() {
         }
 
         // Create user documents after successful verification
-        await createUserDocuments(user, false);
+        await createUserDocuments(user, false, true);
 
         toast.success("Email verified successfully!");
         // Use dynamic redirect URL

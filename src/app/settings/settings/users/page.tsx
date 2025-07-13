@@ -55,8 +55,14 @@ export default function UsersSubtab() {
   const [adsSearchValue, setAdsSearchValue] = useState("");
   const [debouncedAdsSearch, setDebouncedAdsSearch] = useState("");
   const { userDoc } = useAuthStore();
-  const { users, fetchUsers, adsAccounts, fetchAdsAccounts, updateUser } =
-    useAlertSettingsStore();
+  const {
+    users,
+    fetchUsers,
+    adsAccounts,
+    fetchAdsAccounts,
+    updateUser,
+    inviteUser,
+  } = useAlertSettingsStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [email, setEmail] = useState("");
@@ -381,11 +387,31 @@ export default function UsersSubtab() {
 
   // Handle save button click
   const handleSave = async () => {
-    if (!editingUser || isSaving) return;
+    console.log("handleSave");
+    if (isSaving) return;
 
     try {
       setIsSaving(true);
-
+      if (screen === "add") {
+        let adsToInvite = selectedAds;
+        if (role === "Admin") {
+          adsToInvite = adsAccounts.map((acc) => acc.id);
+        }
+        console.log({ email, role, name, selectedAds: adsToInvite });
+        await inviteUser(email, role, name, adsToInvite);
+        toast.success("Invitation sent successfully!");
+        setScreen("list");
+        setEditingUser(null);
+        setRole("Admin");
+        setSelectedAds([]);
+        setAvatarPreview(null);
+        setAvatarFile(null);
+        setName("");
+        setEmail("");
+        setNotifyUser(false);
+        return;
+      }
+      if (!editingUser) return;
       await updateUser(
         editingUser.id,
         {
@@ -398,11 +424,7 @@ export default function UsersSubtab() {
         editingUser,
         selectedAds
       );
-
-      // Show success message
       toast.success("User updated successfully!");
-
-      // Navigate back to list mode
       setScreen("list");
       setEditingUser(null);
       setRole("Admin");
@@ -413,8 +435,8 @@ export default function UsersSubtab() {
       setEmail("");
       setNotifyUser(false);
     } catch (error: any) {
-      console.error("Error updating user:", error);
-      toast.error(error.message || "Failed to update user");
+      console.error("Error saving user:", error);
+      toast.error(error.message || "Failed to save user");
     } finally {
       setIsSaving(false);
     }
@@ -667,7 +689,7 @@ export default function UsersSubtab() {
               <Button
                 className="bg-blue-300 text-white text-lg font-bold px-12 py-3 rounded shadow-md mt-4"
                 disabled={isSaveDisabled}
-                onClick={screen === "edit" ? handleSave : undefined}
+                onClick={handleSave}
               >
                 {isSaving ? (
                   <>

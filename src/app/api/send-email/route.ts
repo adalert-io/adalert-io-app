@@ -4,7 +4,7 @@ import sgMail from "@sendgrid/mail";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { toEmail, toName, tags } = body;
+    const { toEmail, toName, tags, templateId } = body;
 
     // Validate required fields
     if (!toEmail) {
@@ -17,7 +17,6 @@ export async function POST(request: NextRequest) {
     // Get environment variables
     const fromEmail = process.env.SENDGRID_VERIFIED_SENDER;
     const fromName = process.env.SENDGRID_FROM_NAME;
-    const templateId = process.env.SENDGRID_TEMPLATE_ID_UPDATE_PROFILE;
 
     // Validate environment variables
     if (!fromEmail || !templateId) {

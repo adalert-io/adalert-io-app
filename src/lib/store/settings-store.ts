@@ -7,6 +7,8 @@ import {
   getDocs,
   updateDoc,
   doc,
+  setDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 import {
   ref,
@@ -16,6 +18,7 @@ import {
 } from "firebase/storage";
 import { User } from "firebase/auth";
 import { formatAccountNumber } from "../utils";
+import { APPLICATION_NAME } from "../constants";
 
 export interface AlertSettings {
   id: string;
@@ -96,6 +99,13 @@ interface AlertSettingsState {
     updaterUserType: string,
     updaterUserName: string
   ) => Promise<void>;
+  inviteUser: (
+    email: string,
+    userType: string,
+    name: string,
+    selectedAds: string[]
+  ) => Promise<string>;
+  sendInvitationEmail: (email: string, invitationId: string) => Promise<void>;
 }
 
 export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
@@ -444,6 +454,8 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         },
         body: JSON.stringify({
           toEmail,
+          templateId:
+            process.env.NEXT_PUBLIC_SENDGRID_TEMPLATE_ID_UPDATE_PROFILE,
           toName,
           tags: {
             UserName: userName,
@@ -462,6 +474,62 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       console.log("Email notification sent successfully:", result);
     } catch (error) {
       console.error("Error sending email notification:", error);
+      throw error;
+    }
+  },
+  inviteUser: async (
+    email: string,
+    userType: string,
+    name: string,
+    selectedAds: string[]
+  ) => {
+    try {
+      console.log("inviteUser.....");
+      const { useAuthStore } = await import("./auth-store");
+      const userDoc = useAuthStore.getState().userDoc;
+      const invitationRef = doc(collection(db, "invitations"));
+      const invitationData = {
+        email,
+        userType,
+        name,
+        selectedAds,
+        invitedBy: userDoc?.uid,
+        invitedAt: serverTimestamp(),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        status: "pending",
+        companyAdmin: userDoc?.["Company Admin"],
+      };
+      await setDoc(invitationRef, invitationData);
+      await get().sendInvitationEmail(email, invitationRef.id);
+      return invitationRef.id;
+    } catch (error) {
+      console.error("Error inviting user:", error);
+      throw error;
+    }
+  },
+
+  sendInvitationEmail: async (email: string, invitationId: string) => {
+    try {
+      const invitationLink = `${process.env.NEXT_PUBLIC_APP_URL}/auth/invite/${invitationId}`;
+      const response = await fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          toEmail: email,
+          templateId: process.env.NEXT_PUBLIC_SENDGRID_TEMPLATE_ID_INVITE_USER,
+          tags: {
+            ApplicationName: APPLICATION_NAME,
+            Link: invitationLink,
+            ExpiresIn: "7 days",
+          },
+        }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to send invitation email");
+      }
+    } catch (error) {
+      console.error("Error sending invitation email:", error);
       throw error;
     }
   },

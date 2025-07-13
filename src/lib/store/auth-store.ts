@@ -166,7 +166,8 @@ async function checkSubscriptionStatus(userId: string): Promise<boolean> {
 // Reusable function to create user documents
 export async function createUserDocuments(
   user: User,
-  isGoogleSignUp: boolean = false
+  isGoogleSignUp: boolean = false,
+  createStripeAndSubscription: boolean = true
 ) {
   // Check if user document already exists
   const userRef = doc(db, COLLECTIONS.USERS, user.uid);
@@ -222,19 +223,25 @@ export async function createUserDocuments(
       "User": userRef,
     });
 
-    // Create stripeCompanies document
-    const stripeCompaniesRef = doc(db, COLLECTIONS.STRIPE_COMPANIES, user.uid);
-    await setDoc(stripeCompaniesRef, {
-      "User": userRef,
-    });
+    if (createStripeAndSubscription) {
+      // Create stripeCompanies document
+      const stripeCompaniesRef = doc(
+        db,
+        COLLECTIONS.STRIPE_COMPANIES,
+        user.uid
+      );
+      await setDoc(stripeCompaniesRef, {
+        "User": userRef,
+      });
 
-    // Create subscriptions document
-    const subscriptionsRef = doc(db, COLLECTIONS.SUBSCRIPTIONS, user.uid);
-    await setDoc(subscriptionsRef, {
-      "User": userRef,
-      "Free Trial Start Date": serverTimestamp(),
-      "User Status": SUBSCRIPTION_STATUS.TRIAL_NEW,
-    });
+      // Create subscriptions document
+      const subscriptionsRef = doc(db, COLLECTIONS.SUBSCRIPTIONS, user.uid);
+      await setDoc(subscriptionsRef, {
+        "User": userRef,
+        "Free Trial Start Date": serverTimestamp(),
+        "User Status": SUBSCRIPTION_STATUS.TRIAL_NEW,
+      });
+    }
   }
 }
 
@@ -274,8 +281,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // After fetching user document and checking subscription, fetch user ads accounts
       const currentUserDoc = get().userDoc;
       if (currentUserDoc) {
-        const { useUserAdsAccountsStore } = await import("./user-ads-accounts-store");
-        await useUserAdsAccountsStore.getState().fetchUserAdsAccounts(currentUserDoc);
+        const { useUserAdsAccountsStore } = await import(
+          "./user-ads-accounts-store"
+        );
+        await useUserAdsAccountsStore
+          .getState()
+          .fetchUserAdsAccounts(currentUserDoc);
       }
     } catch (err: any) {
       console.error("Error checking subscription status:", err);
@@ -353,7 +364,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const user = userCredential.user;
 
       // Create user documents
-      await createUserDocuments(user, true);
+      await createUserDocuments(user, true, true);
 
       set({ user });
 
@@ -485,4 +496,3 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 }));
- 

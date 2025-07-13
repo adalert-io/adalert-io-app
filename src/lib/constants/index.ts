@@ -1,3 +1,6 @@
+// Application Name Constant
+export const APPLICATION_NAME = "adAlert.io";
+
 // Subscription Status Constants
 export const SUBSCRIPTION_STATUS = {
   TRIAL_NEW: "Trial New",
