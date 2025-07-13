@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import {
@@ -25,8 +25,9 @@ function getPasswordStrength(password: string) {
 export default function AcceptInvitation({
   params,
 }: {
-  params: { invitationId: string };
+  params: Promise<{ invitationId: string }>;
 }) {
+  const { invitationId } = use(params);
   const [invitation, setInvitation] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [accepting, setAccepting] = useState(false);
@@ -44,7 +45,7 @@ export default function AcceptInvitation({
     const fetchInvitation = async () => {
       try {
         const invitationDoc = await getDoc(
-          doc(db, "invitations", params.invitationId)
+          doc(db, "invitations", invitationId)
         );
         if (!invitationDoc.exists()) {
           toast.error("Invalid invitation link");
@@ -72,7 +73,7 @@ export default function AcceptInvitation({
       }
     };
     fetchInvitation();
-  }, [params.invitationId, router]);
+  }, [invitationId, router]);
 
   const validateForm = () => {
     const errs: { name?: string; password?: string } = {};
@@ -99,23 +100,41 @@ export default function AcceptInvitation({
       // 2. Create user documents
       await createUserDocuments(userCredential.user, false, false);
       // 3. Update invitation status
-      await updateDoc(doc(db, "invitations", params.invitationId), {
+      await updateDoc(doc(db, "invitations", invitationId), {
         status: "accepted",
         acceptedAt: serverTimestamp(),
         acceptedBy: userCredential.user.uid,
       });
       // 4. Set up ads accounts access
       if (invitation.selectedAds && invitation.selectedAds.length > 0) {
-        const { useAlertSettingsStore } = await import(
-          "@/lib/store/settings-store"
-        );
-        await useAlertSettingsStore
-          .getState()
-          .updateAdsAccountsSelectedUsers(
-            userCredential.user.uid,
-            invitation.userType,
-            invitation.selectedAds
-          );
+        const userRef = doc(db, "users", userCredential.user.uid);
+
+        // Loop through selected ads accounts and add user to their Selected Users
+        for (const adsAccountId of invitation.selectedAds) {
+          try {
+            const adsAccountRef = doc(db, "adsAccounts", adsAccountId);
+            const adsAccountDoc = await getDoc(adsAccountRef);
+
+            if (adsAccountDoc.exists()) {
+              const currentSelectedUsers =
+                adsAccountDoc.data()["Selected Users"] || [];
+              const userAlreadySelected = currentSelectedUsers.some(
+                (user: any) =>
+                  user.id === userCredential.user.uid ||
+                  user.path?.includes(userCredential.user.uid)
+              );
+
+              if (!userAlreadySelected) {
+                await updateDoc(adsAccountRef, {
+                  "Selected Users": [...currentSelectedUsers, userRef],
+                });
+              }
+            }
+          } catch (error) {
+            console.error(`Error updating ads account ${adsAccountId}:`, error);
+            // Continue with other ads accounts even if one fails
+          }
+        }
       }
       // 5. Log the user in
       await signInWithEmailAndPassword(
@@ -124,6 +143,7 @@ export default function AcceptInvitation({
         formData.password
       );
       toast.success("Account activated! Welcome to the team!");
+      // TODO: need to check where to navigate to
       router.push("/dashboard");
     } catch (error: any) {
       if (error.code === "auth/email-already-in-use") {
