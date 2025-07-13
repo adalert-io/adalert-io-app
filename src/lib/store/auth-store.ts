@@ -189,6 +189,7 @@ export async function createUserDocuments(
       "modified_at": serverTimestamp(),
       "Telephone": user.phoneNumber,
       "uid": user.uid,
+      email: user.email,
     });
 
     // Create authenticationPageTrackers document
