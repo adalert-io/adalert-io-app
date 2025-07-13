@@ -25,6 +25,8 @@ import {
 import { useAlertSettingsStore } from "@/lib/store/settings-store";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { Checkbox } from "@/components/ui/checkbox";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase/config";
 import {
   useReactTable,
   getCoreRowModel,
@@ -393,6 +395,19 @@ export default function UsersSubtab() {
     try {
       setIsSaving(true);
       if (screen === "add") {
+        // Check if email already exists in users collection
+        const usersRef = collection(db, "users");
+        const emailQuery = query(
+          usersRef,
+          where("email", "==", email.toLowerCase())
+        );
+        const emailSnapshot = await getDocs(emailQuery);
+
+        if (!emailSnapshot.empty) {
+          toast.error("A user with this email already exists");
+          return;
+        }
+
         let adsToInvite = selectedAds;
         if (role === "Admin") {
           adsToInvite = adsAccounts.map((acc) => acc.id);
