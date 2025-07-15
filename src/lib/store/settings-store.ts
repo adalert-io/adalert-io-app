@@ -54,6 +54,14 @@ export interface AdsAccount {
   id: string;
   name: string;
   "Selected Users"?: any[]; // Array of user references
+  "Account Name Editable"?: string;
+  "Account Name Original"?: string;
+  "Id"?: string;
+  "Is Connected"?: boolean;
+  "Is Selected"?: boolean;
+  "Created Date"?: any;
+  "Platform"?: string;
+  "Monthly Budget"?: number;
   // Add other fields as needed
 }
 
@@ -66,6 +74,8 @@ interface AlertSettingsState {
   usersLoaded: boolean;
   adsAccounts: AdsAccount[];
   adsAccountsLoaded: boolean;
+  adsAccountsForTab: AdsAccount[];
+  adsAccountsForTabLoaded: boolean;
   fetchAlertSettings: (userId: string) => Promise<void>;
   updateAlertSettings: (
     userId: string,
@@ -73,6 +83,8 @@ interface AlertSettingsState {
   ) => Promise<void>;
   fetchUsers: (companyAdminRef: any) => Promise<void>;
   fetchAdsAccounts: (companyAdminRef: any) => Promise<void>;
+  fetchAdsAccountsForAdsAccountsTab: (companyAdminRef: any, currentUserId: string) => Promise<void>;
+  refreshAdsAccountsForTab: (companyAdminRef: any, currentUserId: string) => Promise<void>;
   refreshUsers: (companyAdminRef: any) => Promise<void>;
   refreshAdsAccounts: (companyAdminRef: any) => Promise<void>;
   updateUser: (
@@ -106,6 +118,8 @@ interface AlertSettingsState {
     selectedAds: string[]
   ) => Promise<string>;
   sendInvitationEmail: (email: string, invitationId: string) => Promise<void>;
+  updateAdsAccount: (accountId: string, updates: any) => Promise<void>;
+  toggleAdsAccountAlert: (accountId: string, sendAlert: boolean) => Promise<void>;
 }
 
 export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
@@ -117,6 +131,8 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
   usersLoaded: false,
   adsAccounts: [],
   adsAccountsLoaded: false,
+  adsAccountsForTab: [],
+  adsAccountsForTabLoaded: false,
   fetchAlertSettings: async (userId: string) => {
     if (get().loadedUserId === userId && get().alertSettings) return;
     set({ loading: true, error: null });
@@ -246,6 +262,54 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         "Selected Users": docSnap.data()["Selected Users"],
       }));
       set({ adsAccounts, adsAccountsLoaded: true, loading: false });
+    } catch (error: any) {
+      set({ error: error.message, loading: false });
+    }
+  },
+  fetchAdsAccountsForAdsAccountsTab: async (companyAdminRef: any, currentUserId: string) => {
+    if (get().adsAccountsForTabLoaded) return;
+    set({ loading: true, error: null });
+    try {
+      const adsAccountsRef = collection(db, "adsAccounts");
+      // const currentUserRef = doc(db, "users", currentUserId);
+      
+      const q = query(
+        adsAccountsRef,
+        where("User", "==", companyAdminRef),
+        where("Is Selected", "==", true)
+      );
+      const snap = await getDocs(q);
+      
+      const adsAccounts: AdsAccount[] = snap.docs
+        .map((docSnap) => {
+          const data = docSnap.data();
+          const selectedUsers = data["Selected Users"] || [];
+          const hasUserAccess = selectedUsers.some((userRef: any) => 
+            userRef.id === currentUserId || userRef.path?.includes(currentUserId)
+          );
+          
+          if (!hasUserAccess) return null;
+          
+          return {
+            id: docSnap.id,
+            name: data["Account Name Editable"] || 
+                  data["Account Name Original"] || 
+                  formatAccountNumber(data["Id"]),
+            "Account Name Editable": data["Account Name Editable"],
+            "Account Name Original": data["Account Name Original"],
+            "Id": data["Id"],
+            "Is Connected": data["Is Connected"],
+            "Is Selected": data["Is Selected"],
+            "Created Date": data["Created Date"],
+            "Platform": data["Platform"] || "Google",
+            "Monthly Budget": data["Monthly Budget"] || 0,
+            "Selected Users": selectedUsers,
+            "Send Me Alert": data["Send Me Alert"] || false,
+          };
+        })
+        .filter(Boolean) as AdsAccount[];
+      
+      set({ adsAccountsForTab: adsAccounts, adsAccountsForTabLoaded: true, loading: false });
     } catch (error: any) {
       set({ error: error.message, loading: false });
     }
@@ -532,5 +596,47 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       console.error("Error sending invitation email:", error);
       throw error;
     }
+  },
+  updateAdsAccount: async (accountId: string, updates: any) => {
+    set({ loading: true, error: null });
+    try {
+      const accountRef = doc(db, "adsAccounts", accountId);
+      await updateDoc(accountRef, updates);
+      
+      // Refresh the ads accounts for tab data
+      const { useAuthStore } = await import("./auth-store");
+      const userDoc = useAuthStore.getState().userDoc;
+      if (userDoc && userDoc["Company Admin"] && userDoc.uid) {
+        await get().refreshAdsAccountsForTab(userDoc["Company Admin"], userDoc.uid);
+      }
+      
+      set({ loading: false });
+    } catch (error: any) {
+      set({ error: error.message, loading: false });
+      throw error;
+    }
+  },
+  toggleAdsAccountAlert: async (accountId: string, sendAlert: boolean) => {
+    set({ loading: true, error: null });
+    try {
+      const accountRef = doc(db, "adsAccounts", accountId);
+      await updateDoc(accountRef, { "Send Me Alert": sendAlert });
+      
+      // Refresh the ads accounts for tab data
+      const { useAuthStore } = await import("./auth-store");
+      const userDoc = useAuthStore.getState().userDoc;
+      if (userDoc && userDoc["Company Admin"] && userDoc.uid) {
+        await get().refreshAdsAccountsForTab(userDoc["Company Admin"], userDoc.uid);
+      }
+      
+      set({ loading: false });
+    } catch (error: any) {
+      set({ error: error.message, loading: false });
+      throw error;
+    }
+  },
+  refreshAdsAccountsForTab: async (companyAdminRef: any, currentUserId: string) => {
+    set({ adsAccountsForTabLoaded: false });
+    await get().fetchAdsAccountsForAdsAccountsTab(companyAdminRef, currentUserId);
   },
 }));
