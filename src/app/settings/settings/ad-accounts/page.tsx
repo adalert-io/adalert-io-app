@@ -49,8 +49,8 @@ export default function AdAccountsSubtab() {
   const [showSearch, setShowSearch] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [businessName, setBusinessName] = useState("");
-  const [monetaryValue, setMonetaryValue] = useState("");
+  const [adAccountName, setAdAccountName] = useState("");
+  const [monthlyBudgetInput, setMonthlyBudgetInput] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [sendAlert, setSendAlert] = useState(false);
   
@@ -62,6 +62,7 @@ export default function AdAccountsSubtab() {
     toggleAdsAccountAlert,
     refreshAdsAccountsForTab,
     deleteAdsAccount,
+    updateAdsAccountVariablesBudgets, // <-- add this
   } = useAlertSettingsStore();
 
   useEffect(() => {
@@ -81,8 +82,8 @@ export default function AdAccountsSubtab() {
   // Populate form data when editing account
   useEffect(() => {
     if (screen === "edit" && editingAccount) {
-      setBusinessName(editingAccount["Account Name Editable"] || editingAccount.name || "");
-      setMonetaryValue(editingAccount["Monthly Budget"]?.toString() || "0");
+      setAdAccountName(editingAccount["Account Name Editable"] || editingAccount["Account Name Original"] || "");
+      setMonthlyBudgetInput(editingAccount["Monthly Budget"]?.toString() || "0");
       setSendAlert(editingAccount["Send Me Alert"] || false);
     }
   }, [screen, editingAccount]);
@@ -110,7 +111,7 @@ export default function AdAccountsSubtab() {
     },
     {
       accessorKey: "name",
-      header: "Business name",
+      header: "Ad account name",
       cell: ({ row }) => <span>{row.original.name}</span>,
     },
     {
@@ -308,21 +309,22 @@ export default function AdAccountsSubtab() {
 
     try {
       setIsSaving(true);
-      
+      const monthlyBudget = parseFloat(monthlyBudgetInput) || 0;
+      const dailyBudget = monthlyBudget / 30.4;
       // Update the ads account
       await updateAdsAccount(editingAccount.id, {
-        "Account Name Editable": businessName,
-        "Monthly Budget": parseFloat(monetaryValue) || 0,
-        "Send Me Alert": sendAlert,
+        "Account Name Editable": adAccountName,
+        "Monthly Budget": monthlyBudget,
+        "Daily Budget": dailyBudget,
       });
-      
+      // Update all adsAccountVariables for this account (store method)
+      await updateAdsAccountVariablesBudgets(editingAccount.id, monthlyBudget, dailyBudget);
       toast.success("Ad account updated successfully!");
       setScreen("list");
       setEditingAccount(null);
-      setBusinessName("");
-      setMonetaryValue("");
+      setAdAccountName("");
+      setMonthlyBudgetInput("");
       setSendAlert(false);
-      
       // Refresh the data
       if (userDoc && userDoc["Company Admin"] && userDoc.uid) {
         refreshAdsAccountsForTab(userDoc["Company Admin"], userDoc.uid);
@@ -335,7 +337,7 @@ export default function AdAccountsSubtab() {
     }
   };
 
-  const isSaveDisabled = !businessName || isSaving;
+  const isSaveDisabled = !adAccountName || isSaving;
 
   return (
     <div className="bg-white rounded-2xl shadow-md p-8 min-h-[600px]">
@@ -409,8 +411,8 @@ export default function AdAccountsSubtab() {
             onClick={() => {
               setScreen("list");
               setEditingAccount(null);
-              setBusinessName("");
-              setMonetaryValue("");
+              setAdAccountName("");
+              setMonthlyBudgetInput("");
               setSendAlert(false);
             }}
           >
@@ -421,15 +423,15 @@ export default function AdAccountsSubtab() {
             <div className="flex-1 flex flex-col gap-4 max-w-md">
               <div className="relative">
                 <Input
-                  placeholder="Business Name"
+                  placeholder="Ad Account Name"
                   className="pl-10"
-                  value={businessName}
-                  onChange={(e) => setBusinessName(e.target.value)}
+                  value={adAccountName}
+                  onChange={(e) => setAdAccountName(e.target.value)}
                 />
                 <Briefcase className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
               </div>
               <div className="text-sm text-gray-500">
-                The business you wish to monitor ads for
+                The ad account you wish to monitor ads for
               </div>
               
               {/* Google Ads Account Details */}
@@ -440,7 +442,7 @@ export default function AdAccountsSubtab() {
                       Google Ads Account ID: {editingAccount?.["Id"]}
                     </div>
                     <div className="text-sm text-gray-600">
-                      Account Name: {editingAccount?.name}
+                      Ad Account Name: {editingAccount?.name}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -448,7 +450,12 @@ export default function AdAccountsSubtab() {
                       <CheckCircle className="w-3 h-3" />
                       Connected
                     </span>
-                    <button className="text-red-500 hover:text-red-700">
+                    <button className="text-red-500 hover:text-red-700"
+                      onClick={() => {
+                        setDeletingAccount(editingAccount);
+                        setShowDeleteModal(true);
+                      }}
+                    >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -459,8 +466,8 @@ export default function AdAccountsSubtab() {
                 <Input
                   placeholder="Monthly Budget"
                   className="pl-10"
-                  value={monetaryValue}
-                  onChange={(e) => setMonetaryValue(e.target.value)}
+                  value={monthlyBudgetInput}
+                  onChange={(e) => setMonthlyBudgetInput(e.target.value)}
                   type="number"
                   step="0.01"
                 />

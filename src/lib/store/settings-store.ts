@@ -121,6 +121,7 @@ interface AlertSettingsState {
   updateAdsAccount: (accountId: string, updates: any) => Promise<void>;
   toggleAdsAccountAlert: (accountId: string, sendAlert: boolean) => Promise<void>;
   deleteAdsAccount: (accountId: string) => Promise<void>;
+  updateAdsAccountVariablesBudgets: (accountId: string, monthly: number, daily: number) => Promise<void>;
 }
 
 export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
@@ -674,6 +675,24 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       set({ loading: false });
     } catch (error: any) {
       set({ error: error.message, loading: false });
+      throw error;
+    }
+  },
+  updateAdsAccountVariablesBudgets: async (accountId: string, monthly: number, daily: number) => {
+    try {
+      const adsAccountVariablesRef = collection(db, "adsAccountVariables");
+      const adsAccountRef = doc(db, "adsAccounts", accountId);
+      const q = query(adsAccountVariablesRef, where("Ads Account", "==", adsAccountRef));
+      const snap = await getDocs(q);
+      const updatePromises = snap.docs.map((docSnap) =>
+        updateDoc(docSnap.ref, {
+          "Monthly Budget": monthly,
+          "Daily Budget": daily,
+        })
+      );
+      await Promise.all(updatePromises);
+    } catch (error) {
+      console.error("Error updating adsAccountVariables budgets:", error);
       throw error;
     }
   },
