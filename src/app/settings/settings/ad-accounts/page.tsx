@@ -42,6 +42,9 @@ export default function AdAccountsSubtab() {
   const router = useRouter();
   const [screen, setScreen] = useState<"list" | "edit">("list");
   const [editingAccount, setEditingAccount] = useState<any>(null);
+  const [deletingAccount, setDeletingAccount] = useState<any>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [pageSize, setPageSize] = useState(25);
   const [showSearch, setShowSearch] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -58,6 +61,7 @@ export default function AdAccountsSubtab() {
     updateAdsAccount,
     toggleAdsAccountAlert,
     refreshAdsAccountsForTab,
+    deleteAdsAccount,
   } = useAlertSettingsStore();
 
   useEffect(() => {
@@ -167,7 +171,13 @@ export default function AdAccountsSubtab() {
           >
             <Edit2 className="w-5 h-5" />
           </button>
-          <button className="text-red-500 hover:text-red-700">
+          <button 
+            className="text-red-500 hover:text-red-700"
+            onClick={() => {
+              setDeletingAccount(row.original);
+              setShowDeleteModal(true);
+            }}
+          >
             <Trash2 className="w-5 h-5" />
           </button>
         </div>
@@ -478,6 +488,85 @@ export default function AdAccountsSubtab() {
                 </div>
                 You can unlink this ad account anytime by clicking the delete button
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && deletingAccount && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <img 
+                  src="/images/adAlert-logo-words.avif" 
+                  alt="adAlert.io" 
+                  className="h-8 w-auto"
+                />
+              </div>
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeletingAccount(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XIcon className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {/* Content */}
+            <div className="mb-6">
+              <p className="text-gray-700">
+                Do you want to remove your ads account:{" "}
+                <span className="font-bold">
+                  {deletingAccount.name} - {formatAccountNumber(deletingAccount["Id"])}
+                </span>
+                ?
+              </p>
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1 border-blue-200 text-blue-600 hover:bg-blue-50"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeletingAccount(null);
+                }}
+                disabled={isDeleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 bg-blue-600 text-white hover:bg-blue-700"
+                onClick={async () => {
+                  try {
+                    setIsDeleting(true);
+                    await deleteAdsAccount(deletingAccount.id);
+                    toast.success("Ad account removed successfully!");
+                    setShowDeleteModal(false);
+                    setDeletingAccount(null);
+                  } catch (error: any) {
+                    toast.error(error.message || "Failed to remove ad account");
+                  } finally {
+                    setIsDeleting(false);
+                  }
+                }}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Removing...
+                  </>
+                ) : (
+                  "Remove"
+                )}
+              </Button>
             </div>
           </div>
         </div>

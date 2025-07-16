@@ -120,6 +120,7 @@ interface AlertSettingsState {
   sendInvitationEmail: (email: string, invitationId: string) => Promise<void>;
   updateAdsAccount: (accountId: string, updates: any) => Promise<void>;
   toggleAdsAccountAlert: (accountId: string, sendAlert: boolean) => Promise<void>;
+  deleteAdsAccount: (accountId: string) => Promise<void>;
 }
 
 export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
@@ -638,5 +639,42 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
   refreshAdsAccountsForTab: async (companyAdminRef: any, currentUserId: string) => {
     set({ adsAccountsForTabLoaded: false });
     await get().fetchAdsAccountsForAdsAccountsTab(companyAdminRef, currentUserId);
+  },
+  deleteAdsAccount: async (accountId: string) => {
+    set({ loading: true, error: null });
+    try {
+      // 1. Delete 'adsAccountVariables' where the 'Ads Account(reference)' = accountId
+      const adsAccountVariablesRef = collection(db, "adsAccountVariables");
+      const adsAccountRef = doc(db, "adsAccounts", accountId);
+      const q = query(adsAccountVariablesRef, where("Ads Account", "==", adsAccountRef));
+      const snap = await getDocs(q);
+      const deleteVariablePromises = snap.docs.map((docSnap) => updateDoc(docSnap.ref, { deleted: true }));
+      await Promise.all(deleteVariablePromises);
+
+      // todo: remove cronitor monitors for ads account
+      // el-tab-settings-ad-accounts-tab -> popup delete button -> every time condition
+
+
+      // 2. Delete 'adsAccounts' document where id = accountId
+      // (Soft delete: set a deleted flag, or hard delete: remove the document)
+      // Here, we will hard delete:
+      await import("firebase/firestore").then(async (firestore) => {
+        await firestore.deleteDoc(adsAccountRef);
+      });
+
+      // 3. Refresh the ads accounts for tab data
+      const { useAuthStore } = await import("./auth-store");
+      const userDoc = useAuthStore.getState().userDoc;
+      if (userDoc && userDoc["Company Admin"] && userDoc.uid) {
+        await get().refreshAdsAccountsForTab(userDoc["Company Admin"], userDoc.uid);
+      }
+
+      // todo: update subscription item
+
+      set({ loading: false });
+    } catch (error: any) {
+      set({ error: error.message, loading: false });
+      throw error;
+    }
   },
 }));
