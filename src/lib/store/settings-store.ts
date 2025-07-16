@@ -773,6 +773,17 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         updateData.Avatar = avatarUrl;
       }
       await updateDoc(userRef, updateData);
+      // If the updated user is the current user, update userDoc in auth-store
+      try {
+        const { useAuthStore } = await import("./auth-store");
+        const currentUser = useAuthStore.getState().user;
+        if (currentUser && currentUser.uid === userId) {
+          const userSnap = await getDocs(query(collection(db, "users"), where("uid", "==", userId)));
+          if (!userSnap.empty) {
+            useAuthStore.getState().setUserDoc(userSnap.docs[0].data() as import("./auth-store").UserDocument);
+          }
+        }
+      } catch (e) { /* ignore */ }
       // If telephone is empty or optInForTextMessage is false, update alertSettings
       if (!Telephone || !optInForTextMessage) {
         const alertSettingsRef = collection(db, "alertSettings");

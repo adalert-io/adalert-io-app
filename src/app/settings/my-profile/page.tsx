@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Mail, User, Phone, Camera } from "lucide-react";
+import { Mail, User, Phone, Camera, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { toast } from "sonner";
 import { CHECKBOX_CLASS } from "@/lib/constants";
@@ -21,6 +21,7 @@ export default function MyProfileTab() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { updateMyProfile } = useAlertSettingsStore();
+  const [isSaving, setIsSaving] = useState(false);
 
   // Clean up object URL when component unmounts or avatarPreview changes
   useEffect(() => {
@@ -67,6 +68,7 @@ export default function MyProfileTab() {
       toast.error("User not found");
       return;
     }
+    setIsSaving(true);
     try {
       await updateMyProfile(userDoc.uid, {
         Name: name,
@@ -81,6 +83,8 @@ export default function MyProfileTab() {
       toast.success("Profile updated successfully!");
     } catch (error: any) {
       toast.error(error.message || "Failed to update profile");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -195,8 +199,8 @@ export default function MyProfileTab() {
             </div>
           </div>
           <div className="flex justify-center mt-8">
-            <Button className="w-full max-w-md bg-blue-600 text-white text-lg font-bold py-3 rounded shadow-md" onClick={handleSave} disabled={!isSaveEnabled}>
-              Save
+            <Button className="w-full max-w-md bg-blue-600 text-white text-lg font-bold py-3 rounded shadow-md" onClick={handleSave} disabled={!isSaveEnabled || isSaving}>
+              {isSaving ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>) : "Save"}
             </Button>
           </div>
         </div>
