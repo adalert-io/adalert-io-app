@@ -44,6 +44,7 @@ export interface UserDocument {
   "Email": string;
   "modified_at": any;
   "Telephone": string | null;
+  "Telephone Dial Code"?: string;
   "uid": string;
   "Inviter"?: any; // Optional field for inviter reference
   "Opt In For Text Message"?: boolean;

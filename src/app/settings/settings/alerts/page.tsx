@@ -92,6 +92,7 @@ const FIELD_MAP = [
 
 export default function AlertsSubtab() {
   const { user } = useAuthStore();
+  const userDoc = useAuthStore().userDoc;
   const {
     alertSettings,
     loading,
@@ -173,6 +174,7 @@ export default function AlertsSubtab() {
               onCheckedChange={() => handleCheckbox("Send SMS Alerts")}
               className={`mr-3 ${CHECKBOX_CLASS}`}
               id="sms-alerts"
+              disabled={!userDoc?.Telephone || !(userDoc && userDoc["Telephone Dial Code"]) }
             />
             <label
               htmlFor="sms-alerts"
