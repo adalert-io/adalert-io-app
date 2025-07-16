@@ -46,6 +46,7 @@ export interface UserDocument {
   "Telephone": string | null;
   "uid": string;
   "Inviter"?: any; // Optional field for inviter reference
+  "Opt In For Text Message"?: boolean;
 }
 
 interface AuthState {
@@ -190,6 +191,7 @@ export async function createUserDocuments(
       "Telephone": user.phoneNumber,
       "uid": user.uid,
       email: user.email,
+      "Opt In For Text Message": false
     });
 
     // Create authenticationPageTrackers document
