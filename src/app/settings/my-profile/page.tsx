@@ -14,8 +14,8 @@ export default function MyProfileTab() {
   const [name, setName] = useState(userDoc?.Name || "");
   const [email, setEmail] = useState(userDoc?.Email || "");
   const [phone, setPhone] = useState(userDoc?.Telephone || "");
-  const [country, setCountry] = useState("US");
-  const [smsConsent, setSmsConsent] = useState(userDoc?.["Opt In For Text Message"] ?? true);
+  const [telephoneDialCode, setTelephoneDialCode] = useState("+1");
+  const [optInForTextMessage, setOptInForTextMessage] = useState(userDoc?.["Opt In For Text Message"] ?? true);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(userDoc?.Avatar || null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -35,7 +35,7 @@ export default function MyProfileTab() {
     setName(userDoc?.Name || "");
     setEmail(userDoc?.Email || "");
     setPhone(userDoc?.Telephone || "");
-    setSmsConsent(userDoc?.["Opt In For Text Message"] ?? true);
+    setOptInForTextMessage(userDoc?.["Opt In For Text Message"] ?? true);
     setAvatarPreview(userDoc?.Avatar || null);
   }, [userDoc]);
 
@@ -65,6 +65,11 @@ export default function MyProfileTab() {
   };
 
   const avatarUrl = avatarPreview || userDoc?.Avatar || "/images/default-avatar.png";
+  const isSaveEnabled = (
+    name.trim() !== "" &&
+    email.trim() !== "" &&
+    ((phone.trim() !== "" && optInForTextMessage) || (phone.trim() === "" && !optInForTextMessage))
+  );
 
   return (
     <div className="flex flex-col items-center w-full min-h-[80vh]">
@@ -140,12 +145,12 @@ export default function MyProfileTab() {
                 <div className="relative flex items-center">
                   {/* Country selector (static for now) */}
                   <select
-                    value={country}
-                    onChange={e => setCountry(e.target.value)}
+                    value={telephoneDialCode}
+                    onChange={e => setTelephoneDialCode(e.target.value)}
                     className="h-10 rounded-l-md border border-gray-200 bg-gray-50 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
                   >
-                    <option value="US">🇺🇸 +1</option>
-                    <option value="CA">🇨🇦 +1</option>
+                    <option value="+1">🇺🇸 +1</option>
+                    <option value="+1">🇨🇦 +1</option>
                   </select>
                   <Input
                     value={phone}
@@ -158,8 +163,8 @@ export default function MyProfileTab() {
                 <div className="flex items-start gap-2 mt-2">
                   <Checkbox
                     id="sms-consent"
-                    checked={smsConsent}
-                    onCheckedChange={checked => setSmsConsent(checked === true)}
+                    checked={optInForTextMessage}
+                    onCheckedChange={checked => setOptInForTextMessage(checked === true)}
                     className={CHECKBOX_CLASS}
                   />
                   <label htmlFor="sms-consent" className="text-xs text-gray-600 select-none">
@@ -170,7 +175,7 @@ export default function MyProfileTab() {
             </div>
           </div>
           <div className="flex justify-center mt-8">
-            <Button className="w-full max-w-md bg-blue-600 text-white text-lg font-bold py-3 rounded shadow-md" onClick={handleSave}>
+            <Button className="w-full max-w-md bg-blue-600 text-white text-lg font-bold py-3 rounded shadow-md" onClick={handleSave} disabled={!isSaveEnabled}>
               Save
             </Button>
           </div>
