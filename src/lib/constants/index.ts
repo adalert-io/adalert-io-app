@@ -54,3 +54,7 @@ export const ALERT_SEVERITY_COLORS = {
   MEDIUM: "#FBC02D",
   LOW: "#FFEB3B",
 };
+
+// Reusable class for checkboxes
+export const CHECKBOX_CLASS =
+  "data-[state=checked]:bg-blue-700 data-[state=checked]:border-blue-700";

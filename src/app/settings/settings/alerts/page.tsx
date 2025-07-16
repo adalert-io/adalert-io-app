@@ -7,9 +7,7 @@ import Link from "next/link";
 import { Info } from "lucide-react";
 import { useAlertSettingsStore } from "@/lib/store/settings-store";
 import { useAuthStore } from "@/lib/store/auth-store";
-
-const checkboxClass =
-  "data-[state=checked]:bg-blue-700 data-[state=checked]:border-blue-700";
+import { CHECKBOX_CLASS } from "@/lib/constants";
 
 const FIELD_MAP = [
   // Email/SMS
@@ -157,7 +155,7 @@ export default function AlertsSubtab() {
             <Checkbox
               checked={!!localSettings["Send Email Alerts"]}
               onCheckedChange={() => handleCheckbox("Send Email Alerts")}
-              className={`mr-2 ${checkboxClass}`}
+              className={`mr-2 ${CHECKBOX_CLASS}`}
               id="email-alerts"
             />
             <label
@@ -173,7 +171,7 @@ export default function AlertsSubtab() {
             <Checkbox
               checked={!!localSettings["Send SMS Alerts"]}
               onCheckedChange={() => handleCheckbox("Send SMS Alerts")}
-              className={`mr-3 ${checkboxClass}`}
+              className={`mr-3 ${CHECKBOX_CLASS}`}
               id="sms-alerts"
             />
             <label
@@ -209,7 +207,7 @@ export default function AlertsSubtab() {
                   checked={!!localSettings[f.key]}
                   onCheckedChange={() => handleCheckbox(f.key)}
                   id={f.id}
-                  className={`mr-2 ${checkboxClass}`}
+                  className={`mr-2 ${CHECKBOX_CLASS}`}
                 />
                 <label
                   htmlFor={f.id}
@@ -233,7 +231,7 @@ export default function AlertsSubtab() {
                   checked={!!localSettings[f.key]}
                   onCheckedChange={() => handleCheckbox(f.key)}
                   id={f.id}
-                  className={`mr-2 ${checkboxClass}`}
+                  className={`mr-2 ${CHECKBOX_CLASS}`}
                 />
                 <label
                   htmlFor={f.id}
@@ -257,7 +255,7 @@ export default function AlertsSubtab() {
                   checked={!!localSettings[f.key]}
                   onCheckedChange={() => handleCheckbox(f.key)}
                   id={f.id}
-                  className={`mr-2 ${checkboxClass}`}
+                  className={`mr-2 ${CHECKBOX_CLASS}`}
                 />
                 <label
                   htmlFor={f.id}
