@@ -7,6 +7,7 @@ import { Mail, User, Phone, Camera } from "lucide-react";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { toast } from "sonner";
 import { CHECKBOX_CLASS } from "@/lib/constants";
+import { useAlertSettingsStore } from "@/lib/store/settings-store";
 
 export default function MyProfileTab() {
   const { userDoc } = useAuthStore();
@@ -19,6 +20,7 @@ export default function MyProfileTab() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(userDoc?.Avatar || null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { updateMyProfile } = useAlertSettingsStore();
 
   // Clean up object URL when component unmounts or avatarPreview changes
   useEffect(() => {
@@ -61,7 +63,25 @@ export default function MyProfileTab() {
 
   // Save handler (stub)
   const handleSave = async () => {
-    toast.info("Save profile not implemented");
+    if (!userDoc?.uid) {
+      toast.error("User not found");
+      return;
+    }
+    try {
+      await updateMyProfile(userDoc.uid, {
+        Name: name,
+        Email: email,
+        optInForTextMessage: optInForTextMessage,
+        Telephone: phone,
+        TelephoneDialCode: telephoneDialCode,
+        avatarFile: avatarFile,
+        currentAvatarUrl: userDoc?.Avatar || null,
+      });
+      setAvatarFile(null);
+      toast.success("Profile updated successfully!");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update profile");
+    }
   };
 
   const avatarUrl = avatarPreview || userDoc?.Avatar || "/images/default-avatar.png";

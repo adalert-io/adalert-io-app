@@ -122,6 +122,26 @@ interface AlertSettingsState {
   toggleAdsAccountAlert: (accountId: string, sendAlert: boolean) => Promise<void>;
   deleteAdsAccount: (accountId: string) => Promise<void>;
   updateAdsAccountVariablesBudgets: (accountId: string, monthly: number, daily: number) => Promise<void>;
+  updateMyProfile: (
+    userId: string,
+    {
+      Name,
+      Email,
+      optInForTextMessage,
+      Telephone,
+      TelephoneDialCode,
+      avatarFile,
+      currentAvatarUrl,
+    }: {
+      Name: string;
+      Email: string;
+      optInForTextMessage: boolean;
+      Telephone: string;
+      TelephoneDialCode: string;
+      avatarFile?: File | null;
+      currentAvatarUrl?: string | null;
+    }
+  ) => Promise<void>;
 }
 
 export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
@@ -693,6 +713,80 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       await Promise.all(updatePromises);
     } catch (error) {
       console.error("Error updating adsAccountVariables budgets:", error);
+      throw error;
+    }
+  },
+  updateMyProfile: async (
+    userId: string,
+    {
+      Name,
+      Email,
+      optInForTextMessage,
+      Telephone,
+      TelephoneDialCode,
+      avatarFile,
+      currentAvatarUrl,
+    }: {
+      Name: string;
+      Email: string;
+      optInForTextMessage: boolean;
+      Telephone: string;
+      TelephoneDialCode: string;
+      avatarFile?: File | null;
+      currentAvatarUrl?: string | null;
+    }
+  ) => {
+    set({ loading: true, error: null });
+    try {
+      let avatarUrl = currentAvatarUrl;
+      // Handle avatar upload if a new file is provided
+      if (avatarFile) {
+        const avatarRef = ref(storage, `avatars/${userId}/${avatarFile.name}`);
+        await uploadBytes(avatarRef, avatarFile);
+        avatarUrl = await getDownloadURL(avatarRef);
+        // Delete old avatar if it exists and is different from the new one
+        if (currentAvatarUrl && currentAvatarUrl !== avatarUrl) {
+          try {
+            const url = new URL(currentAvatarUrl);
+            const pathMatch = url.pathname.match(/\/o\/(.+?)\?/);
+            if (pathMatch) {
+              const filePath = decodeURIComponent(pathMatch[1]);
+              const oldAvatarRef = ref(storage, filePath);
+              await deleteObject(oldAvatarRef);
+            }
+          } catch (error) {
+            // Ignore errors when deleting old avatar
+            console.warn("Could not delete old avatar:", error);
+          }
+        }
+      }
+      // Update user document
+      const userRef = doc(db, "users", userId);
+      const updateData: any = {
+        Name,
+        Email,
+        "Opt In For Text Message": optInForTextMessage,
+        Telephone,
+        "Telephone Dial Code": TelephoneDialCode,
+      };
+      if (avatarUrl !== undefined) {
+        updateData.Avatar = avatarUrl;
+      }
+      await updateDoc(userRef, updateData);
+      // If telephone is empty or optInForTextMessage is false, update alertSettings
+      if (!Telephone || !optInForTextMessage) {
+        const alertSettingsRef = collection(db, "alertSettings");
+        const userDocRef = doc(db, "users", userId);
+        const q = query(alertSettingsRef, where("User", "==", userDocRef));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          const alertDoc = snap.docs[0];
+          await updateDoc(alertDoc.ref, { "Send SMS Alerts": false });
+        }
+      }
+      set({ loading: false });
+    } catch (error: any) {
+      set({ error: error.message, loading: false });
       throw error;
     }
   },
