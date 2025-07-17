@@ -180,7 +180,7 @@ export default function MyProfileTab() {
                     value={phone}
                     onChange={e => setPhone(e.target.value)}
                     placeholder="Phone"
-                    className="pl-10 rounded-l-none"
+                    className="rounded-l-none"
                     type="tel"
                   />
                 </div>
