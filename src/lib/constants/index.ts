@@ -58,3 +58,9 @@ export const ALERT_SEVERITY_COLORS = {
 // Reusable class for checkboxes
 export const CHECKBOX_CLASS =
   "data-[state=checked]:bg-blue-700 data-[state=checked]:border-blue-700";
+
+// Subscription Prices
+export const SUBSCRIPTION_PRICES = {
+  FIRST_ADS_ACCOUNT: 59,
+  ADDITIONAL_ADS_ACCOUNT: 19,
+} as const;

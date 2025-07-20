@@ -9,6 +9,7 @@ import {
   doc,
   setDoc,
   serverTimestamp,
+  deleteDoc,
 } from "firebase/firestore";
 import {
   ref,
@@ -83,8 +84,14 @@ interface AlertSettingsState {
   ) => Promise<void>;
   fetchUsers: (companyAdminRef: any) => Promise<void>;
   fetchAdsAccounts: (companyAdminRef: any) => Promise<void>;
-  fetchAdsAccountsForAdsAccountsTab: (companyAdminRef: any, currentUserId: string) => Promise<void>;
-  refreshAdsAccountsForTab: (companyAdminRef: any, currentUserId: string) => Promise<void>;
+  fetchAdsAccountsForAdsAccountsTab: (
+    companyAdminRef: any,
+    currentUserId: string
+  ) => Promise<void>;
+  refreshAdsAccountsForTab: (
+    companyAdminRef: any,
+    currentUserId: string
+  ) => Promise<void>;
   refreshUsers: (companyAdminRef: any) => Promise<void>;
   refreshAdsAccounts: (companyAdminRef: any) => Promise<void>;
   updateUser: (
@@ -119,9 +126,16 @@ interface AlertSettingsState {
   ) => Promise<string>;
   sendInvitationEmail: (email: string, invitationId: string) => Promise<void>;
   updateAdsAccount: (accountId: string, updates: any) => Promise<void>;
-  toggleAdsAccountAlert: (accountId: string, sendAlert: boolean) => Promise<void>;
+  toggleAdsAccountAlert: (
+    accountId: string,
+    sendAlert: boolean
+  ) => Promise<void>;
   deleteAdsAccount: (accountId: string) => Promise<void>;
-  updateAdsAccountVariablesBudgets: (accountId: string, monthly: number, daily: number) => Promise<void>;
+  updateAdsAccountVariablesBudgets: (
+    accountId: string,
+    monthly: number,
+    daily: number
+  ) => Promise<void>;
   updateMyProfile: (
     userId: string,
     {
@@ -142,6 +156,7 @@ interface AlertSettingsState {
       currentAvatarUrl?: string | null;
     }
   ) => Promise<void>;
+  deleteCompanyAccount: (companyAdminRef: any, userLogout: () => Promise<void>) => Promise<void>;
 }
 
 export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
@@ -288,35 +303,41 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       set({ error: error.message, loading: false });
     }
   },
-  fetchAdsAccountsForAdsAccountsTab: async (companyAdminRef: any, currentUserId: string) => {
+  fetchAdsAccountsForAdsAccountsTab: async (
+    companyAdminRef: any,
+    currentUserId: string
+  ) => {
     if (get().adsAccountsForTabLoaded) return;
     set({ loading: true, error: null });
     try {
       const adsAccountsRef = collection(db, "adsAccounts");
       // const currentUserRef = doc(db, "users", currentUserId);
-      
+
       const q = query(
         adsAccountsRef,
         where("User", "==", companyAdminRef),
         where("Is Selected", "==", true)
       );
       const snap = await getDocs(q);
-      
+
       const adsAccounts: AdsAccount[] = snap.docs
         .map((docSnap) => {
           const data = docSnap.data();
           const selectedUsers = data["Selected Users"] || [];
-          const hasUserAccess = selectedUsers.some((userRef: any) => 
-            userRef.id === currentUserId || userRef.path?.includes(currentUserId)
+          const hasUserAccess = selectedUsers.some(
+            (userRef: any) =>
+              userRef.id === currentUserId ||
+              userRef.path?.includes(currentUserId)
           );
-          
+
           if (!hasUserAccess) return null;
-          
+
           return {
             id: docSnap.id,
-            name: data["Account Name Editable"] || 
-                  data["Account Name Original"] || 
-                  formatAccountNumber(data["Id"]),
+            name:
+              data["Account Name Editable"] ||
+              data["Account Name Original"] ||
+              formatAccountNumber(data["Id"]),
             "Account Name Editable": data["Account Name Editable"],
             "Account Name Original": data["Account Name Original"],
             "Id": data["Id"],
@@ -330,8 +351,12 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           };
         })
         .filter(Boolean) as AdsAccount[];
-      
-      set({ adsAccountsForTab: adsAccounts, adsAccountsForTabLoaded: true, loading: false });
+
+      set({
+        adsAccountsForTab: adsAccounts,
+        adsAccountsForTabLoaded: true,
+        loading: false,
+      });
     } catch (error: any) {
       set({ error: error.message, loading: false });
     }
@@ -624,14 +649,17 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     try {
       const accountRef = doc(db, "adsAccounts", accountId);
       await updateDoc(accountRef, updates);
-      
+
       // Refresh the ads accounts for tab data
       const { useAuthStore } = await import("./auth-store");
       const userDoc = useAuthStore.getState().userDoc;
       if (userDoc && userDoc["Company Admin"] && userDoc.uid) {
-        await get().refreshAdsAccountsForTab(userDoc["Company Admin"], userDoc.uid);
+        await get().refreshAdsAccountsForTab(
+          userDoc["Company Admin"],
+          userDoc.uid
+        );
       }
-      
+
       set({ loading: false });
     } catch (error: any) {
       set({ error: error.message, loading: false });
@@ -643,23 +671,32 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     try {
       const accountRef = doc(db, "adsAccounts", accountId);
       await updateDoc(accountRef, { "Send Me Alert": sendAlert });
-      
+
       // Refresh the ads accounts for tab data
       const { useAuthStore } = await import("./auth-store");
       const userDoc = useAuthStore.getState().userDoc;
       if (userDoc && userDoc["Company Admin"] && userDoc.uid) {
-        await get().refreshAdsAccountsForTab(userDoc["Company Admin"], userDoc.uid);
+        await get().refreshAdsAccountsForTab(
+          userDoc["Company Admin"],
+          userDoc.uid
+        );
       }
-      
+
       set({ loading: false });
     } catch (error: any) {
       set({ error: error.message, loading: false });
       throw error;
     }
   },
-  refreshAdsAccountsForTab: async (companyAdminRef: any, currentUserId: string) => {
+  refreshAdsAccountsForTab: async (
+    companyAdminRef: any,
+    currentUserId: string
+  ) => {
     set({ adsAccountsForTabLoaded: false });
-    await get().fetchAdsAccountsForAdsAccountsTab(companyAdminRef, currentUserId);
+    await get().fetchAdsAccountsForAdsAccountsTab(
+      companyAdminRef,
+      currentUserId
+    );
   },
   deleteAdsAccount: async (accountId: string) => {
     set({ loading: true, error: null });
@@ -667,14 +704,18 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       // 1. Delete 'adsAccountVariables' where the 'Ads Account(reference)' = accountId
       const adsAccountVariablesRef = collection(db, "adsAccountVariables");
       const adsAccountRef = doc(db, "adsAccounts", accountId);
-      const q = query(adsAccountVariablesRef, where("Ads Account", "==", adsAccountRef));
+      const q = query(
+        adsAccountVariablesRef,
+        where("Ads Account", "==", adsAccountRef)
+      );
       const snap = await getDocs(q);
-      const deleteVariablePromises = snap.docs.map((docSnap) => updateDoc(docSnap.ref, { deleted: true }));
+      const deleteVariablePromises = snap.docs.map((docSnap) =>
+        updateDoc(docSnap.ref, { deleted: true })
+      );
       await Promise.all(deleteVariablePromises);
 
       // todo: remove cronitor monitors for ads account
       // el-tab-settings-ad-accounts-tab -> popup delete button -> every time condition
-
 
       // 2. Delete 'adsAccounts' document where id = accountId
       // (Soft delete: set a deleted flag, or hard delete: remove the document)
@@ -687,7 +728,15 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       const { useAuthStore } = await import("./auth-store");
       const userDoc = useAuthStore.getState().userDoc;
       if (userDoc && userDoc["Company Admin"] && userDoc.uid) {
-        await get().refreshAdsAccountsForTab(userDoc["Company Admin"], userDoc.uid);
+        await get().refreshAdsAccountsForTab(
+          userDoc["Company Admin"],
+          userDoc.uid
+        );
+      }
+
+      // 4. Refresh ads accounts where User == Company Admin and Is Connected == true
+      if (userDoc && userDoc["Company Admin"]) {
+        await get().refreshAdsAccounts(userDoc["Company Admin"]);
       }
 
       // todo: update subscription item
@@ -698,11 +747,18 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       throw error;
     }
   },
-  updateAdsAccountVariablesBudgets: async (accountId: string, monthly: number, daily: number) => {
+  updateAdsAccountVariablesBudgets: async (
+    accountId: string,
+    monthly: number,
+    daily: number
+  ) => {
     try {
       const adsAccountVariablesRef = collection(db, "adsAccountVariables");
       const adsAccountRef = doc(db, "adsAccounts", accountId);
-      const q = query(adsAccountVariablesRef, where("Ads Account", "==", adsAccountRef));
+      const q = query(
+        adsAccountVariablesRef,
+        where("Ads Account", "==", adsAccountRef)
+      );
       const snap = await getDocs(q);
       const updatePromises = snap.docs.map((docSnap) =>
         updateDoc(docSnap.ref, {
@@ -778,12 +834,20 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         const { useAuthStore } = await import("./auth-store");
         const currentUser = useAuthStore.getState().user;
         if (currentUser && currentUser.uid === userId) {
-          const userSnap = await getDocs(query(collection(db, "users"), where("uid", "==", userId)));
+          const userSnap = await getDocs(
+            query(collection(db, "users"), where("uid", "==", userId))
+          );
           if (!userSnap.empty) {
-            useAuthStore.getState().setUserDoc(userSnap.docs[0].data() as import("./auth-store").UserDocument);
+            useAuthStore
+              .getState()
+              .setUserDoc(
+                userSnap.docs[0].data() as import("./auth-store").UserDocument
+              );
           }
         }
-      } catch (e) { /* ignore */ }
+      } catch (e) {
+        /* ignore */
+      }
       // If telephone is empty or optInForTextMessage is false, update alertSettings
       if (!Telephone || !optInForTextMessage) {
         const alertSettingsRef = collection(db, "alertSettings");
@@ -798,6 +862,120 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       set({ loading: false });
     } catch (error: any) {
       set({ error: error.message, loading: false });
+      throw error;
+    }
+  },
+  deleteCompanyAccount: async (companyAdminRef: any, userLogout: () => Promise<void>) => {
+    try {
+      // 1. Delete 'adsAccountVariables' where 'User' == companyAdminRef
+      const adsAccountVariablesRef = collection(db, "adsAccountVariables");
+      let q = query(adsAccountVariablesRef, where("User", "==", companyAdminRef));
+      let snap = await getDocs(q);
+      for (const docSnap of snap.docs) {
+        await deleteDoc(docSnap.ref);
+      }
+
+      // 2. Get all adsAccounts ids for this company admin
+      const adsAccountsRef = collection(db, "adsAccounts");
+      q = query(adsAccountsRef, where("User", "==", companyAdminRef));
+      snap = await getDocs(q);
+      const adsAccountIds = snap.docs.map((doc) => doc.id);
+      // Remove all adsAccountVariables where 'Ads Account' in adsAccountIds
+      for (const adsAccountId of adsAccountIds) {
+        const adsAccountDocRef = doc(db, "adsAccounts", adsAccountId);
+        const q2 = query(adsAccountVariablesRef, where("Ads Account", "==", adsAccountDocRef));
+        const snap2 = await getDocs(q2);
+        for (const docSnap2 of snap2.docs) {
+          await deleteDoc(docSnap2.ref);
+        }
+      }
+
+      // 3. Delete all 'alerts' where 'User' == companyAdminRef
+      const alertsRef = collection(db, "alerts");
+      q = query(alertsRef, where("User", "==", companyAdminRef));
+      snap = await getDocs(q);
+      for (const docSnap of snap.docs) {
+        await deleteDoc(docSnap.ref);
+      }
+
+      // 4. Delete all 'adsAccounts' where 'User' == companyAdminRef
+      snap = await getDocs(q = query(adsAccountsRef, where("User", "==", companyAdminRef)));
+      for (const docSnap of snap.docs) {
+        await deleteDoc(docSnap.ref);
+      }
+
+      // 5. Get all user ids for this company admin
+      const usersRef = collection(db, "users");
+      q = query(usersRef, where("Company Admin", "==", companyAdminRef));
+      snap = await getDocs(q);
+      const userIds = snap.docs.map((doc) => doc.id);
+      // Remove all alertSettings where 'User' in userIds
+      const alertSettingsRef = collection(db, "alertSettings");
+      for (const userId of userIds) {
+        const userDocRef = doc(db, "users", userId);
+        const q2 = query(alertSettingsRef, where("User", "==", userDocRef));
+        const snap2 = await getDocs(q2);
+        for (const docSnap2 of snap2.docs) {
+          await deleteDoc(docSnap2.ref);
+        }
+      }
+
+      // 6. Remove all authenticationPageTrackers where 'User' in userIds
+      const authenticationPageTrackersRef = collection(db, "authenticationPageTrackers");
+      for (const userId of userIds) {
+        const userDocRef = doc(db, "users", userId);
+        const q2 = query(authenticationPageTrackersRef, where("User", "==", userDocRef));
+        const snap2 = await getDocs(q2);
+        for (const docSnap2 of snap2.docs) {
+          await deleteDoc(docSnap2.ref);
+        }
+      }
+
+      // 7. Delete all dashboardDailies where 'User' == companyAdminRef
+      const dashboardDailiesRef = collection(db, "dashboardDailies");
+      q = query(dashboardDailiesRef, where("User", "==", companyAdminRef));
+      snap = await getDocs(q);
+      for (const docSnap of snap.docs) {
+        await deleteDoc(docSnap.ref);
+      }
+
+      // 8. Delete all stripeCompanies where 'User' == companyAdminRef
+      const stripeCompaniesRef = collection(db, "stripeCompanies");
+      q = query(stripeCompaniesRef, where("User", "==", companyAdminRef));
+      snap = await getDocs(q);
+      for (const docSnap of snap.docs) {
+        await deleteDoc(docSnap.ref);
+      }
+
+      // 9. Delete all subscriptions where 'User' == companyAdminRef
+      const subscriptionsRef = collection(db, "subscriptions");
+      q = query(subscriptionsRef, where("User", "==", companyAdminRef));
+      snap = await getDocs(q);
+      for (const docSnap of snap.docs) {
+        await deleteDoc(docSnap.ref);
+      }
+
+      // 10. Remove all userTokens where 'User' in userIds
+      const userTokensRef = collection(db, "userTokens");
+      for (const userId of userIds) {
+        const userDocRef = doc(db, "users", userId);
+        const q2 = query(userTokensRef, where("User", "==", userDocRef));
+        const snap2 = await getDocs(q2);
+        for (const docSnap2 of snap2.docs) {
+          await deleteDoc(docSnap2.ref);
+        }
+      }
+
+      // 11. Store all userIds in an array (already done above)
+      // 12. Remove all users where id in userIds
+      for (const userId of userIds) {
+        await deleteDoc(doc(db, "users", userId));
+      }
+
+      // 13. Log the user out
+      await userLogout();
+    } catch (error) {
+      console.error("Error deleting company account:", error);
       throw error;
     }
   },
