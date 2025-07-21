@@ -157,6 +157,10 @@ interface AlertSettingsState {
     }
   ) => Promise<void>;
   deleteCompanyAccount: (companyAdminRef: any, userLogout: () => Promise<void>) => Promise<void>;
+  stripeCompany: any | null;
+  stripeCompanyLoaded: boolean;
+  fetchStripeCompany: (userId: string) => Promise<void>;
+  updateStripeCompany: (userId: string, updates: any) => Promise<void>;
 }
 
 export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
@@ -170,6 +174,8 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
   adsAccountsLoaded: false,
   adsAccountsForTab: [],
   adsAccountsForTabLoaded: false,
+  stripeCompany: null,
+  stripeCompanyLoaded: false,
   fetchAlertSettings: async (userId: string) => {
     if (get().loadedUserId === userId && get().alertSettings) return;
     set({ loading: true, error: null });
@@ -976,6 +982,59 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       await userLogout();
     } catch (error) {
       console.error("Error deleting company account:", error);
+      throw error;
+    }
+  },
+  fetchStripeCompany: async (userId: string) => {
+    if (get().stripeCompanyLoaded && get().stripeCompany) return;
+    set({ loading: true, error: null });
+    try {
+      const stripeCompaniesRef = collection(db, "stripeCompanies");
+      const userRef = doc(db, "users", userId);
+      const q = query(stripeCompaniesRef, where("User", "==", userRef));
+      const snap = await getDocs(q);
+      
+      if (!snap.empty) {
+        const docSnap = snap.docs[0];
+        set({
+          stripeCompany: { id: docSnap.id, ...docSnap.data() },
+          stripeCompanyLoaded: true,
+          loading: false,
+        });
+      } else {
+        set({ stripeCompany: null, stripeCompanyLoaded: true, loading: false });
+      }
+    } catch (error: any) {
+      set({ error: error.message, loading: false });
+    }
+  },
+  updateStripeCompany: async (userId: string, updates: any) => {
+    set({ loading: true, error: null });
+    try {
+      const stripeCompaniesRef = collection(db, "stripeCompanies");
+      const userRef = doc(db, "users", userId);
+      const q = query(stripeCompaniesRef, where("User", "==", userRef));
+      const snap = await getDocs(q);
+      
+      if (!snap.empty) {
+        const docSnap = snap.docs[0];
+        await updateDoc(docSnap.ref, updates);
+        // Re-fetch after update
+        await get().fetchStripeCompany(userId);
+      } else {
+        // Create new record if it doesn't exist
+        const newDocRef = doc(stripeCompaniesRef);
+        await setDoc(newDocRef, {
+          User: userRef,
+          ...updates,
+          createdAt: serverTimestamp(),
+        });
+        await get().fetchStripeCompany(userId);
+      }
+      
+      set({ loading: false });
+    } catch (error: any) {
+      set({ error: error.message, loading: false });
       throw error;
     }
   },
