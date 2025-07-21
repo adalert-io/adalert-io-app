@@ -146,6 +146,7 @@ interface AlertSettingsState {
       TelephoneDialCode,
       avatarFile,
       currentAvatarUrl,
+      ...updates
     }: {
       Name: string;
       Email: string;
@@ -154,6 +155,7 @@ interface AlertSettingsState {
       TelephoneDialCode: string;
       avatarFile?: File | null;
       currentAvatarUrl?: string | null;
+      [key: string]: any;
     }
   ) => Promise<void>;
   deleteCompanyAccount: (companyAdminRef: any, userLogout: () => Promise<void>) => Promise<void>;
@@ -788,6 +790,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       TelephoneDialCode,
       avatarFile,
       currentAvatarUrl,
+      ...updates
     }: {
       Name: string;
       Email: string;
@@ -796,6 +799,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       TelephoneDialCode: string;
       avatarFile?: File | null;
       currentAvatarUrl?: string | null;
+      [key: string]: any;
     }
   ) => {
     set({ loading: true, error: null });
@@ -831,6 +835,9 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         Telephone,
         "Telephone Dial Code": TelephoneDialCode,
       };
+      if (updates["User Type"] !== undefined) {
+        updateData["User Type"] = updates["User Type"];
+      }
       if (avatarUrl !== undefined) {
         updateData.Avatar = avatarUrl;
       }

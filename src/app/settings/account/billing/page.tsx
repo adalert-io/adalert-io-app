@@ -22,8 +22,17 @@ import {
   Target,
   X
 } from "lucide-react";
+import { useAuthStore } from "@/lib/store/auth-store";
+import { useEffect } from "react";
 
 export default function BillingSubtab() {
+  const { user, userDoc, fetchUserDocument } = useAuthStore();
+  // Refetch userDoc on mount to ensure latest user type
+  useEffect(() => {
+    if (user?.uid) {
+      fetchUserDocument(user.uid);
+    }
+  }, [user?.uid, fetchUserDocument]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -70,6 +79,14 @@ export default function BillingSubtab() {
     console.log("Updating payment method:", formData);
     setShowPaymentModal(false);
   };
+
+  if (userDoc && userDoc["User Type"] !== "Admin") {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <span className="text-lg text-gray-600 font-semibold">Contact your admin</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
