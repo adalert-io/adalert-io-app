@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+import { countries } from "countries-list";
 import { useAlertSettingsStore } from "@/lib/store/settings-store";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { 
@@ -18,10 +20,21 @@ import {
   Loader2 
 } from "lucide-react";
 
+// Dynamically import react-select to avoid SSR issues
+const Select = dynamic(() => import("react-select"), {
+  ssr: false,
+  loading: () => <div className="h-10 bg-gray-100 rounded animate-pulse" />
+});
+
 export default function CompanyDetailsSubtab() {
   const { stripeCompany, fetchStripeCompany, updateStripeCompany, loading } = useAlertSettingsStore();
   const { userDoc } = useAuthStore();
   const [isSaving, setIsSaving] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
   const [formData, setFormData] = useState({
     companyName: "",
     address: "",
@@ -32,9 +45,47 @@ export default function CompanyDetailsSubtab() {
     website: "",
     vat: "",
     telephone: "",
+    telephoneCountryCode: "",
     timezone: "",
     email: ""
   });
+
+  // Transform countries data for react-select
+  const countryOptions = useMemo(() => {
+    return Object.entries(countries).map(([code, country]) => ({
+      value: code,
+      label: country.name,
+      dialCode: country.phone,
+      flag: "🌍" // Using a default flag since emoji property might not exist
+    }));
+  }, []);
+
+  // Get selected country option
+  const selectedCountry = useMemo(() => {
+    return countryOptions.find(option => option.label === formData.country) || null;
+  }, [countryOptions, formData.country]);
+
+  // Get dial code options for telephone
+  const dialCodeOptions = useMemo(() => {
+    return countryOptions.map(option => ({
+      value: option.dialCode,
+      label: `+${option.dialCode} ${option.label}`,
+      displayLabel: `+${option.dialCode}`,
+      flag: option.flag
+    }));
+  }, [countryOptions]);
+
+  // Get selected dial code option
+  const selectedDialCode = useMemo(() => {
+    if (!formData.telephoneCountryCode) return null;
+    // Handle both string and array values for backward compatibility
+    const currentCode = Array.isArray(formData.telephoneCountryCode) 
+      ? formData.telephoneCountryCode[0] 
+      : formData.telephoneCountryCode;
+    const found = dialCodeOptions.find(option => option.value.toString() === currentCode.toString()) || null;
+    console.log("Selected dial code:", found, "for value:", currentCode);
+    return found;
+  }, [dialCodeOptions, formData.telephoneCountryCode]);
 
   useEffect(() => {
     if (userDoc?.uid) {
@@ -44,6 +95,10 @@ export default function CompanyDetailsSubtab() {
 
   useEffect(() => {
     if (stripeCompany) {
+      // Handle telephone country code - ensure it's a string
+      const countryCode = stripeCompany["Telephone Country Code"];
+      const countryCodeString = Array.isArray(countryCode) ? countryCode[0] : countryCode;
+      
       setFormData({
         companyName: stripeCompany["Company Name"] || "",
         address: stripeCompany["Street Address"] || "",
@@ -54,6 +109,7 @@ export default function CompanyDetailsSubtab() {
         website: stripeCompany["Website"] || "",
         vat: stripeCompany["VAT"]?.toString() || "",
         telephone: stripeCompany["Telephone"] || "",
+        telephoneCountryCode: countryCodeString?.toString() || "",
         timezone: stripeCompany["Time Zone"] || "",
         email: stripeCompany["Email"] || ""
       });
@@ -64,6 +120,31 @@ export default function CompanyDetailsSubtab() {
     setFormData(prev => ({
       ...prev,
       [field]: value
+    }));
+  };
+
+  const handleCountryChange = (selectedOption: any) => {
+    setFormData(prev => ({
+      ...prev,
+      country: selectedOption?.label || ""
+    }));
+  };
+
+  const handleDialCodeChange = (selectedOption: any) => {
+    console.log("Dial code selected:", selectedOption);
+    // Ensure we store just the dial code as a string, not an array
+    const dialCode = selectedOption?.value;
+    const dialCodeString = Array.isArray(dialCode) ? dialCode[0] : dialCode;
+    setFormData(prev => ({
+      ...prev,
+      telephoneCountryCode: dialCodeString?.toString() || ""
+    }));
+  };
+
+  const handlePhoneNumberChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      telephone: value
     }));
   };
 
@@ -81,6 +162,7 @@ export default function CompanyDetailsSubtab() {
         "Website": formData.website,
         "VAT": formData.vat ? parseFloat(formData.vat) : null,
         "Telephone": formData.telephone,
+        "Telephone Country Code": formData.telephoneCountryCode,
         "Time Zone": formData.timezone,
         "Email": formData.email
       };
@@ -145,14 +227,38 @@ export default function CompanyDetailsSubtab() {
 
           {/* Country */}
           <div className="relative">
-            <Input
-              placeholder="Country"
-              className="pl-10 pr-10"
-              value={formData.country}
-              onChange={(e) => handleInputChange("country", e.target.value)}
-            />
-            <Globe className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
-            <Globe className="absolute right-3 top-2.5 w-4 h-4 text-gray-400" />
+            <div className="absolute left-3 top-2.5 z-10">
+              <Globe className="w-5 h-5 text-blue-400" />
+            </div>
+            {isClient ? (
+              <Select
+                placeholder="Select Country"
+                options={countryOptions}
+                value={selectedCountry}
+                onChange={handleCountryChange}
+                isSearchable
+                className="react-select-container"
+                classNamePrefix="react-select"
+                styles={{
+                  control: (provided) => ({
+                    ...provided,
+                    paddingLeft: '2.5rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.375rem',
+                    minHeight: '2.5rem',
+                    '&:hover': {
+                      borderColor: '#3b82f6'
+                    }
+                  }),
+                  placeholder: (provided) => ({
+                    ...provided,
+                    color: '#9ca3af'
+                  })
+                }}
+              />
+            ) : (
+              <div className="h-10 bg-gray-100 rounded animate-pulse pl-10" />
+            )}
           </div>
 
           {/* Website */}
@@ -205,16 +311,53 @@ export default function CompanyDetailsSubtab() {
           </div>
 
           {/* Telephone */}
-          <div className="relative">
-            <Input
-              placeholder="Telephone"
-              className="pl-10"
-              value={formData.telephone}
-              onChange={(e) => handleInputChange("telephone", e.target.value)}
-            />
-            <div className="absolute left-3 top-2.5 flex items-center gap-1">
-              <span className="text-xs font-bold text-blue-600">US</span>
-              <Phone className="w-4 h-4 text-blue-400" />
+          <div className="flex gap-2">
+            {/* Dial Code Dropdown */}
+            <div className="w-32">
+              {isClient ? (
+                              <Select
+                key={`dial-code-${formData.telephoneCountryCode}`}
+                placeholder="+1"
+                options={dialCodeOptions}
+                value={selectedDialCode ? {
+                  ...selectedDialCode,
+                  label: selectedDialCode.displayLabel
+                } : null}
+                onChange={handleDialCodeChange}
+                isSearchable
+                className="react-select-container"
+                classNamePrefix="react-select"
+                styles={{
+                  control: (provided) => ({
+                    ...provided,
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.375rem',
+                    minHeight: '2.5rem',
+                    '&:hover': {
+                      borderColor: '#3b82f6'
+                    }
+                  }),
+                  placeholder: (provided) => ({
+                    ...provided,
+                    color: '#9ca3af'
+                  })
+                }}
+              />
+              ) : (
+                <div className="h-10 bg-gray-100 rounded animate-pulse" />
+              )}
+            </div>
+            {/* Phone Number Input */}
+            <div className="flex-1 relative">
+              <Input
+                placeholder="Phone Number"
+                type="number"
+                step="1"
+                min="0"
+                value={formData.telephone}
+                onChange={(e) => handlePhoneNumberChange(e.target.value)}
+              />
+              <Phone className="absolute right-3 top-2.5 w-4 h-4 text-blue-400" />
             </div>
           </div>
 

@@ -318,14 +318,14 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     try {
       const adsAccountsRef = collection(db, "adsAccounts");
       // const currentUserRef = doc(db, "users", currentUserId);
-
+      
       const q = query(
         adsAccountsRef,
         where("User", "==", companyAdminRef),
         where("Is Selected", "==", true)
       );
       const snap = await getDocs(q);
-
+      
       const adsAccounts: AdsAccount[] = snap.docs
         .map((docSnap) => {
           const data = docSnap.data();
@@ -335,15 +335,15 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
               userRef.id === currentUserId ||
               userRef.path?.includes(currentUserId)
           );
-
+          
           if (!hasUserAccess) return null;
-
+          
           return {
             id: docSnap.id,
             name:
               data["Account Name Editable"] ||
-              data["Account Name Original"] ||
-              formatAccountNumber(data["Id"]),
+                  data["Account Name Original"] || 
+                  formatAccountNumber(data["Id"]),
             "Account Name Editable": data["Account Name Editable"],
             "Account Name Original": data["Account Name Original"],
             "Id": data["Id"],
@@ -357,7 +357,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           };
         })
         .filter(Boolean) as AdsAccount[];
-
+      
       set({
         adsAccountsForTab: adsAccounts,
         adsAccountsForTabLoaded: true,
@@ -655,7 +655,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     try {
       const accountRef = doc(db, "adsAccounts", accountId);
       await updateDoc(accountRef, updates);
-
+      
       // Refresh the ads accounts for tab data
       const { useAuthStore } = await import("./auth-store");
       const userDoc = useAuthStore.getState().userDoc;
@@ -665,7 +665,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           userDoc.uid
         );
       }
-
+      
       set({ loading: false });
     } catch (error: any) {
       set({ error: error.message, loading: false });
@@ -677,7 +677,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     try {
       const accountRef = doc(db, "adsAccounts", accountId);
       await updateDoc(accountRef, { "Send Me Alert": sendAlert });
-
+      
       // Refresh the ads accounts for tab data
       const { useAuthStore } = await import("./auth-store");
       const userDoc = useAuthStore.getState().userDoc;
@@ -687,7 +687,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           userDoc.uid
         );
       }
-
+      
       set({ loading: false });
     } catch (error: any) {
       set({ error: error.message, loading: false });
