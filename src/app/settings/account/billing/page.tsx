@@ -23,16 +23,25 @@ import {
   X
 } from "lucide-react";
 import { useAuthStore } from "@/lib/store/auth-store";
+import { useAlertSettingsStore } from "@/lib/store/settings-store";
 import { useEffect } from "react";
+import moment from "moment";
+import { SUBSCRIPTION_STATUS, SUBSCRIPTION_PERIODS } from "@/lib/constants";
 
 export default function BillingSubtab() {
   const { user, userDoc, fetchUserDocument } = useAuthStore();
+  const { subscription, fetchSubscription } = useAlertSettingsStore();
   // Refetch userDoc on mount to ensure latest user type
   useEffect(() => {
     if (user?.uid) {
       fetchUserDocument(user.uid);
     }
   }, [user?.uid, fetchUserDocument]);
+  useEffect(() => {
+    if (userDoc?.["Company Admin"]) {
+      fetchSubscription(userDoc["Company Admin"]);
+    }
+  }, [userDoc?.["Company Admin"], fetchSubscription]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -80,6 +89,40 @@ export default function BillingSubtab() {
     setShowPaymentModal(false);
   };
 
+  // Subscription status badge logic
+  let statusText = "";
+  let statusColor = "";
+  let statusBg = "";
+  if (subscription) {
+    const status = subscription["User Status"];
+    const trialStart = subscription["Free Trial Start Date"]?.toDate ? subscription["Free Trial Start Date"].toDate() : null;
+    const trialEnd = trialStart ? moment(trialStart).add(SUBSCRIPTION_PERIODS.TRIAL_DAYS, "days") : null;
+    const now = moment();
+    if (status === SUBSCRIPTION_STATUS.PAYING) {
+      statusText = "Paid Plan Active";
+      statusColor = "#24B04D";
+      statusBg = "#e9ffef";
+    } else if (status === SUBSCRIPTION_STATUS.TRIAL_NEW && trialEnd && now.isBefore(trialEnd)) {
+      statusText = "Free Trial";
+      statusColor = "#24B04D";
+      statusBg = "#e9ffef";
+    } else if (
+      status === SUBSCRIPTION_STATUS.CANCELLED ||
+      status === SUBSCRIPTION_STATUS.PAYMENT_FAILED
+    ) {
+      statusText = "Subscription Canceled";
+      statusColor = "#ee1b23";
+      statusBg = "#ffebee";
+    } else if (
+      (status === SUBSCRIPTION_STATUS.TRIAL_NEW || status === SUBSCRIPTION_STATUS.TRIAL_ENDED) &&
+      trialEnd && now.isAfter(trialEnd)
+    ) {
+      statusText = "Free Trial Ended";
+      statusColor = "#ee1b23";
+      statusBg = "#ffebee";
+    }
+  }
+
   if (userDoc && userDoc["User Type"] !== "Admin") {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -124,10 +167,14 @@ export default function BillingSubtab() {
 
             {/* Status and Actions */}
             <div className="flex flex-col gap-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                <CheckCircle className="w-4 h-4" />
-                Paid Plan Active
-              </div>
+              {statusText && (
+                <div
+                  className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium"
+                  style={{ color: statusColor, background: statusBg }}
+                >
+                  {statusText}
+                </div>
+              )}
               <Button 
                 className="bg-blue-600 text-white hover:bg-blue-700"
                 onClick={() => setShowPaymentModal(true)}

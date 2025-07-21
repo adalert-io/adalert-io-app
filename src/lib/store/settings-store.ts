@@ -163,6 +163,9 @@ interface AlertSettingsState {
   stripeCompanyLoaded: boolean;
   fetchStripeCompany: (userId: string) => Promise<void>;
   updateStripeCompany: (userId: string, updates: any) => Promise<void>;
+  subscription: any | null;
+  subscriptionLoaded: boolean;
+  fetchSubscription: (companyAdminRef: any) => Promise<void>;
 }
 
 export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
@@ -178,6 +181,8 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
   adsAccountsForTabLoaded: false,
   stripeCompany: null,
   stripeCompanyLoaded: false,
+  subscription: null,
+  subscriptionLoaded: false,
   fetchAlertSettings: async (userId: string) => {
     if (get().loadedUserId === userId && get().alertSettings) return;
     set({ loading: true, error: null });
@@ -1043,6 +1048,27 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     } catch (error: any) {
       set({ error: error.message, loading: false });
       throw error;
+    }
+  },
+  fetchSubscription: async (companyAdminRef: any) => {
+    if (get().subscriptionLoaded && get().subscription) return;
+    set({ loading: true, error: null });
+    try {
+      const subscriptionsRef = collection(db, "subscriptions");
+      const q = query(subscriptionsRef, where("User", "==", companyAdminRef));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        const docSnap = snap.docs[0];
+        set({
+          subscription: { id: docSnap.id, ...docSnap.data() },
+          subscriptionLoaded: true,
+          loading: false,
+        });
+      } else {
+        set({ subscription: null, subscriptionLoaded: true, loading: false });
+      }
+    } catch (error: any) {
+      set({ error: error.message, loading: false });
     }
   },
 }));

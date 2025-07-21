@@ -7,6 +7,7 @@ export const SUBSCRIPTION_STATUS = {
   TRIAL_ENDED: "Trial Ended",
   CANCELLED: "Cancelled",
   PAYMENT_FAILED: "Payment Failed",
+  PAYING: 'Paying',
   ACTIVE: "Active",
 } as const;
 
