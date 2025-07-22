@@ -61,14 +61,14 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
   const countryOptions = useMemo(() => {
     return Object.entries(countries).map(([code, country]) => ({
       value: code,
-      label: country.name,
+      label: `${code} - ${country.name}`,
       flag: "🌍"
     }));
   }, []);
 
   // Get selected country option
   const selectedCountry = useMemo(() => {
-    return countryOptions.find(option => option.label === formData.country) || null;
+    return countryOptions.find(option => option.value === formData.country) || null;
   }, [countryOptions, formData.country]);
 
   const connectedAccountsCount = adsAccounts.length;
@@ -131,25 +131,35 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
         return;
       }
 
-      // Send payment method to your backend
-      const result = await paymentService.createPaymentMethod(
-        paymentMethod.id,
-        {
+      // Save payment method details to Firestore
+      let userId = '';
+      if (userDoc["Company Admin"] && typeof userDoc["Company Admin"] === 'object' && userDoc["Company Admin"].id) {
+        userId = userDoc["Company Admin"].id;
+      } else if (typeof userDoc["Company Admin"] === 'string') {
+        // If it's already a string, extract the ID from '/users/<id>'
+        const match = userDoc["Company Admin"].match(/\/users\/(.+)/);
+        userId = match && match[1] ? match[1] : userDoc["Company Admin"];
+      }
+      const userRef = `/users/${userId}`;
+      const saveResult = await paymentService.savePaymentMethodDetails({
+        userRef,
+        paymentMethod,
+        billingDetails: {
           nameOnCard: formData.nameOnCard,
           streetAddress: formData.streetAddress,
           city: formData.city,
           state: formData.state,
           country: formData.country,
           zip: formData.zip,
-        }
-      );
-
-      if (result.success) {
-        toast.success("Payment method saved successfully!");
-        onBack();
-      } else {
-        toast.error(result.error || 'Failed to save payment method');
+        },
+      });
+      if (!saveResult.success) {
+        toast.error(saveResult.error || 'Failed to save payment method details');
+        return;
       }
+
+      toast.success("Payment method saved successfully!");
+      onBack();
     } catch (error: any) {
       console.error('Payment method error:', error);
       toast.error(error.message || 'An error occurred while saving payment method');
@@ -320,7 +330,7 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
                     onChange={(selectedOption: any) => {
                       setFormData(prev => ({
                         ...prev,
-                        country: selectedOption?.label || "United States"
+                        country: selectedOption?.value || "US"
                       }));
                     }}
                     isSearchable
