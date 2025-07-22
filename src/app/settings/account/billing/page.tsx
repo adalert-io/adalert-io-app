@@ -47,7 +47,7 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
   const stripe = useStripe();
   const elements = useElements();
   const { userDoc } = useAuthStore();
-  const { adsAccounts } = useAlertSettingsStore();
+  const { adsAccounts, paymentMethods } = useAlertSettingsStore();
   const [isClient, setIsClient] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -55,9 +55,23 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
     streetAddress: "",
     city: "",
     state: "",
-    country: "United States",
+    country: "US",
     zip: ""
   });
+
+  // Prefill form fields if paymentMethods is available
+  useEffect(() => {
+    if (paymentMethods) {
+      setFormData({
+        nameOnCard: paymentMethods['Stripe Name'] || "",
+        streetAddress: paymentMethods['Stripe Address'] || "",
+        city: paymentMethods['Stripe City'] || "",
+        state: paymentMethods['Stripe State'] || "",
+        country: paymentMethods['Stripe Country'] || "US",
+        zip: paymentMethods['Zip'] || ""
+      });
+    }
+  }, [paymentMethods]);
 
   // Transform countries data for react-select
   const countryOptions = useMemo(() => {
