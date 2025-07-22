@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+import { countries } from "countries-list";
 import { 
   CreditCard, 
   Calendar, 
@@ -24,14 +26,23 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useAlertSettingsStore } from "@/lib/store/settings-store";
-import { useEffect } from "react";
 import moment from "moment";
-import { SUBSCRIPTION_STATUS, SUBSCRIPTION_PERIODS } from "@/lib/constants";
+import { SUBSCRIPTION_STATUS, SUBSCRIPTION_PERIODS, SUBSCRIPTION_PRICES } from "@/lib/constants";
+
+// Dynamically import react-select to avoid SSR issues
+const Select = dynamic(() => import("react-select"), {
+  ssr: false,
+  loading: () => <div className="h-10 bg-gray-100 rounded animate-pulse" />
+});
 
 export default function BillingSubtab() {
   const { user, userDoc, fetchUserDocument } = useAuthStore();
-  const { subscription, fetchSubscription, paymentMethods, fetchPaymentMethods } = useAlertSettingsStore();
+  const { subscription, fetchSubscription, paymentMethods, fetchPaymentMethods, adsAccounts, fetchAdsAccounts } = useAlertSettingsStore();
+  const [isClient, setIsClient] = useState(false);
   // Refetch userDoc on mount to ensure latest user type
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
   useEffect(() => {
     if (user?.uid) {
       fetchUserDocument(user.uid);
@@ -41,8 +52,9 @@ export default function BillingSubtab() {
     if (userDoc?.["Company Admin"]) {
       fetchSubscription(userDoc["Company Admin"]);
       fetchPaymentMethods(userDoc["Company Admin"]);
+      fetchAdsAccounts(userDoc["Company Admin"]);
     }
-  }, [userDoc?.["Company Admin"], fetchSubscription, fetchPaymentMethods]);
+  }, [userDoc?.["Company Admin"], fetchSubscription, fetchPaymentMethods, fetchAdsAccounts]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -55,6 +67,20 @@ export default function BillingSubtab() {
     country: "United States",
     zip: ""
   });
+
+  // Transform countries data for react-select
+  const countryOptions = useMemo(() => {
+    return Object.entries(countries).map(([code, country]) => ({
+      value: code,
+      label: country.name,
+      flag: "🌍" // Using a default flag since emoji property might not exist
+    }));
+  }, []);
+
+  // Get selected country option
+  const selectedCountry = useMemo(() => {
+    return countryOptions.find(option => option.label === formData.country) || null;
+  }, [countryOptions, formData.country]);
 
   // Mock data - replace with real data from Stripe
   const paymentMethod = {
@@ -123,6 +149,25 @@ export default function BillingSubtab() {
       statusBg = "#ffebee";
     }
   }
+
+  const connectedAccountsCount = adsAccounts.length;
+
+  // Calculate subscription price based on number of ads accounts
+  const calculateSubscriptionPrice = () => {
+    if (connectedAccountsCount === 0) {
+      return 0;
+    } else if (connectedAccountsCount === 1) {
+      return SUBSCRIPTION_PRICES.FIRST_ADS_ACCOUNT;
+    } else {
+      return (
+        SUBSCRIPTION_PRICES.FIRST_ADS_ACCOUNT +
+        SUBSCRIPTION_PRICES.ADDITIONAL_ADS_ACCOUNT *
+          (connectedAccountsCount - 1)
+      );
+    }
+  };
+
+  const subscriptionPrice = calculateSubscriptionPrice();
 
   if (userDoc && userDoc["User Type"] !== "Admin") {
     return (
@@ -331,9 +376,9 @@ export default function BillingSubtab() {
             <div className="p-6">
               {/* Subscription Summary */}
               <div className="flex items-center justify-between mb-8">
-                <div className="text-3xl font-bold text-blue-600">$116/Monthly</div>
+                <div className="text-3xl font-bold text-blue-600">${subscriptionPrice}/Monthly</div>
                 <div className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-medium">
-                  4 Connected ads account(s)
+                  {connectedAccountsCount} Connected ads account(s)
                 </div>
               </div>
 
@@ -454,18 +499,41 @@ export default function BillingSubtab() {
                         Country
                       </Label>
                       <div className="relative mt-1">
-                        <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                        <select
-                          id="country"
-                          value={formData.country}
-                          onChange={(e) => handleInputChange('country', e.target.value)}
-                          className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        >
-                          <option value="United States">United States</option>
-                          <option value="Canada">Canada</option>
-                          <option value="United Kingdom">United Kingdom</option>
-                          <option value="Australia">Australia</option>
-                        </select>
+                        <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 z-10" />
+                        {isClient ? (
+                          <Select
+                            placeholder="Select Country"
+                            options={countryOptions}
+                            value={selectedCountry}
+                            onChange={(selectedOption: any) => {
+                              setFormData(prev => ({
+                                ...prev,
+                                country: selectedOption?.label || "United States"
+                              }));
+                            }}
+                            isSearchable
+                            className="react-select-container"
+                            classNamePrefix="react-select"
+                            styles={{
+                              control: (provided) => ({
+                                ...provided,
+                                paddingLeft: '2.5rem',
+                                border: '1px solid #d1d5db',
+                                borderRadius: '0.375rem',
+                                minHeight: '2.5rem',
+                                '&:hover': {
+                                  borderColor: '#3b82f6'
+                                }
+                              }),
+                              placeholder: (provided) => ({
+                                ...provided,
+                                color: '#9ca3af'
+                              })
+                            }}
+                          />
+                        ) : (
+                          <div className="h-10 bg-gray-100 rounded animate-pulse pl-10" />
+                        )}
                       </div>
                     </div>
                     <div>
