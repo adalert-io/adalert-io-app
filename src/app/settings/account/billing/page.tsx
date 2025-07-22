@@ -30,7 +30,7 @@ import { SUBSCRIPTION_STATUS, SUBSCRIPTION_PERIODS } from "@/lib/constants";
 
 export default function BillingSubtab() {
   const { user, userDoc, fetchUserDocument } = useAuthStore();
-  const { subscription, fetchSubscription } = useAlertSettingsStore();
+  const { subscription, fetchSubscription, paymentMethods, fetchPaymentMethods } = useAlertSettingsStore();
   // Refetch userDoc on mount to ensure latest user type
   useEffect(() => {
     if (user?.uid) {
@@ -40,8 +40,9 @@ export default function BillingSubtab() {
   useEffect(() => {
     if (userDoc?.["Company Admin"]) {
       fetchSubscription(userDoc["Company Admin"]);
+      fetchPaymentMethods(userDoc["Company Admin"]);
     }
-  }, [userDoc?.["Company Admin"], fetchSubscription]);
+  }, [userDoc?.["Company Admin"], fetchSubscription, fetchPaymentMethods]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -149,21 +150,30 @@ export default function BillingSubtab() {
           <h3 className="text-lg font-semibold mb-4">Payment Method</h3>
           <div className="flex items-start gap-6">
             {/* Payment Method Card */}
-            <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-6 min-w-[320px]">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <div className="text-sm opacity-80 mb-1">visa</div>
-                  <div className="text-lg font-bold">VISA</div>
+            {paymentMethods ? (
+              <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-6 min-w-[320px]">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <div className="text-sm opacity-80 mb-1">visa</div>
+                    <div className="text-lg font-bold">VISA</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm opacity-80 mb-1">Test</div>
+                    <div className="text-sm">{paymentMethod.expMonth} / {paymentMethod.expYear}</div>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-sm opacity-80 mb-1">Test</div>
-                  <div className="text-sm">{paymentMethod.expMonth} / {paymentMethod.expYear}</div>
+                <div className="text-lg font-mono">
+                  XXXX - XXXX - XXXX - {paymentMethod.last4}
                 </div>
               </div>
-              <div className="text-lg font-mono">
-                XXXX - XXXX - XXXX - {paymentMethod.last4}
+            ) : (
+              <div className="bg-gray-100 text-gray-600 rounded-lg p-6 min-w-[320px] flex items-center justify-center">
+                <div className="text-center">
+                  <CreditCard className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                  <p className="text-sm">No payment method</p>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Status and Actions */}
             <div className="flex flex-col gap-4">
@@ -179,7 +189,7 @@ export default function BillingSubtab() {
                 className="bg-blue-600 text-white hover:bg-blue-700"
                 onClick={() => setShowPaymentModal(true)}
               >
-                Update payment method
+                {paymentMethods ? "Update payment method" : "Add payment method"}
               </Button>
             </div>
           </div>

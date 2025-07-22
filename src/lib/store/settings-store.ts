@@ -166,6 +166,9 @@ interface AlertSettingsState {
   subscription: any | null;
   subscriptionLoaded: boolean;
   fetchSubscription: (companyAdminRef: any) => Promise<void>;
+  paymentMethods: any | null;
+  paymentMethodsLoaded: boolean;
+  fetchPaymentMethods: (companyAdminRef: any) => Promise<void>;
 }
 
 export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
@@ -183,6 +186,8 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
   stripeCompanyLoaded: false,
   subscription: null,
   subscriptionLoaded: false,
+  paymentMethods: null,
+  paymentMethodsLoaded: false,
   fetchAlertSettings: async (userId: string) => {
     if (get().loadedUserId === userId && get().alertSettings) return;
     set({ loading: true, error: null });
@@ -1066,6 +1071,28 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         });
       } else {
         set({ subscription: null, subscriptionLoaded: true, loading: false });
+      }
+    } catch (error: any) {
+      set({ error: error.message, loading: false });
+    }
+  },
+  fetchPaymentMethods: async (companyAdminRef: any) => {
+    if (get().paymentMethodsLoaded && get().paymentMethods) return;
+    set({ loading: true, error: null });
+    try {
+      const paymentMethodsRef = collection(db, "paymentMethods");
+      const userRef = doc(db, "users", companyAdminRef.uid);
+      const q = query(paymentMethodsRef, where("User", "==", userRef));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        const docSnap = snap.docs[0];
+        set({
+          paymentMethods: { id: docSnap.id, ...docSnap.data() },
+          paymentMethodsLoaded: true,
+          loading: false,
+        });
+      } else {
+        set({ paymentMethods: null, paymentMethodsLoaded: true, loading: false });
       }
     } catch (error: any) {
       set({ error: error.message, loading: false });
