@@ -389,18 +389,15 @@ export default function BillingSubtab() {
                 <Label htmlFor="cardNumber" className="text-sm font-medium text-gray-700">
                   Card number
                 </Label>
-                <div className="flex gap-2 mt-1">
+                <div className="mt-1">
                   <Input
                     id="cardNumber"
                     type="text"
                     placeholder="1234 5678 9012 3456"
                     value={formData.cardNumber}
                     onChange={(e) => handleInputChange('cardNumber', e.target.value)}
-                    className="flex-1"
+                    className="w-full"
                   />
-                  <Button variant="outline" className="bg-green-100 text-green-700 hover:bg-green-200">
-                    Autofill link
-                  </Button>
                 </div>
               </div>
 
