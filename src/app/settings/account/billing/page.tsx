@@ -33,6 +33,8 @@ import { useAuthStore } from "@/lib/store/auth-store";
 import { useAlertSettingsStore } from "@/lib/store/settings-store";
 import moment from "moment";
 import { SUBSCRIPTION_STATUS, SUBSCRIPTION_PERIODS, SUBSCRIPTION_PRICES } from "@/lib/constants";
+import { doc } from "firebase/firestore";
+import { db } from "@/lib/firebase/config";
 
 // Dynamically import react-select to avoid SSR issues
 const Select = dynamic(() => import("react-select"), {
@@ -140,9 +142,9 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
         const match = userDoc["Company Admin"].match(/\/users\/(.+)/);
         userId = match && match[1] ? match[1] : userDoc["Company Admin"];
       }
-      const userRef = `/users/${userId}`;
+      const userRef = doc(db, 'users', userId);
       const saveResult = await paymentService.savePaymentMethodDetails({
-        userRef,
+        userRef: `/users/${userId}`,
         paymentMethod,
         billingDetails: {
           nameOnCard: formData.nameOnCard,
@@ -157,6 +159,9 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
         toast.error(saveResult.error || 'Failed to save payment method details');
         return;
       }
+
+      // Fetch the saved payment method and update state
+      await useAlertSettingsStore.getState().fetchPaymentMethodByUser(userRef);
 
       toast.success("Payment method saved successfully!");
       onBack();
@@ -402,7 +407,7 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
 // Main Billing Component
 export default function BillingSubtab() {
   const { user, userDoc, fetchUserDocument } = useAuthStore();
-  const { subscription, fetchSubscription, paymentMethods, fetchPaymentMethods, adsAccounts, fetchAdsAccounts } = useAlertSettingsStore();
+  const { subscription, fetchSubscription, paymentMethods, fetchPaymentMethod, fetchPaymentMethodByUser, adsAccounts, fetchAdsAccounts } = useAlertSettingsStore();
   const [screen, setScreen] = useState<"list" | "payment-form">("list");
   // Refetch userDoc on mount to ensure latest user type
   useEffect(() => {
@@ -413,10 +418,20 @@ export default function BillingSubtab() {
   useEffect(() => {
     if (userDoc?.["Company Admin"]) {
       fetchSubscription(userDoc["Company Admin"]);
-      fetchPaymentMethods(userDoc["Company Admin"]);
+      fetchPaymentMethod(userDoc["Company Admin"]);
       fetchAdsAccounts(userDoc["Company Admin"]);
+      // Fetch payment method by user reference
+      let userId = '';
+      if (userDoc["Company Admin"] && typeof userDoc["Company Admin"] === 'object' && userDoc["Company Admin"].id) {
+        userId = userDoc["Company Admin"].id;
+      } else if (typeof userDoc["Company Admin"] === 'string') {
+        const match = userDoc["Company Admin"].match(/\/users\/(.+)/);
+        userId = match && match[1] ? match[1] : userDoc["Company Admin"];
+      }
+      const userRef = doc(db, 'users', userId);
+      fetchPaymentMethodByUser(userRef);
     }
-  }, [userDoc?.["Company Admin"], fetchSubscription, fetchPaymentMethods, fetchAdsAccounts]);
+  }, [userDoc?.["Company Admin"], fetchSubscription, fetchPaymentMethod, fetchAdsAccounts, fetchPaymentMethodByUser]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -527,16 +542,20 @@ export default function BillingSubtab() {
                     <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-6 min-w-[320px]">
                       <div className="flex justify-between items-start mb-4">
                         <div>
-                          <div className="text-sm opacity-80 mb-1">visa</div>
-                          <div className="text-lg font-bold">VISA</div>
+                          <div className="text-sm opacity-80 mb-1">{paymentMethods['Stripe Card Brand'] || 'Card'}</div>
+                          <div className="text-lg font-bold">{paymentMethods['Stripe Card Brand']?.toUpperCase() || 'CARD'}</div>
                         </div>
                         <div className="text-right">
-                          <div className="text-sm opacity-80 mb-1">Test</div>
-                          <div className="text-sm">{paymentMethod.expMonth} / {paymentMethod.expYear}</div>
+                          <div className="text-sm opacity-80 mb-1">{paymentMethods['Stripe Expired Month'] && paymentMethods['Stripe Expired Year'] ? '' : 'Test'}</div>
+                          <div className="text-sm">{String(paymentMethods['Stripe Expired Month']).padStart(2, '0')} / {paymentMethods['Stripe Expired Year']}</div>
                         </div>
                       </div>
                       <div className="text-lg font-mono">
-                        XXXX - XXXX - XXXX - {paymentMethod.last4}
+                        XXXX - XXXX - XXXX - {paymentMethods['Stripe Last 4 Digits']}
+                      </div>
+                      <div className="mt-4 text-sm">
+                        <div>Name: {paymentMethods['Stripe Name']}</div>
+                        <div>Address: {paymentMethods['Stripe Address']}, {paymentMethods['Stripe City']}, {paymentMethods['Stripe State']} {paymentMethods['Zip']}, {paymentMethods['Stripe Country']}</div>
                       </div>
                     </div>
                   ) : (

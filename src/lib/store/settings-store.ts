@@ -168,7 +168,8 @@ interface AlertSettingsState {
   fetchSubscription: (companyAdminRef: any) => Promise<void>;
   paymentMethods: any | null;
   paymentMethodsLoaded: boolean;
-  fetchPaymentMethods: (companyAdminRef: any) => Promise<void>;
+  fetchPaymentMethod: (companyAdminRef: any) => Promise<void>;
+  fetchPaymentMethodByUser: (userRef: any) => Promise<void>;
 }
 
 export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
@@ -1076,7 +1077,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       set({ error: error.message, loading: false });
     }
   },
-  fetchPaymentMethods: async (companyAdminRef: any) => {
+  fetchPaymentMethod: async (companyAdminRef: any) => {
     if (get().paymentMethodsLoaded && get().paymentMethods) return;
     set({ loading: true, error: null });
     try {
@@ -1086,13 +1087,26 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       const snap = await getDocs(q);
       if (!snap.empty) {
         const docSnap = snap.docs[0];
-        set({
-          paymentMethods: { id: docSnap.id, ...docSnap.data() },
-          paymentMethodsLoaded: true,
-          loading: false,
-        });
+        set({ paymentMethods: { id: docSnap.id, ...docSnap.data() }, paymentMethodsLoaded: true, loading: false });
       } else {
         set({ paymentMethods: null, paymentMethodsLoaded: true, loading: false });
+      }
+    } catch (error: any) {
+      set({ error: error.message, loading: false });
+    }
+  },
+  fetchPaymentMethodByUser: async (userRef: any) => {
+    set({ loading: true, error: null });
+    try {
+      const paymentMethodsRef = collection(db, "paymentMethods");
+      const q = query(paymentMethodsRef, where("User", "==", userRef));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        const docSnap = snap.docs[0];
+        console.log('docSnap', docSnap.data());
+        set({ paymentMethods: { id: docSnap.id, ...docSnap.data() }, loading: false });
+      } else {
+        set({ paymentMethods: null, loading: false });
       }
     } catch (error: any) {
       set({ error: error.message, loading: false });
