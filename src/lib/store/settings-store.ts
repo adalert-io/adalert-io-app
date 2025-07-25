@@ -20,6 +20,7 @@ import {
 import { User } from "firebase/auth";
 import { formatAccountNumber } from "../utils";
 import { APPLICATION_NAME } from "../constants";
+import { CardElement } from '@stripe/react-stripe-js';
 
 export interface AlertSettings {
   id: string;
@@ -170,6 +171,22 @@ interface AlertSettingsState {
   paymentMethodsLoaded: boolean;
   fetchPaymentMethod: (companyAdminRef: any) => Promise<void>;
   fetchPaymentMethodByUser: (userRef: any) => Promise<void>;
+  invoices: any[] | null;
+  handleSubscriptionPayment: (
+    {
+      formData,
+      stripe,
+      elements,
+      toast,
+      onBack,
+    }: {
+      formData: any;
+      stripe: any;
+      elements: any;
+      toast: any;
+      onBack: () => void;
+    }
+  ) => Promise<void>;
 }
 
 export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
@@ -189,6 +206,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
   subscriptionLoaded: false,
   paymentMethods: null,
   paymentMethodsLoaded: false,
+  invoices: null,
   fetchAlertSettings: async (userId: string) => {
     if (get().loadedUserId === userId && get().alertSettings) return;
     set({ loading: true, error: null });
@@ -1110,6 +1128,212 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       }
     } catch (error: any) {
       set({ error: error.message, loading: false });
+    }
+  },
+  /**
+   * Handles the full payment and subscription flow for a new payment method and subscription.
+   * Usage: Call from the billing page's handleSubmit, passing formData, stripe, elements, toast, and onBack.
+   */
+  handleSubscriptionPayment: async ({
+    formData,
+    stripe,
+    elements,
+    toast,
+    onBack,
+  }: {
+    formData: any;
+    stripe: any;
+    elements: any;
+    toast: any;
+    onBack: () => void;
+  }) => {
+    set({ loading: true, error: null });
+    try {
+      // 1. Get userId from userDoc['Company Admin']
+      const { useAuthStore } = await import("./auth-store");
+      const userDoc = useAuthStore.getState().userDoc;
+      if (!userDoc) throw new Error('User document not found');
+      let userId = '';
+      if (userDoc["Company Admin"] && typeof userDoc["Company Admin"] === 'object' && userDoc["Company Admin"].id) {
+        userId = userDoc["Company Admin"].id;
+      } else if (typeof userDoc["Company Admin"] === 'string') {
+        const match = userDoc["Company Admin"].match(/\/users\/(.+)/);
+        userId = match && match[1] ? match[1] : userDoc["Company Admin"];
+      }
+      console.log('userId: ', userId);
+      const userRef = doc(db, "users", userId);
+
+      // 2. Fetch user document
+      const userSnap = await getDocs(query(collection(db, "users"), where("__name__", "==", userId)));
+      const userData = userSnap.empty ? null : userSnap.docs[0].data();
+      if (!userData) throw new Error("User document not found");
+
+      // 3. Fetch stripeCompanies where User == userId
+      const stripeCompaniesRef = collection(db, "stripeCompanies");
+      const stripeCompaniesSnap = await getDocs(query(stripeCompaniesRef, where("User", "==", userRef)));
+      const stripeCompanyDoc = stripeCompaniesSnap.empty ? null : stripeCompaniesSnap.docs[0];
+      const stripeCompany = stripeCompanyDoc ? stripeCompanyDoc.data() : null;
+
+      // 4. Fetch adsAccounts where User == userId and Is Connected == true
+      const adsAccountsRef = collection(db, "adsAccounts");
+      const adsAccountsSnap = await getDocs(query(adsAccountsRef, where("User", "==", userRef), where("Is Connected", "==", true)));
+      const adsAccounts = adsAccountsSnap.docs.map(doc => doc.data());
+      const adsAccountsCount = adsAccounts.length;
+      console.log('adsAccountsCount: ', adsAccountsCount);
+
+      // 5. If paymentMethods is empty:
+      if (!get().paymentMethods) {
+        // Create payment method with Stripe
+        const { error, paymentMethod } = await stripe.createPaymentMethod({
+          type: 'card',
+          card: elements.getElement('card') || elements.getElement(CardElement),
+          billing_details: {
+            name: formData.nameOnCard,
+            address: {
+              line1: formData.streetAddress,
+              city: formData.city,
+              state: formData.state,
+              postal_code: formData.zip,
+              country: formData.country,
+            },
+          },
+        });
+        if (error) {
+          toast.error(error.message || 'Payment method creation failed');
+          set({ loading: false });
+          return;
+        }
+
+        // Prepare customer creation payload
+        let customerEmail = userData.email || userData.Email;
+        let shipping = {
+          name: formData.nameOnCard,
+          address: {
+            line1: formData.streetAddress,
+            city: formData.city,
+            state: formData.state,
+            postal_code: formData.zip,
+            country: formData.country,
+          },
+        };
+        if (stripeCompany) {
+          customerEmail = stripeCompany.Email || customerEmail;
+          shipping = {
+            name: stripeCompany["Company Name"] || formData.nameOnCard,
+            address: {
+              line1: stripeCompany["Street Address"] || formData.streetAddress,
+              city: stripeCompany["City"] || formData.city,
+              state: stripeCompany["State"] || formData.state,
+              postal_code: stripeCompany["Zip"] || formData.zip,
+              country: stripeCompany["Country"] || formData.country,
+            },
+          };
+        }
+
+        // Create Stripe customer (API route should handle attaching payment method, shipping, and email)
+        const { paymentService } = await import("@/services/payment");
+        const customerResult = await paymentService.createStripeCustomer({
+          userId,
+          paymentMethodId: paymentMethod.id,
+          billingDetails: {
+            nameOnCard: shipping.name,
+            streetAddress: shipping.address.line1,
+            city: shipping.address.city,
+            state: shipping.address.state,
+            country: shipping.address.country,
+            zip: shipping.address.postal_code,
+          },
+        });
+        if (!customerResult.success) {
+          toast.error(customerResult.error || 'Failed to create Stripe customer');
+          set({ loading: false });
+          return;
+        }
+        const customerId = customerResult.customerId;
+        console.log('customerId: ', customerId);
+
+        // Save payment method details to Firestore
+        const saveResult = await paymentService.savePaymentMethodDetails({
+          userRef: `/users/${userId}`,
+          paymentMethod,
+          billingDetails: {
+            nameOnCard: formData.nameOnCard,
+            streetAddress: formData.streetAddress,
+            city: formData.city,
+            state: formData.state,
+            country: formData.country,
+            zip: formData.zip,
+          },
+        });
+        if (!saveResult.success) {
+          toast.error(saveResult.error || 'Failed to save payment method details');
+          set({ loading: false });
+          return;
+        }
+
+        // Fetch the saved payment method and update state
+        await get().fetchPaymentMethodByUser(userRef);
+
+        // Update subscription doc with new Stripe Customer Id
+        const subscriptionsRef = collection(db, "subscriptions");
+        const subSnap = await getDocs(query(subscriptionsRef, where("User", "==", userRef)));
+        console.log('subSnap: ', subSnap);
+        if (!subSnap.empty) {
+          await updateDoc(subSnap.docs[0].ref, { "Stripe Customer Id": customerId });
+        }
+
+        // If adsAccounts > 0, create Stripe subscription
+        if (adsAccountsCount > 0) {
+          // Call backend API to create subscription (implement /api/stripe-subscriptions)
+          const priceId = process.env.NEXT_PUBLIC_STRIPE_SUBSCRIPTION_PRICE_ID;
+          // Log all fields passed into the body for debugging
+          console.log('Creating Stripe subscription with:', {
+            customerId,
+            priceId,
+            quantity: adsAccountsCount,
+            paymentMethodId: paymentMethod.id,
+          });
+          const subRes = await fetch("/api/stripe-subscriptions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              customerId,
+              priceId,
+              quantity: adsAccountsCount,
+              paymentMethodId: paymentMethod.id,
+            }),
+          });
+          const subData = await subRes.json();
+          console.log('subData: ', subData);
+          if (!subRes.ok || subData.error) {
+            toast.error((subData.error || 'Stripe subscription error') + ' Your subscription payment has failed. Please update your payment method to avoid any service interruptions.');
+            set({ loading: false });
+            return;
+          }
+          // Update subscription doc with subscription id and status
+          if (!subSnap.empty) {
+            await updateDoc(subSnap.docs[0].ref, {
+              "Stripe Subscription Id": subData.subscriptionId,
+              "Stripe Subscription Item Id(s)": [subData.subscriptionId],
+              "User Status": "Paying",
+            });
+          }
+          toast.success("You've successfully subscribed to AdAlerts.io");
+
+          // Fetch invoices (implement /api/stripe-invoices)
+          const invRes = await fetch(`/api/stripe-invoices?customerId=${customerId}`);
+          const invData = await invRes.json();
+          if (invRes.ok && invData.invoices) {
+            set({ invoices: invData.invoices });
+          }
+          onBack();
+        }
+      }
+      set({ loading: false });
+    } catch (error: any) {
+      console.error('handleSubscriptionPayment error:', error);
+      toast.error(error.message || 'An error occurred while processing payment');
+      set({ loading: false, error: error.message });
     }
   },
 }));

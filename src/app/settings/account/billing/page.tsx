@@ -9,7 +9,6 @@ import dynamic from "next/dynamic";
 import { countries } from "countries-list";
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { stripePromise, stripeConfig } from '@/lib/stripe/config';
-import { paymentService } from '@/services/payment';
 import { toast } from 'sonner';
 import { 
   CreditCard, 
@@ -126,61 +125,15 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
     setIsSubmitting(true);
 
     try {
-      // Create payment method with Stripe
-      const { error, paymentMethod } = await stripe.createPaymentMethod({
-        type: 'card',
-        card: elements.getElement(CardElement)!,
-        billing_details: {
-          name: formData.nameOnCard,
-          address: {
-            line1: formData.streetAddress,
-            city: formData.city,
-            state: formData.state,
-            postal_code: formData.zip,
-            country: formData.country,
-          },
-        },
+      await useAlertSettingsStore.getState().handleSubscriptionPayment({
+        formData,
+        stripe,
+        elements,
+        toast,
+        onBack,
       });
-
-      if (error) {
-        toast.error(error.message || 'Payment method creation failed');
-        return;
-      }
-
-      // Save payment method details to Firestore
-      let userId = '';
-      if (userDoc["Company Admin"] && typeof userDoc["Company Admin"] === 'object' && userDoc["Company Admin"].id) {
-        userId = userDoc["Company Admin"].id;
-      } else if (typeof userDoc["Company Admin"] === 'string') {
-        // If it's already a string, extract the ID from '/users/<id>'
-        const match = userDoc["Company Admin"].match(/\/users\/(.+)/);
-        userId = match && match[1] ? match[1] : userDoc["Company Admin"];
-      }
-      const userRef = doc(db, 'users', userId);
-      const saveResult = await paymentService.savePaymentMethodDetails({
-        userRef: `/users/${userId}`,
-        paymentMethod,
-        billingDetails: {
-          nameOnCard: formData.nameOnCard,
-          streetAddress: formData.streetAddress,
-          city: formData.city,
-          state: formData.state,
-          country: formData.country,
-          zip: formData.zip,
-        },
-      });
-      if (!saveResult.success) {
-        toast.error(saveResult.error || 'Failed to save payment method details');
-        return;
-      }
-
-      // Fetch the saved payment method and update state
-      await useAlertSettingsStore.getState().fetchPaymentMethodByUser(userRef);
-
-      toast.success("Payment method saved successfully!");
-      onBack();
     } catch (error: any) {
-      console.error('Payment method error:', error);
+      console.error('Payment error:', error);
       toast.error(error.message || 'An error occurred while saving payment method');
     } finally {
       setIsSubmitting(false);

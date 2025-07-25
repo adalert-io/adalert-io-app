@@ -123,4 +123,42 @@ export const paymentService = {
       return { success: false, error: error.message || 'Failed to save payment method details' };
     }
   },
+
+  async createStripeCustomer({
+    userId,
+    paymentMethodId,
+    billingDetails,
+  }: {
+    userId: string;
+    paymentMethodId: string;
+    billingDetails: PaymentMethodData;
+  }): Promise<{ success: boolean; customerId?: string; error?: string }> {
+    try {
+      const response = await fetch('/api/stripe-customers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          paymentMethodId,
+          billingDetails,
+        }),
+      });
+      
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to create Stripe customer');
+      }
+      
+      const result = await response.json();
+      return { 
+        success: true, 
+        customerId: result.customerId 
+      };
+    } catch (error: any) {
+      return { 
+        success: false, 
+        error: error.message || 'Failed to create Stripe customer' 
+      };
+    }
+  },
 }; 
