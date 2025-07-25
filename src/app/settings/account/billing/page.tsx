@@ -26,7 +26,8 @@ import {
   Building,
   Target,
   X,
-  Loader2
+  Loader2,
+  Download
 } from "lucide-react";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useAlertSettingsStore } from "@/lib/store/settings-store";
@@ -399,27 +400,42 @@ export default function BillingSubtab() {
       fetchPaymentMethodByUser(userRef);
     }
   }, [userDoc?.["Company Admin"], fetchSubscription, fetchPaymentMethod, fetchAdsAccounts, fetchPaymentMethodByUser]);
+
+  // --- Invoice fetching logic ---
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(false);
+  useEffect(() => {
+    const fetchInvoices = async () => {
+      if (
+        subscription &&
+        subscription["Stripe Customer Id"] &&
+        typeof subscription["Stripe Customer Id"] === "string" &&
+        subscription["Stripe Customer Id"].trim() !== ""
+      ) {
+        setInvoicesLoading(true);
+        try {
+          const res = await fetch(`/api/stripe-invoices?customerId=${subscription["Stripe Customer Id"]}`);
+          const data = await res.json();
+          if (res.ok && data.invoices) {
+            setInvoices(data.invoices);
+          } else {
+            setInvoices([]);
+          }
+        } catch (err) {
+          setInvoices([]);
+        } finally {
+          setInvoicesLoading(false);
+        }
+      } else {
+        setInvoices([]);
+      }
+    };
+    fetchInvoices();
+  }, [subscription]);
+  // --- End invoice fetching logic ---
+
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-
-  // Mock data - replace with real data from Stripe
-  const paymentMethod = {
-    type: "visa",
-    brand: "VISA",
-    last4: "4242",
-    expMonth: "08",
-    expYear: "2025",
-    isTest: true
-  };
-
-  interface Invoice {
-    dateIssued: string;
-    invoiceNo: string;
-    paymentMethod: string;
-    status: 'Paid' | 'Pending' | 'Failed';
-  }
-
-  const invoices: Invoice[] = []; // Empty for now - will be populated from Stripe
 
   const totalPages = Math.ceil(invoices.length / pageSize);
 
@@ -559,7 +575,12 @@ export default function BillingSubtab() {
             <div className="bg-white rounded-2xl shadow-md p-8">
               <h2 className="text-xl font-bold mb-6">Invoice History</h2>
               
-              {invoices.length === 0 ? (
+              {invoicesLoading ? (
+                <div className="text-center py-12">
+                  <Loader2 className="w-6 h-6 mx-auto animate-spin mb-2" />
+                  <p className="text-gray-500 text-lg">Loading invoices...</p>
+                </div>
+              ) : invoices.length === 0 ? (
                 <div className="text-center py-12">
                   <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-500 text-lg">No invoices</p>
@@ -575,23 +596,44 @@ export default function BillingSubtab() {
                           <th className="text-left py-3 px-4 font-semibold text-gray-700">Invoice No.</th>
                           <th className="text-left py-3 px-4 font-semibold text-gray-700">Payment Method</th>
                           <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
+                          <th className="text-left py-3 px-4 font-semibold text-gray-700">Download</th>
                         </tr>
                       </thead>
                       <tbody>
                         {invoices.map((invoice, index) => (
                           <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                            <td className="py-3 px-4">{invoice.dateIssued}</td>
-                            <td className="py-3 px-4">{invoice.invoiceNo}</td>
-                            <td className="py-3 px-4">{invoice.paymentMethod}</td>
+                            <td className="py-3 px-4">{invoice.created ? new Date(invoice.created * 1000).toLocaleDateString() : ''}</td>
+                            <td className="py-3 px-4">{invoice.number || invoice.id}</td>
+                            <td className="py-3 px-4">{'Card'}</td>
                             <td className="py-3 px-4">
                               <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                invoice.status === 'Paid' 
+                                invoice.status === 'paid' 
                                   ? 'bg-green-100 text-green-800' 
-                                  : 'bg-yellow-100 text-yellow-800'
+                                  : invoice.status === 'open' || invoice.status === 'pending'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-red-100 text-red-800'
                               }`}>
-                                {invoice.status}
+                                {invoice.status ? invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1) : 'Unknown'}
                               </span>
                             </td>
+                           <td className="py-3 px-4">
+                             {invoice.invoice_pdf || invoice.hosted_invoice_url ? (
+                               <a
+                                 href={invoice.invoice_pdf || invoice.hosted_invoice_url}
+                                 target="_blank"
+                                 rel="noopener noreferrer"
+                                 download
+                                 aria-label="Download Invoice"
+                                 className="inline-flex items-center justify-center p-2 rounded hover:bg-gray-200 transition-colors"
+                               >
+                                 <Download className="w-5 h-5 text-blue-600" />
+                               </a>
+                             ) : (
+                               <span className="text-gray-400" title="No invoice file available">
+                                 <Download className="w-5 h-5" />
+                               </span>
+                             )}
+                           </td>
                           </tr>
                         ))}
                       </tbody>
