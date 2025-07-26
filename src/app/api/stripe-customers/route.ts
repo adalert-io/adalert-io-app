@@ -16,6 +16,8 @@ export async function POST(request: NextRequest) {
       billingDetails 
     } = body;
 
+    console.log('Received billing details:', billingDetails);
+
     if (!userId || !paymentMethodId || !billingDetails) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
@@ -31,7 +33,7 @@ export async function POST(request: NextRequest) {
     const userData = userDoc.data();
 
     // Create customer in Stripe
-    const customer = await stripe.customers.create({
+    const customerData = {
       name: userData['Name'] || billingDetails.nameOnCard,
       email: userData['Email'],
       address: {
@@ -45,7 +47,13 @@ export async function POST(request: NextRequest) {
       invoice_settings: {
         default_payment_method: paymentMethodId,
       },
-    });
+    };
+
+    console.log('Creating Stripe customer with data:', customerData);
+
+    const customer = await stripe.customers.create(customerData);
+
+    console.log('Created Stripe customer:', customer.id);
 
     // Attach payment method to customer
     await stripe.paymentMethods.attach(paymentMethodId, {

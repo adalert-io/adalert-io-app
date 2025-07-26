@@ -1232,17 +1232,22 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
 
         // Create Stripe customer (API route should handle attaching payment method, shipping, and email)
         const { paymentService } = await import("@/services/payment");
+        
+        const billingDetailsPayload = {
+          nameOnCard: formData.nameOnCard,
+          streetAddress: formData.streetAddress,
+          city: formData.city,
+          state: formData.state,
+          country: formData.country,
+          zip: formData.zip,
+        };
+        
+        console.log('Sending billing details to API:', billingDetailsPayload);
+        
         const customerResult = await paymentService.createStripeCustomer({
           userId,
           paymentMethodId: paymentMethod.id,
-          billingDetails: {
-            nameOnCard: shipping.name,
-            streetAddress: shipping.address.line1,
-            city: shipping.address.city,
-            state: shipping.address.state,
-            country: shipping.address.country,
-            zip: shipping.address.postal_code,
-          },
+          billingDetails: billingDetailsPayload,
         });
         if (!customerResult.success) {
           toast.error(customerResult.error || 'Failed to create Stripe customer');
@@ -1273,6 +1278,45 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
 
         // Fetch the saved payment method and update state
         await get().fetchPaymentMethodByUser(userRef);
+
+        // Update stripeCompanies document with billing address
+        try {
+          // Get the address from the payment method
+          const address = paymentMethod.billing_details?.address || {};
+          const email = paymentMethod.billing_details?.email || userData.email || userData.Email;
+
+          // Lookup country name from code
+          let countryName = address.country;
+          if (address.country) {
+            try {
+              // Use countries-list for country code to name
+              const { countries } = await import('countries-list');
+              const code = address.country as keyof typeof countries;
+              countryName = countries[code]?.name || address.country;
+            } catch (e) {
+              // fallback to code
+              countryName = address.country;
+            }
+          }
+
+          // Find the stripeCompanies document
+          const stripeCompaniesRef = collection(db, "stripeCompanies");
+          const q = query(stripeCompaniesRef, where("User", "==", userDoc["Company Admin"]));
+          const snap = await getDocs(q);
+          if (!snap.empty) {
+            const docSnap = snap.docs[0];
+            await updateDoc(docSnap.ref, {
+              Email: email,
+              "Street Address": address.line1 || '',
+              City: address.city || '',
+              State: address.state || '',
+              Country: countryName || '',
+              Zip: address.postal_code || '',
+            });
+          }
+        } catch (err) {
+          console.error('Failed to update stripeCompanies billing address:', err);
+        }
 
         // Update subscription doc with new Stripe Customer Id
         const subscriptionsRef = collection(db, "subscriptions");
