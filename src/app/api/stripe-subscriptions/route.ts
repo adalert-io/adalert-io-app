@@ -36,6 +36,36 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// PUT /api/stripe-subscriptions - Update subscription item quantity
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { subscriptionId, subscriptionItemId, quantity } = body;
+    
+    if (!subscriptionId || !subscriptionItemId || quantity === undefined) {
+      return NextResponse.json({ error: 'Subscription ID, Subscription Item ID, and quantity are required' }, { status: 400 });
+    }
+
+    // Update the subscription item quantity
+    const updatedSubscriptionItem = await stripe.subscriptionItems.update(subscriptionItemId, {
+      quantity: quantity,
+      proration_behavior: 'create_prorations', // or 'none', 'always_invoice'
+    });
+
+    return NextResponse.json({
+      success: true,
+      subscriptionItem: updatedSubscriptionItem,
+      message: 'Subscription item updated successfully',
+    });
+  } catch (error: any) {
+    console.error('Error updating Stripe subscription item:', error);
+    return NextResponse.json({ 
+      error: error.message || 'Internal server error',
+      success: false 
+    }, { status: 500 });
+  }
+}
+
 // DELETE /api/stripe-subscriptions
 export async function DELETE(request: NextRequest) {
   try {
@@ -65,6 +95,5 @@ export async function DELETE(request: NextRequest) {
   }
 }
 
-// Only allow POST and DELETE
-export const GET = undefined;
-export const PUT = undefined; 
+// Only allow POST, PUT and DELETE
+export const GET = undefined; 

@@ -776,7 +776,57 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         await get().refreshAdsAccounts(userDoc["Company Admin"]);
       }
 
-      // todo: update subscription item
+      // 5. Update subscription item quantity based on remaining ads accounts
+      if (userDoc && userDoc["Company Admin"]) {
+        try {
+          // Get the subscription document
+          const subscriptionsRef = collection(db, "subscriptions");
+          const subscriptionQuery = query(subscriptionsRef, where("User", "==", userDoc["Company Admin"]));
+          const subscriptionSnap = await getDocs(subscriptionQuery);
+          
+          if (!subscriptionSnap.empty) {
+            const subscriptionDoc = subscriptionSnap.docs[0];
+            const subscriptionData = subscriptionDoc.data();
+            const stripeSubscriptionId = subscriptionData["Stripe Subscription Id"];
+            // const stripeSubscriptionItemIds = subscriptionData["Stripe Subscription Item Id(s)"] || [];
+            
+            if (stripeSubscriptionId) {
+              // Get the updated count of connected ads accounts
+              const adsAccountsRef = collection(db, "adsAccounts");
+              const adsAccountsQuery = query(
+                adsAccountsRef, 
+                where("User", "==", userDoc["Company Admin"]), 
+                where("Is Connected", "==", true)
+              );
+              const adsAccountsSnap = await getDocs(adsAccountsQuery);
+              const newQuantity = adsAccountsSnap.size;
+              
+              // Update the subscription item quantity
+              try {
+                const response = await fetch("/api/stripe-subscriptions", {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    subscriptionId: stripeSubscriptionId,
+                    subscriptionItemId: stripeSubscriptionId, // Use the subscription ID as the item ID
+                    quantity: newQuantity
+                  }),
+                });
+                
+                if (!response.ok) {
+                  console.warn(`Failed to update subscription item ${stripeSubscriptionId}:`, await response.text());
+                } else {
+                  console.log(`Successfully updated subscription item ${stripeSubscriptionId} to quantity ${newQuantity}`);
+                }
+              } catch (error) {
+                console.warn(`Error updating subscription item ${stripeSubscriptionId}:`, error);
+              }
+            }
+          }
+        } catch (error) {
+          console.warn('Error updating subscription item:', error);
+        }
+      }
 
       set({ loading: false });
     } catch (error: any) {
