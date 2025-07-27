@@ -151,12 +151,11 @@ export const useUserAdsAccountsStore = create<UserAdsAccountsState>((set, get) =
       if (!subscriptionSnap.empty) {
         const subscriptionDoc = subscriptionSnap.docs[0];
         const subscriptionData = subscriptionDoc.data();
+        const stripeSubscriptionId = subscriptionData["Stripe Subscription Id"];
         const stripeSubscriptionItemIds = subscriptionData["Stripe Subscription Item Id(s)"] || [];
         
-        // Check if the first subscription item ID exists
-        if (stripeSubscriptionItemIds.length > 0 && stripeSubscriptionItemIds[0]) {
-          const subscriptionItemId = stripeSubscriptionItemIds[0];
-          
+        // Check if subscription item IDs exist
+        if (stripeSubscriptionItemIds.length > 0) {
           // Get the current count of connected ads accounts
           const adsAccountRef = collection(db, COLLECTIONS.ADS_ACCOUNTS);
           const adsAccountQuery = query(
@@ -167,21 +166,23 @@ export const useUserAdsAccountsStore = create<UserAdsAccountsState>((set, get) =
           const adsAccountSnap = await getDocs(adsAccountQuery);
           const connectedAccountsCount = adsAccountSnap.size;
           
-          // Update the subscription item quantity
-          const response = await fetch("/api/stripe-subscriptions", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              subscriptionId: subscriptionItemId,
-              subscriptionItemId: subscriptionItemId,
-              quantity: connectedAccountsCount
-            }),
-          });
-          
-          if (!response.ok) {
-            console.warn(`Failed to update subscription item ${subscriptionItemId}:`, await response.text());
-          } else {
-            console.log(`Successfully updated subscription item ${subscriptionItemId} to quantity ${connectedAccountsCount}`);
+          // Update each subscription item quantity
+          for (const subscriptionItemId of stripeSubscriptionItemIds) {
+            const response = await fetch("/api/stripe-subscriptions", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                subscriptionId: stripeSubscriptionId,
+                subscriptionItemId: subscriptionItemId,
+                quantity: connectedAccountsCount
+              }),
+            });
+            
+            if (!response.ok) {
+              console.warn(`Failed to update subscription item ${subscriptionItemId}:`, await response.text());
+            } else {
+              console.log(`Successfully updated subscription item ${subscriptionItemId} to quantity ${connectedAccountsCount}`);
+            }
           }
         }
       }

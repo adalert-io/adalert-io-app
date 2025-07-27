@@ -25,8 +25,12 @@ export async function POST(request: NextRequest) {
       automatic_tax: { enabled: false },
     });
 
+    // Extract subscription item IDs from the subscription
+    const subscriptionItemIds = subscription.items.data.map(item => item.id);
+
     return NextResponse.json({
       subscriptionId: subscription.id,
+      subscriptionItemIds: subscriptionItemIds,
       subscription,
       error: null,
     });

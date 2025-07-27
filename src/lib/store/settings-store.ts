@@ -791,35 +791,42 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             // const stripeSubscriptionItemIds = subscriptionData["Stripe Subscription Item Id(s)"] || [];
             
             if (stripeSubscriptionId) {
-              // Get the updated count of connected ads accounts
-              const adsAccountsRef = collection(db, "adsAccounts");
-              const adsAccountsQuery = query(
-                adsAccountsRef, 
-                where("User", "==", userDoc["Company Admin"]), 
-                where("Is Connected", "==", true)
-              );
-              const adsAccountsSnap = await getDocs(adsAccountsQuery);
-              const newQuantity = adsAccountsSnap.size;
+              // Get the subscription item IDs
+              const stripeSubscriptionItemIds = subscriptionData["Stripe Subscription Item Id(s)"] || [];
               
-              // Update the subscription item quantity
-              try {
-                const response = await fetch("/api/stripe-subscriptions", {
-                  method: "PUT",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    subscriptionId: stripeSubscriptionId,
-                    subscriptionItemId: stripeSubscriptionId, // Use the subscription ID as the item ID
-                    quantity: newQuantity
-                  }),
-                });
+              if (stripeSubscriptionItemIds.length > 0) {
+                // Get the updated count of connected ads accounts
+                const adsAccountsRef = collection(db, "adsAccounts");
+                const adsAccountsQuery = query(
+                  adsAccountsRef, 
+                  where("User", "==", userDoc["Company Admin"]), 
+                  where("Is Connected", "==", true)
+                );
+                const adsAccountsSnap = await getDocs(adsAccountsQuery);
+                const newQuantity = adsAccountsSnap.size;
                 
-                if (!response.ok) {
-                  console.warn(`Failed to update subscription item ${stripeSubscriptionId}:`, await response.text());
-                } else {
-                  console.log(`Successfully updated subscription item ${stripeSubscriptionId} to quantity ${newQuantity}`);
+                // Update each subscription item quantity
+                for (const subscriptionItemId of stripeSubscriptionItemIds) {
+                  try {
+                    const response = await fetch("/api/stripe-subscriptions", {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        subscriptionId: stripeSubscriptionId,
+                        subscriptionItemId: subscriptionItemId,
+                        quantity: newQuantity
+                      }),
+                    });
+                    
+                    if (!response.ok) {
+                      console.warn(`Failed to update subscription item ${subscriptionItemId}:`, await response.text());
+                    } else {
+                      console.log(`Successfully updated subscription item ${subscriptionItemId} to quantity ${newQuantity}`);
+                    }
+                  } catch (error) {
+                    console.warn(`Error updating subscription item ${subscriptionItemId}:`, error);
+                  }
                 }
-              } catch (error) {
-                console.warn(`Error updating subscription item ${stripeSubscriptionId}:`, error);
               }
             }
           }
@@ -1458,7 +1465,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           if (!subSnap.empty) {
             await updateDoc(subSnap.docs[0].ref, {
               "Stripe Subscription Id": subData.subscriptionId,
-              "Stripe Subscription Item Id(s)": [subData.subscriptionId],
+              "Stripe Subscription Item Id(s)": subData.subscriptionItemIds || [],
               "User Status": "Paying",
             });
           }
