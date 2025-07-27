@@ -1372,8 +1372,136 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           }
           onBack();
         }
+      } else {
+        // 6. If paymentMethods is not empty:
+        // Replace Stripe Payment Method
+        // https://bubble.io/page?id=adalerts-75228&tab=Workflow&name=el-tab-account-billing&type=custom&elements=bTMqY&wf_item=bTNVy
+        
+        // 1. Fetch the subscriptions document where 'User' equals userDoc['Company Admin']
+        const subscriptionsRef = collection(db, "subscriptions");
+        const subQuery = query(subscriptionsRef, where("User", "==", userDoc["Company Admin"]));
+        const subSnap = await getDocs(subQuery);
+        if (subSnap.empty) {
+          toast.error('No subscription found for this user');
+          set({ loading: false });
+          return;
+        }
+        const subscriptionDoc = subSnap.docs[0];
+        const stripeCustomerId = subscriptionDoc.data()["Stripe Customer Id"];
+        if (!stripeCustomerId) {
+          toast.error('No Stripe Customer ID found in subscription');
+          set({ loading: false });
+          return;
+        }
+
+        // 2. Create payment method with Stripe
+        const { error, paymentMethod } = await stripe.createPaymentMethod({
+          type: 'card',
+          card: elements.getElement('card') || elements.getElement(CardElement),
+          billing_details: {
+            name: formData.nameOnCard,
+            address: {
+              line1: formData.streetAddress,
+              city: formData.city,
+              state: formData.state,
+              postal_code: formData.zip,
+              country: formData.country,
+            },
+          },
+        });
+        if (error) {
+          toast.error(error.message || 'Payment method creation failed');
+          set({ loading: false });
+          return;
+        }
+
+        // 3. Replace payment method using API route
+        const oldPaymentMethodId = get().paymentMethods?.['Stripe Payment Method'];
+        
+        const paymentMethodRes = await fetch("/api/stripe-payment-methods", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: 'replace',
+            customerId: stripeCustomerId,
+            paymentMethodId: paymentMethod.id,
+            oldPaymentMethodId: oldPaymentMethodId || null,
+          }),
+        });
+        
+        const paymentMethodData = await paymentMethodRes.json();
+        if (!paymentMethodRes.ok || !paymentMethodData.success) {
+          toast.error(paymentMethodData.error || 'Failed to update payment method');
+          set({ loading: false });
+          return;
+        }
+
+        // 5. Update the new payment method details to Firestore
+        const userRef = doc(db, "users", userId);
+        const { paymentService } = await import("@/services/payment");
+        const saveResult = await paymentService.savePaymentMethodDetails({
+          userRef: `/users/${userId}`,
+          paymentMethod,
+          billingDetails: {
+            nameOnCard: formData.nameOnCard,
+            streetAddress: formData.streetAddress,
+            city: formData.city,
+            state: formData.state,
+            country: formData.country,
+            zip: formData.zip,
+          },
+        });
+        if (!saveResult.success) {
+          toast.error(saveResult.error || 'Failed to save payment method details');
+          set({ loading: false });
+          return;
+        }
+
+        // 6. Fetch the saved payment method and update state
+        await get().fetchPaymentMethodByUser(userRef);
+
+        // 7. Update stripeCompanies document with billing address
+        try {
+          // Get the address from the payment method
+          const address = paymentMethod.billing_details?.address || {};
+          const email = paymentMethod.billing_details?.email || userData.email || userData.Email;
+
+          // Lookup country name from code
+          let countryName = address.country;
+          if (address.country) {
+            try {
+              // Use countries-list for country code to name
+              const { countries } = await import('countries-list');
+              const code = address.country as keyof typeof countries;
+              countryName = countries[code]?.name || address.country;
+            } catch (e) {
+              // fallback to code
+              countryName = address.country;
+            }
+          }
+
+          // Find the stripeCompanies document
+          const stripeCompaniesRef = collection(db, "stripeCompanies");
+          const q = query(stripeCompaniesRef, where("User", "==", userDoc["Company Admin"]));
+          const snap = await getDocs(q);
+          if (!snap.empty) {
+            const docSnap = snap.docs[0];
+            await updateDoc(docSnap.ref, {
+              Email: email,
+              "Street Address": address.line1 || '',
+              City: address.city || '',
+              State: address.state || '',
+              Country: countryName || '',
+              Zip: address.postal_code || '',
+            });
+          }
+        } catch (err) {
+          console.error('Failed to update stripeCompanies billing address:', err);
+        }
+
+        toast.success("Payment method updated successfully!");
+        onBack();
       }
-      set({ loading: false });
     } catch (error: any) {
       console.error('handleSubscriptionPayment error:', error);
       toast.error(error.message || 'An error occurred while processing payment');

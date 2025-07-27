@@ -50,6 +50,7 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
   const { adsAccounts, paymentMethods } = useAlertSettingsStore();
   const [isClient, setIsClient] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCardComplete, setIsCardComplete] = useState(false);
   const [formData, setFormData] = useState({
     nameOnCard: "",
     streetAddress: "",
@@ -115,6 +116,18 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
       ...prev,
       [field]: value
     }));
+  };
+
+  // Check if all required fields are filled
+  const isFormValid = () => {
+    return (
+      isCardComplete &&
+      formData.nameOnCard.trim() !== "" &&
+      formData.streetAddress.trim() !== "" &&
+      formData.city.trim() !== "" &&
+      formData.state.trim() !== "" &&
+      formData.zip.trim() !== ""
+    );
   };
 
   const handleSubmit = async () => {
@@ -211,7 +224,12 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
               Card details
             </Label>
             <div className="mt-1 border border-gray-300 rounded-md p-3">
-              <CardElement options={stripeConfig.cardElementOptions} />
+              <CardElement 
+                options={stripeConfig.cardElementOptions}
+                onChange={(event) => {
+                  setIsCardComplete(event.complete);
+                }}
+              />
             </div>
           </div>
 
@@ -354,8 +372,8 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
         <div className="mt-8">
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting || !stripe}
-            className="w-full bg-gray-800 text-white hover:bg-gray-900 py-3 text-lg font-medium"
+            disabled={isSubmitting || !stripe || !isFormValid()}
+            className="w-full bg-gray-800 text-white hover:bg-gray-900 py-3 text-lg font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
               <>
