@@ -29,9 +29,10 @@ interface UserAdsAccountsState {
     symbol: string
   ) => Promise<void>;
   updateAdAccount: (accountId: string, updates: Partial<AdsAccount>) => void;
+  updateStripeSubscriptionQuantity: (userDoc: UserDocument) => Promise<void>;
 }
 
-export const useUserAdsAccountsStore = create<UserAdsAccountsState>((set) => ({
+export const useUserAdsAccountsStore = create<UserAdsAccountsState>((set, get) => ({
   userAdsAccounts: [],
   selectedAdsAccount: null,
   loading: false,
@@ -108,6 +109,8 @@ export const useUserAdsAccountsStore = create<UserAdsAccountsState>((set) => ({
           loading: false,
         });
       }
+
+
     } catch (err: any) {
       set({ error: err.message, loading: false });
     }
@@ -132,5 +135,58 @@ export const useUserAdsAccountsStore = create<UserAdsAccountsState>((set) => ({
         selectedAdsAccount: updatedSelectedAccount,
       };
     });
+  },
+
+  updateStripeSubscriptionQuantity: async (userDoc: UserDocument) => {
+    if (!userDoc || !userDoc["Company Admin"]) {
+      return;
+    }
+
+    try {
+      // Get the subscription document
+      const subscriptionsRef = collection(db, "subscriptions");
+      const subscriptionQuery = query(subscriptionsRef, where("User", "==", userDoc["Company Admin"]));
+      const subscriptionSnap = await getDocs(subscriptionQuery);
+      
+      if (!subscriptionSnap.empty) {
+        const subscriptionDoc = subscriptionSnap.docs[0];
+        const subscriptionData = subscriptionDoc.data();
+        const stripeSubscriptionItemIds = subscriptionData["Stripe Subscription Item Id(s)"] || [];
+        
+        // Check if the first subscription item ID exists
+        if (stripeSubscriptionItemIds.length > 0 && stripeSubscriptionItemIds[0]) {
+          const subscriptionItemId = stripeSubscriptionItemIds[0];
+          
+          // Get the current count of connected ads accounts
+          const adsAccountRef = collection(db, COLLECTIONS.ADS_ACCOUNTS);
+          const adsAccountQuery = query(
+            adsAccountRef,
+            where("User", "==", userDoc["Company Admin"]),
+            where("Is Connected", "==", true)
+          );
+          const adsAccountSnap = await getDocs(adsAccountQuery);
+          const connectedAccountsCount = adsAccountSnap.size;
+          
+          // Update the subscription item quantity
+          const response = await fetch("/api/stripe-subscriptions", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              subscriptionId: subscriptionItemId,
+              subscriptionItemId: subscriptionItemId,
+              quantity: connectedAccountsCount
+            }),
+          });
+          
+          if (!response.ok) {
+            console.warn(`Failed to update subscription item ${subscriptionItemId}:`, await response.text());
+          } else {
+            console.log(`Successfully updated subscription item ${subscriptionItemId} to quantity ${connectedAccountsCount}`);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Error updating subscription item:', error);
+    }
   },
 }));

@@ -242,7 +242,6 @@ export function AddAdsAccount() {
           const { ["Created Date"]: _createdDate, ...updatePayload } = acc;
           await updateDoc(doc(db, "adsAccounts", acc._id), {
             ...updatePayload,
-            // TODO: need to check if it stores the user reference
             "Selected Users": arrayUnion(doc(db, COLLECTIONS.USERS, user.uid)),
             "User": doc(db, "users", user.uid),
             "User Token": doc(db, "userTokens", userToken.id),
@@ -298,6 +297,17 @@ export function AddAdsAccount() {
       // step 7: check number of ads accounts and navigate accordingly
       const updatedAdsAccounts = useUserAdsAccountsStore.getState().userAdsAccounts;
       const connectedAccountsCount = updatedAdsAccounts.filter(acc => acc["Is Connected"]).length;
+
+      // step 8: update the quantity of the stripe subscription if the count has changed
+      if (userDoc) {
+        // Get the previous count from the store before it was updated
+        const previousCount = adsAccounts?.filter(acc => acc["Is Connected"]).length || 0;
+        
+        // Only update if the count has changed
+        if (connectedAccountsCount !== previousCount) {
+          await useUserAdsAccountsStore.getState().updateStripeSubscriptionQuantity(userDoc);
+        }
+      }
 
       toast.success("Ads accounts updated successfully");
       
