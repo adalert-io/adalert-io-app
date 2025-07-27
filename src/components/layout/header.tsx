@@ -8,6 +8,7 @@ import { ChevronDown, Plus, BarChart2, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import * as React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { useIntercomContext } from '@/components/intercom';
 
 // Utility to get initial from name or email
 function getInitial(nameOrEmail: string) {
@@ -25,6 +26,7 @@ export function Header() {
   const menuRef = React.useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
+  const { show } = useIntercomContext();
 
   // Dropdown handler
   const handleSelectAccount = (account: any) => {
@@ -62,7 +64,7 @@ export function Header() {
     { label: 'My Profile', onClick: () => router.push('/profile') },
     { label: 'Settings', onClick: () => router.push('/settings') },
     { divider: true },
-    { label: 'Help', onClick: () => router.push('/help') },
+    { label: 'Help', onClick: () => show() },
     { divider: true },
     { label: 'Log out', onClick: async () => { await logout(); router.push('/auth'); } },
   ];
@@ -72,7 +74,7 @@ export function Header() {
     { divider: true },
     { label: 'My Profile', onClick: () => router.push('/profile') },
     { label: 'Settings', onClick: () => router.push('/settings') },
-    { label: 'Help', onClick: () => router.push('/help') },
+    { label: 'Help', onClick: () => show() },
     { divider: true },
     { label: 'Log out', onClick: async () => { await logout(); router.push('/auth'); } },
   ];
@@ -147,7 +149,7 @@ export function Header() {
               <Button variant="ghost" size="icon" className="text-blue-600" aria-label="Stats" onClick={() => router.push('/summary')}>
                 <BarChart2 className="w-5 h-5" />
               </Button>
-              <Button variant="ghost" size="icon" className="text-blue-600" aria-label="Help">
+              <Button variant="ghost" size="icon" className="text-blue-600" aria-label="Help" onClick={() => show()}>
                 <HelpCircle className="w-5 h-5" />
               </Button>
             </div>
