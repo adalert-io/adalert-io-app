@@ -36,7 +36,35 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Only allow POST
+// DELETE /api/stripe-subscriptions
+export async function DELETE(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { subscriptionId, customerId } = body;
+    
+    if (!subscriptionId) {
+      return NextResponse.json({ error: 'Subscription ID is required' }, { status: 400 });
+    }
+
+    // Cancel the subscription
+    const cancelledSubscription = await stripe.subscriptions.cancel(subscriptionId, {
+      prorate: true, // Prorate any remaining time
+    });
+
+    return NextResponse.json({
+      success: true,
+      subscription: cancelledSubscription,
+      message: 'Subscription cancelled successfully',
+    });
+  } catch (error: any) {
+    console.error('Error cancelling Stripe subscription:', error);
+    return NextResponse.json({ 
+      error: error.message || 'Internal server error',
+      success: false 
+    }, { status: 500 });
+  }
+}
+
+// Only allow POST and DELETE
 export const GET = undefined;
-export const PUT = undefined;
-export const DELETE = undefined; 
+export const PUT = undefined; 

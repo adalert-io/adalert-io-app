@@ -981,7 +981,15 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         await deleteDoc(docSnap.ref);
       }
 
-      // 8. Delete all stripeCompanies where 'User' == companyAdminRef
+      // 8. Delete all paymentMethods where 'User' == companyAdminRef
+      const paymentMethodsRef = collection(db, "paymentMethods");
+      q = query(paymentMethodsRef, where("User", "==", companyAdminRef));
+      snap = await getDocs(q);
+      for (const docSnap of snap.docs) {
+        await deleteDoc(docSnap.ref);
+      }
+
+      // 9. Delete all stripeCompanies where 'User' == companyAdminRef
       const stripeCompaniesRef = collection(db, "stripeCompanies");
       q = query(stripeCompaniesRef, where("User", "==", companyAdminRef));
       snap = await getDocs(q);
@@ -989,15 +997,43 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         await deleteDoc(docSnap.ref);
       }
 
-      // 9. Delete all subscriptions where 'User' == companyAdminRef
+      // 10. Delete all subscriptions where 'User' == companyAdminRef
+      // First, cancel Stripe subscription if it exists
       const subscriptionsRef = collection(db, "subscriptions");
       q = query(subscriptionsRef, where("User", "==", companyAdminRef));
       snap = await getDocs(q);
       for (const docSnap of snap.docs) {
+        const subscriptionData = docSnap.data();
+        const stripeSubscriptionId = subscriptionData["Stripe Subscription Id"];
+        const stripeCustomerId = subscriptionData["Stripe Customer Id"];
+        
+        // Cancel Stripe subscription if it exists
+        if (stripeSubscriptionId) {
+          try {
+            const response = await fetch("/api/stripe-subscriptions", {
+              method: "DELETE",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                subscriptionId: stripeSubscriptionId,
+                customerId: stripeCustomerId
+              }),
+            });
+            
+            if (!response.ok) {
+              console.warn(`Failed to cancel Stripe subscription ${stripeSubscriptionId}:`, await response.text());
+            } else {
+              console.log(`Successfully cancelled Stripe subscription ${stripeSubscriptionId}`);
+            }
+          } catch (error) {
+            console.warn(`Error cancelling Stripe subscription ${stripeSubscriptionId}:`, error);
+          }
+        }
+        
+        // Delete the subscription document from Firestore
         await deleteDoc(docSnap.ref);
       }
 
-      // 10. Remove all userTokens where 'User' in userIds
+      // 11. Remove all userTokens where 'User' in userIds
       const userTokensRef = collection(db, "userTokens");
       for (const userId of userIds) {
         const userDocRef = doc(db, "users", userId);
@@ -1008,13 +1044,27 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         }
       }
 
-      // 11. Store all userIds in an array (already done above)
-      // 12. Remove all users where id in userIds
+      // 12. Remove all avatars where 'User' in userIds
+      for (const userId of userIds) {
+        try {
+          const avatarFolderRef = ref(storage, `avatars/${userId}`);
+          // Note: Firebase Storage doesn't have a direct "list all files" method
+          // We'll try to delete the folder itself, which will delete all contents
+          await deleteObject(avatarFolderRef);
+        } catch (error) {
+          // Ignore errors if folder doesn't exist or is already empty
+          console.warn(`Could not delete avatar folder for user ${userId}:`, error);
+        }
+      }
+
+      // todo: 13. Remove all mailchimp where 'User' in userIds
+
+      // 14. Remove all users where id in userIds
       for (const userId of userIds) {
         await deleteDoc(doc(db, "users", userId));
       }
 
-      // 13. Log the user out
+      // 14. Log the user out
       await userLogout();
     } catch (error) {
       console.error("Error deleting company account:", error);
