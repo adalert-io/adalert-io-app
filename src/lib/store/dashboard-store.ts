@@ -121,6 +121,7 @@ interface DashboardState {
   lastFetchedAccountId: string | null;
   setLastFetchedAccountId: (id: string) => void;
   fetchAlerts: (adsAccountId: string) => Promise<void>;
+  fetchFirstAlerts: (selectedAdsAccount: any) => Promise<void>;
   fetchOrCreateDashboardDaily: (adsAccountId: string) => Promise<void>;
   fetchSpendMtd: (adsAccount: any) => Promise<void>;
   fetchSpendMtdIndicator: (adsAccount: any) => Promise<void>;
@@ -173,6 +174,138 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       set({ alerts, loading: false });
     } catch (err: any) {
       set({ error: err.message, loading: false });
+    }
+  },
+
+  fetchFirstAlerts: async (selectedAdsAccount: any) => {
+    try {
+      console.log("fetchFirstAlerts - selectedAdsAccount: ", selectedAdsAccount);
+      
+      // Check if Get Alerts From First Load Done is false
+      if (selectedAdsAccount['Get Alerts From First Load Done'] !== false) {
+        console.log("Get Alerts From First Load Done is not false, skipping first alerts fetch");
+        return;
+      }
+
+      const currentAlerts = get().alerts;
+      
+      // If alerts are empty, make all the API calls
+      if (currentAlerts.length === 0 || true) {
+        console.log("Alerts are empty, making first load API calls");
+        
+        const adsAccountId = selectedAdsAccount['_id'];
+        
+        // Make the 7 calls to dashboard-get-alerts-for-once-per-day-fb
+        for (let i = 0; i < 7; i++) {
+          try {
+            const path = getFirebaseFnPath('dashboard-get-alerts-for-once-per-day-fb');
+            const response = await fetch(path, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                adsAccountId: adsAccountId,
+                dashboardFnArrayIndex: i
+              }),
+            });
+            
+            if (!response.ok) {
+              console.error(`Failed to fetch alerts for index ${i}:`, response.statusText);
+            } else {
+              console.log(`Successfully fetched alerts for index ${i}`);
+            }
+          } catch (error) {
+            console.error(`Error fetching alerts for index ${i}:`, error);
+          }
+        }
+
+        // Make the call to dashboard-get-alerts-for-twice-per-day-fb
+        try {
+          const path = getFirebaseFnPath('dashboard-get-alerts-for-twice-per-day-fb');
+          const response = await fetch(path, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              adsAccountId: adsAccountId
+            }),
+          });
+          
+          if (!response.ok) {
+            console.error('Failed to fetch twice-per-day alerts:', response.statusText);
+          } else {
+            console.log('Successfully fetched twice-per-day alerts');
+          }
+        } catch (error) {
+          console.error('Error fetching twice-per-day alerts:', error);
+        }
+
+        // Make the call to dashboard-get-alerts-for-four-times-per-day-fb
+        try {
+          const path = getFirebaseFnPath('dashboard-get-alerts-for-four-times-per-day-fb');
+          const response = await fetch(path, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              adsAccountId: adsAccountId
+            }),
+          });
+          
+          if (!response.ok) {
+            console.error('Failed to fetch four-times-per-day alerts:', response.statusText);
+          } else {
+            console.log('Successfully fetched four-times-per-day alerts');
+          }
+        } catch (error) {
+          console.error('Error fetching four-times-per-day alerts:', error);
+        }
+
+        // Make the call to dashboard-get-alerts-for-six-times-per-day
+        try {
+          const path = getFirebaseFnPath('dashboard-get-alerts-for-six-times-per-day');
+          const response = await fetch(path, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              adsAccountId: adsAccountId
+            }),
+          });
+          
+          if (!response.ok) {
+            console.error('Failed to fetch six-times-per-day alerts:', response.statusText);
+          } else {
+            console.log('Successfully fetched six-times-per-day alerts');
+          }
+        } catch (error) {
+          console.error('Error fetching six-times-per-day alerts:', error);
+        }
+
+        // Fetch alerts for this selected account
+        await get().fetchAlerts(selectedAdsAccount.id);
+      } else {
+        console.log("Alerts are not empty, skipping API calls but updating flag");
+      }
+
+      // Update 'Get Alerts From First Load Done' to true
+      try {
+        const accountRef = doc(db, COLLECTIONS.ADS_ACCOUNTS, selectedAdsAccount.id);
+        await updateDoc(accountRef, {
+          'Get Alerts From First Load Done': true
+        });
+        console.log('Updated Get Alerts From First Load Done to true');
+      } catch (error) {
+        console.error('Error updating Get Alerts From First Load Done:', error);
+      }
+      
+    } catch (error: any) {
+      console.error('Error in fetchFirstAlerts:', error);
+      set({ error: error.message });
     }
   },
 

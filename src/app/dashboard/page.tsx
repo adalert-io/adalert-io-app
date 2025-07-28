@@ -46,16 +46,6 @@ import {
 } from "@/components/ui/popover";
 import { FilterPopover, FilterState } from "./FilterPopover";
 import {
-  doc,
-  updateDoc,
-  query,
-  collection,
-  getDocs,
-  where,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
-import { COLLECTIONS } from "@/lib/constants";
-import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -248,6 +238,7 @@ export default function Dashboard() {
   const { selectedAdsAccount, userAdsAccounts } = useUserAdsAccountsStore();
   const {
     fetchAlerts,
+    fetchFirstAlerts,
     fetchOrCreateDashboardDaily,
     fetchSpendMtd,
     fetchSpendMtdIndicator,
@@ -394,6 +385,14 @@ export default function Dashboard() {
       fetchKpiData(selectedAdsAccount);
     }
   }, [dashboardDaily, selectedAdsAccount, fetchKpiData, kpiDataLoading]);
+
+  // Check if we need to fetch first alerts
+  useEffect(() => {
+    if (selectedAdsAccount && selectedAdsAccount.id === lastFetchedAccountId) {
+      // Only run this after fetchAlerts has completed (when lastFetchedAccountId is set)
+      fetchFirstAlerts(selectedAdsAccount);
+    }
+  }, [selectedAdsAccount, lastFetchedAccountId, fetchFirstAlerts]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
