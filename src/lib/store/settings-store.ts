@@ -18,7 +18,7 @@ import {
   deleteObject,
 } from "firebase/storage";
 import { User } from "firebase/auth";
-import { formatAccountNumber } from "../utils";
+import { formatAccountNumber, getFirebaseFnPath } from "../utils";
 import { APPLICATION_NAME } from "../constants";
 import { CardElement } from '@stripe/react-stripe-js';
 
@@ -1114,14 +1114,44 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         }
       }
 
-      // todo: 13. Remove all mailchimp where 'User' in userIds
+      // 13. Remove cronitor monitors
+      try {
+        // Fetch the admin user document to get the email
+        const adminUserDoc = await getDocs(query(collection(db, "users"), where("__name__", "==", companyAdminRef.id)));
+        if (!adminUserDoc.empty) {
+          const adminEmail = adminUserDoc.docs[0].data().email || adminUserDoc.docs[0].data().Email;
+          
+          if (adminEmail) {
+            const path = getFirebaseFnPath('remove-cronitor-monitors-for-subscription-cancellation-fb');
+            const response = await fetch(path, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                adminEmail: adminEmail
+              }),
+            });
+            
+            if (!response.ok) {
+              console.warn('Failed to remove cronitor monitors:', await response.text());
+            } else {
+              console.log('Successfully removed cronitor monitors for admin email:', adminEmail);
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Error removing cronitor monitors:', error);
+      }
 
-      // 14. Remove all users where id in userIds
+      // todo: 14. Remove all mailchimp where 'User' in userIds
+
+      // 15. Remove all users where id in userIds
       for (const userId of userIds) {
         await deleteDoc(doc(db, "users", userId));
       }
 
-      // 14. Log the user out
+      // 16. Log the user out
       await userLogout();
     } catch (error) {
       console.error("Error deleting company account:", error);
