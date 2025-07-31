@@ -20,7 +20,7 @@ import {
 import { User } from "firebase/auth";
 import { formatAccountNumber, getFirebaseFnPath } from "../utils";
 import { APPLICATION_NAME } from "../constants";
-import { CardElement } from '@stripe/react-stripe-js';
+import { CardElement } from "@stripe/react-stripe-js";
 
 export interface AlertSettings {
   id: string;
@@ -159,7 +159,10 @@ interface AlertSettingsState {
       [key: string]: any;
     }
   ) => Promise<void>;
-  deleteCompanyAccount: (companyAdminRef: any, userLogout: () => Promise<void>) => Promise<void>;
+  deleteCompanyAccount: (
+    companyAdminRef: any,
+    userLogout: () => Promise<void>
+  ) => Promise<void>;
   stripeCompany: any | null;
   stripeCompanyLoaded: boolean;
   fetchStripeCompany: (userId: string) => Promise<void>;
@@ -172,21 +175,19 @@ interface AlertSettingsState {
   fetchPaymentMethod: (companyAdminRef: any) => Promise<void>;
   fetchPaymentMethodByUser: (userRef: any) => Promise<void>;
   invoices: any[] | null;
-  handleSubscriptionPayment: (
-    {
-      formData,
-      stripe,
-      elements,
-      toast,
-      onBack,
-    }: {
-      formData: any;
-      stripe: any;
-      elements: any;
-      toast: any;
-      onBack: () => void;
-    }
-  ) => Promise<void>;
+  handleSubscriptionPayment: ({
+    formData,
+    stripe,
+    elements,
+    toast,
+    onBack,
+  }: {
+    formData: any;
+    stripe: any;
+    elements: any;
+    toast: any;
+    onBack: () => void;
+  }) => Promise<void>;
 }
 
 export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
@@ -349,14 +350,14 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     try {
       const adsAccountsRef = collection(db, "adsAccounts");
       // const currentUserRef = doc(db, "users", currentUserId);
-      
+
       const q = query(
         adsAccountsRef,
         where("User", "==", companyAdminRef),
         where("Is Selected", "==", true)
       );
       const snap = await getDocs(q);
-      
+
       const adsAccounts: AdsAccount[] = snap.docs
         .map((docSnap) => {
           const data = docSnap.data();
@@ -366,15 +367,15 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
               userRef.id === currentUserId ||
               userRef.path?.includes(currentUserId)
           );
-          
+
           if (!hasUserAccess) return null;
-          
+
           return {
             id: docSnap.id,
             name:
               data["Account Name Editable"] ||
-                  data["Account Name Original"] || 
-                  formatAccountNumber(data["Id"]),
+              data["Account Name Original"] ||
+              formatAccountNumber(data["Id"]),
             "Account Name Editable": data["Account Name Editable"],
             "Account Name Original": data["Account Name Original"],
             "Id": data["Id"],
@@ -388,7 +389,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           };
         })
         .filter(Boolean) as AdsAccount[];
-      
+
       set({
         adsAccountsForTab: adsAccounts,
         adsAccountsForTabLoaded: true,
@@ -686,7 +687,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     try {
       const accountRef = doc(db, "adsAccounts", accountId);
       await updateDoc(accountRef, updates);
-      
+
       // Refresh the ads accounts for tab data
       const { useAuthStore } = await import("./auth-store");
       const userDoc = useAuthStore.getState().userDoc;
@@ -696,7 +697,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           userDoc.uid
         );
       }
-      
+
       set({ loading: false });
     } catch (error: any) {
       set({ error: error.message, loading: false });
@@ -708,7 +709,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     try {
       const accountRef = doc(db, "adsAccounts", accountId);
       await updateDoc(accountRef, { "Send Me Alert": sendAlert });
-      
+
       // Refresh the ads accounts for tab data
       const { useAuthStore } = await import("./auth-store");
       const userDoc = useAuthStore.getState().userDoc;
@@ -718,7 +719,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           userDoc.uid
         );
       }
-      
+
       set({ loading: false });
     } catch (error: any) {
       set({ error: error.message, loading: false });
@@ -751,17 +752,47 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       );
       await Promise.all(deleteVariablePromises);
 
-      // todo: remove cronitor monitors for ads account
-      // el-tab-settings-ad-accounts-tab -> popup delete button -> every time condition
+      // 2. Remove cronitor monitors for ads account
+      try {
+        const path = getFirebaseFnPath(
+          "remove-cronitor-monitors-for-ads-account-fb"
+        );
+        const response = await fetch(path, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            adsAccountId: accountId,
+          }),
+        });
 
-      // 2. Delete 'adsAccounts' document where id = accountId
+        if (!response.ok) {
+          console.warn(
+            "Failed to remove cronitor monitors for ads account:",
+            await response.text()
+          );
+        } else {
+          console.log(
+            "Successfully removed cronitor monitors for ads account:",
+            accountId
+          );
+        }
+      } catch (error) {
+        console.warn(
+          "Error removing cronitor monitors for ads account:",
+          error
+        );
+      }
+
+      // 3. Delete 'adsAccounts' document where id = accountId
       // (Soft delete: set a deleted flag, or hard delete: remove the document)
       // Here, we will hard delete:
       await import("firebase/firestore").then(async (firestore) => {
         await firestore.deleteDoc(adsAccountRef);
       });
 
-      // 3. Refresh the ads accounts for tab data
+      // 4. Refresh the ads accounts for tab data
       const { useAuthStore } = await import("./auth-store");
       const userDoc = useAuthStore.getState().userDoc;
       if (userDoc && userDoc["Company Admin"] && userDoc.uid) {
@@ -771,40 +802,45 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         );
       }
 
-      // 4. Refresh ads accounts where User == Company Admin and Is Connected == true
+      // 5. Refresh ads accounts where User == Company Admin and Is Connected == true
       if (userDoc && userDoc["Company Admin"]) {
         await get().refreshAdsAccounts(userDoc["Company Admin"]);
       }
 
-      // 5. Update subscription item quantity based on remaining ads accounts
+      // 6. Update subscription item quantity based on remaining ads accounts
       if (userDoc && userDoc["Company Admin"]) {
         try {
           // Get the subscription document
           const subscriptionsRef = collection(db, "subscriptions");
-          const subscriptionQuery = query(subscriptionsRef, where("User", "==", userDoc["Company Admin"]));
+          const subscriptionQuery = query(
+            subscriptionsRef,
+            where("User", "==", userDoc["Company Admin"])
+          );
           const subscriptionSnap = await getDocs(subscriptionQuery);
-          
+
           if (!subscriptionSnap.empty) {
             const subscriptionDoc = subscriptionSnap.docs[0];
             const subscriptionData = subscriptionDoc.data();
-            const stripeSubscriptionId = subscriptionData["Stripe Subscription Id"];
+            const stripeSubscriptionId =
+              subscriptionData["Stripe Subscription Id"];
             // const stripeSubscriptionItemIds = subscriptionData["Stripe Subscription Item Id(s)"] || [];
-            
+
             if (stripeSubscriptionId) {
               // Get the subscription item IDs
-              const stripeSubscriptionItemIds = subscriptionData["Stripe Subscription Item Id(s)"] || [];
-              
+              const stripeSubscriptionItemIds =
+                subscriptionData["Stripe Subscription Item Id(s)"] || [];
+
               if (stripeSubscriptionItemIds.length > 0) {
                 // Get the updated count of connected ads accounts
                 const adsAccountsRef = collection(db, "adsAccounts");
                 const adsAccountsQuery = query(
-                  adsAccountsRef, 
-                  where("User", "==", userDoc["Company Admin"]), 
+                  adsAccountsRef,
+                  where("User", "==", userDoc["Company Admin"]),
                   where("Is Connected", "==", true)
                 );
                 const adsAccountsSnap = await getDocs(adsAccountsQuery);
                 const newQuantity = adsAccountsSnap.size;
-                
+
                 // Update each subscription item quantity
                 for (const subscriptionItemId of stripeSubscriptionItemIds) {
                   try {
@@ -814,24 +850,32 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
                       body: JSON.stringify({
                         subscriptionId: stripeSubscriptionId,
                         subscriptionItemId: subscriptionItemId,
-                        quantity: newQuantity
+                        quantity: newQuantity,
                       }),
                     });
-                    
+
                     if (!response.ok) {
-                      console.warn(`Failed to update subscription item ${subscriptionItemId}:`, await response.text());
+                      console.warn(
+                        `Failed to update subscription item ${subscriptionItemId}:`,
+                        await response.text()
+                      );
                     } else {
-                      console.log(`Successfully updated subscription item ${subscriptionItemId} to quantity ${newQuantity}`);
+                      console.log(
+                        `Successfully updated subscription item ${subscriptionItemId} to quantity ${newQuantity}`
+                      );
                     }
                   } catch (error) {
-                    console.warn(`Error updating subscription item ${subscriptionItemId}:`, error);
+                    console.warn(
+                      `Error updating subscription item ${subscriptionItemId}:`,
+                      error
+                    );
                   }
                 }
               }
             }
           }
         } catch (error) {
-          console.warn('Error updating subscription item:', error);
+          console.warn("Error updating subscription item:", error);
         }
       }
 
@@ -964,11 +1008,17 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       throw error;
     }
   },
-  deleteCompanyAccount: async (companyAdminRef: any, userLogout: () => Promise<void>) => {
+  deleteCompanyAccount: async (
+    companyAdminRef: any,
+    userLogout: () => Promise<void>
+  ) => {
     try {
       // 1. Delete 'adsAccountVariables' where 'User' == companyAdminRef
       const adsAccountVariablesRef = collection(db, "adsAccountVariables");
-      let q = query(adsAccountVariablesRef, where("User", "==", companyAdminRef));
+      let q = query(
+        adsAccountVariablesRef,
+        where("User", "==", companyAdminRef)
+      );
       let snap = await getDocs(q);
       for (const docSnap of snap.docs) {
         await deleteDoc(docSnap.ref);
@@ -982,7 +1032,10 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       // Remove all adsAccountVariables where 'Ads Account' in adsAccountIds
       for (const adsAccountId of adsAccountIds) {
         const adsAccountDocRef = doc(db, "adsAccounts", adsAccountId);
-        const q2 = query(adsAccountVariablesRef, where("Ads Account", "==", adsAccountDocRef));
+        const q2 = query(
+          adsAccountVariablesRef,
+          where("Ads Account", "==", adsAccountDocRef)
+        );
         const snap2 = await getDocs(q2);
         for (const docSnap2 of snap2.docs) {
           await deleteDoc(docSnap2.ref);
@@ -998,7 +1051,9 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       }
 
       // 4. Delete all 'adsAccounts' where 'User' == companyAdminRef
-      snap = await getDocs(q = query(adsAccountsRef, where("User", "==", companyAdminRef)));
+      snap = await getDocs(
+        (q = query(adsAccountsRef, where("User", "==", companyAdminRef)))
+      );
       for (const docSnap of snap.docs) {
         await deleteDoc(docSnap.ref);
       }
@@ -1020,10 +1075,16 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       }
 
       // 6. Remove all authenticationPageTrackers where 'User' in userIds
-      const authenticationPageTrackersRef = collection(db, "authenticationPageTrackers");
+      const authenticationPageTrackersRef = collection(
+        db,
+        "authenticationPageTrackers"
+      );
       for (const userId of userIds) {
         const userDocRef = doc(db, "users", userId);
-        const q2 = query(authenticationPageTrackersRef, where("User", "==", userDocRef));
+        const q2 = query(
+          authenticationPageTrackersRef,
+          where("User", "==", userDocRef)
+        );
         const snap2 = await getDocs(q2);
         for (const docSnap2 of snap2.docs) {
           await deleteDoc(docSnap2.ref);
@@ -1063,7 +1124,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         const subscriptionData = docSnap.data();
         const stripeSubscriptionId = subscriptionData["Stripe Subscription Id"];
         const stripeCustomerId = subscriptionData["Stripe Customer Id"];
-        
+
         // Cancel Stripe subscription if it exists
         if (stripeSubscriptionId) {
           try {
@@ -1072,20 +1133,28 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 subscriptionId: stripeSubscriptionId,
-                customerId: stripeCustomerId
+                customerId: stripeCustomerId,
               }),
             });
-            
+
             if (!response.ok) {
-              console.warn(`Failed to cancel Stripe subscription ${stripeSubscriptionId}:`, await response.text());
+              console.warn(
+                `Failed to cancel Stripe subscription ${stripeSubscriptionId}:`,
+                await response.text()
+              );
             } else {
-              console.log(`Successfully cancelled Stripe subscription ${stripeSubscriptionId}`);
+              console.log(
+                `Successfully cancelled Stripe subscription ${stripeSubscriptionId}`
+              );
             }
           } catch (error) {
-            console.warn(`Error cancelling Stripe subscription ${stripeSubscriptionId}:`, error);
+            console.warn(
+              `Error cancelling Stripe subscription ${stripeSubscriptionId}:`,
+              error
+            );
           }
         }
-        
+
         // Delete the subscription document from Firestore
         await deleteDoc(docSnap.ref);
       }
@@ -1110,38 +1179,56 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           await deleteObject(avatarFolderRef);
         } catch (error) {
           // Ignore errors if folder doesn't exist or is already empty
-          console.warn(`Could not delete avatar folder for user ${userId}:`, error);
+          console.warn(
+            `Could not delete avatar folder for user ${userId}:`,
+            error
+          );
         }
       }
 
       // 13. Remove cronitor monitors
       try {
         // Fetch the admin user document to get the email
-        const adminUserDoc = await getDocs(query(collection(db, "users"), where("__name__", "==", companyAdminRef.id)));
+        const adminUserDoc = await getDocs(
+          query(
+            collection(db, "users"),
+            where("__name__", "==", companyAdminRef.id)
+          )
+        );
         if (!adminUserDoc.empty) {
-          const adminEmail = adminUserDoc.docs[0].data().email || adminUserDoc.docs[0].data().Email;
-          
+          const adminEmail =
+            adminUserDoc.docs[0].data().email ||
+            adminUserDoc.docs[0].data().Email;
+
           if (adminEmail) {
-            const path = getFirebaseFnPath('remove-cronitor-monitors-for-subscription-cancellation-fb');
+            const path = getFirebaseFnPath(
+              "remove-cronitor-monitors-for-subscription-cancellation-fb"
+            );
             const response = await fetch(path, {
-              method: 'POST',
+              method: "POST",
               headers: {
-                'Content-Type': 'application/json',
+                "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                adminEmail: adminEmail
+                adminEmail: adminEmail,
               }),
             });
-            
+
             if (!response.ok) {
-              console.warn('Failed to remove cronitor monitors:', await response.text());
+              console.warn(
+                "Failed to remove cronitor monitors:",
+                await response.text()
+              );
             } else {
-              console.log('Successfully removed cronitor monitors for admin email:', adminEmail);
+              console.log(
+                "Successfully removed cronitor monitors for admin email:",
+                adminEmail
+              );
             }
           }
         }
       } catch (error) {
-        console.warn('Error removing cronitor monitors:', error);
+        console.warn("Error removing cronitor monitors:", error);
       }
 
       // todo: 14. Remove all mailchimp where 'User' in userIds
@@ -1166,7 +1253,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       const userRef = doc(db, "users", userId);
       const q = query(stripeCompaniesRef, where("User", "==", userRef));
       const snap = await getDocs(q);
-      
+
       if (!snap.empty) {
         const docSnap = snap.docs[0];
         set({
@@ -1188,7 +1275,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       const userRef = doc(db, "users", userId);
       const q = query(stripeCompaniesRef, where("User", "==", userRef));
       const snap = await getDocs(q);
-      
+
       if (!snap.empty) {
         const docSnap = snap.docs[0];
         await updateDoc(docSnap.ref, updates);
@@ -1204,7 +1291,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         });
         await get().fetchStripeCompany(userId);
       }
-      
+
       set({ loading: false });
     } catch (error: any) {
       set({ error: error.message, loading: false });
@@ -1242,9 +1329,17 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       const snap = await getDocs(q);
       if (!snap.empty) {
         const docSnap = snap.docs[0];
-        set({ paymentMethods: { id: docSnap.id, ...docSnap.data() }, paymentMethodsLoaded: true, loading: false });
+        set({
+          paymentMethods: { id: docSnap.id, ...docSnap.data() },
+          paymentMethodsLoaded: true,
+          loading: false,
+        });
       } else {
-        set({ paymentMethods: null, paymentMethodsLoaded: true, loading: false });
+        set({
+          paymentMethods: null,
+          paymentMethodsLoaded: true,
+          loading: false,
+        });
       }
     } catch (error: any) {
       set({ error: error.message, loading: false });
@@ -1258,8 +1353,11 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       const snap = await getDocs(q);
       if (!snap.empty) {
         const docSnap = snap.docs[0];
-        console.log('docSnap', docSnap.data());
-        set({ paymentMethods: { id: docSnap.id, ...docSnap.data() }, loading: false });
+        console.log("docSnap", docSnap.data());
+        set({
+          paymentMethods: { id: docSnap.id, ...docSnap.data() },
+          loading: false,
+        });
       } else {
         set({ paymentMethods: null, loading: false });
       }
@@ -1289,41 +1387,57 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       // 1. Get userId from userDoc['Company Admin']
       const { useAuthStore } = await import("./auth-store");
       const userDoc = useAuthStore.getState().userDoc;
-      if (!userDoc) throw new Error('User document not found');
-      let userId = '';
-      if (userDoc["Company Admin"] && typeof userDoc["Company Admin"] === 'object' && userDoc["Company Admin"].id) {
+      if (!userDoc) throw new Error("User document not found");
+      let userId = "";
+      if (
+        userDoc["Company Admin"] &&
+        typeof userDoc["Company Admin"] === "object" &&
+        userDoc["Company Admin"].id
+      ) {
         userId = userDoc["Company Admin"].id;
-      } else if (typeof userDoc["Company Admin"] === 'string') {
+      } else if (typeof userDoc["Company Admin"] === "string") {
         const match = userDoc["Company Admin"].match(/\/users\/(.+)/);
         userId = match && match[1] ? match[1] : userDoc["Company Admin"];
       }
-      console.log('userId: ', userId);
+      console.log("userId: ", userId);
       const userRef = doc(db, "users", userId);
 
       // 2. Fetch user document
-      const userSnap = await getDocs(query(collection(db, "users"), where("__name__", "==", userId)));
+      const userSnap = await getDocs(
+        query(collection(db, "users"), where("__name__", "==", userId))
+      );
       const userData = userSnap.empty ? null : userSnap.docs[0].data();
       if (!userData) throw new Error("User document not found");
 
       // 3. Fetch stripeCompanies where User == userId
       const stripeCompaniesRef = collection(db, "stripeCompanies");
-      const stripeCompaniesSnap = await getDocs(query(stripeCompaniesRef, where("User", "==", userRef)));
-      const stripeCompanyDoc = stripeCompaniesSnap.empty ? null : stripeCompaniesSnap.docs[0];
+      const stripeCompaniesSnap = await getDocs(
+        query(stripeCompaniesRef, where("User", "==", userRef))
+      );
+      const stripeCompanyDoc = stripeCompaniesSnap.empty
+        ? null
+        : stripeCompaniesSnap.docs[0];
       const stripeCompany = stripeCompanyDoc ? stripeCompanyDoc.data() : null;
 
       // 4. Fetch adsAccounts where User == userId and Is Connected == true
       const adsAccountsRef = collection(db, "adsAccounts");
-      const adsAccountsSnap = await getDocs(query(adsAccountsRef, where("User", "==", userRef), where("Is Connected", "==", true)));
-      const adsAccounts = adsAccountsSnap.docs.map(doc => doc.data());
+      const adsAccountsSnap = await getDocs(
+        query(
+          adsAccountsRef,
+          where("User", "==", userRef),
+          where("Is Connected", "==", true)
+        )
+      );
+      const adsAccounts = adsAccountsSnap.docs.map((doc) => doc.data());
       const adsAccountsCount = adsAccounts.length;
-      console.log('adsAccountsCount: ', adsAccountsCount);
+      console.log("adsAccountsCount: ", adsAccountsCount);
 
       // 5. If paymentMethods is empty:
       if (!get().paymentMethods) {
         // Create payment method with Stripe
         const { error, paymentMethod } = await stripe.createPaymentMethod({
-          type: 'card',
-          card: elements.getElement('card') || elements.getElement(CardElement),
+          type: "card",
+          card: elements.getElement("card") || elements.getElement(CardElement),
           billing_details: {
             name: formData.nameOnCard,
             address: {
@@ -1336,7 +1450,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           },
         });
         if (error) {
-          toast.error(error.message || 'Payment method creation failed');
+          toast.error(error.message || "Payment method creation failed");
           set({ loading: false });
           return;
         }
@@ -1369,7 +1483,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
 
         // Create Stripe customer (API route should handle attaching payment method, shipping, and email)
         const { paymentService } = await import("@/services/payment");
-        
+
         const billingDetailsPayload = {
           nameOnCard: formData.nameOnCard,
           streetAddress: formData.streetAddress,
@@ -1378,21 +1492,23 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           country: formData.country,
           zip: formData.zip,
         };
-        
-        console.log('Sending billing details to API:', billingDetailsPayload);
-        
+
+        console.log("Sending billing details to API:", billingDetailsPayload);
+
         const customerResult = await paymentService.createStripeCustomer({
           userId,
           paymentMethodId: paymentMethod.id,
           billingDetails: billingDetailsPayload,
         });
         if (!customerResult.success) {
-          toast.error(customerResult.error || 'Failed to create Stripe customer');
+          toast.error(
+            customerResult.error || "Failed to create Stripe customer"
+          );
           set({ loading: false });
           return;
         }
         const customerId = customerResult.customerId;
-        console.log('customerId: ', customerId);
+        console.log("customerId: ", customerId);
 
         // Save payment method details to Firestore
         const saveResult = await paymentService.savePaymentMethodDetails({
@@ -1408,7 +1524,9 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           },
         });
         if (!saveResult.success) {
-          toast.error(saveResult.error || 'Failed to save payment method details');
+          toast.error(
+            saveResult.error || "Failed to save payment method details"
+          );
           set({ loading: false });
           return;
         }
@@ -1420,14 +1538,17 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         try {
           // Get the address from the payment method
           const address = paymentMethod.billing_details?.address || {};
-          const email = paymentMethod.billing_details?.email || userData.email || userData.Email;
+          const email =
+            paymentMethod.billing_details?.email ||
+            userData.email ||
+            userData.Email;
 
           // Lookup country name from code
           let countryName = address.country;
           if (address.country) {
             try {
               // Use countries-list for country code to name
-              const { countries } = await import('countries-list');
+              const { countries } = await import("countries-list");
               const code = address.country as keyof typeof countries;
               countryName = countries[code]?.name || address.country;
             } catch (e) {
@@ -1438,29 +1559,39 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
 
           // Find the stripeCompanies document
           const stripeCompaniesRef = collection(db, "stripeCompanies");
-          const q = query(stripeCompaniesRef, where("User", "==", userDoc["Company Admin"]));
+          const q = query(
+            stripeCompaniesRef,
+            where("User", "==", userDoc["Company Admin"])
+          );
           const snap = await getDocs(q);
           if (!snap.empty) {
             const docSnap = snap.docs[0];
             await updateDoc(docSnap.ref, {
               Email: email,
-              "Street Address": address.line1 || '',
-              City: address.city || '',
-              State: address.state || '',
-              Country: countryName || '',
-              Zip: address.postal_code || '',
+              "Street Address": address.line1 || "",
+              City: address.city || "",
+              State: address.state || "",
+              Country: countryName || "",
+              Zip: address.postal_code || "",
             });
           }
         } catch (err) {
-          console.error('Failed to update stripeCompanies billing address:', err);
+          console.error(
+            "Failed to update stripeCompanies billing address:",
+            err
+          );
         }
 
         // Update subscription doc with new Stripe Customer Id
         const subscriptionsRef = collection(db, "subscriptions");
-        const subSnap = await getDocs(query(subscriptionsRef, where("User", "==", userRef)));
-        console.log('subSnap: ', subSnap);
+        const subSnap = await getDocs(
+          query(subscriptionsRef, where("User", "==", userRef))
+        );
+        console.log("subSnap: ", subSnap);
         if (!subSnap.empty) {
-          await updateDoc(subSnap.docs[0].ref, { "Stripe Customer Id": customerId });
+          await updateDoc(subSnap.docs[0].ref, {
+            "Stripe Customer Id": customerId,
+          });
         }
 
         // If adsAccounts > 0, create Stripe subscription
@@ -1468,7 +1599,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           // Call backend API to create subscription (implement /api/stripe-subscriptions)
           const priceId = process.env.NEXT_PUBLIC_STRIPE_SUBSCRIPTION_PRICE_ID;
           // Log all fields passed into the body for debugging
-          console.log('Creating Stripe subscription with:', {
+          console.log("Creating Stripe subscription with:", {
             customerId,
             priceId,
             quantity: adsAccountsCount,
@@ -1485,9 +1616,12 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             }),
           });
           const subData = await subRes.json();
-          console.log('subData: ', subData);
+          console.log("subData: ", subData);
           if (!subRes.ok || subData.error) {
-            toast.error((subData.error || 'Stripe subscription error') + ' Your subscription payment has failed. Please update your payment method to avoid any service interruptions.');
+            toast.error(
+              (subData.error || "Stripe subscription error") +
+                " Your subscription payment has failed. Please update your payment method to avoid any service interruptions."
+            );
             set({ loading: false });
             return;
           }
@@ -1495,14 +1629,17 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           if (!subSnap.empty) {
             await updateDoc(subSnap.docs[0].ref, {
               "Stripe Subscription Id": subData.subscriptionId,
-              "Stripe Subscription Item Id(s)": subData.subscriptionItemIds || [],
+              "Stripe Subscription Item Id(s)":
+                subData.subscriptionItemIds || [],
               "User Status": "Paying",
             });
           }
           toast.success("You've successfully subscribed to AdAlerts.io");
 
           // Fetch invoices (implement /api/stripe-invoices)
-          const invRes = await fetch(`/api/stripe-invoices?customerId=${customerId}`);
+          const invRes = await fetch(
+            `/api/stripe-invoices?customerId=${customerId}`
+          );
           const invData = await invRes.json();
           if (invRes.ok && invData.invoices) {
             set({ invoices: invData.invoices });
@@ -1513,28 +1650,31 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         // 6. If paymentMethods is not empty:
         // Replace Stripe Payment Method
         // https://bubble.io/page?id=adalerts-75228&tab=Workflow&name=el-tab-account-billing&type=custom&elements=bTMqY&wf_item=bTNVy
-        
+
         // 1. Fetch the subscriptions document where 'User' equals userDoc['Company Admin']
         const subscriptionsRef = collection(db, "subscriptions");
-        const subQuery = query(subscriptionsRef, where("User", "==", userDoc["Company Admin"]));
+        const subQuery = query(
+          subscriptionsRef,
+          where("User", "==", userDoc["Company Admin"])
+        );
         const subSnap = await getDocs(subQuery);
         if (subSnap.empty) {
-          toast.error('No subscription found for this user');
+          toast.error("No subscription found for this user");
           set({ loading: false });
           return;
         }
         const subscriptionDoc = subSnap.docs[0];
         const stripeCustomerId = subscriptionDoc.data()["Stripe Customer Id"];
         if (!stripeCustomerId) {
-          toast.error('No Stripe Customer ID found in subscription');
+          toast.error("No Stripe Customer ID found in subscription");
           set({ loading: false });
           return;
         }
 
         // 2. Create payment method with Stripe
         const { error, paymentMethod } = await stripe.createPaymentMethod({
-          type: 'card',
-          card: elements.getElement('card') || elements.getElement(CardElement),
+          type: "card",
+          card: elements.getElement("card") || elements.getElement(CardElement),
           billing_details: {
             name: formData.nameOnCard,
             address: {
@@ -1547,28 +1687,31 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           },
         });
         if (error) {
-          toast.error(error.message || 'Payment method creation failed');
+          toast.error(error.message || "Payment method creation failed");
           set({ loading: false });
           return;
         }
 
         // 3. Replace payment method using API route
-        const oldPaymentMethodId = get().paymentMethods?.['Stripe Payment Method'];
-        
+        const oldPaymentMethodId =
+          get().paymentMethods?.["Stripe Payment Method"];
+
         const paymentMethodRes = await fetch("/api/stripe-payment-methods", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            action: 'replace',
+            action: "replace",
             customerId: stripeCustomerId,
             paymentMethodId: paymentMethod.id,
             oldPaymentMethodId: oldPaymentMethodId || null,
           }),
         });
-        
+
         const paymentMethodData = await paymentMethodRes.json();
         if (!paymentMethodRes.ok || !paymentMethodData.success) {
-          toast.error(paymentMethodData.error || 'Failed to update payment method');
+          toast.error(
+            paymentMethodData.error || "Failed to update payment method"
+          );
           set({ loading: false });
           return;
         }
@@ -1589,7 +1732,9 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           },
         });
         if (!saveResult.success) {
-          toast.error(saveResult.error || 'Failed to save payment method details');
+          toast.error(
+            saveResult.error || "Failed to save payment method details"
+          );
           set({ loading: false });
           return;
         }
@@ -1601,14 +1746,17 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         try {
           // Get the address from the payment method
           const address = paymentMethod.billing_details?.address || {};
-          const email = paymentMethod.billing_details?.email || userData.email || userData.Email;
+          const email =
+            paymentMethod.billing_details?.email ||
+            userData.email ||
+            userData.Email;
 
           // Lookup country name from code
           let countryName = address.country;
           if (address.country) {
             try {
               // Use countries-list for country code to name
-              const { countries } = await import('countries-list');
+              const { countries } = await import("countries-list");
               const code = address.country as keyof typeof countries;
               countryName = countries[code]?.name || address.country;
             } catch (e) {
@@ -1619,29 +1767,37 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
 
           // Find the stripeCompanies document
           const stripeCompaniesRef = collection(db, "stripeCompanies");
-          const q = query(stripeCompaniesRef, where("User", "==", userDoc["Company Admin"]));
+          const q = query(
+            stripeCompaniesRef,
+            where("User", "==", userDoc["Company Admin"])
+          );
           const snap = await getDocs(q);
           if (!snap.empty) {
             const docSnap = snap.docs[0];
             await updateDoc(docSnap.ref, {
               Email: email,
-              "Street Address": address.line1 || '',
-              City: address.city || '',
-              State: address.state || '',
-              Country: countryName || '',
-              Zip: address.postal_code || '',
+              "Street Address": address.line1 || "",
+              City: address.city || "",
+              State: address.state || "",
+              Country: countryName || "",
+              Zip: address.postal_code || "",
             });
           }
         } catch (err) {
-          console.error('Failed to update stripeCompanies billing address:', err);
+          console.error(
+            "Failed to update stripeCompanies billing address:",
+            err
+          );
         }
 
         toast.success("Payment method updated successfully!");
         onBack();
       }
     } catch (error: any) {
-      console.error('handleSubscriptionPayment error:', error);
-      toast.error(error.message || 'An error occurred while processing payment');
+      console.error("handleSubscriptionPayment error:", error);
+      toast.error(
+        error.message || "An error occurred while processing payment"
+      );
       set({ loading: false, error: error.message });
     }
   },
