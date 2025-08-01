@@ -5,6 +5,7 @@ import {
   query,
   where,
   getDocs,
+  getDoc,
   updateDoc,
   doc,
   setDoc,
@@ -1231,11 +1232,43 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         console.warn("Error removing cronitor monitors:", error);
       }
 
-      // todo: 14. Remove all mailchimp where 'User' in userIds
-
       // 15. Remove all users where id in userIds
       for (const userId of userIds) {
-        await deleteDoc(doc(db, "users", userId));
+        try {
+          // Get user document to retrieve contact IDs
+          const userRef = doc(db, "users", userId);
+          const userDoc = await getDoc(userRef);
+
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            const contactIds = {
+              Pipedrive: userData.Pipedrive,
+              Mailchimp: userData.Mailchimp,
+              "Sendgrid Marketing": userData["Sendgrid Marketing"],
+            };
+
+            // Only attempt to remove contacts if any contact IDs exist
+            if (Object.values(contactIds).some((id) => id)) {
+              const { removeUserContacts } = await import(
+                "@/services/contacts"
+              );
+              const removalResult = await removeUserContacts(contactIds);
+
+              if (removalResult.errors.length > 0) {
+                console.warn(
+                  `Contact removal errors for user ${userId}:`,
+                  removalResult.errors
+                );
+              }
+            }
+          }
+
+          // Delete the user document
+          await deleteDoc(doc(db, "users", userId));
+        } catch (error) {
+          console.error(`Error removing user ${userId}:`, error);
+          // Continue with next user even if this one fails
+        }
       }
 
       // 16. Log the user out

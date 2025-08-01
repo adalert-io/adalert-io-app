@@ -44,6 +44,27 @@ export default function VerifyEmailPage() {
         // Create user documents after successful verification
         await createUserDocuments(user, false, true);
 
+        // Create contacts in external platforms
+        const { createUserContacts } = await import("@/services/contacts");
+        const userName =
+          user.displayName || user.email?.split("@")[0] || "User";
+        const contactResult = await createUserContacts(user, userName);
+
+        // Update user document with contact IDs if they were created
+        if (contactResult.success) {
+          const { doc, updateDoc } = await import("firebase/firestore");
+          const { db } = await import("@/lib/firebase/config");
+          await updateDoc(
+            doc(db, "users", user.uid),
+            contactResult.contactIds as any
+          );
+        }
+
+        // Log any contact creation errors
+        if (contactResult.errors.length > 0) {
+          console.warn("Contact creation errors:", contactResult.errors);
+        }
+
         toast.success("Email verified successfully!");
         // Use dynamic redirect URL
         setTimeout(() => {

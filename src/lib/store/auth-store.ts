@@ -48,6 +48,9 @@ export interface UserDocument {
   "uid": string;
   "Inviter"?: any; // Optional field for inviter reference
   "Opt In For Text Message"?: boolean;
+  "Pipedrive"?: string; // PipeDrive person ID
+  "Mailchimp"?: string; // MailChimp subscriber ID
+  "Sendgrid Marketing"?: string; // SendGrid contact ID
 }
 
 interface AuthState {
@@ -177,13 +180,19 @@ export async function createUserDocuments(
 
   // Only create documents if they don't exist
   if (!userDoc.exists()) {
-    // Create user document
-    await setDoc(userRef, {
+    // Create contacts in external platforms first
+    const userName = isGoogleSignUp
+      ? user.displayName || user.email?.split("@")[0] || "User"
+      : user.displayName || user.email?.split("@")[0] || "User";
+
+    const { createUserContacts } = await import("@/services/contacts");
+    const contactResult = await createUserContacts(user, userName);
+
+    // Create user document with contact IDs
+    const userData: any = {
       "Company Admin": userRef,
       "Is Google Sign Up": isGoogleSignUp,
-      "Name": isGoogleSignUp
-        ? user.displayName
-        : user.displayName || user.email?.split("@")[0],
+      "Name": userName,
       "User Access": "All ad accounts",
       "Avatar": user.photoURL,
       "User Type": USER_TYPES.ADMIN,
@@ -192,8 +201,20 @@ export async function createUserDocuments(
       "Telephone": user.phoneNumber,
       "uid": user.uid,
       email: user.email,
-      "Opt In For Text Message": false
-    });
+      "Opt In For Text Message": false,
+    };
+
+    // Add contact IDs if they were created successfully
+    if (contactResult.success) {
+      Object.assign(userData, contactResult.contactIds);
+    }
+
+    // Log any contact creation errors
+    if (contactResult.errors.length > 0) {
+      console.warn("Contact creation errors:", contactResult.errors);
+    }
+
+    await setDoc(userRef, userData);
 
     // Create authenticationPageTrackers document
     const authTrackerRef = doc(db, COLLECTIONS.AUTH_TRACKERS, user.uid);

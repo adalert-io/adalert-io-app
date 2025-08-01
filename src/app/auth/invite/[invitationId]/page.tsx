@@ -97,13 +97,33 @@ export default function AcceptInvitation({
         invitation.email,
         formData.password
       );
-      // 2. Create user documents
+      // 2. Create user documents (without contacts for now)
       await createUserDocuments(userCredential.user, false, false);
-      // 3. Update user document to set Company Admin
-      await updateDoc(doc(db, "users", userCredential.user.uid), {
+
+      // 3. Create contacts in external platforms
+      const { createUserContacts } = await import("@/services/contacts");
+      const contactResult = await createUserContacts(
+        userCredential.user,
+        formData.name
+      );
+
+      // 4. Update user document to set Company Admin and contact IDs
+      const updateData: any = {
         "Company Admin": invitation.companyAdmin,
         Name: formData.name,
-      });
+      };
+
+      // Add contact IDs if they were created successfully
+      if (contactResult.success) {
+        Object.assign(updateData, contactResult.contactIds);
+      }
+
+      // Log any contact creation errors
+      if (contactResult.errors.length > 0) {
+        console.warn("Contact creation errors:", contactResult.errors);
+      }
+
+      await updateDoc(doc(db, "users", userCredential.user.uid), updateData);
       // 4. Update invitation status
       await updateDoc(doc(db, "invitations", invitationId), {
         status: "accepted",
