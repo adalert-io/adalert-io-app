@@ -36,7 +36,8 @@ export default function RedirectPage() {
         try {
           // Use the proper authentication flow that includes checking subscription status
           // and fetching user ads accounts
-          const { checkSubscriptionStatus, handlePostAuthNavigation } = useAuthStore.getState();
+          const { checkSubscriptionStatus, handlePostAuthNavigation } =
+            useAuthStore.getState();
           await checkSubscriptionStatus(firebaseUser.uid);
           await handlePostAuthNavigation();
         } catch (error) {
@@ -68,32 +69,25 @@ export default function RedirectPage() {
     if (code) {
       (async () => {
         try {
-          const client_id = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!;
-          const client_secret = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_SECRET!;
           const redirect_uri = !page
             ? `${window.location.origin}/redirect`
             : `${window.location.origin}/redirect?page=${page}`;
 
-          const params = new URLSearchParams({
-            code,
-            client_id,
-            client_secret,
-            redirect_uri,
-            grant_type: "authorization_code",
-          });
-
-          const response = await fetch("https://oauth2.googleapis.com/token", {
+          const response = await fetch("/api/google-oauth", {
             method: "POST",
             headers: {
-              "Content-Type": "application/x-www-form-urlencoded",
+              "Content-Type": "application/json",
             },
-            body: params.toString(),
+            body: JSON.stringify({
+              code,
+              redirect_uri,
+            }),
           });
 
           const tokenData = await response.json();
 
           if (!response.ok) {
-            setError("Failed to get Google token");
+            setError(tokenData.error || "Failed to get Google token");
             return;
           }
 
