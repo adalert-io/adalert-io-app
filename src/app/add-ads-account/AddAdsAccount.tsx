@@ -113,6 +113,9 @@ export function AddAdsAccount() {
               ...acc,
             }))
           );
+
+          // Set 'Is Ads Account Authenticating' to false after fetching ads accounts
+          await setAdsAccountAuthenticating(user.uid, false);
         }
       } catch (error) {
         console.error("Error initializing data:", error);
@@ -286,8 +289,8 @@ export function AddAdsAccount() {
         }
       }
 
-      // step 5: set isAdsAccountAuthenticating to false
-      await setAdsAccountAuthenticating(user.uid, false);
+      // // step 5: set isAdsAccountAuthenticating to false
+      // await setAdsAccountAuthenticating(user.uid, false);
 
       // step 6: update ads accounts in Zustand store
       if (userDoc) {
@@ -295,22 +298,28 @@ export function AddAdsAccount() {
       }
 
       // step 7: check number of ads accounts and navigate accordingly
-      const updatedAdsAccounts = useUserAdsAccountsStore.getState().userAdsAccounts;
-      const connectedAccountsCount = updatedAdsAccounts.filter(acc => acc["Is Connected"]).length;
+      const updatedAdsAccounts =
+        useUserAdsAccountsStore.getState().userAdsAccounts;
+      const connectedAccountsCount = updatedAdsAccounts.filter(
+        (acc) => acc["Is Connected"]
+      ).length;
 
       // step 8: update the quantity of the stripe subscription if the count has changed
       if (userDoc) {
         // Get the previous count from the store before it was updated
-        const previousCount = adsAccounts?.filter(acc => acc["Is Connected"]).length || 0;
-        
+        const previousCount =
+          adsAccounts?.filter((acc) => acc["Is Connected"]).length || 0;
+
         // Only update if the count has changed
         if (connectedAccountsCount !== previousCount) {
-          await useUserAdsAccountsStore.getState().updateStripeSubscriptionQuantity(userDoc);
+          await useUserAdsAccountsStore
+            .getState()
+            .updateStripeSubscriptionQuantity(userDoc);
         }
       }
 
       toast.success("Ads accounts updated successfully");
-      
+
       if (connectedAccountsCount > 1) {
         router.push("/summary");
       } else {
