@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -15,8 +16,9 @@ import { applyActionCode } from "firebase/auth";
 import { toast } from "sonner";
 import { authConfig } from "@/lib/config/auth-config";
 import { createUserDocuments } from "@/lib/store/auth-store";
+import { Loader2 } from "lucide-react";
 
-export default function VerifyEmailPage() {
+function VerifyEmailPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [verifying, setVerifying] = useState(true);
@@ -114,5 +116,33 @@ export default function VerifyEmailPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[#ffffff] p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold text-center">
+            Email Verification
+          </CardTitle>
+          <CardDescription className="text-center">Loading...</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex justify-center">
+            <Loader2 className="animate-spin w-8 h-8 text-blue-600" />
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <VerifyEmailPageContent />
+    </Suspense>
   );
 }

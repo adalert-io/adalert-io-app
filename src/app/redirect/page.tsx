@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { db } from "@/lib/firebase/config";
 import {
   collection,
@@ -21,7 +22,7 @@ import { toast } from "sonner";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase/config";
 
-export default function RedirectPage() {
+function RedirectPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
@@ -239,5 +240,37 @@ export default function RedirectPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[#fafbfe]">
+      <div className="bg-white rounded-2xl shadow-lg px-12 py-10 flex flex-col items-center w-full max-w-md">
+        <div className="flex items-center mb-8">
+          <Image
+            src="/images/adalert-logo.avif"
+            alt="adAlert.io logo"
+            width={48}
+            height={48}
+            className="mr-3"
+            priority
+          />
+          <span className="text-2xl font-semibold text-[#1a2e49] tracking-tight">
+            adAlert.io
+          </span>
+        </div>
+        <Loader2 className="animate-spin w-10 h-10 text-blue-600 mb-6" />
+        <p className="text-lg text-gray-500 text-center">Loading...</p>
+      </div>
+    </div>
+  );
+}
+
+export default function RedirectPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <RedirectPageContent />
+    </Suspense>
   );
 }
