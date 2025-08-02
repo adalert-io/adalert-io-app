@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const client_id = process.env.GOOGLE_CLIENT_ID;
+    const client_id = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     const client_secret = process.env.GOOGLE_CLIENT_SECRET;
 
     if (!client_id || !client_secret) {
