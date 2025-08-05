@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import { AuthSync } from "@/components/auth/auth-sync";
 import { IntercomProvider, IntercomUserSync } from "@/components/intercom";
+import { AuthStateHandler } from "@/components/auth/auth-state-handler";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,6 +32,7 @@ export default function RootLayout({
         <AuthSync>
           <IntercomProvider autoInitialize={true}>
             <IntercomUserSync />
+            <AuthStateHandler />
             {children}
             <Toaster richColors position="top-center" />
           </IntercomProvider>
