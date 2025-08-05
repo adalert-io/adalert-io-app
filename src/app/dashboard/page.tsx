@@ -247,6 +247,7 @@ export default function Dashboard() {
     triggerShowingAdsLabel,
     dashboardDaily,
     adsLabel,
+    alertsLoading,
     spendMtdLoading,
     spendMtdIndicatorLoading,
     kpiDataLoading,
@@ -262,6 +263,11 @@ export default function Dashboard() {
   // Replace selectedRows with selectedAlertIds for better performance and to avoid infinite loops
   const [selectedAlertIds, setSelectedAlertIds] = useState<string[]>([]);
   const [pageSize, setPageSize] = React.useState(25);
+
+  // Auto-refresh alerts every 15 minutes
+  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(
+    null
+  );
 
   // --- Search State ---
   const [showSearch, setShowSearch] = useState(false);
@@ -346,6 +352,40 @@ export default function Dashboard() {
     lastFetchedAccountId,
     setLastFetchedAccountId,
   ]);
+
+  // Set up auto-refresh for alerts every 15 minutes
+  useEffect(() => {
+    if (selectedAdsAccount?.id) {
+      // Clear any existing interval
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+
+      // Set up new interval to refresh alerts every 15 minutes (900000 ms)
+      const interval = setInterval(() => {
+        console.log("Auto-refreshing alerts...");
+        fetchAlerts(selectedAdsAccount.id);
+      }, 900000);
+
+      setRefreshInterval(interval);
+
+      // Cleanup function
+      return () => {
+        if (interval) {
+          clearInterval(interval);
+        }
+      };
+    }
+  }, [selectedAdsAccount?.id, fetchAlerts]);
+
+  // Cleanup interval when component unmounts
+  useEffect(() => {
+    return () => {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+    };
+  }, [refreshInterval]);
 
   // Fetch spend MTD after dashboardDaily is set
   useEffect(() => {
@@ -1221,6 +1261,64 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1">
               <h2 className="text-lg font-bold text-gray-900">Alerts</h2>
+              {alertsLoading && (
+                <div className="flex items-center gap-2 ml-2">
+                  <svg
+                    className="animate-spin h-4 w-4 text-blue-500"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8z"
+                    />
+                  </svg>
+                  <span className="text-xs text-blue-600 font-medium">
+                    Updating...
+                  </span>
+                </div>
+              )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="p-0.5 rounded hover:bg-gray-100 transition-colors"
+                    aria-label="Auto-refresh active"
+                    tabIndex={0}
+                  >
+                    <svg
+                      className="w-3 h-3 text-green-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="top"
+                  align="center"
+                  className="max-w-xs text-xs"
+                >
+                  Alerts will automatically refresh every 15 minutes
+                </TooltipContent>
+              </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
@@ -1405,13 +1503,44 @@ export default function Dashboard() {
               </select>
             </div>
           </div>
-          <AlertsDataTable
-            pageSize={pageSize}
-            setPageSize={setPageSize}
-            filteredAlerts={filteredAlerts}
-            selectedAlertIds={selectedAlertIds}
-            setSelectedAlertIds={setSelectedAlertIds}
-          />
+          <div className="relative">
+            <AlertsDataTable
+              pageSize={pageSize}
+              setPageSize={setPageSize}
+              filteredAlerts={filteredAlerts}
+              selectedAlertIds={selectedAlertIds}
+              setSelectedAlertIds={setSelectedAlertIds}
+            />
+            {alertsLoading && (
+              <div className="absolute inset-0 bg-white/50 flex items-center justify-center rounded-md">
+                <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-md">
+                  <svg
+                    className="animate-spin h-5 w-5 text-blue-500"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8z"
+                    />
+                  </svg>
+                  <span className="text-sm font-medium text-gray-700">
+                    Loading alerts...
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </div>
