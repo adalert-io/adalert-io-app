@@ -1,26 +1,27 @@
-import Image from 'next/image';
-import Link from 'next/link';
-import { useAuthStore } from '@/lib/store/auth-store';
-import { useUserAdsAccountsStore } from '@/lib/store/user-ads-accounts-store';
-import { formatAccountNumber } from '@/lib/utils';
-import { NavigationMenu } from '@/components/ui/navigation-menu';
-import { ChevronDown, Plus, BarChart2, HelpCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import * as React from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { useIntercomContext } from '@/components/intercom';
+import Image from "next/image";
+import Link from "next/link";
+import { useAuthStore } from "@/lib/store/auth-store";
+import { useUserAdsAccountsStore } from "@/lib/store/user-ads-accounts-store";
+import { formatAccountNumber } from "@/lib/utils";
+import { NavigationMenu } from "@/components/ui/navigation-menu";
+import { ChevronDown, Plus, BarChart2, HelpCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import * as React from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { useIntercomContext } from "@/components/intercom";
 
 // Utility to get initial from name or email
 function getInitial(nameOrEmail: string) {
-  if (!nameOrEmail) return '';
+  if (!nameOrEmail) return "";
   const trimmed = nameOrEmail.trim();
-  if (trimmed.length === 0) return '';
+  if (trimmed.length === 0) return "";
   return trimmed[0].toUpperCase();
 }
 
 export function Header() {
   const { user, userDoc, logout } = useAuthStore();
-  const { userAdsAccounts, selectedAdsAccount, setSelectedAdsAccount } = useUserAdsAccountsStore();
+  const { userAdsAccounts, selectedAdsAccount, setSelectedAdsAccount } =
+    useUserAdsAccountsStore();
   const [dropdownOpen, setDropdownOpen] = React.useState(false);
   const [menuOpen, setMenuOpen] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
@@ -33,18 +34,18 @@ export function Header() {
     if (!selectedAdsAccount || selectedAdsAccount.id !== account.id) {
       setSelectedAdsAccount(account);
       setDropdownOpen(false);
-      router.push('/dashboard');
+      router.push("/dashboard");
     } else {
       setDropdownOpen(false);
-      if (!pathname || !pathname.startsWith('/dashboard')) {
-        router.push('/dashboard');
+      if (!pathname || !pathname.startsWith("/dashboard")) {
+        router.push("/dashboard");
       }
     }
   };
 
   // Avatar fallback
-  const avatarUrl = userDoc?.Avatar || '/images/default-avatar.png';
-  const userName = userDoc?.Name || userDoc?.Email || 'User';
+  const avatarUrl = userDoc?.Avatar || "/images/default-avatar.png";
+  const userName = userDoc?.Name || userDoc?.Email || "User";
   const userInitial = getInitial(userName);
 
   // Handle menu open/close and outside click
@@ -55,28 +56,42 @@ export function Header() {
         setMenuOpen(false);
       }
     }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
   }, [menuOpen]);
 
   // Menu options
   const menuOptionsMd = [
-    { label: 'My Profile', onClick: () => router.push('/profile') },
-    { label: 'Settings', onClick: () => router.push('/settings') },
+    { label: "My Profile", onClick: () => router.push("/profile") },
+    { label: "Settings", onClick: () => router.push("/settings") },
     { divider: true },
-    { label: 'Help', onClick: () => show() },
+    { label: "Help", onClick: () => show() },
     { divider: true },
-    { label: 'Log out', onClick: async () => { await logout(); router.push('/auth'); } },
+    {
+      label: "Log out",
+      onClick: async () => {
+        await logout();
+        router.push("/auth");
+      },
+    },
   ];
   const menuOptionsSm = [
-    { label: 'Add Accounts', onClick: () => router.push('/add-ads-account') },
-    { label: 'Accounts Summary', onClick: () => router.push('/summary') },
+    { label: "Add Accounts", onClick: () => router.push("/add-ads-account") },
+    ...(userAdsAccounts.length >= 2
+      ? [{ label: "Accounts Summary", onClick: () => router.push("/summary") }]
+      : []),
     { divider: true },
-    { label: 'My Profile', onClick: () => router.push('/profile') },
-    { label: 'Settings', onClick: () => router.push('/settings') },
-    { label: 'Help', onClick: () => show() },
+    { label: "My Profile", onClick: () => router.push("/profile") },
+    { label: "Settings", onClick: () => router.push("/settings") },
+    { label: "Help", onClick: () => show() },
     { divider: true },
-    { label: 'Log out', onClick: async () => { await logout(); router.push('/auth'); } },
+    {
+      label: "Log out",
+      onClick: async () => {
+        await logout();
+        router.push("/auth");
+      },
+    },
   ];
 
   return (
@@ -92,7 +107,9 @@ export function Header() {
               height={32}
               priority
             />
-            <span className="text-xl font-bold text-gray-900 tracking-tight whitespace-nowrap">adAlert.io</span>
+            <span className="text-xl font-bold text-gray-900 tracking-tight whitespace-nowrap">
+              adAlert.io
+            </span>
           </Link>
           {/* Dropdown: Only if logged in */}
           {user && userAdsAccounts.length > 0 && (
@@ -105,11 +122,17 @@ export function Header() {
                 type="button"
               >
                 <span className="truncate">
-                  {!pathname || !pathname.startsWith('/dashboard')
-                    ? 'Select an ads account'
+                  {!pathname || !pathname.startsWith("/dashboard")
+                    ? "Select an ads account"
                     : selectedAdsAccount
-                      ? `${selectedAdsAccount['Account Name Editable'] || selectedAdsAccount.name || 'Account'} \u2013 ${formatAccountNumber(selectedAdsAccount.Id || selectedAdsAccount.id || '')}`
-                      : 'Select an ads account'}
+                    ? `${
+                        selectedAdsAccount["Account Name Editable"] ||
+                        selectedAdsAccount.name ||
+                        "Account"
+                      } \u2013 ${formatAccountNumber(
+                        selectedAdsAccount.Id || selectedAdsAccount.id || ""
+                      )}`
+                    : "Select an ads account"}
                 </span>
                 <ChevronDown className="w-5 h-5 text-blue-600" />
               </button>
@@ -122,14 +145,22 @@ export function Header() {
                   {userAdsAccounts.map((account) => (
                     <li
                       key={account.id}
-                      className={`px-4 py-2 cursor-pointer hover:bg-blue-50 text-sm text-gray-900 flex items-center gap-2 ${selectedAdsAccount?.id === account.id ? 'bg-blue-50 font-semibold' : ''}`}
+                      className={`px-4 py-2 cursor-pointer hover:bg-blue-50 text-sm text-gray-900 flex items-center gap-2 ${
+                        selectedAdsAccount?.id === account.id
+                          ? "bg-blue-50 font-semibold"
+                          : ""
+                      }`}
                       onClick={() => handleSelectAccount(account)}
                       role="option"
                       aria-selected={selectedAdsAccount?.id === account.id}
                     >
                       <span className="truncate">
-                        {account['Account Name Editable'] || account.name || 'Account'}
-                        <span className="text-[#7A7D9C] ml-2">{formatAccountNumber(account.Id || account.id || '')}</span>
+                        {account["Account Name Editable"] ||
+                          account.name ||
+                          "Account"}
+                        <span className="text-[#7A7D9C] ml-2">
+                          {formatAccountNumber(account.Id || account.id || "")}
+                        </span>
                       </span>
                     </li>
                   ))}
@@ -143,13 +174,33 @@ export function Header() {
           <div className="flex items-center gap-1 min-w-0">
             {/* Icons: hidden on small screens */}
             <div className="hidden sm:flex items-center">
-              <Button variant="ghost" size="icon" className="text-blue-600" aria-label="Add" onClick={() => router.push('/add-ads-account')}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-blue-600"
+                aria-label="Add"
+                onClick={() => router.push("/add-ads-account")}
+              >
                 <Plus className="w-5 h-5" />
               </Button>
-              <Button variant="ghost" size="icon" className="text-blue-600" aria-label="Stats" onClick={() => router.push('/summary')}>
-                <BarChart2 className="w-5 h-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="text-blue-600" aria-label="Help" onClick={() => show()}>
+              {userAdsAccounts.length >= 2 && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-blue-600"
+                  aria-label="Stats"
+                  onClick={() => router.push("/summary")}
+                >
+                  <BarChart2 className="w-5 h-5" />
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-blue-600"
+                aria-label="Help"
+                onClick={() => show()}
+              >
                 <HelpCircle className="w-5 h-5" />
               </Button>
             </div>
@@ -169,8 +220,12 @@ export function Header() {
                 height={32}
                 className="rounded-full object-cover border border-[#E3E8F0]"
               />
-              <span className="text-base font-medium text-gray-900 md:inline hidden whitespace-normal break-words max-w-xs md:max-w-none">{userName}</span>
-              <span className="text-base font-medium text-gray-900 md:hidden inline">{userInitial}</span>
+              <span className="text-base font-medium text-gray-900 md:inline hidden whitespace-normal break-words max-w-xs md:max-w-none">
+                {userName}
+              </span>
+              <span className="text-base font-medium text-gray-900 md:hidden inline">
+                {userInitial}
+              </span>
               <ChevronDown className="w-5 h-5 text-blue-600 group-hover:text-blue-800 flex-shrink-0 min-w-[20px]" />
               {/* Dropdown menu */}
               {menuOpen && (
@@ -182,12 +237,19 @@ export function Header() {
                   <div className="hidden md:block">
                     {menuOptionsMd.map((item, idx) =>
                       item.divider ? (
-                        <div key={idx} className="my-1 border-t border-gray-200" />
+                        <div
+                          key={idx}
+                          className="my-1 border-t border-gray-200"
+                        />
                       ) : (
                         <button
                           key={item.label}
                           className="w-full text-left px-4 py-2 text-[16px] text-[#232360] hover:bg-blue-50 focus:bg-blue-100 focus:outline-none"
-                          onClick={e => { e.stopPropagation(); setMenuOpen(false); if (item.onClick) item.onClick(); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMenuOpen(false);
+                            if (item.onClick) item.onClick();
+                          }}
                           tabIndex={0}
                         >
                           {item.label}
@@ -199,12 +261,19 @@ export function Header() {
                   <div className="block md:hidden">
                     {menuOptionsSm.map((item, idx) =>
                       item.divider ? (
-                        <div key={idx} className="my-1 border-t border-gray-200" />
+                        <div
+                          key={idx}
+                          className="my-1 border-t border-gray-200"
+                        />
                       ) : (
                         <button
                           key={item.label}
                           className="w-full text-left px-4 py-2 text-[14px] text-[#232360] hover:bg-blue-50 focus:bg-blue-100 focus:outline-none"
-                          onClick={e => { e.stopPropagation(); setMenuOpen(false); if (item.onClick) item.onClick(); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMenuOpen(false);
+                            if (item.onClick) item.onClick();
+                          }}
                           tabIndex={0}
                         >
                           {item.label}
@@ -220,4 +289,4 @@ export function Header() {
       </div>
     </header>
   );
-} 
+}
