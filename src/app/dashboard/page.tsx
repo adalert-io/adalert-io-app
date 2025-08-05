@@ -1340,7 +1340,13 @@ export default function Dashboard() {
                   to retroactive data updates made by the vendor.
                 </TooltipContent>
               </Tooltip>
-              <span className="text-xs text-gray-400">Settings</span>
+              <button
+                type="button"
+                onClick={() => router.push("/settings")}
+                className="text-xs text-gray-400 hover:text-gray-600 hover:underline cursor-pointer transition-colors"
+              >
+                Settings
+              </button>
               {/* Selection bar inline with heading */}
               {selectedAlerts.length > 0 && (
                 <div className="flex items-center gap-2 ml-4">
