@@ -233,7 +233,7 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
 
   return (
     <div className="flex min-h-[600px] h-full ">
-      {/* Left Panel - Signup Form */}
+      {/* Left Panel - Signup Forms */}
       <div className="w-1/2 flex flex-col h-full justify-center ">
       
         <div className="flex-1 p-8 flex flex-col justify-center h-full">
