@@ -97,7 +97,7 @@ export function Header() {
   return (
     <header className="w-full bg-[#FAFBFF] h-16 flex items-center border-b border-[#F0F1F6] px-6 md:px-6 lg:px-20">
       <div className="flex w-full max-w-[1440px] mx-auto items-center justify-between">
-        {/* Left: Logo + Dropdown */}
+        {/* Left: Logo + Dropdown changes added */}
         <div className="flex items-center gap-6 min-w-0">
           <Link href="/" className="flex items-center gap-2 min-w-0">
             <Image
