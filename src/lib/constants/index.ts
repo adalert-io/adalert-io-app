@@ -7,7 +7,7 @@ export const SUBSCRIPTION_STATUS = {
   TRIAL_ENDED: "Trial Ended",
   CANCELLED: "Cancelled",
   PAYMENT_FAILED: "Payment Failed",
-  PAYING: 'Paying',
+  PAYING: "Paying",
   ACTIVE: "Active",
 } as const;
 
@@ -40,8 +40,8 @@ export const COLLECTIONS = {
 export const FIREBASE_FN_DOMAINS = {
   // DEV: "adalert-kmotjdlnmq-uc.a.run.app",
   DEV: "127.0.0.1:5001/adalertdev/us-central1/test",
-  PROD: "adalert-kmotjdlnmq-uc.a.run.app",
-  // ACTUAL_PROD: "adalert-msrjiafroa-uc.a.run.app",
+  // PROD: "adalert-kmotjdlnmq-uc.a.run.app", // dev project
+  PROD: "adalert-msrjiafroa-uc.a.run.app", // prod project
 };
 
 export const ALERT_SEVERITIES = {
