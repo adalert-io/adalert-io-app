@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   EnvelopeClosedIcon,
   LockClosedIcon,
@@ -29,22 +30,26 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Header } from "@/components/layout/header";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, XCircle } from "lucide-react";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-const signupFormSchema = z
-  .object({
-    fullName: z.string().min(2, "Full name must be at least 2 characters"),
-    email: z.string().email("Invalid email address"),
-    password: z.string().min(8, "Password must be at least 8 characters"),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
+// Password strength helper
+function getPasswordStrength(password: string) {
+  let score = 0;
+  if (password.length >= 8) score++;
+  if (/[A-Z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+  return score;
+}
+
+const signupFormSchema = z.object({
+  fullName: z.string().min(2, "Full name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
 
 type SignupFormValues = z.infer<typeof signupFormSchema>;
 
@@ -63,6 +68,7 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [showVerificationMessage, setShowVerificationMessage] = useState(false);
+  const [password, setPassword] = useState("");
 
   // Set router instance in auth store
   useEffect(() => {
@@ -75,9 +81,11 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
       fullName: "",
       email: "",
       password: "",
-      confirmPassword: "",
     },
+    mode: "onChange", // ensure validation updates on change
   });
+
+  const isFormValid = form.formState.isValid;
 
   async function onSubmit(data: SignupFormValues) {
     try {
@@ -122,10 +130,24 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
     return (
       <div className="flex min-h-[600px] h-full">
         <div className="w-1/2 flex flex-col h-full justify-center">
-          <Header />
+   
           <div className="flex-1 p-8 flex flex-col justify-center h-full">
+            {/* Logo before verification message */}
+
             <Card className="w-full h-full flex flex-col justify-center">
               <CardHeader>
+                            <Link href="/" className="flex items-center justify-center gap-2 min-w-0">
+            <Image
+              src="/images/adalert-logo.avif"
+              alt="AdAlert Logo"
+              width={32}
+              height={32}
+              priority
+            />
+            <span className="text-xl font-bold text-gray-900 tracking-tight whitespace-nowrap">
+              adAlert.io
+            </span>
+          </Link>
                 <CardTitle className="text-3xl font-bold">
                   Verify your email
                 </CardTitle>
@@ -210,26 +232,39 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
   }
 
   return (
-    <div className="flex min-h-[600px] h-full">
-      {/* Left Panel - Signup Form */}
-      <div className="w-1/2 flex flex-col h-full justify-center">
-        <Header />
+    <div className="flex min-h-[600px] h-full ">
+      {/* Left Panel - Signup Forms */}
+      <div className="w-1/2 flex flex-col h-full justify-center ">
+      
         <div className="flex-1 p-8 flex flex-col justify-center h-full">
-          <Card className="w-full h-full flex flex-col justify-center">
+          {/* Logo before signup form */}
+         
+          <Card className="w-full h-full flex flex-col justify-center w-[490px] p-5 mx-auto">
             <CardHeader>
-              <CardTitle className="text-3xl font-bold">
-                Create your account
+             <Link href="/" className="flex items-center justify-center gap-2 min-w-0 py-2">
+            <Image
+              src="/images/adalert-logo.avif"
+              alt="AdAlert Logo"
+              width={32}
+              height={32}
+              priority
+            />
+            <span className="text-xl font-bold text-gray-900 tracking-tight whitespace-nowrap">
+              adAlert.io
+            </span>
+          </Link>
+              <CardTitle className="text-2xl font-bold">
+                Start your{" "}
+                <span className="text-blue-600">FREE 7 day trial</span>
               </CardTitle>
-              <CardDescription>
-                Join AdAlert to start monitoring your ads and get real-time
-                alerts
-              </CardDescription>
+
+              <CardDescription>No credit card required</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col justify-center">
               <Button
                 type="button"
                 variant="secondary"
-                className="w-full flex items-center justify-center py-6 gap-2 bg-gray-100 hover:bg-gray-200 text-gray-900 text-xl font-medium mb-6 border border-gray-200 shadow-none"
+                className="w-full flex items-center justify-center py-6 gap-2 bg-gray-100 hover:bg-gray-200 text-gray-900 text-xl font-medium mb-4 border border-gray-200 shadow-none"
                 onClick={handleGoogleSignup}
                 disabled={isLoading}
               >
@@ -270,7 +305,7 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
                 Continue with Google
               </Button>
 
-              <div className="flex items-center my-6">
+              <div className="flex items-center my-4">
                 <div className="flex-1 h-px bg-gray-200" />
                 <span className="mx-4 text-gray-400 text-sm">or</span>
                 <div className="flex-1 h-px bg-gray-200" />
@@ -339,37 +374,108 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
                               placeholder="Create a password"
                               className="pl-10"
                               {...field}
+                              value={field.value}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                setPassword(e.target.value);
+                              }}
                             />
                           </div>
                         </FormControl>
+                        {/* Password requirements and strength bar only show if password is not empty */}
+                        {password.length > 0 && (
+                          <>
+                            <div className="mt-2 space-y-1 text-sm">
+                              <div className="flex items-center gap-2">
+                                {password.length >= 8 ? (
+                                  <CheckCircle className="text-blue-600 w-4 h-4" />
+                                ) : (
+                                  <XCircle className="text-gray-400 w-4 h-4" />
+                                )}
+                                8 characters minimum
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {/[A-Z]/.test(password) ? (
+                                  <CheckCircle className="text-blue-600 w-4 h-4" />
+                                ) : (
+                                  <XCircle className="text-gray-400 w-4 h-4" />
+                                )}
+                                One uppercase letter
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {/[0-9]/.test(password) ? (
+                                  <CheckCircle className="text-blue-600 w-4 h-4" />
+                                ) : (
+                                  <XCircle className="text-gray-400 w-4 h-4" />
+                                )}
+                                One number
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {/[^A-Za-z0-9]/.test(password) ? (
+                                  <CheckCircle className="text-blue-600 w-4 h-4" />
+                                ) : (
+                                  <XCircle className="text-gray-400 w-4 h-4" />
+                                )}
+                                One Special Character{" "}
+                                <span className="ml-1 text-xs text-gray-500">
+                                  @ $ ! % * ? &
+                                </span>
+                              </div>
+                            </div>
+                            {/* Password strength bar */}
+                            <div className="mt-3">
+                              <span className="text-xs font-semibold text-gray-600">
+                                Strength
+                              </span>
+                              <div className="flex items-center gap-2 mt-1">
+                                {[1, 2, 3, 4].map((i) => (
+                                  <div
+                                    key={i}
+                                    className={`h-2 w-8 rounded-full ${
+                                      getPasswordStrength(password) >= i
+                                        ? "bg-blue-600"
+                                        : "bg-gray-200"
+                                    }`}
+                                  />
+                                ))}
+                                <span className="ml-2 text-xs text-gray-500">
+                                  {["", "Weak", "Fair", "Good", "Strong"][
+                                    getPasswordStrength(password)
+                                  ]}
+                                </span>
+                              </div>
+                            </div>
+                          </>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
-                  <FormField
-                    control={form.control}
-                    name="confirmPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Confirm Password</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <LockClosedIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                            <Input
-                              type="password"
-                              placeholder="Confirm your password"
-                              className="pl-10"
-                              {...field}
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <Button type="submit" className="w-full" disabled={isLoading}>
+                  <CardDescription>
+                    By signing up, you agree to the{" "}
+                    <a
+                      href="https://www.adalert.io/terms-conditions#terms-and-conditions"
+                      className="text-blue-600 hover:underline"
+                    >
+                      Terms and Conditions
+                    </a>{" "}
+                    and{" "}
+                    <a
+                      href="https://www.adalert.io/terms-conditions#privacy-policy"
+                      className="text-blue-600 hover:underline"
+                    >
+                      Privacy Policy
+                    </a>
+                  </CardDescription>
+                  <Button
+                    type="submit"
+                    disabled={!isFormValid || isLoading}
+                    className={`w-full mt-2 py-6 text-base font-semibold transition-colors duration-200 ${
+                      isFormValid
+                        ? "bg-blue-600 text-white hover:bg-blue-700"
+                        : "bg-gray-400 text-white cursor-not-allowed"
+                    }`}
+                  >
                     {isLoading ? "Creating account..." : "Create Account"}
                   </Button>
                 </form>
@@ -381,7 +487,7 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
                   <Button
                     variant="link"
                     onClick={onSwitchToLogin}
-                    className="px-0 font-normal"
+                    className="px-0 font-normal text-blue-600 hover:underline"
                     disabled={isLoading}
                   >
                     Sign in
