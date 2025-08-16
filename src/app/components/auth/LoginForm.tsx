@@ -273,7 +273,7 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
     </p>
     <div className="flex items-center gap-3">
       <img
-        src="/images/user.png"
+        src="/images/asher.jpg"
         alt="Owner Avatar"
         className="w-10 h-10 rounded-full object-cover"
       />
