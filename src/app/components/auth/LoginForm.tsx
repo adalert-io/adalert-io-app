@@ -19,10 +19,11 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Header } from "@/components/layout/header";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import Image from "next/image";
+import Animation from "@/components/Animation";
 
 const loginFormSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -76,11 +77,13 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#ffffff]">
-      <Header />
-      <div className="mt-[50px] w-[490px] p-5 mx-auto max-w-2xl px-0 flex flex-col items-center justify-center flex-1">
-        <Card className="w-full border border-gray-200 rounded-xl bg-white shadow-none p-0">
+    <div className="w-full h-screen grid grid-cols-1 md:grid-cols-2">
+      <div className="flex items-center justify-center p-5">
+
+      <div className="w-full max-w-md p-5 mx-auto flex flex-col items-center justify-center flex-1">
+        <Card className="w-full bg-white shadow-none border-none rounded-none p-0">
           <CardContent className="p-8">
+            
             <h1 className="text-3xl font-bold mb-4">
               Log in to <span className="text-blue-600">adAlert.io</span>
             </h1>
@@ -148,7 +151,6 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <EnvelopeClosedIcon className="absolute left-3 top-2.5 h-5 w-5 text-blue-600" />
@@ -170,9 +172,8 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <div className="relative">
+                        <div className="relative">  
                           <LockClosedIcon className="absolute left-3 top-2.5 h-5 w-5 text-blue-600" />
                           <Input
                             type={showPassword ? "text" : "password"}
@@ -255,7 +256,35 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
           </CardContent>
         </Card>
       </div>
+      </div>
+{/* Right Column */}
+<div className="hidden md:flex relative items-center justify-center bg-white overflow-hidden shadow-[inset_8px_0_8px_-8px_rgba(0,0,0,0.1)]">
+  
+  {/* Static Grid */}
+  <div className="absolute inset-0 bg-[linear-gradient(rgba(180,200,255,0.3)_1px,transparent_1px),linear-gradient(90deg,rgba(180,200,255,0.3)_1px,transparent_1px)] bg-[length:120px_120px]"></div>
+
+  {/* Moving Light Line Overlay */}
+ 
+
+  {/* Owner Card */}
+  <div className="relative bg-white/80 backdrop-blur-lg rounded-2xl shadow-lg p-6 max-w-sm border border-gray-200 z-10">
+    <p className="text-gray-700 text-base mb-4">
+      “We are on a mission to revolutionize the way businesses track and analyze their advertising campaigns — making ad monitoring <span className="font-semibold">smarter, faster, and effortless</span>. Our goal is to provide actionable insights in real-time, so you can focus on growth while we handle the data.”
+    </p>
+    <div className="flex items-center gap-3">
+      <img
+        src="/images/user.png"
+        alt="Owner Avatar"
+        className="w-10 h-10 rounded-full object-cover"
+      />
+      <div>
+        <p className="font-semibold text-gray-800">Asher Elran</p>
+        <p className="text-sm text-gray-500">Founder, adAlert.io</p>
+      </div>
+    </div>
+  </div>
+</div>
+
     </div>
   );
 }
- 
