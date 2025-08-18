@@ -85,52 +85,53 @@ export function Header() {
         {/* Desktop actions */}
         <div className="hidden md:flex items-center gap-4">
           {user && userAdsAccounts.length > 0 && (
-            <div className="relative">
-              <button
-                className="flex items-center gap-2 px-4 py-2 border border-[#E3E8F0] bg-white rounded-xl shadow-sm text-[#7A7D9C] text-base font-medium min-w-[240px] hover:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-200 transition-all"
-                onClick={() => setDropdownOpen((v) => !v)}
-                type="button"
-              >
-                <span className="truncate">
-                  {!pathname || !pathname.startsWith("/dashboard")
-                    ? "Select an ads account"
-                    : selectedAdsAccount
-                    ? `${
-                        selectedAdsAccount["Account Name Editable"] ||
-                        selectedAdsAccount.name ||
-                        "Account"
-                      } \u2013 ${formatAccountNumber(
-                        selectedAdsAccount.Id || selectedAdsAccount.id || ""
-                      )}`
-                    : "Select an ads account"}
-                </span>
-                <ChevronDown className="w-5 h-5 text-blue-600" />
-              </button>
-              {dropdownOpen && (
-                <ul className="absolute left-0 mt-2 w-full bg-white border border-[#E3E8F0] rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto animate-in fade-in">
-                  {userAdsAccounts.map((account) => (
-                    <li
-                      key={account.id}
-                      className={`px-4 py-2 cursor-pointer hover:bg-blue-50 text-sm text-gray-900 flex items-center gap-2 ${
-                        selectedAdsAccount?.id === account.id
-                          ? "bg-blue-50 font-semibold"
-                          : ""
-                      }`}
-                      onClick={() => handleSelectAccount(account)}
-                    >
-                      <span className="truncate">
-                        {account["Account Name Editable"] ||
-                          account.name ||
-                          "Account"}
-                        <span className="text-[#7A7D9C] ml-2">
-                          {formatAccountNumber(account.Id || account.id || "")}
-                        </span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+<div className="relative inline-block">
+  <button
+    className="flex items-center gap-2 px-4 py-2 border border-[#E3E8F0] bg-white rounded-xl shadow-sm text-[#7A7D9C] text-base font-medium w-fit hover:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-200 transition-all"
+    onClick={() => setDropdownOpen((v) => !v)}
+    type="button"
+  >
+    <span className="whitespace-nowrap">
+      {!pathname || !pathname.startsWith("/dashboard")
+        ? "Select an ads account"
+        : selectedAdsAccount
+        ? `${
+            selectedAdsAccount["Account Name Editable"] ||
+            selectedAdsAccount.name ||
+            "Account"
+          } – ${formatAccountNumber(
+            selectedAdsAccount.Id || selectedAdsAccount.id || ""
+          )}`
+        : "Select an ads account"}
+    </span>
+    <ChevronDown className="w-5 h-5 text-blue-600 shrink-0" />
+  </button>
+
+  {dropdownOpen && (
+    <ul className="absolute left-0 mt-2 min-w-max bg-white border border-[#E3E8F0] rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto animate-in fade-in">
+      {userAdsAccounts.map((account) => (
+        <li
+          key={account.id}
+          className={`px-4 py-2 cursor-pointer hover:bg-blue-50 text-sm text-gray-900 flex items-center gap-2 ${
+            selectedAdsAccount?.id === account.id
+              ? "bg-blue-50 font-semibold"
+              : ""
+          }`}
+          onClick={() => handleSelectAccount(account)}
+        >
+          <span className="whitespace-nowrap">
+            {account["Account Name Editable"] || account.name}
+          </span>
+          <span className="text-[#7A7D9C] ml-2">
+            {formatAccountNumber(account.Id || account.id || "")}
+          </span>
+        </li>
+      ))}
+    </ul>
+  )}
+</div>
+
+
           )}
 
           {user && userDoc && (
