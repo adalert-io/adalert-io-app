@@ -239,32 +239,31 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
         <div className="flex-1 p-8 flex flex-col justify-center h-full">
           {/* Logo before signup form */}
          
-          <Card className="w-full h-full flex flex-col justify-center w-[490px] p-5 mx-auto">
+          <div className="w-full h-full flex flex-col justify-center w-[490px] p-5 mx-auto">
             <CardHeader>
-             <Link href="/" className="flex items-center justify-center gap-2 min-w-0 py-2">
-            <Image
-              src="/images/adalert-logo.avif"
-              alt="AdAlert Logo"
-              width={32}
-              height={32}
-              priority
-            />
-            <span className="text-xl font-bold text-gray-900 tracking-tight whitespace-nowrap">
-              adAlert.io
-            </span>
+             <Link href="https://adalert.io/" className="flex items-center justify-center gap-2 min-w-0 py-2">
+             <h1 className="flex items-center justify-center gap-2 text-[20px] font-bold mb-4">
+              <Image
+                src="/images/adalert-logo.avif"
+                alt="logo"
+                width={40}
+                height={40}
+              />
+              <span className="text-[#223b53]">adAlert.io</span>
+            </h1>
           </Link>
-              <CardTitle className="text-2xl font-bold">
+              <CardTitle className="font-bold text-center text-[24px]">
                 Start your{" "}
                 <span className="text-blue-600">FREE 7 day trial</span>
               </CardTitle>
 
-              <CardDescription>No credit card required</CardDescription>
+              <CardDescription className="text-center">No credit card required</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col justify-center">
               <Button
                 type="button"
                 variant="secondary"
-                className="w-full flex items-center justify-center py-6 gap-2 bg-gray-100 hover:bg-gray-200 text-gray-900 text-xl font-medium mb-4 border border-gray-200 shadow-none"
+                className="w-full flex items-center justify-center bg-white gap-2 text-[15px] font-normal text-black  border border-gray-200 shadow-none"
                 onClick={handleGoogleSignup}
                 disabled={isLoading}
               >
@@ -302,7 +301,7 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
                     />
                   </svg>
                 </span>
-                Continue with Google
+                Signup with Google
               </Button>
 
               <div className="flex items-center my-4">
@@ -321,7 +320,6 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
                     name="fullName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Full Name</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <PersonIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
@@ -329,6 +327,7 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
                               type="text"
                               placeholder="Enter your full name"
                               className="pl-10"
+                                autoComplete="off" // 🚀 This disables autofill
                               {...field}
                             />
                           </div>
@@ -343,7 +342,6 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email address</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <EnvelopeClosedIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
@@ -351,6 +349,8 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
                               type="email"
                               placeholder="Enter your email"
                               className="pl-10"
+                                autoComplete="off" // 🚀 This disables autofill
+
                               {...field}
                             />
                           </div>
@@ -365,7 +365,6 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Password</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <LockClosedIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
@@ -373,6 +372,8 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
                               type="password"
                               placeholder="Create a password"
                               className="pl-10"
+                                autoComplete="off" // 🚀 This disables autofill
+
                               {...field}
                               value={field.value}
                               onChange={(e) => {
@@ -495,7 +496,7 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
                 </p>
               </div>
             </CardContent>
-          </Card>
+          </div>
         </div>
       </div>
 

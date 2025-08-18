@@ -23,7 +23,7 @@ import { useAuthStore } from "@/lib/store/auth-store";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Image from "next/image";
-
+import Link from "next/link";
 const loginFormSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
@@ -82,6 +82,9 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
         <div className="w-full max-w-md p-5 mx-auto flex flex-col items-center justify-center flex-1">
           <Card className="w-full bg-white shadow-none border-none rounded-none p-0">
             <CardContent className="p-8 text-center">
+                                      <Link href="https://adalert.io/" className="flex items-center justify-center gap-2 min-w-0 py-2">
+
+              
             <h1 className="flex items-center justify-center gap-2 text-[20px] font-bold mb-4">
   <Image
     src="/images/adalert-logo.avif"
@@ -91,7 +94,7 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
   />
   <span className="text-[#223b53]">adAlert.io</span>
 </h1>
-
+</Link>
               <h3 className="text-[24px] mb-6 font-bold">
                 Welcome Back!
               </h3>
