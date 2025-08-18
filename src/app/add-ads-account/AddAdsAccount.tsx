@@ -35,7 +35,6 @@ import {
   setDoc,
   deleteDoc,
   getDoc,
-  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { COLLECTIONS } from "@/lib/constants";
@@ -57,8 +56,12 @@ export function AddAdsAccount() {
   const [isLoading, setIsLoading] = useState(false);
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [editingValue, setEditingValue] = useState<string>("");
+
   const fetchUserAdsAccounts = useUserAdsAccountsStore(
     (state) => state.fetchUserAdsAccounts
+  );
+  const userAdsAccounts = useUserAdsAccountsStore(
+    (state) => state.userAdsAccounts
   );
 
   // Default ads account variable values
@@ -78,43 +81,27 @@ export function AddAdsAccount() {
       setIsLoading(true);
 
       try {
-        // If userDoc is null, rerun fetchUserDocument and checkSubscriptionStatus
         if (!userDoc) {
           await useAuthStore.getState().fetchUserDocument(user.uid);
           await useAuthStore.getState().checkSubscriptionStatus(user.uid);
         }
 
-        // 1. Get userToken document
         const token = await getCurrentUserToken(user.uid);
         setUserToken(token);
 
-        // 2. Get authenticationPageTracker document
         const tracker = await getAuthTracker(user.uid);
         setAuthTracker(tracker);
 
-        // 3. Get subscription document
         const sub = await getSubscription(user.uid);
         setSubscription(sub);
 
-        console.log("user: ", user);
-        console.log("userDoc: ", userDoc);
-        console.log("isFullAccess: ", isFullAccess);
-        console.log("token: ", token);
-        console.log("tracker: ", tracker);
-        console.log("sub: ", sub);
-
-        // 4. Check conditions and make API call
         if (token && tracker && tracker["Is Ads Account Authenticating"]) {
           const data = await fetchAdsAccounts(token.id, user.uid);
-          console.log("data", data);
-          // Add IsSelected property to each account for UI state
           setAdsAccounts(
             data.map((acc: any) => ({
               ...acc,
             }))
           );
-
-          // Set 'Is Ads Account Authenticating' to false after fetching ads accounts
           await setAdsAccountAuthenticating(user.uid, false);
         }
       } catch (error) {
@@ -125,7 +112,7 @@ export function AddAdsAccount() {
     };
 
     initializeData();
-  }, [user]);
+  }, [user, userDoc]);
 
   const handleConnectGoogleAds = async () => {
     if (!user) return;
@@ -145,7 +132,6 @@ export function AddAdsAccount() {
     window.location.href = oauthUrl;
   };
 
-  // Handle card selection
   const handleCardClick = (idx: number) => {
     if (!adsAccounts) return;
     setAdsAccounts(
@@ -155,13 +141,10 @@ export function AddAdsAccount() {
     );
   };
 
-  // Handle budget input
   const handleBudgetChange = (idx: number, value: string) => {
     if (!adsAccounts) return;
-    // Only allow numbers
     const raw = value.replace(/[^0-9]/g, "");
     setEditingValue(raw);
-    // Calculate daily budget by dividing monthly budget by 30.4 and rounding to 2 decimal places
     const dailyBudget = Number((Number(raw) / 30.4).toFixed(2));
     setAdsAccounts(
       adsAccounts.map((acc, i) =>
@@ -187,7 +170,6 @@ export function AddAdsAccount() {
     setEditingValue("");
   };
 
-  // Button disabled logic
   const isConnectContinueDisabled =
     adsAccounts?.some(
       (acc) =>
@@ -196,12 +178,9 @@ export function AddAdsAccount() {
     ) ?? false;
 
   const handleConnectAndContinue = async () => {
-    console.log("userDoc: ", userDoc);
-    console.log("isFullAccess: ", isFullAccess);
-
     if (!isFullAccess) {
       toast.warning(
-        "You're unable to connect an ads account(s), either your free trial has ended or you haven't subscribed to adAlert.io"
+        "You're unable to connect an ads account(s), either your free trial has ended or you haven't subscribed."
       );
       return;
     }
@@ -211,7 +190,6 @@ export function AddAdsAccount() {
     try {
       setIsLoading(true);
 
-      // Step 1: Update Is Connected status for selected accounts
       const updatedAccounts = adsAccounts.map((acc) => {
         if (
           acc["Is Selected"] &&
@@ -223,7 +201,7 @@ export function AddAdsAccount() {
           return {
             ...updatePayload,
             "Is Connected": true,
-            "User": doc(db, "users", user.uid),
+            User: doc(db, "users", user.uid),
             "User Token": doc(db, "userTokens", userToken.id),
             "Monthly Budget": Number(acc["Monthly Budget"]),
           };
@@ -231,7 +209,6 @@ export function AddAdsAccount() {
         return acc;
       });
 
-      // Step 2: Update Selected Users for connected accounts
       const accountsToUpdate = updatedAccounts.filter(
         (acc) =>
           acc["Is Selected"] &&
@@ -241,44 +218,39 @@ export function AddAdsAccount() {
 
       for (const acc of accountsToUpdate) {
         if (acc._id && userToken) {
-          // Exclude 'Created Date' from the update payload
           const { ["Created Date"]: _createdDate, ...updatePayload } = acc;
           await updateDoc(doc(db, "adsAccounts", acc._id), {
             ...updatePayload,
             "Selected Users": arrayUnion(doc(db, COLLECTIONS.USERS, user.uid)),
-            "User": doc(db, "users", user.uid),
+            User: doc(db, "users", user.uid),
             "User Token": doc(db, "userTokens", userToken.id),
             "Monthly Budget": Number(acc["Monthly Budget"]),
           });
         }
       }
 
-      // Step 3: Create or update adsAccountVariables documents
       for (const acc of accountsToUpdate) {
         if (acc._id) {
           const adsAccountVarRef = doc(db, "adsAccountVariables", acc._id);
           const adsAccountVarSnap = await getDoc(adsAccountVarRef);
 
           if (adsAccountVarSnap.exists()) {
-            // Update existing document
             await updateDoc(adsAccountVarRef, {
-              "DailyBudget": acc["Daily Budget"] || 0,
-              "MonthlyBudget": acc["Monthly Budget"] || 0,
+              DailyBudget: acc["Daily Budget"] || 0,
+              MonthlyBudget: acc["Monthly Budget"] || 0,
             });
           } else {
-            // Create new document
             await setDoc(adsAccountVarRef, {
               "Ads Account": doc(db, "adsAccounts", acc._id),
-              "User": doc(db, "users", user.uid),
-              "DailyBudget": acc["Daily Budget"] || 0,
-              "MonthlyBudget": acc["Monthly Budget"] || 0,
+              User: doc(db, "users", user.uid),
+              DailyBudget: acc["Daily Budget"] || 0,
+              MonthlyBudget: acc["Monthly Budget"] || 0,
               ...DEFAULT_ADS_ACCOUNT_VARIABLE,
             });
           }
         }
       }
 
-      // Step 4: Delete documents for unselected or invalid accounts
       const accountsToDelete = updatedAccounts.filter(
         (acc) => !(acc["Is Selected"] && acc["Is Connected"])
       );
@@ -289,28 +261,20 @@ export function AddAdsAccount() {
         }
       }
 
-      // // step 5: set isAdsAccountAuthenticating to false
-      // await setAdsAccountAuthenticating(user.uid, false);
-
-      // step 6: update ads accounts in Zustand store
       if (userDoc) {
         await fetchUserAdsAccounts(userDoc);
       }
 
-      // step 7: check number of ads accounts and navigate accordingly
       const updatedAdsAccounts =
         useUserAdsAccountsStore.getState().userAdsAccounts;
       const connectedAccountsCount = updatedAdsAccounts.filter(
         (acc) => acc["Is Connected"]
       ).length;
 
-      // step 8: update the quantity of the stripe subscription if the count has changed
       if (userDoc) {
-        // Get the previous count from the store before it was updated
         const previousCount =
           adsAccounts?.filter((acc) => acc["Is Connected"]).length || 0;
 
-        // Only update if the count has changed
         if (connectedAccountsCount !== previousCount) {
           await useUserAdsAccountsStore
             .getState()
@@ -340,7 +304,7 @@ export function AddAdsAccount() {
         <Card className="w-full max-w-2xl p-0 border border-gray-200 rounded-2xl shadow-md bg-white">
           <CardContent className="p-10 flex flex-col items-center">
             <h1 className="text-2xl md:text-3xl font-bold text-center mb-6">
-              {adsAccounts && adsAccounts.length > 0
+              {userAdsAccounts && userAdsAccounts.length > 0
                 ? "Add new ads account"
                 : "Let's add your first ads account"}
             </h1>
@@ -427,7 +391,9 @@ export function AddAdsAccount() {
                 disabled={!user || isLoading}
               >
                 {isLoading && <Loader2 className="h-5 w-5 animate-spin" />}
-                Connect Google Ads account(s)
+                {userAdsAccounts && userAdsAccounts.length > 0
+                  ? "Add another Google Ads account"
+                  : "Connect Google Ads account(s)"}
               </Button>
             )}
 
@@ -444,7 +410,6 @@ export function AddAdsAccount() {
               </Button>
             )}
 
-            {/* Info and Switch Account Link */}
             <div className="flex items-center justify-center text-gray-500 text-sm mb-2 w-full">
               <InfoCircledIcon className="mr-2 w-5 h-5 text-blue-500" />
               You can unlink any ad accounts anytime you want from settings.
