@@ -475,22 +475,25 @@ export default function Dashboard() {
       },
     },
     {
-      accessorKey: "severity",
-      header: "Severity",
-      cell: ({ row }) => (
-        <span
-          className={`inline-block w-3 h-3 rounded-full ${
-            row.original.Severity.toLowerCase() ===
-            ALERT_SEVERITIES.CRITICAL.toLowerCase()
-              ? `bg-[${ALERT_SEVERITY_COLORS.CRITICAL}]`
-              : row.original.Severity.toLowerCase() ===
-                ALERT_SEVERITIES.MEDIUM.toLowerCase()
-              ? `bg-[${ALERT_SEVERITY_COLORS.MEDIUM}]`
-              : `bg-[${ALERT_SEVERITY_COLORS.LOW}]`
-          }`}
-        />
-      ),
-    },
+  accessorKey: "severity",
+  header: "Severity",
+  cell: ({ row }) => {
+    let color = ALERT_SEVERITY_COLORS.LOW; // default fallback
+    if (row.original.Severity?.toLowerCase() === ALERT_SEVERITIES.CRITICAL.toLowerCase()) {
+      color = ALERT_SEVERITY_COLORS.CRITICAL;
+    } else if (row.original.Severity?.toLowerCase() === ALERT_SEVERITIES.MEDIUM.toLowerCase()) {
+      color = ALERT_SEVERITY_COLORS.MEDIUM;
+    }
+
+    return (
+      <span
+        className="inline-block w-3 h-3 rounded-full"
+        style={{ backgroundColor: color }}
+      />
+    );
+  },
+},
+
     {
       accessorKey: "description",
       header: "Description",
@@ -623,141 +626,91 @@ export default function Dashboard() {
     });
 
     return (
-      <div className="rounded-md border">
-        <table className="min-w-full text-xs">
-          <thead>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th key={header.id} className="px-2 py-2 text-left">
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
-                  </th>
-                ))}
-              </tr>
+      <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
+  <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+    <thead className="text-xs bg-[#015AFD] text-white uppercase">
+      {table.getHeaderGroups().map((headerGroup) => (
+        <tr key={headerGroup.id}>
+          {headerGroup.headers.map((header) => (
+            <th key={header.id} className="px-6 py-3">
+              {flexRender(header.column.columnDef.header, header.getContext())}
+            </th>
+          ))}
+        </tr>
+      ))}
+    </thead>
+    <tbody>
+      {table.getRowModel().rows.map((row) => (
+        <React.Fragment key={row.id}>
+          <tr className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+            {row.getVisibleCells().map((cell) => (
+              <td key={cell.id} className="px-6 py-4">
+                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+              </td>
             ))}
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.map((row) => (
-              <React.Fragment key={row.id}>
-                <tr className="hover:bg-gray-50">
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-2 py-2 align-top">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </td>
-                  ))}
-                </tr>
-                {expandedRowIds.includes(row.id) &&
-                  (() => {
-                    // Find the index of the Description column
-                    const descriptionColIdx = columns.findIndex(
-                      (col) =>
-                        (col as any).accessorKey === "description" ||
-                        col.id === "description"
-                    );
-                    // Find the indexes of the Checkbox, Found, and Severity columns
-                    const checkboxColIdx = columns.findIndex(
-                      (col) => col.id === "select"
-                    );
-                    // Find the indexes of the Found and Severity columns
-                    const foundColIdx = columns.findIndex(
-                      (col) =>
-                        (col as any).accessorKey === "date" || col.id === "date"
-                    );
-                    const severityColIdx = columns.findIndex(
-                      (col) =>
-                        (col as any).accessorKey === "severity" ||
-                        col.id === "severity"
-                    );
-                    // If not found, fallback to 0
-                    const startIdx =
-                      descriptionColIdx >= 0 ? descriptionColIdx : 0;
-                    const colSpan = columns.length - startIdx;
-                    return (
-                      <tr>
-                        {/* Columns before Description, fill bg for Found and Severity */}
-                        {Array.from({ length: startIdx }).map((_, i) => {
-                          const isCheckbox = i === checkboxColIdx;
-                          const isFound = i === foundColIdx;
-                          const isSeverity = i === severityColIdx;
-                          return (
-                            <td
-                              key={i}
-                              className={
-                                isCheckbox || isFound || isSeverity
-                                  ? "bg-[#FAFAFA]"
-                                  : undefined
-                              }
-                            />
-                          );
-                        })}
-                        {/* Description content */}
-                        <td
-                          colSpan={colSpan}
-                          className="bg-[#FAFAFA] px-4 py-4"
-                        >
-                          <div
-                            className="prose max-w-none text-sm"
-                            dangerouslySetInnerHTML={{
-                              __html: row.original["Long Description"] || "",
-                            }}
-                          />
-                        </td>
-                      </tr>
-                    );
-                  })()}
-              </React.Fragment>
-            ))}
-          </tbody>
-        </table>
-        {/* Pagination Controls */}
-        <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
-          <div />
-          <div>
-            Page {table.getState().pagination.pageIndex + 1} of{" "}
-            {table.getPageCount()}
-          </div>
-          <div className="flex gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => table.setPageIndex(0)}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <ChevronsLeft className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-              disabled={!table.getCanNextPage()}
-            >
-              <ChevronsRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
+          </tr>
+
+          {expandedRowIds.includes(row.id) && (
+            <tr className="bg-gray-50 dark:bg-gray-900  text-dark">
+              <td colSpan={columns.length} className="px-6 py-4">
+                <div
+                  className="prose max-w-none text-sm"
+                  dangerouslySetInnerHTML={{
+                    __html: row.original["Long Description"] || "",
+                  }}
+                />
+              </td>
+            </tr>
+          )}
+        </React.Fragment>
+      ))}
+    </tbody>
+  </table>
+
+  {/* Pagination stays the same */}
+  <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
+    <div />
+    <div>
+      Page {table.getState().pagination.pageIndex + 1} of{" "}
+      {table.getPageCount()}
+    </div>
+    <div className="flex gap-1">
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => table.setPageIndex(0)}
+        disabled={!table.getCanPreviousPage()}
+      >
+        <ChevronsLeft className="w-4 h-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => table.previousPage()}
+        disabled={!table.getCanPreviousPage()}
+      >
+        <ChevronLeft className="w-4 h-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => table.nextPage()}
+        disabled={!table.getCanNextPage()}
+      >
+        <ChevronRight className="w-4 h-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+        disabled={!table.getCanNextPage()}
+      >
+        <ChevronsRight className="w-4 h-4" />
+      </Button>
+    </div>
+  </div>
       </div>
+
     );
   }
 
