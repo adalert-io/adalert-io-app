@@ -445,7 +445,7 @@ export function AddAdsAccount() {
             )}
 
             {/* Info and Switch Account Link */}
-            <div className="flex items-center text-gray-500 text-sm mb-2 w-full">
+            <div className="flex items-center justify-center text-gray-500 text-sm mb-2 w-full">
               <InfoCircledIcon className="mr-2 w-5 h-5 text-blue-500" />
               You can unlink any ad accounts anytime you want from settings.
             </div>
