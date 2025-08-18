@@ -85,7 +85,7 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
                                       <Link href="https://adalert.io/" className="flex items-center justify-center gap-2 min-w-0 py-2">
 
               
-            <h1 className="flex items-center justify-center gap-2 text-[20px] font-bold mb-4">
+            <h1 className="flex items-center justify-center gap-2 text-[25px] font-bold mb-4">
   <Image
     src="/images/adalert-logo.avif"
     alt="logo"
@@ -165,6 +165,8 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
                               type="email"
                               placeholder="Email"
                               className="pl-10"
+                                autoComplete="off" // 🚀 This disables autofill
+
                               {...field}
                             />
                           </div>
@@ -186,6 +188,8 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
                               type={showPassword ? "text" : "password"}
                               placeholder="Password"
                               className="pl-10"
+                                autoComplete="off" // 🚀 This disables autofill
+
                               {...field}
                             />
                             <button

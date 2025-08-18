@@ -128,27 +128,28 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
 
   if (showVerificationMessage) {
     return (
-      <div className="flex min-h-[600px] h-full">
-        <div className="w-1/2 flex flex-col h-full justify-center">
+      <div className="w-full h-screen grid grid-cols-1 md:grid-cols-2">
+        <div className="flex items-center justify-center p-5">
    
-          <div className="flex-1 p-8 flex flex-col justify-center h-full">
+          <div className="w-full max-w-md p-5 mx-auto flex flex-col items-center justify-center flex-1">
             {/* Logo before verification message */}
 
-            <Card className="w-full h-full flex flex-col justify-center">
+           <Card className="w-full bg-white shadow-none border-none rounded-none p-0">
               <CardHeader>
-                            <Link href="/" className="flex items-center justify-center gap-2 min-w-0">
-            <Image
-              src="/images/adalert-logo.avif"
-              alt="AdAlert Logo"
-              width={32}
-              height={32}
-              priority
-            />
-            <span className="text-xl font-bold text-gray-900 tracking-tight whitespace-nowrap">
-              adAlert.io
-            </span>
-          </Link>
-                <CardTitle className="text-3xl font-bold">
+                              <Link href="https://adalert.io/" className="flex items-center justify-center gap-2 min-w-0 py-2">
+
+              
+            <h1 className="flex items-center justify-center gap-2 text-[25px] font-bold mb-4">
+  <Image
+    src="/images/adalert-logo.avif"
+    alt="logo"
+    width={40}
+    height={40}
+  />
+  <span className="text-[#223b53]">adAlert.io</span>
+</h1>
+</Link>
+                <CardTitle className="text-[24px] text-center mb-6 font-bold">
                   Verify your email
                 </CardTitle>
                 <CardDescription>
@@ -164,17 +165,17 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
                 <Button
                   onClick={handleResendVerification}
                   disabled={isLoading}
-                  className="w-full"
+                  className="w-full bg-blue-600 text-white hover:bg-blue-700 transition=colors duration-200"
                 >
                   {isLoading ? "Sending..." : "Resend verification email"}
                 </Button>
-                <div className="mt-6 text-center">
+                <div className="text-center">
                   <p className="text-sm text-gray-600">
                     Already verified?{" "}
                     <Button
                       variant="link"
                       onClick={onSwitchToLogin}
-                      className="px-0 font-normal"
+                      className="px-0 font-normal text-blue-600"
                       disabled={isLoading}
                     >
                       Sign in
@@ -186,63 +187,102 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
           </div>
         </div>
         {/* Keep the right panel with feature boxes */}
-        <div className="w-1/2 h-full hidden lg:block relative">
-          <div className="absolute inset-0 w-full h-full bg-[url('/images/adAlert-sign-up-right.jpeg')] bg-cover bg-center" />
-          <div className="absolute inset-0 flex flex-col gap-8 justify-center items-center px-8">
-            {/* Feature Box 1 */}
-            <div className="bg-white rounded-xl shadow-lg p-6 flex items-start gap-4 w-[340px]">
-              <CheckCircle className="text-yellow-400 w-8 h-8 flex-shrink-0 mt-1" />
-              <div className="text-gray-800 font-medium">
-                Negative trends detection with dozens of daily audit points
-              </div>
-            </div>
-            {/* Feature Box 2 */}
-            <div className="bg-white rounded-xl shadow-lg p-6 flex items-start gap-4 w-[340px]">
-              <CheckCircle className="text-yellow-400 w-8 h-8 flex-shrink-0 mt-1" />
-              <div className="text-gray-800 font-medium">
-                Policy violation monitoring and budget pacing alerts
-              </div>
-            </div>
-            {/* Feature Box 3 */}
-            <div className="bg-white rounded-xl shadow-lg p-6 flex items-start gap-4 w-[340px]">
-              <CheckCircle className="text-yellow-400 w-8 h-8 flex-shrink-0 mt-1" />
-              <div className="text-gray-800 font-medium">
-                Sudden KPI drops detection, landing page uptime and ad serving
-                alerts
-              </div>
-            </div>
-            {/* Feature Box 4 */}
-            <div className="bg-white rounded-xl shadow-lg p-6 flex items-start gap-4 w-[340px]">
-              <CheckCircle className="text-yellow-400 w-8 h-8 flex-shrink-0 mt-1" />
-              <div className="text-gray-800 font-medium">
-                Tap into industry leading PPC ad review strategies
-              </div>
-            </div>
-            {/* Feature Box 5 */}
-            <div className="bg-white rounded-xl shadow-lg p-6 flex items-start gap-4 w-[340px]">
-              <CheckCircle className="text-yellow-400 w-8 h-8 flex-shrink-0 mt-1" />
-              <div className="text-gray-800 font-medium">
-                Zero management time with only 30 seconds sign up process
-              </div>
-            </div>
-          </div>
+         <div className="hidden lg:flex relative items-center justify-center bg-white overflow-hidden shadow-[inset_8px_0_8px_-8px_rgba(0,0,0,0.1)]">
+                       {/* Background Grid with Hover Effects */}
+       <div className="absolute inset-0 grid grid-cols-[repeat(auto-fill,120px)] grid-rows-[repeat(auto-fill,120px)] gap-0 overflow-hidden">
+         {Array.from({ length: 200 }, (_, i) => (
+           <div
+             key={i}
+             className="border border-blue-200/30 hover:border-blue-400/60 hover:bg-blue-50/20 transition-all duration-200 cursor-pointer min-h-[120px] min-w-[120px]"
+           />
+         ))}
+       </div>
+
+  {/* Zig-Zag Cards */}
+  <div className="relative flex flex-col gap-12 max-w-5xl mx-auto px-4 z-10">
+    
+    {/* Card 1 - Right */}
+    <div className="self-end bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg p-6 max-w-sm border border-gray-200 transform rotate-2 hover:rotate-0 transition-transform duration-300">
+      <p className="text-gray-700 text-sm mb-4">
+        "adAlert.io has transformed how we monitor our ad campaigns. The real-time alerts and insights have saved us countless hours and improved our ROI significantly."
+      </p>
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold text-sm">
+          SM
         </div>
+        <div>
+          <p className="font-semibold text-gray-800 text-sm">Sarah Mitchell</p>
+          <p className="text-xs text-gray-500">Marketing Director, TechFlow</p>
+        </div>
+      </div>
+    </div>
+
+    {/* Card 2 - Left */}
+    <div className="self-start bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg p-6 max-w-sm border border-gray-200 transform -rotate-2 hover:rotate-0 transition-transform duration-300">
+      <p className="text-gray-700 text-sm mb-4">
+        "The automated monitoring and instant notifications have been a game-changer. We catch issues before they become problems, and our team can focus on strategy instead of manual monitoring."
+      </p>
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white font-semibold text-sm">
+          MJ
+        </div>
+        <div>
+          <p className="font-semibold text-gray-800 text-sm">Michael Johnson</p>
+          <p className="text-xs text-gray-500">CEO, GrowthLabs</p>
+        </div>
+      </div>
+    </div>
+
+    {/* Card 3 - Right */}
+    <div className="self-end bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg p-6 max-w-sm border border-gray-200 transform rotate-2 hover:rotate-0 transition-transform duration-300">
+      <p className="text-gray-700 text-sm mb-4">
+        "As a small business, we needed an affordable solution that could compete with enterprise tools. adAlert.io delivers exactly that - powerful features without the complexity."
+      </p>
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white font-semibold text-sm">
+          AL
+        </div>
+        <div>
+          <p className="font-semibold text-gray-800 text-sm">Alex Rodriguez</p>
+          <p className="text-xs text-gray-500">Founder, StartupXYZ</p>
+        </div>
+      </div>
+    </div>
+
+    {/* Card 4 - Left */}
+    <div className="self-start bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg p-6 max-w-sm border border-gray-200 transform -rotate-2 hover:rotate-0 transition-transform duration-300">
+      <p className="text-gray-700 text-sm mb-4">
+        "The dashboard is incredibly intuitive and the customer support is outstanding. We've been using adAlert.io for 6 months and it's become an essential part of our marketing stack."
+      </p>
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-semibold text-sm">
+          EL
+        </div>
+        <div>
+          <p className="font-semibold text-gray-800 text-sm">Emma Lee</p>
+          <p className="text-xs text-gray-500">Digital Marketing Manager, InnovateCorp</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-[600px] h-full ">
+    <div className="w-full h-screen grid grid-cols-1 md:grid-cols-2">
       {/* Left Panel - Signup Forms */}
-      <div className="w-1/2 flex flex-col h-full justify-center ">
+      <div className="flex items-center justify-center p-5">
       
-        <div className="flex-1 p-8 flex flex-col justify-center h-full">
+        <div className="w-full max-w-md p-5 mx-auto flex flex-col items-center justify-center flex-1">
           {/* Logo before signup form */}
          
-          <div className="w-full h-full flex flex-col justify-center w-[490px] p-5 mx-auto">
+          <Card className="w-full bg-white shadow-none border-none rounded-none p-0">
             <CardHeader>
              <Link href="https://adalert.io/" className="flex items-center justify-center gap-2 min-w-0 py-2">
-             <h1 className="flex items-center justify-center gap-2 text-[20px] font-bold mb-4">
+             <h1 className="flex items-center justify-center gap-2 text-[25px] font-bold mb-4">
               <Image
                 src="/images/adalert-logo.avif"
                 alt="logo"
@@ -301,7 +341,7 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
                     />
                   </svg>
                 </span>
-                Signup with Google
+                Sign up with Google
               </Button>
 
               <div className="flex items-center my-4">
@@ -322,7 +362,7 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
                       <FormItem>
                         <FormControl>
                           <div className="relative">
-                            <PersonIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                            <PersonIcon className="absolute left-3 top-2.5 h-5 w-5 text-blue-600" />
                             <Input
                               type="text"
                               placeholder="Enter your full name"
@@ -344,7 +384,7 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
                       <FormItem>
                         <FormControl>
                           <div className="relative">
-                            <EnvelopeClosedIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                            <EnvelopeClosedIcon className="absolute left-3 top-2.5 h-5 w-5 text-blue-600" />
                             <Input
                               type="email"
                               placeholder="Enter your email"
@@ -367,7 +407,7 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
                       <FormItem>
                         <FormControl>
                           <div className="relative">
-                            <LockClosedIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                            <LockClosedIcon className="absolute left-3 top-2.5 h-5 w-5 text-blue-600" />
                             <Input
                               type="password"
                               placeholder="Create a password"
@@ -496,52 +536,91 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
                 </p>
               </div>
             </CardContent>
-          </div>
+          </Card>
         </div>
       </div>
 
       {/* Right Panel - Background Image with Feature Boxes */}
-      <div className="w-1/2 h-full hidden lg:block relative">
-        <div className="absolute inset-0 w-full h-full bg-[url('/images/adAlert-sign-up-right.jpeg')] bg-cover bg-center" />
-        <div className="absolute inset-0 flex flex-col gap-8 justify-center items-center px-8">
-          {/* Feature Box 1 */}
-          <div className="bg-white rounded-xl shadow-lg p-6 flex items-start gap-4 w-[340px]">
-            <CheckCircle className="text-yellow-400 w-8 h-8 flex-shrink-0 mt-1" />
-            <div className="text-gray-800 font-medium">
-              Negative trends detection with dozens of daily audit points
-            </div>
-          </div>
-          {/* Feature Box 2 */}
-          <div className="bg-white rounded-xl shadow-lg p-6 flex items-start gap-4 w-[340px]">
-            <CheckCircle className="text-yellow-400 w-8 h-8 flex-shrink-0 mt-1" />
-            <div className="text-gray-800 font-medium">
-              Policy violation monitoring and budget pacing alerts
-            </div>
-          </div>
-          {/* Feature Box 3 */}
-          <div className="bg-white rounded-xl shadow-lg p-6 flex items-start gap-4 w-[340px]">
-            <CheckCircle className="text-yellow-400 w-8 h-8 flex-shrink-0 mt-1" />
-            <div className="text-gray-800 font-medium">
-              Sudden KPI drops detection, landing page uptime and ad serving
-              alerts
-            </div>
-          </div>
-          {/* Feature Box 4 */}
-          <div className="bg-white rounded-xl shadow-lg p-6 flex items-start gap-4 w-[340px]">
-            <CheckCircle className="text-yellow-400 w-8 h-8 flex-shrink-0 mt-1" />
-            <div className="text-gray-800 font-medium">
-              Tap into industry leading PPC ad review strategies
-            </div>
-          </div>
-          {/* Feature Box 5 */}
-          <div className="bg-white rounded-xl shadow-lg p-6 flex items-start gap-4 w-[340px]">
-            <CheckCircle className="text-yellow-400 w-8 h-8 flex-shrink-0 mt-1" />
-            <div className="text-gray-800 font-medium">
-              Zero management time with only 30 seconds sign up process
-            </div>
-          </div>
+        <div className="hidden lg:flex relative items-center justify-center bg-white overflow-hidden shadow-[inset_8px_0_8px_-8px_rgba(0,0,0,0.1)]">
+                       {/* Background Grid with Hover Effects */}
+       <div className="absolute inset-0 grid grid-cols-[repeat(auto-fill,120px)] grid-rows-[repeat(auto-fill,120px)] gap-0 overflow-hidden">
+         {Array.from({ length: 200 }, (_, i) => (
+           <div
+             key={i}
+             className="border border-blue-200/30 hover:border-blue-400/60 hover:bg-blue-50/20 transition-all duration-200 cursor-pointer min-h-[120px] min-w-[120px]"
+           />
+         ))}
+       </div>
+
+  {/* Zig-Zag Cards */}
+  <div className="relative flex flex-col gap-12 max-w-5xl mx-auto px-4 z-10">
+    
+    {/* Card 1 - Right */}
+    <div className="self-end bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg p-6 max-w-sm border border-gray-200 transform rotate-2 hover:rotate-0 transition-transform duration-300">
+      <p className="text-gray-700 text-sm mb-4">
+        "adAlert.io has transformed how we monitor our ad campaigns. The real-time alerts and insights have saved us countless hours and improved our ROI significantly."
+      </p>
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold text-sm">
+          SM
+        </div>
+        <div>
+          <p className="font-semibold text-gray-800 text-sm">Sarah Mitchell</p>
+          <p className="text-xs text-gray-500">Marketing Director, TechFlow</p>
         </div>
       </div>
+    </div>
+
+    {/* Card 2 - Left */}
+    <div className="self-start bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg p-6 max-w-sm border border-gray-200 transform -rotate-2 hover:rotate-0 transition-transform duration-300">
+      <p className="text-gray-700 text-sm mb-4">
+        "The automated monitoring and instant notifications have been a game-changer. We catch issues before they become problems, and our team can focus on strategy instead of manual monitoring."
+      </p>
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white font-semibold text-sm">
+          MJ
+        </div>
+        <div>
+          <p className="font-semibold text-gray-800 text-sm">Michael Johnson</p>
+          <p className="text-xs text-gray-500">CEO, GrowthLabs</p>
+        </div>
+      </div>
+    </div>
+
+    {/* Card 3 - Right */}
+    <div className="self-end bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg p-6 max-w-sm border border-gray-200 transform rotate-2 hover:rotate-0 transition-transform duration-300">
+      <p className="text-gray-700 text-sm mb-4">
+        "As a small business, we needed an affordable solution that could compete with enterprise tools. adAlert.io delivers exactly that - powerful features without the complexity."
+      </p>
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white font-semibold text-sm">
+          AL
+        </div>
+        <div>
+          <p className="font-semibold text-gray-800 text-sm">Alex Rodriguez</p>
+          <p className="text-xs text-gray-500">Founder, StartupXYZ</p>
+        </div>
+      </div>
+    </div>
+
+    {/* Card 4 - Left */}
+    <div className="self-start bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg p-6 max-w-sm border border-gray-200 transform -rotate-2 hover:rotate-0 transition-transform duration-300">
+      <p className="text-gray-700 text-sm mb-4">
+        "The dashboard is incredibly intuitive and the customer support is outstanding. We've been using adAlert.io for 6 months and it's become an essential part of our marketing stack."
+      </p>
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-semibold text-sm">
+          EL
+        </div>
+        <div>
+          <p className="font-semibold text-gray-800 text-sm">Emma Lee</p>
+          <p className="text-xs text-gray-500">Digital Marketing Manager, InnovateCorp</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
     </div>
   );
 }
