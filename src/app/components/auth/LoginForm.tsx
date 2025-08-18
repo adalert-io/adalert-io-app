@@ -81,19 +81,18 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
 
         <div className="w-full max-w-md p-5 mx-auto flex flex-col items-center justify-center flex-1">
           <Card className="w-full bg-white shadow-none border-none rounded-none p-0">
-            <CardContent className="p-8">
+            <CardContent className="p-8 text-center">
 
               <h1 className="text-3xl font-bold mb-4">
-                Log in to <span className="text-blue-600">adAlert.io</span>
+                <span className="text-blue-600">adAlert.io</span>
               </h1>
-              <p className="text-gray-400 mb-6 text-base">
-                Log in to your account
-              </p>
-
+              <h2 className="text-3xl font-bold mb-4">
+                Welcome Back!
+              </h2>
               <Button
                 type="button"
                 variant="secondary"
-                className="w-full flex items-center justify-center py-6 gap-2 bg-gray-100 hover:bg-gray-200 text-gray-900 text-xl font-medium mb-6 border border-gray-200 shadow-none"
+                className="w-full flex items-center justify-center bg-white gap-2 text-[15px] font-normal text-black mb-6 border border-gray-200 shadow-none"
                 onClick={handleGoogleSignIn}
                 disabled={loading}
               >
@@ -131,7 +130,7 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
                     />
                   </svg>
                 </span>
-                Continue with Google
+                Sign in with Google
               </Button>
 
               <div className="flex items-center my-6">
