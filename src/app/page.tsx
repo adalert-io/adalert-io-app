@@ -9,7 +9,7 @@ import Image from "next/image";
 
 function LoadingFallback() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F5F7FB]">
+    <div className="min-h-screen flex items-center justify-center bg-[#FFFFFF]">
       <div className="flex flex-col items-center gap-4">
         <div className="flex items-center mb-8">
           <Image

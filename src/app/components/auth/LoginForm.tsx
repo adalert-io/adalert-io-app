@@ -76,12 +76,12 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
   }
 
   return (
-    <div className="w-full h-screen grid grid-cols-1 md:grid-cols-2">
+    <div className="w-full h-screen grid grid-cols-1 md:grid-cols-2 mobile-uses">
       <div className="flex items-center justify-center p-5">
 
-        <div className="w-full max-w-md p-5 mx-auto flex flex-col items-center justify-center flex-1">
-          <Card className="w-full bg-white shadow-none border-none rounded-none p-0">
-            <CardContent className="p-8 text-center">
+        <div className="w-full max-w-md mx-auto flex flex-col items-center justify-center flex-1">
+          <Card className="px-2 w-full bg-white shadow-none border-none rounded-none p-0">
+            <CardContent className="text-center px-0">
                                       <Link href="https://adalert.io/" className="flex items-center justify-center gap-2 min-w-0 py-2">
 
               

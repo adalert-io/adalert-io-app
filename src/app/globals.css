@@ -121,3 +121,8 @@
   }
 }
 
+@media(max-width:1023px){
+.mobile-uses {
+    grid-template-columns: 1fr;
+}
+}

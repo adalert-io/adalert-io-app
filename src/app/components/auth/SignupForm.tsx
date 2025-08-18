@@ -128,14 +128,14 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
 
   if (showVerificationMessage) {
     return (
-      <div className="w-full h-screen grid grid-cols-1 md:grid-cols-2">
-        <div className="flex items-center justify-center p-5">
+      <div className="w-full h-screen grid grid-cols-1 md:grid-cols-2 mobile-uses">
+        <div className="flex items-center justify-center">
    
-          <div className="w-full max-w-md p-5 mx-auto flex flex-col items-center justify-center flex-1">
+          <div className="w-full max-w-md mx-auto flex flex-col items-center justify-center flex-1">
             {/* Logo before verification message */}
 
-           <Card className="w-full bg-white shadow-none border-none rounded-none p-0">
-              <CardHeader>
+           <Card className="w-full bg-white shadow-none border-none rounded-none p-5">
+              <CardHeader className="px-0">
                               <Link href="https://adalert.io/" className="flex items-center justify-center gap-2 min-w-0 py-2">
 
               
@@ -157,7 +157,7 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
                   your email and click the verification link to continue.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="flex-1 flex flex-col justify-center space-y-4">
+              <CardContent className="px-0 flex-1 flex flex-col justify-center space-y-4">
                 <p className="text-gray-600">
                   Didn't receive the email? Check your spam folder or click the
                   button below to resend.
@@ -272,11 +272,11 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
   }
 
   return (
-    <div className="w-full h-screen grid grid-cols-1 md:grid-cols-2">
+    <div className="w-full h-screen grid grid-cols-1 md:grid-cols-2 mobile-uses">
       {/* Left Panel - Signup Forms */}
       <div className="flex items-center justify-center p-5">
       
-        <div className="w-full max-w-md p-5 mx-auto flex flex-col items-center justify-center flex-1">
+        <div className="w-full max-w-md mx-auto flex flex-col items-center justify-center flex-1">
           {/* Logo before signup form */}
          
           <Card className="w-full bg-white shadow-none border-none rounded-none p-0">
@@ -299,7 +299,7 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
 
               <CardDescription className="text-center">No credit card required</CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 flex flex-col justify-center">
+            <CardContent className="px-0 flex-1 flex flex-col justify-center">
               <Button
                 type="button"
                 variant="secondary"
