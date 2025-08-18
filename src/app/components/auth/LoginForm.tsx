@@ -82,13 +82,19 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
         <div className="w-full max-w-md p-5 mx-auto flex flex-col items-center justify-center flex-1">
           <Card className="w-full bg-white shadow-none border-none rounded-none p-0">
             <CardContent className="p-8 text-center">
+            <h1 className="flex items-center justify-center gap-2 text-[20px] font-bold mb-4">
+  <Image
+    src="/images/adalert-logo.avif"
+    alt="logo"
+    width={40}
+    height={40}
+  />
+  <span className="text-[#223b53]">adAlert.io</span>
+</h1>
 
-              <h1 className="text-3xl font-bold mb-4">
-                <span className="text-blue-600">adAlert.io</span>
-              </h1>
-              <h2 className="text-3xl font-bold mb-4">
+              <h3 className="text-[24px] mb-6 font-bold">
                 Welcome Back!
-              </h2>
+              </h3>
               <Button
                 type="button"
                 variant="secondary"
@@ -256,15 +262,15 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
       </div>
              {/* Right Column */}
        <div className="hidden lg:flex relative items-center justify-center bg-white overflow-hidden shadow-[inset_8px_0_8px_-8px_rgba(0,0,0,0.1)]">
-           {/* Background Grid with Hover Effects */}
-      <div className="absolute inset-0 grid grid-cols-[repeat(auto-fill,120px)] grid-rows-[repeat(auto-fill,120px)] gap-0">
-        {Array.from({ length: 100 }, (_, i) => (
-          <div
-            key={i}
-            className="border border-blue-200/30 hover:border-blue-400/60 hover:bg-blue-50/20 transition-all duration-200 cursor-pointer"
-          />
-        ))}
-      </div>
+                       {/* Background Grid with Hover Effects */}
+       <div className="absolute inset-0 grid grid-cols-[repeat(auto-fill,120px)] grid-rows-[repeat(auto-fill,120px)] gap-0 overflow-hidden">
+         {Array.from({ length: 200 }, (_, i) => (
+           <div
+             key={i}
+             className="border border-blue-200/30 hover:border-blue-400/60 hover:bg-blue-50/20 transition-all duration-200 cursor-pointer min-h-[120px] min-w-[120px]"
+           />
+         ))}
+       </div>
 
   {/* Zig-Zag Cards */}
   <div className="relative flex flex-col gap-12 max-w-5xl mx-auto px-4 z-10">
