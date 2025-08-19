@@ -11,6 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import Reviews from "@/components/reviews/Reviews";
+
 import {
   Card,
   CardContent,
@@ -18,6 +20,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Star } from "lucide-react";
+
 import {
   Form,
   FormControl,
@@ -186,87 +190,8 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
             </Card>
           </div>
         </div>
-        {/* Keep the right panel with feature boxes */}
-         <div className="hidden lg:flex relative items-center justify-center bg-white overflow-hidden shadow-[inset_8px_0_8px_-8px_rgba(0,0,0,0.1)]">
-                       {/* Background Grid with Hover Effects */}
-       <div className="absolute inset-0 grid grid-cols-[repeat(auto-fill,120px)] grid-rows-[repeat(auto-fill,120px)] gap-0 overflow-hidden">
-         {Array.from({ length: 200 }, (_, i) => (
-           <div
-             key={i}
-             className="border border-blue-200/30 hover:border-blue-400/60 hover:bg-blue-50/20 transition-all duration-200 cursor-pointer min-h-[120px] min-w-[120px]"
-           />
-         ))}
-       </div>
+             <Reviews  />
 
-  {/* Zig-Zag Cards */}
-  <div className="relative flex flex-col gap-12 max-w-5xl mx-auto px-4 z-10">
-    
-    {/* Card 1 - Right */}
-    <div className="self-end bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg p-6 max-w-sm border border-gray-200 transform rotate-2 hover:rotate-0 transition-transform duration-300">
-      <p className="text-gray-700 text-sm mb-4">
-        "adAlert.io has transformed how we monitor our ad campaigns. The real-time alerts and insights have saved us countless hours and improved our ROI significantly."
-      </p>
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold text-sm">
-          SM
-        </div>
-        <div>
-          <p className="font-semibold text-gray-800 text-sm">Sarah Mitchell</p>
-          <p className="text-xs text-gray-500">Marketing Director, TechFlow</p>
-        </div>
-      </div>
-    </div>
-
-    {/* Card 2 - Left */}
-    <div className="self-start bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg p-6 max-w-sm border border-gray-200 transform -rotate-2 hover:rotate-0 transition-transform duration-300">
-      <p className="text-gray-700 text-sm mb-4">
-        "The automated monitoring and instant notifications have been a game-changer. We catch issues before they become problems, and our team can focus on strategy instead of manual monitoring."
-      </p>
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white font-semibold text-sm">
-          MJ
-        </div>
-        <div>
-          <p className="font-semibold text-gray-800 text-sm">Michael Johnson</p>
-          <p className="text-xs text-gray-500">CEO, GrowthLabs</p>
-        </div>
-      </div>
-    </div>
-
-    {/* Card 3 - Right */}
-    <div className="self-end bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg p-6 max-w-sm border border-gray-200 transform rotate-2 hover:rotate-0 transition-transform duration-300">
-      <p className="text-gray-700 text-sm mb-4">
-        "As a small business, we needed an affordable solution that could compete with enterprise tools. adAlert.io delivers exactly that - powerful features without the complexity."
-      </p>
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white font-semibold text-sm">
-          AL
-        </div>
-        <div>
-          <p className="font-semibold text-gray-800 text-sm">Alex Rodriguez</p>
-          <p className="text-xs text-gray-500">Founder, StartupXYZ</p>
-        </div>
-      </div>
-    </div>
-
-    {/* Card 4 - Left */}
-    <div className="self-start bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg p-6 max-w-sm border border-gray-200 transform -rotate-2 hover:rotate-0 transition-transform duration-300">
-      <p className="text-gray-700 text-sm mb-4">
-        "The dashboard is incredibly intuitive and the customer support is outstanding. We've been using adAlert.io for 6 months and it's become an essential part of our marketing stack."
-      </p>
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-semibold text-sm">
-          EL
-        </div>
-        <div>
-          <p className="font-semibold text-gray-800 text-sm">Emma Lee</p>
-          <p className="text-xs text-gray-500">Digital Marketing Manager, InnovateCorp</p>
-        </div>
-      </div>
-    </div>
-
-  </div>
-</div>
       </div>
     );
   }
@@ -541,86 +466,8 @@ export default function SignupForm({ onSwitchToLogin }: SignupFormProps) {
       </div>
 
       {/* Right Panel - Background Image with Feature Boxes */}
-        <div className="hidden lg:flex relative items-center justify-center bg-white overflow-hidden shadow-[inset_8px_0_8px_-8px_rgba(0,0,0,0.1)]">
-                       {/* Background Grid with Hover Effects */}
-       <div className="absolute inset-0 grid grid-cols-[repeat(auto-fill,120px)] grid-rows-[repeat(auto-fill,120px)] gap-0 overflow-hidden">
-         {Array.from({ length: 200 }, (_, i) => (
-           <div
-             key={i}
-             className="border border-blue-200/30 hover:border-blue-400/60 hover:bg-blue-50/20 transition-all duration-200 cursor-pointer min-h-[120px] min-w-[120px]"
-           />
-         ))}
-       </div>
+       <Reviews  />
 
-  {/* Zig-Zag Cards */}
-  <div className="relative flex flex-col gap-12 max-w-5xl mx-auto px-4 z-10">
-    
-    {/* Card 1 - Right */}
-    <div className="self-end bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg p-6 max-w-sm border border-gray-200 transform rotate-2 hover:rotate-0 transition-transform duration-300">
-      <p className="text-gray-700 text-sm mb-4">
-        "adAlert.io has transformed how we monitor our ad campaigns. The real-time alerts and insights have saved us countless hours and improved our ROI significantly."
-      </p>
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold text-sm">
-          SM
-        </div>
-        <div>
-          <p className="font-semibold text-gray-800 text-sm">Sarah Mitchell</p>
-          <p className="text-xs text-gray-500">Marketing Director, TechFlow</p>
-        </div>
-      </div>
-    </div>
-
-    {/* Card 2 - Left */}
-    <div className="self-start bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg p-6 max-w-sm border border-gray-200 transform -rotate-2 hover:rotate-0 transition-transform duration-300">
-      <p className="text-gray-700 text-sm mb-4">
-        "The automated monitoring and instant notifications have been a game-changer. We catch issues before they become problems, and our team can focus on strategy instead of manual monitoring."
-      </p>
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white font-semibold text-sm">
-          MJ
-        </div>
-        <div>
-          <p className="font-semibold text-gray-800 text-sm">Michael Johnson</p>
-          <p className="text-xs text-gray-500">CEO, GrowthLabs</p>
-        </div>
-      </div>
-    </div>
-
-    {/* Card 3 - Right */}
-    <div className="self-end bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg p-6 max-w-sm border border-gray-200 transform rotate-2 hover:rotate-0 transition-transform duration-300">
-      <p className="text-gray-700 text-sm mb-4">
-        "As a small business, we needed an affordable solution that could compete with enterprise tools. adAlert.io delivers exactly that - powerful features without the complexity."
-      </p>
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white font-semibold text-sm">
-          AL
-        </div>
-        <div>
-          <p className="font-semibold text-gray-800 text-sm">Alex Rodriguez</p>
-          <p className="text-xs text-gray-500">Founder, StartupXYZ</p>
-        </div>
-      </div>
-    </div>
-
-    {/* Card 4 - Left */}
-    <div className="self-start bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg p-6 max-w-sm border border-gray-200 transform -rotate-2 hover:rotate-0 transition-transform duration-300">
-      <p className="text-gray-700 text-sm mb-4">
-        "The dashboard is incredibly intuitive and the customer support is outstanding. We've been using adAlert.io for 6 months and it's become an essential part of our marketing stack."
-      </p>
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-semibold text-sm">
-          EL
-        </div>
-        <div>
-          <p className="font-semibold text-gray-800 text-sm">Emma Lee</p>
-          <p className="text-xs text-gray-500">Digital Marketing Manager, InnovateCorp</p>
-        </div>
-      </div>
-    </div>
-
-  </div>
-</div>
     </div>
   );
 }

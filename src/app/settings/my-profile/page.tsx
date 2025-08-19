@@ -8,6 +8,7 @@ import { useAuthStore } from "@/lib/store/auth-store";
 import { toast } from "sonner";
 import { CHECKBOX_CLASS } from "@/lib/constants";
 import { useAlertSettingsStore } from "@/lib/store/settings-store";
+import Link from "next/link";
 
 export default function MyProfileTab() {
   const { userDoc } = useAuthStore();
@@ -102,7 +103,7 @@ export default function MyProfileTab() {
           <h2 className="text-2xl font-bold mb-1">My Profile</h2>
           <p className="text-gray-500 mb-6">
             View or edit your profile. You can include or exclude yourself from email alerts or control the frequency from {" "}
-            <a href="/settings/alert-settings" className="text-blue-600 underline">alert settings</a>
+            <Link href="/settings/settings/alerts" className="text-blue-600 underline">alert settings</Link>
           </p>
           <div className="flex flex-col md:flex-row gap-8">
             {/* Avatar and Name */}

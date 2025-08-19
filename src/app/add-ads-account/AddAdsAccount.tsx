@@ -119,7 +119,7 @@ export function AddAdsAccount() {
     await setAdsAccountAuthenticating(user.uid, true);
 
     const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-    const from = searchParams.get("from");
+   const from = searchParams?.get("from") || "";
     const redirectUri =
       from === "settings"
         ? `${window.location.origin}/redirect?page=add-ads-account-from-settings`
@@ -301,7 +301,7 @@ export function AddAdsAccount() {
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
       <main className="flex flex-1 items-center justify-center mt-24">
-        <Card className="w-full max-w-2xl p-0 border border-gray-200 rounded-2xl shadow-md bg-white">
+        <Card className="w-full max-w-2xl p-0 border border-gray-200 rounded-[7px] shadow-md bg-white">
           <CardContent className="p-10 flex flex-col items-center">
             <h1 className="text-2xl md:text-3xl font-bold text-center mb-6">
               {userAdsAccounts && userAdsAccounts.length > 0
@@ -393,7 +393,7 @@ export function AddAdsAccount() {
                 {isLoading && <Loader2 className="h-5 w-5 animate-spin" />}
                 {userAdsAccounts && userAdsAccounts.length > 0
                   ? "Add another Google Ads account"
-                  : "Connect Google Ads account(s)"}
+                  : "Connect"}
               </Button>
             )}
 

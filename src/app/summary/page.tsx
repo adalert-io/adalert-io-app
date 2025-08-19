@@ -63,9 +63,9 @@ export default function Summary() {
 
   // Dot color logic (copied from dashboard)
   function getDotColor(key: string | null) {
-    if (["AccountIsOverPacing33PercentToDate", "AccountIsUnderPacing33PercentToDate"].includes(key || "")) return "#EDE41B";
-    if (["AccountIsOverPacing50PercentToDate", "AccountIsUnderPacing50PercentToDate"].includes(key || "")) return "#FF7F26";
-    if (["AccountIsOverPacing75PercentToDate", "AccountIsUnderPacing75PercentToDate"].includes(key || "")) return "#EE1B23";
+    if (["AccountIsOverPacing33PercentToDate", "AccountIsUnderPacing33PercentToDate"].includes(key || "")) return "#ede41b";
+    if (["AccountIsOverPacing50PercentToDate", "AccountIsUnderPacing50PercentToDate"].includes(key || "")) return "#ff7f26";
+    if (["AccountIsOverPacing75PercentToDate", "AccountIsUnderPacing75PercentToDate"].includes(key || "")) return "#eb0009";
     return "#1BC47D";
   }
 
