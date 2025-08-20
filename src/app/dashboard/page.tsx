@@ -825,7 +825,7 @@ export default function Dashboard() {
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#F5F7FB]">
+    <div className="min-h-screen bg-[#FFF]">
       <Header />
       <main className="max-w-[1440px] mx-auto px-6 py-6">
         {/* Top Section */}
