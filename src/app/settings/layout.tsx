@@ -16,7 +16,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
   const currentMainTab = pathname?.split('/')[2] || 'settings';
 
   return (
-    <div className="min-h-screen bg-[#FFF]">
+    <div className="min-h-screen bg-[#f5f7fb]">
       <Header />
       <div className="w-full flex flex-col items-center mt-8">
         <div className="flex gap-4 bg-white rounded-2xl shadow-md p-2 mb-8">

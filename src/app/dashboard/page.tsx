@@ -825,7 +825,7 @@ export default function Dashboard() {
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#FFF]">
+    <div className="min-h-screen bg-[#f5f7fb]">
       <Header />
       <main className="max-w-[1440px] mx-auto px-6 py-6">
         {/* Top Section */}
@@ -931,278 +931,273 @@ export default function Dashboard() {
           style={{ minWidth: 0 }}
         >
           {/* Row 2: Cards in a row (Critical, Medium, Low, Spend MTD/Budget) */}
-          <div className="flex gap-4 flex-grow max-w-[830px] w-full">
-            <Card className="w-32 bg-white border-l-4 border-[#E53935] flex-grow">
-              <CardContent className="h-full flex flex-col items-center justify-center p-4">
-                <span className="text-4xl font-bold text-[#E53935]">
-                  {criticalCount}
+    <div className="flex gap-4 flex-wrap justify-center max-w-full">
+  <Card className="w-full sm:w-64 md:w-[210px] h-[110px] bg-white border-l-4 border-[#E53935]">
+    <CardContent className="h-full flex flex-col items-center justify-center p-2">
+      <span className="text-2xl font-bold text-[#E53935]">
+        {criticalCount}
+      </span>
+      <span className="text-sm font-semibold text-gray-700 mt-1">
+        Critical
+      </span>
+    </CardContent>
+  </Card>
+
+  <Card className="w-full sm:w-64 md:w-[210px] h-[110px] bg-white border-l-4 border-[#FBC02D]">
+    <CardContent className="h-full flex flex-col items-center justify-center p-2">
+      <span className="text-2xl font-bold text-[#FBC02D]">
+        {mediumCount}
+      </span>
+      <span className="text-sm font-semibold text-gray-700 mt-1">
+        Medium
+      </span>
+    </CardContent>
+  </Card>
+
+  <Card className="w-full sm:w-64 md:w-[210px] h-[110px] bg-white border-l-4 border-[#FFEB3B]">
+    <CardContent className="h-full flex flex-col items-center justify-center p-2">
+      <span className="text-2xl font-bold text-[#FFEB3B]">
+        {lowCount}
+      </span>
+      <span className="text-sm font-semibold text-gray-700 mt-1">
+        Low
+      </span>
+    </CardContent>
+  </Card>
+</div>
+
+
+
+         <div className="flex flex-grow-0 flex-shrink-0 justify-end w-full md:w-auto mt-4 md:mt-0">
+  {/* Spend MTD / Monthly Budget Card */}
+  <Card className="bg-[#fff] border border-[#E3E8F0] rounded-xl shadow-none p-0 w-full md:w-[650px] h-[200px] gap-2 flex flex-col justify-between">
+    <div className="flex justify-between items-start px-6 pt-4">
+      <div className="flex flex-col gap-1">
+        <span className="text-xs text-[#7A7D9C] font-medium flex items-center gap-1">
+          Spend MTD
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className="ml-1 p-0.5 rounded hover:bg-[#E3E8F0] transition-colors"
+                aria-label="Spend MTD information"
+                tabIndex={0}
+              >
+                <AlertTriangle className="w-3 h-3 text-[#7A7D9C]" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent
+              side="top"
+              align="center"
+              className="max-w-xs text-xs"
+            >
+              The actual amount can differ between users' dashboards based on
+              API call times and could be different from what you see on the ads
+              account, with up to a few hours' difference.
+            </TooltipContent>
+          </Tooltip>
+        </span>
+        <div className="flex items-center gap-2 mt-1">
+          <span className="text-[20px] leading-none font-bold text-[#232360]">
+            {spendMtdLoading
+              ? "--"
+              : dashboardDaily?.["Spend MTD"] != null
+              ? `${
+                  selectedAdsAccount?.["Currency Symbol"] || "$"
+                }${Number(dashboardDaily["Spend MTD"]).toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}`
+              : "--"}
+          </span>
+          <span className="ml-1 mt-1">
+            {(() => {
+              const key =
+                dashboardDaily?.["Spend MTD Indicator Alert"]?.["Key"];
+              let color = "#1BC47D"; // green default
+              if (
+                [
+                  "AccountIsOverPacing33PercentToDate",
+                  "AccountIsUnderPacing33PercentToDate",
+                ].includes(key)
+              )
+                color = "#EDE41B";
+              if (
+                [
+                  "AccountIsOverPacing50PercentToDate",
+                  "AccountIsUnderPacing50PercentToDate",
+                ].includes(key)
+              )
+                color = "#FF7F26";
+              if (
+                [
+                  "AccountIsOverPacing75PercentToDate",
+                  "AccountIsUnderPacing75PercentToDate",
+                ].includes(key)
+              )
+                color = "#EE1B23";
+              return (
+                <span
+                  className="inline-block w-3 h-3 rounded-full"
+                  style={{ background: color }}
+                />
+              );
+            })()}
+          </span>
+        </div>
+      </div>
+      <div className="flex flex-col items-end gap-1">
+        <span className="text-xs text-[#7A7D9C] font-medium flex items-center gap-1">
+          Monthly Budget
+        </span>
+        <div className="flex items-center gap-1 mt-1">
+          {isEditingBudget ? (
+            <>
+              <Button
+                className="bg-[#156CFF] hover:bg-[#156CFF]/90 text-white font-semibold px-1 py-0.5 rounded-md text-xs h-6 min-w-[50px]"
+                onClick={handleConfirmBudget}
+                disabled={
+                  isUpdatingBudget || !budgetInput || Number(budgetInput) < 0
+                }
+              >
+                Confirm
+              </Button>
+              <input
+                ref={budgetInputRef}
+                type="number"
+                min={0}
+                className="ml-2 border border-[#E3E8F0] rounded-md px-2 py-1 text-sm font-bold text-right w-28 outline-none focus:border-blue-400 h-7"
+                value={budgetInput}
+                onChange={(e) =>
+                  setBudgetInput(e.target.value.replace(/[^0-9.]/g, ""))
+                }
+                disabled={isUpdatingBudget}
+              />
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="p-0.5 rounded hover:bg-[#E3E8F0] transition-colors"
+                aria-label="Edit budget"
+                onClick={handleEditBudget}
+              >
+                {/* Pencil icon in blue (#156CFF) */}
+                <Pencil1Icon className="w-4 h-4 text-[#156CFF]" />
+              </button>
+              <span className="text-[20px] leading-none font-bold text-[#232360]">
+                {selectedAdsAccount?.["Currency Symbol"] || "$"}
+                {selectedAdsAccount?.["Monthly Budget"] != null
+                  ? Number(
+                      selectedAdsAccount["Monthly Budget"]
+                    ).toLocaleString("en-US", {
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    })
+                  : "--"}
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+
+    {/* ✅ Progress bar section kept */}
+    <div className="relative px-6 mt-3" style={{ height: 60 }}>
+      {(() => {
+        const spend = Number(dashboardDaily?.["Spend MTD"] ?? 0);
+        const budget = Number(selectedAdsAccount?.["Monthly Budget"] ?? 1);
+        const percent = budget
+          ? Math.min((spend / budget) * 100, 100)
+          : 0;
+        const now = moment();
+        const day = now.date();
+        const daysInMonth = now.daysInMonth();
+        const dayPercent = (day / daysInMonth) * 100;
+        return (
+          <div className="relative w-full h-6 flex items-center">
+            {/* Background */}
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-6 rounded-full bg-white border border-[#E3E8F0]" />
+            {/* Fill */}
+            <div
+              className="absolute left-0 top-1/2 -translate-y-1/2 h-6 rounded-full bg-[#156CFF]"
+              style={{
+                width: `${percent}%`,
+                minWidth: percent > 0 ? 8 : 0,
+              }}
+            />
+            {/* Percentage text */}
+            {percent < 15 ? (
+              <span
+                className="absolute top-0 left-0 h-6 flex items-center text-black text-xs font-semibold select-none"
+                style={{ left: `calc(${percent}% + 8px)` }}
+              >
+                {percent.toFixed(1)}%
+              </span>
+            ) : (
+              <span
+                className="absolute top-0 h-6 flex items-center text-white text-xs font-semibold select-none"
+                style={{
+                  left: `calc(${percent / 2}% )`,
+                  transform: "translateX(-50%)",
+                }}
+              >
+                {percent.toFixed(1)}%
+              </span>
+            )}
+            {/* Current day marker */}
+            <div
+              className="absolute top-1 h-4"
+              style={{ left: `calc(${dayPercent}% - 1px)` }}
+            >
+              <div className="w-0.5 h-4 bg-[#7A7D9C] rounded" />
+            </div>
+            {/* Day label */}
+            <div
+              className="absolute left-0"
+              style={{ top: 24, width: "100%" }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  left:
+                    dayPercent > 93
+                      ? "calc(100% - 48px)"
+                      : `calc(${dayPercent}% - 12px)`,
+                }}
+              >
+                <span className="text-[13px] text-[#7A7D9C] font-semibold select-none">
+                  {day}
                 </span>
-                <span className="text-lg font-semibold text-gray-700 mt-2">
-                  Critical
+                <span className="text-[11px] text-[#7A7D9C] font-semibold select-none ml-1">
+                  days
                 </span>
-              </CardContent>
-            </Card>
-            <Card className="w-32 bg-white border-l-4 border-[#FBC02D] flex-grow">
-              <CardContent className="h-full flex flex-col items-center justify-center p-4">
-                <span className="text-4xl font-bold text-[#FBC02D]">
-                  {mediumCount}
-                </span>
-                <span className="text-lg font-semibold text-gray-700 mt-2">
-                  Medium
-                </span>
-              </CardContent>
-            </Card>
-            <Card className="w-32 bg-white border-l-4 border-[#FFEB3B] flex-grow">
-              <CardContent className="h-full flex flex-col items-center justify-center p-4">
-                <span className="text-4xl font-bold text-[#FFEB3B]">
-                  {lowCount}
-                </span>
-                <span className="text-lg font-semibold text-gray-700 mt-2">
-                  Low
-                </span>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
-          <div className="flex flex-grow-0 flex-shrink-0 justify-end w-full md:w-auto mt-4 md:mt-0">
-            {/* Spend MTD / Monthly Budget Card - now in the same row */}
-            <Card className="bg-[#F5F8FF] border border-[#E3E8F0] rounded-xl shadow-none p-0 w-full md:w-[400px] h-[160px] gap-2 flex flex-col justify-between">
-              <div className="flex justify-between items-start px-4 pt-4">
-                <div className="flex flex-col gap-1">
-                  <span className="text-xs text-[#7A7D9C] font-medium flex items-center gap-1">
-                    Spend MTD
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          className="ml-1 p-0.5 rounded hover:bg-[#E3E8F0] transition-colors"
-                          aria-label="Spend MTD information"
-                          tabIndex={0}
-                        >
-                          <AlertTriangle className="w-3 h-3 text-[#7A7D9C]" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent
-                        side="top"
-                        align="center"
-                        className="max-w-xs text-xs"
-                      >
-                        The actual amount can differ between users' dashboards
-                        based on API call times and could be different from what
-                        you see on the ads account, with up to a few hours'
-                        difference.
-                      </TooltipContent>
-                    </Tooltip>
-                  </span>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[18px] leading-none font-bold text-[#232360]">
-                      {spendMtdLoading
-                        ? "--"
-                        : dashboardDaily?.["Spend MTD"] != null
-                        ? `${
-                            selectedAdsAccount?.["Currency Symbol"] || "$"
-                          }${Number(dashboardDaily["Spend MTD"]).toLocaleString(
-                            "en-US",
-                            {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            }
-                          )}`
-                        : "--"}
-                    </span>
-                    {/* Dot color logic */}
-                    <span className="ml-1 mt-1">
-                      {(() => {
-                        const key =
-                          dashboardDaily?.["Spend MTD Indicator Alert"]?.[
-                            "Key"
-                          ];
-                        let color = "#1BC47D"; // green default
-                        if (
-                          [
-                            "AccountIsOverPacing33PercentToDate",
-                            "AccountIsUnderPacing33PercentToDate",
-                          ].includes(key)
-                        )
-                          color = "#EDE41B";
-                        if (
-                          [
-                            "AccountIsOverPacing50PercentToDate",
-                            "AccountIsUnderPacing50PercentToDate",
-                          ].includes(key)
-                        )
-                          color = "#FF7F26";
-                        if (
-                          [
-                            "AccountIsOverPacing75PercentToDate",
-                            "AccountIsUnderPacing75PercentToDate",
-                          ].includes(key)
-                        )
-                          color = "#EE1B23";
-                        return (
-                          <span
-                            className="inline-block w-3 h-3 rounded-full"
-                            style={{ background: color }}
-                          />
-                        );
-                      })()}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex flex-col items-end gap-1">
-                  <span className="text-xs text-[#7A7D9C] font-medium flex items-center gap-1">
-                    Monthly Budget
-                  </span>
-                  <div className="flex items-center gap-1 mt-1">
-                    {isEditingBudget ? (
-                      <>
-                        <Button
-                          className="bg-[#156CFF] hover:bg-[#156CFF]/90 text-white font-semibold px-1 py-0.5 rounded-md text-xs h-6 min-w-[50px]"
-                          onClick={handleConfirmBudget}
-                          disabled={
-                            isUpdatingBudget ||
-                            !budgetInput ||
-                            Number(budgetInput) < 0
-                          }
-                        >
-                          Confirm
-                        </Button>
-                        <input
-                          ref={budgetInputRef}
-                          type="number"
-                          min={0}
-                          className="ml-2 border border-[#E3E8F0] rounded-md px-2 py-1 text-sm font-bold text-right w-28 outline-none focus:border-blue-400 h-7"
-                          value={budgetInput}
-                          onChange={(e) =>
-                            setBudgetInput(
-                              e.target.value.replace(/[^0-9.]/g, "")
-                            )
-                          }
-                          disabled={isUpdatingBudget}
-                        />
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          className="p-0.5 rounded hover:bg-[#E3E8F0] transition-colors"
-                          aria-label="Edit budget"
-                          onClick={handleEditBudget}
-                        >
-                          <Pencil1Icon className="w-4 h-4 text-[#7A7D9C]" />
-                        </button>
-                        <span className="text-[18px] leading-none font-bold text-[#232360]">
-                          {selectedAdsAccount?.["Currency Symbol"] || "$"}
-                          {selectedAdsAccount?.["Monthly Budget"] != null
-                            ? Number(
-                                selectedAdsAccount["Monthly Budget"]
-                              ).toLocaleString("en-US", {
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0,
-                              })
-                            : "--"}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-              {/* Progress bar section */}
-              <div className="relative px-4 mt-2" style={{ height: 48 }}>
-                {(() => {
-                  const spend = Number(dashboardDaily?.["Spend MTD"] ?? 0);
-                  const budget = Number(
-                    selectedAdsAccount?.["Monthly Budget"] ?? 1
-                  );
-                  const percent = budget
-                    ? Math.min((spend / budget) * 100, 100)
-                    : 0;
-                  const now = moment();
-                  const day = now.date();
-                  const daysInMonth = now.daysInMonth();
-                  const dayPercent = (day / daysInMonth) * 100;
-                  return (
-                    <div className="relative w-full h-6 flex items-center">
-                      {/* Progress bar bg */}
-                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-5 rounded-full bg-white border border-[#E3E8F0]" />
-                      {/* Progress bar fill */}
-                      <div
-                        className="absolute left-0 top-1/2 -translate-y-1/2 h-5 rounded-full bg-[#156CFF]"
-                        style={{
-                          width: `${percent}%`,
-                          minWidth: percent > 0 ? 8 : 0,
-                        }}
-                      />
-                      {/* Percentage label */}
-                      {percent < 15 ? (
-                        <span
-                          className="absolute top-0 left-0 h-6 flex items-center text-black text-xs font-semibold select-none"
-                          style={{ left: `calc(${percent}% + 8px)` }}
-                        >
-                          {percent.toFixed(1)}%
-                        </span>
-                      ) : (
-                        <span
-                          className="absolute top-0 h-6 flex items-center text-white text-xs font-semibold select-none"
-                          style={{
-                            left: `calc(${percent / 2}% )`,
-                            transform: "translateX(-50%)",
-                          }}
-                        >
-                          {percent.toFixed(1)}%
-                        </span>
-                      )}
-                      {/* Vertical line for current day */}
-                      <div
-                        className="absolute top-1 h-4"
-                        style={{ left: `calc(${dayPercent}% - 1px)` }}
-                      >
-                        <div className="w-0.5 h-4 bg-[#7A7D9C] rounded" />
-                      </div>
-                      {/* Day label under the vertical line */}
-                      <div
-                        className="absolute left-0"
-                        style={{ top: 20, width: "100%" }}
-                      >
-                        <div
-                          style={{
-                            position: "absolute",
-                            left:
-                              dayPercent > 93
-                                ? "calc(100% - 48px)" // clamp to right edge minus label width
-                                : `calc(${dayPercent}% - 12px)`,
-                          }}
-                        >
-                          <span className="text-[13px] text-[#7A7D9C] font-semibold select-none">
-                            {day}
-                          </span>
-                          <span className="text-[11px] text-[#7A7D9C] font-semibold select-none ml-1">
-                            days
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-              {/* Spend Projection */}
-              <div className="flex justify-end items-end px-4 pb-3 pt-1">
-                <span className="text-xs text-[#7A7D9C] font-medium">
-                  Spend Projection:{" "}
-                  {selectedAdsAccount?.["Currency Symbol"] || "$"}
-                  {(() => {
-                    const spend = Number(dashboardDaily?.["Spend MTD"] ?? 0);
-                    const now = moment();
-                    const day = now.date();
-                    const projection = day ? (spend / day) * 30.4 : 0;
-                    return projection.toLocaleString("en-US", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    });
-                  })()}
-                </span>
-              </div>
-            </Card>
-          </div>
+        );
+      })()}
+    </div>
+
+    {/* Spend Projection */}
+    <div className="flex justify-end items-end px-6 pb-3 pt-1">
+      <span className="text-xs text-[#7A7D9C] font-medium">
+        Spend Projection: {selectedAdsAccount?.["Currency Symbol"] || "$"}
+        {(() => {
+          const spend = Number(dashboardDaily?.["Spend MTD"] ?? 0);
+          const now = moment();
+          const day = now.date();
+          const projection = day ? (spend / day) * 30.4 : 0;
+          return projection.toLocaleString("en-US", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          });
+        })()}
+      </span>
+    </div>
+  </Card>
+</div>
+
         </div>
 
         {/* Metrics Row */}
