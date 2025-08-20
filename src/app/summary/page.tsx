@@ -10,7 +10,7 @@ import { formatAccountNumber } from "@/lib/utils"
 import { MagnifyingGlassIcon } from "@radix-ui/react-icons"
 import { Button } from "@/components/ui/button"
 import { ALERT_SEVERITY_COLORS } from "@/lib/constants"
-import { X } from "lucide-react"
+import { X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react"
 
 export default function Summary() {
   const { user, userDoc, loading } = useAuthStore()
@@ -183,21 +183,27 @@ export default function Summary() {
             >
               <MagnifyingGlassIcon className="w-5 h-5 text-[#015AFD]" />
             </Button>
-            {/* Row count dropdown */}
-            <select
-              className="border rounded-lg px-3 py-2 text-sm bg-white shadow-sm hover:border-gray-300 transition-colors focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value))
-                setPage(1)
-              }}
-              aria-label="Rows per page"
-            >
-              <option value={15}>15 rows</option>
-              <option value={25}>25 rows</option>
-              <option value={50}>50 rows</option>
-              <option value={100}>100 rows</option>
-            </select>
+            <div className="relative">
+              <select
+                className="appearance-none border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm bg-white shadow-sm hover:border-gray-300 transition-colors focus:ring-2 focus:ring-blue-200 focus:border-blue-300 cursor-pointer font-medium text-gray-700"
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value))
+                  setPage(1)
+                }}
+                aria-label="Rows per page"
+              >
+                <option value={15}>15 rows</option>
+                <option value={25}>25 rows</option>
+                <option value={50}>50 rows</option>
+                <option value={100}>100 rows</option>
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -259,7 +265,7 @@ export default function Summary() {
                       <td className="px-4 py-6 text-center">
                         {acc.isConnected ? (
                           <div className="flex items-center justify-center w-8 h-8 mx-auto">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M16.0122 1.85333C14.0875 0.739998 11.6264 1.40068 10.5151 3.32901L0.540031 20.6392C-0.571165 22.5676 0.0882575 25.0333 2.01293 26.1467C3.9376 27.26 6.3987 26.5993 7.50995 24.671L17.4851 7.36074C18.5963 5.4324 17.9368 2.96665 16.0122 1.85333Z" fill="#FFC107"></path><path d="M16.0119 1.85333C15.1129 1.33331 14.0969 1.20053 13.156 1.40303C13.5555 1.48922 13.9488 1.63759 14.3218 1.85333C16.2464 2.96666 16.9059 5.43241 15.7947 7.36074L5.81955 24.671C5.22739 25.6986 4.25187 26.366 3.17847 26.597C4.84064 26.9555 6.61383 26.2256 7.50966 24.671L17.4848 7.36074C18.5961 5.43241 17.9366 2.96666 16.0119 1.85333Z" fill="#FFB300"></path><path d="M4.01986 26.6875C6.23997 26.6875 8.03972 24.8843 8.03972 22.66C8.03972 20.4357 6.23997 18.6326 4.01986 18.6326C1.79975 18.6326 0 20.4357 0 22.66C0 24.8843 1.79975 26.6875 4.01986 26.6875Z" fill="#4CAF50"></path><path d="M3.17847 26.597C3.17825 26.5975 3.17814 26.5979 3.17798 26.5984C3.44956 26.6564 3.73098 26.6875 4.01984 26.6875C6.23993 26.6875 8.0397 24.8844 8.0397 22.6601C8.0397 22.1659 7.95045 21.6928 7.78792 21.2553L5.8196 24.671C5.22739 25.6986 4.25188 26.366 3.17847 26.597Z" fill="#43A047"></path><path d="M27.4602 20.6393L17.4851 3.32907C16.3739 1.40074 13.9128 0.740059 11.9881 1.85339C10.0634 2.96671 9.4039 5.43247 10.5152 7.3608L20.4903 24.671C21.6015 26.5994 24.0626 27.26 25.9873 26.1467C27.912 25.0334 28.5714 22.5676 27.4602 20.6393Z" fill="#2196F3"></path><path d="M27.4601 20.6393L17.485 3.32909C16.5891 1.77449 14.816 1.04452 13.1538 1.4031C14.2272 1.6341 15.2027 2.30151 15.7949 3.32909L25.7701 20.6393C26.8813 22.5677 26.2218 25.0334 24.2972 26.1467C23.9241 26.3625 23.5309 26.5108 23.1314 26.597C24.0722 26.7995 25.0883 26.6668 25.9873 26.1467C27.9119 25.0334 28.5714 22.5676 27.4601 20.6393Z" fill="#1E88E5"></path></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M16.0122 1.85333C14.0875 0.739998 11.6264 1.40068 10.5151 3.32901L0.540031 20.6392C-0.571165 22.5676 0.0882575 25.0333 2.01293 26.1467C3.9376 27.26 6.3987 26.5993 7.50995 24.671L17.4851 7.36074C18.5963 5.4324 17.9368 2.96665 16.0122 1.85333Z" fill="#FFC107"></path><path d="M16.0119 1.85333C15.1129 1.33331 14.0969 1.20053 13.156 1.40303C13.5555 1.48922 13.9488 1.63759 14.3218 1.85333C16.2464 2.96666 16.9059 5.43241 15.7947 7.36074L5.81955 24.671C5.22739 25.6986 4.25187 26.366 3.17847 26.597C4.84064 26.9555 6.61383 26.2256 7.50966 24.671L17.4848 7.36074C18.5961 5.43241 17.9366 2.96666 16.0119 1.85333Z" fill="#FFB300"></path><path d="M4.01986 26.6875C6.23997 26.6875 8.03972 24.8843 8.03972 22.66C8.03972 20.4357 6.23997 18.6326 4.01986 18.6326C1.79975 18.6326 0 20.4357 0 22.66C0 24.8843 1.79975 26.6875 4.01986 26.6875Z" fill="#4CAF50"></path><path d="M3.17847 26.597C3.17825 26.5975 3.17814 26.5979 3.17798 26.5984C3.44956 26.6564 3.73098 26.6875 4.01984 26.6875C6.23993 26.6875 8.0397 24.8844 8.0397 22.6601C8.0397 22.1659 7.95045 21.6928 7.78792 21.2553L5.8196 24.671C5.22739 25.6986 4.25188 26.366 3.17847 26.597Z" fill="#43A047"></path><path d="M27.4602 20.6393L17.4851 3.32907C16.3739 1.40074 13.9128 0.740059 11.9881 1.85339C10.0634 2.96671 9.4039 5.43247 10.5152 7.3608L20.4903 24.671C21.6015 26.5994 24.0626 27.26 25.9873 26.1467C27.912 25.0334 28.5714 22.5676 27.4602 20.6393Z" fill="#2196F3"></path><path d="M27.4601 20.6393L17.485 3.32909C16.5891 1.77449 14.816 1.04452 13.1538 1.4031C14.2272 1.6341 15.2027 2.30151 15.7949 3.32909L25.7701 20.6393C26.8813 22.5677 26.2218 25.0334 24.2972 26.1467C23.9241 26.3625 23.5309 26.5108 23.1314 26.597C24.0722 26.7995 25.0883 26.6668 25.9873 26.1467C27.9119 25.0334 28.5714 22.5676 27.4601 20.6393Z" fill="#1E88E5"></path></svg>
                           </div>
                         ) : (
                           <div className="flex items-center justify-center w-8 h-8 mx-auto">
@@ -269,15 +275,12 @@ export default function Summary() {
                       </td>
                       {/* Name */}
                       <td className="px-4 py-6">
-                    <div className="flex items-center">
-  <span className="text-gray-900 font-semibold text-base">
-    {acc.accountName}
-  </span>
-  <span className="text-gray-500 font-normal text-base ml-1">
-    - {formatAccountNumber(acc["Id"])}
-  </span>
-</div>
-
+                        <div className="flex items-center">
+                          <span className="text-gray-900 font-semibold text-base">{acc.accountName}</span>
+                          <span className="text-gray-500 font-normal text-base ml-1">
+                            - {formatAccountNumber(acc["Id"])}
+                          </span>
+                        </div>
                       </td>
                       {/* Showing Ads */}
                       <td className="px-4 py-6">
@@ -389,31 +392,137 @@ export default function Summary() {
             </table>
           </div>
 
-          {/* Pagination controls */}
           <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200 gap-4">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-600 font-medium">
               Showing {pagedAccounts.length > 0 ? (page - 1) * pageSize + 1 : 0} to{" "}
               {Math.min(page * pageSize, filteredAccounts.length)} of {filteredAccounts.length} accounts
             </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <span>Go to page:</span>
-                <select
-                  className="border rounded-lg px-3 py-1 text-sm bg-white shadow-sm hover:border-gray-300 transition-colors focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
-                  value={page}
-                  onChange={(e) => setPage(Number(e.target.value))}
-                  aria-label="Go to page"
-                >
-                  {Array.from({ length: totalPages }, (_, i) => (
-                    <option key={i + 1} value={i + 1}>
-                      {i + 1}
-                    </option>
-                  ))}
-                </select>
+
+            <div className="flex items-center gap-3">
+              {/* First page button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(1)}
+                disabled={page === 1}
+                className="h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="First page"
+              >
+                <ChevronsLeft className="w-4 h-4" />
+              </Button>
+
+              {/* Previous page button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(page - 1)}
+                disabled={page === 1}
+                className="h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Previous page"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+
+              {/* Page numbers */}
+              <div className="flex items-center gap-1">
+                {(() => {
+                  const maxVisiblePages = 5
+                  const halfVisible = Math.floor(maxVisiblePages / 2)
+                  let startPage = Math.max(1, page - halfVisible)
+                  const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
+
+                  if (endPage - startPage + 1 < maxVisiblePages) {
+                    startPage = Math.max(1, endPage - maxVisiblePages + 1)
+                  }
+
+                  const pages = []
+
+                  // Show first page if not in range
+                  if (startPage > 1) {
+                    pages.push(
+                      <Button
+                        key={1}
+                        variant={1 === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setPage(1)}
+                        className="h-8 w-8 p-0 text-sm font-medium"
+                      >
+                        1
+                      </Button>,
+                    )
+                    if (startPage > 2) {
+                      pages.push(
+                        <span key="ellipsis1" className="px-2 text-gray-400 text-sm">
+                          ...
+                        </span>,
+                      )
+                    }
+                  }
+
+                  // Show visible page range
+                  for (let i = startPage; i <= endPage; i++) {
+                    pages.push(
+                      <Button
+                        key={i}
+                        variant={i === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setPage(i)}
+                        className="h-8 w-8 p-0 text-sm font-medium"
+                      >
+                        {i}
+                      </Button>,
+                    )
+                  }
+
+                  // Show last page if not in range
+                  if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) {
+                      pages.push(
+                        <span key="ellipsis2" className="px-2 text-gray-400 text-sm">
+                          ...
+                        </span>,
+                      )
+                    }
+                    pages.push(
+                      <Button
+                        key={totalPages}
+                        variant={totalPages === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setPage(totalPages)}
+                        className="h-8 w-8 p-0 text-sm font-medium"
+                      >
+                        {totalPages}
+                      </Button>,
+                    )
+                  }
+
+                  return pages
+                })()}
               </div>
-              <div className="text-sm text-gray-600">
-                Page {page} of {totalPages}
-              </div>
+
+              {/* Next page button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(page + 1)}
+                disabled={page === totalPages}
+                className="h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Next page"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+
+              {/* Last page button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(totalPages)}
+                disabled={page === totalPages}
+                className="h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Last page"
+              >
+                <ChevronsRight className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </div>
