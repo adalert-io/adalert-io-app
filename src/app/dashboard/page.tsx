@@ -236,6 +236,7 @@ export default function Dashboard() {
   const { user } = useAuthStore();
   const router = useRouter();
   const { selectedAdsAccount, userAdsAccounts } = useUserAdsAccountsStore();
+  console.log('Selected Ads Account:', selectedAdsAccount);
   const {
     fetchAlerts,
     fetchFirstAlerts,
