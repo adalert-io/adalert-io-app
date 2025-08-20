@@ -340,7 +340,7 @@ export default function AdAccountsSubtab() {
   const isSaveDisabled = !adAccountName || isSaving;
 
   return (
-    <div className="bg-white rounded-2xl shadow-md p-8 min-h-[600px]">
+    <div className="bg-white p-4 min-h-[600px]">
       {screen === "list" && (
         <>
           <h2 className="text-2xl font-bold mb-1">Ad Account</h2>

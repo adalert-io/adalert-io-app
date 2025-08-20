@@ -55,7 +55,7 @@ export default function SubscriptionsSubtab() {
   return (
     <div className="space-y-6">
       {/* Main Subscription Card */}
-      <div className="bg-white rounded-2xl shadow-md p-8">
+      <div className="bg-white p-4">
         <h2 className="text-xl font-bold mb-6">Subscriptions</h2>
 
         {/* Current Status */}
@@ -132,7 +132,7 @@ export default function SubscriptionsSubtab() {
       </div>
 
       {/* Account Cancellation */}
-      <div className="flex items-center gap-3 text-gray-700">
+      <div className="flex items-center gap-3 text-gray-700 ml-4">
         <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0" />
         <span>
           I would like to{" "}

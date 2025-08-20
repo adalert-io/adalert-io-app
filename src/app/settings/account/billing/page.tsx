@@ -542,7 +542,7 @@ export default function BillingSubtab() {
         {screen === "list" && (
           <>
             {/* Billing Section */}
-            <div className="bg-white rounded-2xl shadow-md p-8">
+            <div className="bg-white p-4">
               <h2 className="text-xl font-bold mb-2">Billing</h2>
               <p className="text-gray-600 mb-6">
                 Update payment method and view your invoices. You can review your subscription details{" "}
@@ -608,7 +608,7 @@ export default function BillingSubtab() {
             </div>
 
             {/* Invoice History Section */}
-            <div className="bg-white rounded-2xl shadow-md p-8">
+            <div className="bg-white rounded-2xl  p-4">
               <h2 className="text-xl font-bold mb-6">Invoice History</h2>
               
               {invoicesLoading ? (

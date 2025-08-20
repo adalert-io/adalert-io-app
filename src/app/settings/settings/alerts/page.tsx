@@ -140,7 +140,7 @@ export default function AlertsSubtab() {
     FIELD_MAP.filter((f) => f.group === group);
 
   return (
-    <div className="bg-white rounded-2xl shadow-md p-8">
+    <div className="bg-white p-4">
       <div className="flex items-center gap-3 mb-1">
         <h2 className="text-2xl font-bold">Alerts</h2>
         {loading && <span className="text-blue-600 text-base">Loading...</span>}
