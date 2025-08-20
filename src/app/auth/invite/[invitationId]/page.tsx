@@ -100,12 +100,28 @@ export default function AcceptInvitation({
       // 2. Create user documents (without contacts for now)
       await createUserDocuments(userCredential.user, false, false);
 
-      // 3. Create contacts in external platforms
-      const { createUserContacts } = await import("@/services/contacts");
-      const contactResult = await createUserContacts(
-        userCredential.user,
-        formData.name
-      );
+      // 3. Create contacts in external platforms using the new API
+      let contactResult = { success: false, contactIds: {}, errors: [] };
+
+      try {
+        const response = await fetch("/api/contacts/create", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user: userCredential.user,
+            userName: formData.name,
+          }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          contactResult = result.result;
+        }
+      } catch (error) {
+        console.warn("Failed to create contacts:", error);
+      }
 
       // 4. Update user document to set Company Admin and contact IDs
       const updateData: any = {
