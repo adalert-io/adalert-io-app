@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,6 +9,11 @@ import { toast } from "sonner";
 import { CHECKBOX_CLASS } from "@/lib/constants";
 import { useAlertSettingsStore } from "@/lib/store/settings-store";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+import { countries } from "countries-list";
+
+// react-select import (avoid SSR issues)
+const Select = dynamic(() => import("react-select"), { ssr: false });
 
 export default function MyProfileTab() {
   const { userDoc } = useAuthStore();
@@ -16,7 +21,7 @@ export default function MyProfileTab() {
   const [name, setName] = useState(userDoc?.Name || "");
   const [email, setEmail] = useState(userDoc?.Email || "");
   const [phone, setPhone] = useState(userDoc?.Telephone || "");
-  const [telephoneDialCode, setTelephoneDialCode] = useState("+1");
+  const [telephoneDialCode, setTelephoneDialCode] = useState(userDoc?.TelephoneDialCode || "");
   const [optInForTextMessage, setOptInForTextMessage] = useState(userDoc?.["Opt In For Text Message"] ?? true);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(userDoc?.Avatar || null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -24,7 +29,20 @@ export default function MyProfileTab() {
   const { updateMyProfile } = useAlertSettingsStore();
   const [isSaving, setIsSaving] = useState(false);
 
-  // Clean up object URL when component unmounts or avatarPreview changes
+  // Dial code options build
+  const dialCodeOptions = useMemo(() => {
+    return Object.entries(countries).map(([code, country]) => ({
+      value: country.phone,
+      label: `+${country.phone} ${country.name}`,
+      displayLabel: `+${country.phone}`,
+    }));
+  }, []);
+
+  const selectedDialCode = useMemo(() => {
+    return dialCodeOptions.find(opt => opt.value.toString() === telephoneDialCode.toString()) || null;
+  }, [dialCodeOptions, telephoneDialCode]);
+
+  // Clean up avatar preview
   useEffect(() => {
     return () => {
       if (avatarPreview && avatarPreview !== userDoc?.Avatar) {
@@ -34,23 +52,24 @@ export default function MyProfileTab() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [avatarPreview]);
 
-  // Update state if userDoc changes
+  // Sync state if userDoc changes
   useEffect(() => {
     setName(userDoc?.Name || "");
     setEmail(userDoc?.Email || "");
     setPhone(userDoc?.Telephone || "");
+    setTelephoneDialCode(userDoc?.TelephoneDialCode || "");
     setOptInForTextMessage(userDoc?.["Opt In For Text Message"] ?? true);
     setAvatarPreview(userDoc?.Avatar || null);
   }, [userDoc]);
 
-  // Handler to trigger file input
+  // Avatar click
   const handleAvatarClick = () => {
     if (!isGoogleSignUp && fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
 
-  // Handler for file change (implement upload logic as needed)
+  // Avatar file change
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -63,7 +82,7 @@ export default function MyProfileTab() {
     }
   };
 
-  // Save handler (stub)
+  // Save profile
   const handleSave = async () => {
     if (!userDoc?.uid) {
       toast.error("User not found");
@@ -74,10 +93,10 @@ export default function MyProfileTab() {
       await updateMyProfile(userDoc.uid, {
         Name: name,
         Email: email,
-        optInForTextMessage: optInForTextMessage,
+        optInForTextMessage,
         Telephone: phone,
         TelephoneDialCode: telephoneDialCode,
-        avatarFile: avatarFile,
+        avatarFile,
         currentAvatarUrl: userDoc?.Avatar || null,
       });
       setAvatarFile(null);
@@ -102,7 +121,7 @@ export default function MyProfileTab() {
         <div className="bg-white rounded-2xl shadow-md p-8 border border-gray-200">
           <h2 className="text-2xl font-bold mb-1">My Profile</h2>
           <p className="text-gray-500 mb-6">
-            View or edit your profile. You can include or exclude yourself from email alerts or control the frequency from {" "}
+            View or edit your profile. You can include or exclude yourself from email alerts or control the frequency from{" "}
             <Link href="/settings/settings/alerts" className="text-blue-600 underline">alert settings</Link>
           </p>
           <div className="flex flex-col md:flex-row gap-8">
@@ -119,18 +138,16 @@ export default function MyProfileTab() {
                     }}
                   />
                 </div>
-                {/* Camera icon button */}
+                {/* Camera icon */}
                 <button
                   type="button"
-                  className="absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-1/2 bg-gray-200 hover:bg-gray-300 border-4 border-white rounded-full w-12 h-12 flex items-center justify-center shadow-md z-50"
+                  className="absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-1/2 bg-gray-200 hover:bg-gray-300 border-4 border-white rounded-full w-12 h-12 flex items-center justify-center shadow-md"
                   aria-label="Change avatar"
-                  style={{ zIndex: 50 }}
                   onClick={handleAvatarClick}
                   disabled={isGoogleSignUp}
                 >
                   <Camera className="w-6 h-6 text-blue-600" />
                 </button>
-                {/* Hidden file input */}
                 <input
                   type="file"
                   accept="image/*"
@@ -142,6 +159,7 @@ export default function MyProfileTab() {
               </div>
               <div className="text-xl font-bold text-center">{name}</div>
             </div>
+
             {/* Personal Info Form */}
             <div className="flex-1 bg-white rounded-xl border border-gray-100 p-8">
               <div className="text-lg font-semibold mb-6">Personal information</div>
@@ -167,23 +185,29 @@ export default function MyProfileTab() {
                   />
                   <Mail className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
                 </div>
-                <div className="relative flex items-center">
-                  {/* Country selector (static for now) */}
-                  <select
-                    value={telephoneDialCode}
-                    onChange={e => setTelephoneDialCode(e.target.value)}
-                    className="h-10 rounded-l-md border border-gray-200 bg-gray-50 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-                  >
-                    <option value="+1">🇺🇸 +1</option>
-                    <option value="+1">🇨🇦 +1</option>
-                  </select>
-                  <Input
-                    value={phone}
-                    onChange={e => setPhone(e.target.value)}
-                    placeholder="Phone"
-                    className="rounded-l-none"
-                    type="tel"
-                  />
+                <div className="flex gap-2 items-center">
+                  {/* Country Code Dropdown */}
+                  <div className="w-32">
+                    <Select
+                      placeholder="+1"
+                      options={dialCodeOptions}
+                      value={selectedDialCode ? { ...selectedDialCode, label: selectedDialCode.displayLabel } : null}
+                      onChange={(option) => setTelephoneDialCode(option?.value.toString() || "")}
+                      isSearchable
+                      className="react-select-container"
+                      classNamePrefix="react-select"
+                    />
+                  </div>
+                  {/* Phone */}
+                  <div className="flex-1 relative">
+                    <Input
+                      value={phone}
+                      onChange={e => setPhone(e.target.value)}
+                      placeholder="Phone"
+                      type="tel"
+                    />
+                    <Phone className="absolute right-3 top-2.5 w-4 h-4 text-blue-400" />
+                  </div>
                 </div>
                 <div className="flex items-start gap-2 mt-2">
                   <Checkbox
@@ -193,14 +217,19 @@ export default function MyProfileTab() {
                     className={CHECKBOX_CLASS}
                   />
                   <label htmlFor="sms-consent" className="text-xs text-gray-600 select-none">
-                    I consent to opting in for text messages. Message and data rate changes may apply. Change in your alert settings to opt out. This feature is only available in the US.
+                    I consent to opting in for text messages. Message and data rate charges may apply. Change in your alert settings to opt out.
                   </label>
                 </div>
               </form>
             </div>
           </div>
+
           <div className="flex justify-center mt-8">
-            <Button className="w-full max-w-[150px] flex justify-center bg-blue-600 text-white text-lg font-bold py-3 rounded shadow-md " onClick={handleSave} disabled={!isSaveEnabled || isSaving}>
+            <Button
+              className="w-full max-w-[150px] flex justify-center bg-blue-600 text-white text-lg font-bold py-3 rounded shadow-md"
+              onClick={handleSave}
+              disabled={!isSaveEnabled || isSaving}
+            >
               {isSaving ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>) : "Save"}
             </Button>
           </div>
@@ -208,4 +237,4 @@ export default function MyProfileTab() {
       </div>
     </div>
   );
-} 
+}
