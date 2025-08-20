@@ -123,7 +123,7 @@ export default function Summary() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F7FB]">
+    <div className="min-h-screen bg-[#FFF]">
       <Header />
       <main className="max-w-[1440px] mx-auto px-4 sm:px-6 py-4 sm:py-6">
         {/* Top header row */}
