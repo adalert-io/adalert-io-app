@@ -73,7 +73,12 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
       });
     }
   }, [paymentMethods]);
-
+const cards = [
+    { name: "Visa", src: "/cards/Visa.png" },
+    { name: "Mastercard", src: "/cards/Mastercard.png" },
+    { name: "Amex", src: "/cards/Amex.png" },
+    { name: "Discover", src: "/cards/Discover.png" },
+  ];
   // Transform countries data for react-select
   const countryOptions = useMemo(() => {
     return Object.entries(countries).map(([code, country]) => ({
@@ -193,12 +198,18 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
       </button>
 
       {/* Subscription Summary */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="text-3xl font-bold text-blue-600">${subscriptionPrice}/Monthly</div>
-        <div className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-medium">
-          {connectedAccountsCount} Connected ads account(s)
-        </div>
-      </div>
+     <div className="flex items-center justify-between gap-4 mb-4">
+            <div className="text-3xl font-bold">
+              <span className="text-blue-600">${subscriptionPrice}</span>
+              <span className="text-gray-600 font-normal text-xl">/Monthly</span>
+            </div>
+            <div className="bg-gray-100 px-3 py-1 rounded-full">
+              <span className="text-blue-600 font-semibold">
+                {connectedAccountsCount}
+              </span>
+              <span className="text-gray-600"> Connected ads account(s)</span>
+            </div>
+          </div>
 
       {/* Payment Method Form */}
       <div>
@@ -209,164 +220,171 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
         <div className="flex items-center gap-4 mb-6">
           <div className="text-sm text-gray-600">Accepted cards:</div>
           <div className="flex gap-2">
-            <div className="w-8 h-5 bg-red-600 rounded flex items-center justify-center text-white text-xs font-bold">MC</div>
-            <div className="w-8 h-5 bg-blue-600 rounded flex items-center justify-center text-white text-xs font-bold">AMEX</div>
-            <div className="w-8 h-5 bg-orange-600 rounded-full flex items-center justify-center text-white text-xs font-bold">D</div>
-            <div className="w-8 h-5 bg-blue-500 rounded flex items-center justify-center text-white text-xs font-bold">VISA</div>
+           <div className="flex gap-3 items-center">
+      {cards.map((card) => (
+        <img
+          key={card.name}
+          src={card.src}
+          alt={card.name}
+          className="w-[50px] h-auto object-contain"
+        />
+      ))}
+    </div>
           </div>
         </div>
 
         {/* Form Fields */}
-        <div className="space-y-4">
-          {/* Card Details */}
-          <div>
-            <Label className="text-sm font-medium text-gray-700">
-              Card details
-            </Label>
-            <div className="mt-1 border border-gray-300 rounded-md p-3">
-              <CardElement 
-                options={stripeConfig.cardElementOptions}
-                onChange={(event) => {
-                  setIsCardComplete(event.complete);
-                }}
-              />
-            </div>
-          </div>
+     <div className="space-y-4">
+  {/* Card Details */}
+  <div>
+    <Label className="text-sm font-medium text-gray-700">
+      Card details
+    </Label>
+    <div className="mt-1 border border-gray-300 rounded-md p-3">
+      <CardElement 
+        options={stripeConfig.cardElementOptions}
+        onChange={(event) => {
+          setIsCardComplete(event.complete);
+        }}
+      />
+    </div>
+  </div>
 
-          {/* Name on Card */}
-          <div>
-            <Label htmlFor="nameOnCard" className="text-sm font-medium text-gray-700">
-              Name on card
-            </Label>
-            <div className="relative mt-1">
-              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                id="nameOnCard"
-                type="text"
-                placeholder="John Doe"
-                value={formData.nameOnCard}
-                onChange={(e) => handleInputChange('nameOnCard', e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
+  {/* Name on Card */}
+  <div>
+    <Label htmlFor="nameOnCard" className="text-sm font-medium text-gray-700">
+      Name on card
+    </Label>
+    <div className="relative mt-1">
+      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#155dfc] w-4 h-4" />
+      <Input
+        id="nameOnCard"
+        type="text"
+        placeholder="John Doe"
+        value={formData.nameOnCard}
+        onChange={(e) => handleInputChange('nameOnCard', e.target.value)}
+        className="pl-10"
+      />
+    </div>
+  </div>
 
-          {/* Street Address */}
-          <div>
-            <Label htmlFor="streetAddress" className="text-sm font-medium text-gray-700">
-              Street address
-            </Label>
-            <div className="relative mt-1">
-              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                id="streetAddress"
-                type="text"
-                placeholder="123 Main St"
-                value={formData.streetAddress}
-                onChange={(e) => handleInputChange('streetAddress', e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
+  {/* Street Address */}
+  <div>
+    <Label htmlFor="streetAddress" className="text-sm font-medium text-gray-700">
+      Street address
+    </Label>
+    <div className="relative mt-1">
+      <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#155dfc] w-4 h-4" />
+      <Input
+        id="streetAddress"
+        type="text"
+        placeholder="123 Main St"
+        value={formData.streetAddress}
+        onChange={(e) => handleInputChange('streetAddress', e.target.value)}
+        className="pl-10"
+      />
+    </div>
+  </div>
 
-          {/* City and State Row */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="city" className="text-sm font-medium text-gray-700">
-                City
-              </Label>
-              <div className="relative mt-1">
-                <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  id="city"
-                  type="text"
-                  placeholder="New York"
-                  value={formData.city}
-                  onChange={(e) => handleInputChange('city', e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="state" className="text-sm font-medium text-gray-700">
-                State
-              </Label>
-              <div className="relative mt-1">
-                <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  id="state"
-                  type="text"
-                  placeholder="NY"
-                  value={formData.state}
-                  onChange={(e) => handleInputChange('state', e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-          </div>
+  {/* City and State Row */}
+  <div className="grid grid-cols-2 gap-4">
+    <div>
+      <Label htmlFor="city" className="text-sm font-medium text-gray-700">
+        City
+      </Label>
+      <div className="relative mt-1">
+        <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#155dfc] w-4 h-4" />
+        <Input
+          id="city"
+          type="text"
+          placeholder="New York"
+          value={formData.city}
+          onChange={(e) => handleInputChange('city', e.target.value)}
+          className="pl-10"
+        />
+      </div>
+    </div>
+    <div>
+      <Label htmlFor="state" className="text-sm font-medium text-gray-700">
+        State
+      </Label>
+      <div className="relative mt-1">
+        <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#155dfc] w-4 h-4" />
+        <Input
+          id="state"
+          type="text"
+          placeholder="NY"
+          value={formData.state}
+          onChange={(e) => handleInputChange('state', e.target.value)}
+          className="pl-10"
+        />
+      </div>
+    </div>
+  </div>
 
-          {/* Country and Zip Row */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="country" className="text-sm font-medium text-gray-700">
-                Country
-              </Label>
-              <div className="relative mt-1">
-                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 z-10" />
-                {isClient ? (
-                  <Select
-                    placeholder="Select Country"
-                    options={countryOptions}
-                    value={selectedCountry}
-                    onChange={(selectedOption: any) => {
-                      setFormData(prev => ({
-                        ...prev,
-                        country: selectedOption?.value || "US"
-                      }));
-                    }}
-                    isSearchable
-                    className="react-select-container"
-                    classNamePrefix="react-select"
-                    styles={{
-                      control: (provided) => ({
-                        ...provided,
-                        paddingLeft: '2.5rem',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '0.375rem',
-                        minHeight: '2.5rem',
-                        '&:hover': {
-                          borderColor: '#3b82f6'
-                        }
-                      }),
-                      placeholder: (provided) => ({
-                        ...provided,
-                        color: '#9ca3af'
-                      })
-                    }}
-                  />
-                ) : (
-                  <div className="h-10 bg-gray-100 rounded animate-pulse pl-10" />
-                )}
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="zip" className="text-sm font-medium text-gray-700">
-                Zip
-              </Label>
-              <div className="relative mt-1">
-                <Target className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  id="zip"
-                  type="text"
-                  placeholder="10001"
-                  value={formData.zip}
-                  onChange={(e) => handleInputChange('zip', e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
+  {/* Country and Zip Row */}
+  <div className="grid grid-cols-2 gap-4">
+    <div>
+      <Label htmlFor="country" className="text-sm font-medium text-gray-700">
+        Country
+      </Label>
+      <div className="relative mt-1">
+        <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#155dfc] w-4 h-4 z-10" />
+        {isClient ? (
+          <Select
+            placeholder="Select Country"
+            options={countryOptions}
+            value={selectedCountry}
+            onChange={(selectedOption: any) => {
+              setFormData(prev => ({
+                ...prev,
+                country: selectedOption?.value || "US"
+              }));
+            }}
+            isSearchable
+            className="react-select-container"
+            classNamePrefix="react-select"
+            styles={{
+              control: (provided) => ({
+                ...provided,
+                paddingLeft: '2.5rem',
+                border: '1px solid #d1d5db',
+                borderRadius: '0.375rem',
+                minHeight: '2.5rem',
+                '&:hover': {
+                  borderColor: '#3b82f6'
+                }
+              }),
+              placeholder: (provided) => ({
+                ...provided,
+                color: '#9ca3af'
+              })
+            }}
+          />
+        ) : (
+          <div className="h-10 bg-gray-100 rounded animate-pulse pl-10" />
+        )}
+      </div>
+    </div>
+    <div>
+      <Label htmlFor="zip" className="text-sm font-medium text-gray-700">
+        Zip
+      </Label>
+      <div className="relative mt-1">
+        <Target className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#155dfc] w-4 h-4" />
+        <Input
+          id="zip"
+          type="text"
+          placeholder="10001"
+          value={formData.zip}
+          onChange={(e) => handleInputChange('zip', e.target.value)}
+          className="pl-10"
+        />
+      </div>
+    </div>
+  </div>
+</div>
+
 
         {/* Submit Button */}
         <div className="mt-8">

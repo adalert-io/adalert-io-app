@@ -147,21 +147,22 @@ function KpiMetricsRow({
   const [activePeriod, setActivePeriod] = React.useState("7");
 
   return (
-    <div className="mb-6">
+    <div className="mb-6 -mt-[70px]">
       <div className="flex gap-2 mb-3">
         {KPI_PERIODS.map((p) => (
-          <button
-            key={p.key}
-            type="button"
-            className={`px-4 py-2 rounded-lg font-semibold border transition-colors text-sm ${
-              activePeriod === p.key
-                ? "bg-[#015AFD] text-white border-[#015AFD]"
-                : "bg-white text-[#015AFD] border-[#015AFD] hover:bg-blue-50"
-            }`}
-            onClick={() => setActivePeriod(p.key)}
-          >
-            {p.label}
-          </button>
+        <button
+  key={p.key}
+  type="button"
+  className={`px-6 py-3 rounded-lg font-semibold border transition-colors text-base ${
+    activePeriod === p.key
+      ? "bg-[#015AFD] text-white border-[#015AFD]"
+      : "bg-white text-[#015AFD] border-[#015AFD] hover:bg-blue-50"
+  }`}
+  onClick={() => setActivePeriod(p.key)}
+>
+  {p.label}
+</button>
+
         ))}
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-3">
@@ -212,19 +213,20 @@ function KpiMetricsRow({
                   maximumFractionDigits: 2,
                 })}%`;
           return (
-            <Card key={field.label} className="bg-white">
-              <CardContent className="py-2 px-2 flex flex-col items-center">
-                <span className="text-base font-bold text-gray-900">
-                  {valueDisplay}
-                </span>
-                <span className="text-xs font-semibold text-gray-900">
-                  {field.label}
-                </span>
-                <span className={`text-xs font-semibold ${pctColor}`}>
-                  {pctDisplay}
-                </span>
-              </CardContent>
-            </Card>
+         <Card key={field.label} className="bg-white">
+  <CardContent className="px-2 flex flex-col items-center">
+    <span className="text-base font-bold text-gray-900">
+      {valueDisplay}
+    </span>
+    <span className="text-xs font-semibold text-gray-900">
+      {field.label}
+    </span>
+    <span className={`text-xs font-semibold ${pctColor}`}>
+      {pctDisplay}
+    </span>
+  </CardContent>
+</Card>
+
           );
         })}
       </div>
@@ -627,9 +629,9 @@ export default function Dashboard() {
     });
 
     return (
-      <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
+      <div className="relative overflow-x-auto shadow-md sm:rounded-lg mt-6">
   <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-    <thead className="text-xs bg-[#015AFD] text-white uppercase">
+    <thead className="text-xs bg-[#f4f6fa] text-[#000] uppercase">
       {table.getHeaderGroups().map((headerGroup) => (
         <tr key={headerGroup.id}>
           {headerGroup.headers.map((header) => (
@@ -832,6 +834,7 @@ export default function Dashboard() {
         <div className="flex flex-col md:flex-row gap-4 mb-6 w-full">
           <div className="flex flex-col gap-2 w-full">
             <div className="flex items-center gap-3">
+              <span className="text-lg md:text-xl font-semibold text-gray-900"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M16.0122 1.85333C14.0875 0.739998 11.6264 1.40068 10.5151 3.32901L0.540031 20.6392C-0.571165 22.5676 0.0882575 25.0333 2.01293 26.1467C3.9376 27.26 6.3987 26.5993 7.50995 24.671L17.4851 7.36074C18.5963 5.4324 17.9368 2.96665 16.0122 1.85333Z" fill="#FFC107"></path><path d="M16.0119 1.85333C15.1129 1.33331 14.0969 1.20053 13.156 1.40303C13.5555 1.48922 13.9488 1.63759 14.3218 1.85333C16.2464 2.96666 16.9059 5.43241 15.7947 7.36074L5.81955 24.671C5.22739 25.6986 4.25187 26.366 3.17847 26.597C4.84064 26.9555 6.61383 26.2256 7.50966 24.671L17.4848 7.36074C18.5961 5.43241 17.9366 2.96666 16.0119 1.85333Z" fill="#FFB300"></path><path d="M4.01986 26.6875C6.23997 26.6875 8.03972 24.8843 8.03972 22.66C8.03972 20.4357 6.23997 18.6326 4.01986 18.6326C1.79975 18.6326 0 20.4357 0 22.66C0 24.8843 1.79975 26.6875 4.01986 26.6875Z" fill="#4CAF50"></path><path d="M3.17847 26.597C3.17825 26.5975 3.17814 26.5979 3.17798 26.5984C3.44956 26.6564 3.73098 26.6875 4.01984 26.6875C6.23993 26.6875 8.0397 24.8844 8.0397 22.6601C8.0397 22.1659 7.95045 21.6928 7.78792 21.2553L5.8196 24.671C5.22739 25.6986 4.25188 26.366 3.17847 26.597Z" fill="#43A047"></path><path d="M27.4602 20.6393L17.4851 3.32907C16.3739 1.40074 13.9128 0.740059 11.9881 1.85339C10.0634 2.96671 9.4039 5.43247 10.5152 7.3608L20.4903 24.671C21.6015 26.5994 24.0626 27.26 25.9873 26.1467C27.912 25.0334 28.5714 22.5676 27.4602 20.6393Z" fill="#2196F3"></path><path d="M27.4601 20.6393L17.485 3.32909C16.5891 1.77449 14.816 1.04452 13.1538 1.4031C14.2272 1.6341 15.2027 2.30151 15.7949 3.32909L25.7701 20.6393C26.8813 22.5677 26.2218 25.0334 24.2972 26.1467C23.9241 26.3625 23.5309 26.5108 23.1314 26.597C24.0722 26.7995 25.0883 26.6668 25.9873 26.1467C27.9119 25.0334 28.5714 22.5676 27.4601 20.6393Z" fill="#1E88E5"></path></svg></span>
               <span
                 className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 ${
                   !adsLabel
@@ -1054,7 +1057,7 @@ export default function Dashboard() {
           {isEditingBudget ? (
             <>
               <Button
-                className="bg-[#156CFF] hover:bg-[#156CFF]/90 text-white font-semibold px-1 py-0.5 rounded-md text-xs h-6 min-w-[50px]"
+                className="p-4 bg-[#156CFF] hover:bg-[#156CFF]/90 text-white font-semibold px-1 py-0.5 rounded-md text-xs h-6 min-w-[50px]"
                 onClick={handleConfirmBudget}
                 disabled={
                   isUpdatingBudget || !budgetInput || Number(budgetInput) < 0
@@ -1447,7 +1450,7 @@ export default function Dashboard() {
                 </span>
               </Button>
               <select
-                className="ml-2 border rounded-md px-2 py-1 text-xs"
+                className="border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm bg-white shadow-sm hover:border-gray-300 transition-colors focus:ring-2 focus:ring-blue-200 focus:border-blue-300 cursor-pointer font-medium text-gray-700"
                 value={pageSize}
                 onChange={(e) => setPageSize(Number(e.target.value))}
               >
@@ -1456,6 +1459,7 @@ export default function Dashboard() {
                 <option value={50}>50 rows</option>
                 <option value={100}>100 rows</option>
               </select>
+              
             </div>
           </div>
           <div className="relative">

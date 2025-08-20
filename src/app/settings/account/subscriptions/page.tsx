@@ -60,10 +60,10 @@ export default function SubscriptionsSubtab() {
 
         {/* Current Status */}
         <div className="mb-6">
-          <div className="flex items-center gap-4 mb-4">
+          <div className="flex items-center gap-4 mb-4 justify-between">
             <div className="text-3xl font-bold">
               <span className="text-blue-600">${subscriptionPrice}</span>
-              <span className="text-gray-600">/Monthly</span>
+              <span className="text-gray-600 font-normal text-xl">/Monthly</span>
             </div>
             <div className="bg-gray-100 px-3 py-1 rounded-full">
               <span className="text-blue-600 font-semibold">
@@ -153,13 +153,7 @@ export default function SubscriptionsSubtab() {
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <img
-                  src="/images/adAlert-logo-words.avif"
-                  alt="adAlert.io"
-                  className="h-8 w-auto"
-                />
-              </div>
+
               <button
                 onClick={() => setShowDeleteModal(false)}
                 className="text-gray-400 hover:text-gray-600"
@@ -206,10 +200,10 @@ export default function SubscriptionsSubtab() {
                 {isDeleting ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Removing...
+                    Deleting...
                   </>
                 ) : (
-                  "Remove"
+                  "DELETE"
                 )}
               </Button>
             </div>

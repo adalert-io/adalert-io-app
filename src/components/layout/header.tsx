@@ -102,13 +102,12 @@ export function Header() {
                   {userAdsAccounts.map((account) => (
                     <li
                       key={account.id}
-                      className={`px-4 py-2 cursor-pointer hover:bg-blue-50 text-sm text-gray-900 flex items-center gap-2 ${
+                      className={`px-4 py-2 cursor-pointer hover:bg-blue-50 text-sm text-gray-900 flex items-center gap-1 ${
                         selectedAdsAccount?.id === account.id ? "bg-blue-50 font-semibold" : ""
                       }`}
                       onClick={() => handleSelectAccount(account)}
                     >
-                      <span className="whitespace-nowrap">{account["Account Name Editable"] || account.name}</span>
-                      <span className="text-[#7A7D9C] ml-2">{formatAccountNumber(account.Id || account.id || "")}</span>
+                      <span className="whitespace-nowrap">{account["Account Name Editable"] || account.name}</span>-<span className="text-[#7A7D9C]">{formatAccountNumber(account.Id || account.id || "")}</span>
                     </li>
                   ))}
                 </ul>

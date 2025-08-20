@@ -270,7 +270,7 @@ export default function AlertsSubtab() {
           ))}
         </div>
       </div>
-      <div className="flex justify-start mt-8">
+      <div className="flex justify-center mt-8">
         <Button
           onClick={handleSave}
           disabled={saving || loading}
