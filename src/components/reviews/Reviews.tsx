@@ -1,34 +1,32 @@
 // Reviews.tsx
 import React from "react";
 import { Star } from "lucide-react";
+import Image from "next/image";
 
 const Reviews: React.FC = () => {
   const reviews = [
     {
       id: 1,
       text: `"Managing multiple ad accounts used to feel overwhelming, but AdAlert.io changed that. The platform’s real-time alerts, easy setup, and dependable monitoring give our agency complete confidence and keep our clients consistently satisfied."`,
-      initials: "LM",
+      image: "/images/Lauren.png",
       name: "Lauren Mitchell",
       role: "Director of Digital Strategy, Horizon Growth Agency",
-      gradient: "from-blue-400 to-purple-500",
       align: "self-end rotate-2",
     },
     {
       id: 2,
       text: `"As a project manager overseeing multiple clients, AdAlert.io keeps our campaigns on track. The real-time monitoring gives our team confidence and our clients peace of mind."`,
-      initials: "DC",
+      image: "/images/David.png",
       name: "David Chen",
       role: "Project Manager, Elevate Marketing Group",
-      gradient: "from-green-400 to-blue-500",
       align: "self-start -rotate-2",
     },
     {
       id: 3,
       text: `"AdAlert.io saves me hours every week. Instant alerts mean I can act before small issues become big problems. It’s a must-have for PPC managers."`,
-      initials: "JR",
-      name: "Jessica Ramos",
+      image: "/images/Johann.png",
+      name: "Johann Müller",
       role: "Senior PPC Specialist, BrightPath Media",
-      gradient: "from-orange-400 to-red-500",
       align: "self-end rotate-2",
     },
   ];
@@ -64,11 +62,13 @@ const Reviews: React.FC = () => {
             </div>
             {/* Reviewer */}
             <div className="flex items-center gap-3">
-              <div
-                className={`w-10 h-10 rounded-full bg-gradient-to-br ${review.gradient} flex items-center justify-center text-white font-semibold text-sm`}
-              >
-                {review.initials}
-              </div>
+              <Image
+                src={review.image}
+                alt={review.name}
+                width={40}
+                height={40}
+                className="rounded-full object-cover"
+              />
               <div>
                 <p className="font-semibold text-gray-800 text-sm">
                   {review.name}

@@ -41,7 +41,6 @@ import { COLLECTIONS } from "@/lib/constants";
 import { useUserAdsAccountsStore } from "@/lib/store/user-ads-accounts-store";
 
 function formatAccountId(id: string) {
-  // Format as xxx-xxx-xxxx
   return id.replace(/(\d{3})(\d{3})(\d{4})/, "$1-$2-$3");
 }
 
@@ -64,7 +63,6 @@ export function AddAdsAccount() {
     (state) => state.userAdsAccounts
   );
 
-  // Default ads account variable values
   const DEFAULT_ADS_ACCOUNT_VARIABLE = {
     "Is Enabled": true,
     "Is Alert Enabled": true,
@@ -97,11 +95,7 @@ export function AddAdsAccount() {
 
         if (token && tracker && tracker["Is Ads Account Authenticating"]) {
           const data = await fetchAdsAccounts(token.id, user.uid);
-          setAdsAccounts(
-            data.map((acc: any) => ({
-              ...acc,
-            }))
-          );
+          setAdsAccounts(data.map((acc: any) => ({ ...acc })));
           await setAdsAccountAuthenticating(user.uid, false);
         }
       } catch (error) {
@@ -119,7 +113,7 @@ export function AddAdsAccount() {
     await setAdsAccountAuthenticating(user.uid, true);
 
     const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-   const from = searchParams?.get("from") || "";
+    const from = searchParams?.get("from") || "";
     const redirectUri =
       from === "settings"
         ? `${window.location.origin}/redirect?page=add-ads-account-from-settings`
@@ -300,18 +294,17 @@ export function AddAdsAccount() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
-      <main className="flex flex-1 items-center justify-center mt-24">
-        <Card className="w-full max-w-2xl p-0 border border-gray-200 rounded-[7px] shadow-md bg-white">
-          <CardContent className="p-10 flex flex-col items-center">
-            <h1 className="text-2xl md:text-3xl font-bold text-center mb-6">
+      <main className="flex flex-1 items-center justify-center mt-12 md:mt-24 px-4">
+        <Card className="w-full max-w-md md:max-w-2xl p-0 border border-gray-200 rounded-[7px] shadow-md bg-white">
+          <CardContent className="p-6 md:p-10 flex flex-col items-center">
+            <h1 className="text-xl md:text-3xl font-bold text-center mb-4 md:mb-6">
               {userAdsAccounts && userAdsAccounts.length > 0
                 ? "Add new ads account"
                 : "Let's add your first ads account"}
             </h1>
 
-            {/* Ads Accounts List */}
             {adsAccounts && adsAccounts.length > 0 && (
-              <div className="w-full max-h-72 overflow-y-auto flex flex-col gap-4 mb-8">
+              <div className="w-full max-h-72 overflow-y-auto flex flex-col gap-4 mb-6 md:mb-8">
                 {adsAccounts.map((acc, idx) => {
                   const isSelected = acc["Is Selected"];
                   const isConnected = acc["Is Connected"];
@@ -335,7 +328,7 @@ export function AddAdsAccount() {
                       }`}
                       onClick={() => handleCardClick(idx)}
                     >
-                      <div className="flex justify-between items-center mb-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
                         <div>
                           <div className="text-sm font-semibold text-gray-800">
                             Google Ads Account ID: {formatAccountId(acc.Id)}
@@ -345,7 +338,7 @@ export function AddAdsAccount() {
                           </div>
                         </div>
                         {acc["Is Connected"] && (
-                          <span className="flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 rounded-lg text-xs font-medium">
+                          <span className="mt-2 sm:mt-0 flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 rounded-lg text-xs font-medium">
                             <CheckCheck className="w-4 h-4 text-green-600" />{" "}
                             Connected
                           </span>
@@ -359,7 +352,7 @@ export function AddAdsAccount() {
                           type="text"
                           inputMode="numeric"
                           min={0}
-                          className={`flex-1 border rounded-lg px-4 py-2 text-lg font-semibold outline-none transition-all text-right ${
+                          className={`flex-1 border rounded-lg px-4 py-2 text-base md:text-lg font-semibold outline-none transition-all text-right ${
                             isInvalid
                               ? "border-red-500 focus:border-red-500"
                               : "border-gray-200"
@@ -382,11 +375,10 @@ export function AddAdsAccount() {
               </div>
             )}
 
-            {/* Connect Google Ads account(s) Button */}
             {(!adsAccounts || adsAccounts.length === 0) && (
               <Button
                 size="lg"
-                className="w-full max-w-xs bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold py-6 mb-4"
+                className="w-full max-w-xs bg-blue-600 hover:bg-blue-700 text-white text-base md:text-lg font-semibold py-4 md:py-6 mb-4"
                 onClick={handleConnectGoogleAds}
                 disabled={!user || isLoading}
               >
@@ -397,11 +389,10 @@ export function AddAdsAccount() {
               </Button>
             )}
 
-            {/* Connect and continue Button */}
             {adsAccounts && adsAccounts.length > 0 && (
               <Button
                 size="lg"
-                className="w-full max-w-xs bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold py-6 mb-4"
+                className="w-full max-w-xs bg-blue-600 hover:bg-blue-700 text-white text-base md:text-lg font-semibold py-4 md:py-6 mb-4"
                 onClick={handleConnectAndContinue}
                 disabled={isConnectContinueDisabled || isLoading}
               >
@@ -412,10 +403,11 @@ export function AddAdsAccount() {
 
             <div className="flex items-center justify-center text-gray-500 text-sm mb-2 w-full">
               <InfoCircledIcon className="mr-2 w-5 h-5 text-blue-500" />
-              You can unlink any ad accounts anytime you want from settings.
+              You can unlink any ad account from the settings at any time.
             </div>
+
             {adsAccounts && adsAccounts.length > 0 && (
-              <div className="flex items-center text-gray-500 text-sm mb-8 w-full">
+              <div className="flex items-center text-gray-500 text-sm mb-6 md:mb-8 w-full justify-center">
                 <InfoCircledIcon className="mr-2 w-5 h-5 text-blue-500" />
                 Not the right ads account?{" "}
                 <button
@@ -429,14 +421,14 @@ export function AddAdsAccount() {
               </div>
             )}
 
-            <div className="flex gap-4 w-full justify-center mt-2">
-              <div className="flex flex-col items-center bg-gray-50 rounded-xl p-4 w-48">
+            <div className="flex flex-col sm:flex-row gap-4 w-full justify-center mt-2">
+              <div className="flex flex-col items-center bg-gray-50 rounded-xl p-4 w-full sm:w-48">
                 <ShieldCheck className="w-7 h-7 text-blue-500 mb-2" />
                 <span className="font-medium text-gray-800">
                   Secure Connection
                 </span>
               </div>
-              <div className="flex flex-col items-center bg-gray-50 rounded-xl p-4 w-48">
+              <div className="flex flex-col items-center bg-gray-50 rounded-xl p-4 w-full sm:w-48">
                 <CheckCircle className="w-7 h-7 text-green-500 mb-2" />
                 <span className="font-medium text-gray-800">
                   MCC Compatible
