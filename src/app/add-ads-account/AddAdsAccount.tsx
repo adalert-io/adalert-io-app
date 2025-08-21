@@ -295,7 +295,7 @@ export function AddAdsAccount() {
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
       <main className="flex flex-1 items-center justify-center mt-12 md:mt-24 px-4">
-        <Card className="w-full max-w-md md:max-w-2xl p-0 border border-gray-200 rounded-[7px] shadow-md bg-white">
+        <Card className="w-full max-w-md md:max-w-2xl p-0 border border-gray-200 rounded-[15px] shadow-none bg-white">
           <CardContent className="p-6 md:p-10 flex flex-col items-center">
             <h1 className="text-xl md:text-3xl font-bold text-center mb-4 md:mb-6">
               {userAdsAccounts && userAdsAccounts.length > 0

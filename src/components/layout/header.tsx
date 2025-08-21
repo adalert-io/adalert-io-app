@@ -81,7 +81,7 @@ export function Header() {
           {user && userAdsAccounts.length > 0 && (
 <div className="relative ml-4 hidden md:inline-block">
               <button
-                className="flex items-center gap-2 px-4 py-2 border border-[#E3E8F0] bg-white rounded-xl shadow-sm text-[#7A7D9C] text-base font-medium w-fit hover:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-200 transition-all"
+                className="flex items-center gap-2 px-4 py-2 border border-[#E3E8F0] bg-white rounded-xl shadow-none text-[#7A7D9C] text-base font-medium w-fit hover:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-200 transition-all"
                 onClick={() => setDropdownOpen((v) => !v)}
                 type="button"
               >
@@ -249,7 +249,7 @@ export function Header() {
         <div className="md:hidden absolute top-16 left-0 w-full bg-white border-b border-gray-200 px-4 py-3 z-40">
           <div className="relative">
             <button
-              className="flex items-center justify-between w-full px-4 py-3 border border-[#E3E8F0] bg-white rounded-xl shadow-sm text-[#7A7D9C] text-base font-medium hover:border-blue-400 transition-all"
+              className="flex items-center justify-between w-full px-4 py-3 border border-[#E3E8F0] bg-white rounded-xl shadow-none text-[#7A7D9C] text-base font-medium hover:border-blue-400 transition-all"
               onClick={() => setDropdownOpen((v) => !v)}
               type="button"
             >

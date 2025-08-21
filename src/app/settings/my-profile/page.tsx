@@ -175,7 +175,6 @@ export default function MyProfileTab() {
                     className="h-10 rounded-l-md border border-gray-200 bg-gray-50 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
                   >
                     <option value="+1">🇺🇸 +1</option>
-                    <option value="+1">🇨🇦 +1</option>
                   </select>
                   <Input
                     value={phone}

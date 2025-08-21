@@ -165,7 +165,7 @@ export default function Summary() {
                 {searchValue && (
                   <button
                     type="button"
-                    className="ml-2 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+                    className="ml-2 text-gray-400 hover:text-gray-600 shadow-none transition-colors p-1 rounded-full hover:bg-gray-100"
                     onClick={() => setSearchValue("")}
                     aria-label="Clear search"
                   >
@@ -178,14 +178,14 @@ export default function Summary() {
               variant="outline"
               size="icon"
               onClick={() => setShowSearch((v) => !v)}
-              className={`${showSearch ? "border-blue-200 bg-blue-50" : ""} hover:bg-blue-50 transition-colors`}
+              className={`${showSearch ? "border-blue-200 shadow-none bg-blue-50" : ""} hover:bg-blue-50 shadow-none transition-colors`}
               aria-label="Show search"
             >
-              <MagnifyingGlassIcon className="w-5 h-5 text-[#015AFD]" />
+              <MagnifyingGlassIcon className="w-5 h-5 text-[#015AFD] shadow-none" />
             </Button>
             <div className="relative">
               <select
-                className="appearance-none border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm bg-white shadow-sm hover:border-gray-300 transition-colors focus:ring-2 focus:ring-blue-200 focus:border-blue-300 cursor-pointer font-medium text-gray-700"
+                className="appearance-none border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm bg-white shadow-none hover:border-gray-300 transition-colors focus:ring-2 focus:ring-blue-200 focus:border-blue-300 cursor-pointer font-medium text-gray-700"
                 value={pageSize}
                 onChange={(e) => {
                   setPageSize(Number(e.target.value))
@@ -208,7 +208,7 @@ export default function Summary() {
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-none border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
@@ -290,7 +290,7 @@ export default function Summary() {
                             Checking
                           </span>
                         ) : acc.showingAds ? (
-                          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-700 font-semibold text-sm">
+                          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-700 font-regular text-sm">
                             <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
                               <rect width="16" height="16" rx="8" fill="#22C55E" />
                               <path
@@ -304,7 +304,7 @@ export default function Summary() {
                             Yes
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-100 text-red-700 font-semibold text-sm">
+                          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-100 text-red-700 font-regular text-sm">
                             <div className="w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
                               <X className="w-2.5 h-2.5 text-white stroke-[2.5]" />
                             </div>
@@ -320,21 +320,21 @@ export default function Summary() {
                               className="inline-block w-3 h-3 rounded-full"
                               style={{ background: ALERT_SEVERITY_COLORS.CRITICAL }}
                             />
-                            <span className="text-sm font-bold text-gray-900">{acc.impact.critical}</span>
+                            <span className="text-sm font-regular text-gray-900">{acc.impact.critical}</span>
                           </span>
                           <span className="flex items-center gap-2">
                             <span
                               className="inline-block w-3 h-3 rounded-full"
                               style={{ background: ALERT_SEVERITY_COLORS.MEDIUM }}
                             />
-                            <span className="text-sm font-bold text-gray-900">{acc.impact.medium}</span>
+                            <span className="text-sm font-regular text-gray-900">{acc.impact.medium}</span>
                           </span>
                           <span className="flex items-center gap-2">
                             <span
                               className="inline-block w-3 h-3 rounded-full"
                               style={{ background: ALERT_SEVERITY_COLORS.LOW }}
                             />
-                            <span className="text-sm font-bold text-gray-900">{acc.impact.low}</span>
+                            <span className="text-sm font-regular text-gray-900">{acc.impact.low}</span>
                           </span>
                         </div>
                       </td>
@@ -343,9 +343,9 @@ export default function Summary() {
                         <div className="flex items-center gap-3">
                           {/* Progress bar */}
                           <div className="relative w-full h-6 flex items-center">
-                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-6 rounded-full bg-white border-2 border-[#E3E8F0] shadow-sm" />
+                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-6 rounded-full bg-white border-1 border-[#E3E8F0] shadow-none" />
                             <div
-                              className="absolute left-0 top-1/2 -translate-y-1/2 h-6 rounded-full bg-gradient-to-r from-[#156CFF] to-[#0052CC] shadow-sm"
+                              className="absolute left-0 top-1/2 -translate-y-1/2 h-6 rounded-full bg-[#156CFF] shadow-sm"
                               style={{
                                 width: `${acc.progressBar.percent}%`,
                                 minWidth: acc.progressBar.percent > 0 ? 10 : 0,
@@ -354,14 +354,14 @@ export default function Summary() {
                             {/* Percentage label */}
                             {acc.progressBar.percent < 15 ? (
                               <span
-                                className="absolute top-0 left-0 h-6 flex items-center text-gray-900 text-sm font-semibold select-none"
+                                className="absolute top-0 left-0 h-6 flex items-center text-gray-900 text-sm font-regular select-none"
                                 style={{ left: `calc(${acc.progressBar.percent}% + 12px)` }}
                               >
                                 {acc.progressBar.percent.toFixed(1)}%
                               </span>
                             ) : (
                               <span
-                                className="absolute top-0 h-6 flex items-center text-white text-sm font-semibold select-none drop-shadow-sm"
+                                className="absolute top-0 h-6 flex items-center text-white text-sm font-regular select-none drop-shadow-sm"
                                 style={{
                                   left: `calc(${acc.progressBar.percent / 2}% )`,
                                   transform: "translateX(-50%)",
@@ -380,7 +380,7 @@ export default function Summary() {
                           </div>
                           {/* Dot color */}
                           <span
-                            className="inline-block w-3 h-3 rounded-full border border-white shadow-sm"
+                            className="inline-block w-3 h-3 rounded-full border border-white shadow-none"
                             style={{ background: getDotColor(acc.spendMtdIndicatorKey) }}
                           />
                         </div>
