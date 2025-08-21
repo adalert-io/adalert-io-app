@@ -173,6 +173,7 @@ export default function MyProfileTab() {
                     value={telephoneDialCode}
                     onChange={e => setTelephoneDialCode(e.target.value)}
                     className="h-10 rounded-l-md border border-gray-200 bg-gray-50 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    disabled
                   >
                     <option value="+1">🇺🇸 +1</option>
                   </select>

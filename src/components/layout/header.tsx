@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useAuthStore } from "@/lib/store/auth-store"
 import { useUserAdsAccountsStore } from "@/lib/store/user-ads-accounts-store"
 import { formatAccountNumber } from "@/lib/utils"
-import { ChevronDown, Plus, BarChart2, HelpCircle } from "lucide-react"
+import { ChevronDown, Plus, BarChart2, HelpCircle, User, Settings, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import * as React from "react"
 import { useRouter, usePathname } from "next/navigation"
@@ -79,9 +79,9 @@ export function Header() {
           </Link>
 
           {user && userAdsAccounts.length > 0 && (
-<div className="relative ml-4 hidden md:inline-block">
+            <div className="relative ml-4 hidden md:inline-block">
               <button
-                className="flex items-center gap-2 px-4 py-2 border border-[#E3E8F0] bg-white rounded-xl shadow-none text-[#7A7D9C] text-base font-medium w-fit hover:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-200 transition-all"
+                className="flex items-center gap-2 px-4 py-2 border border-[#E3E8F0] bg-white rounded-xl shadow-none text-[#5e5e5e] text-base font-medium w-fit hover:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-200 transition-all"
                 onClick={() => setDropdownOpen((v) => !v)}
                 type="button"
               >
@@ -98,16 +98,16 @@ export function Header() {
               </button>
 
               {dropdownOpen && (
-                <ul className="absolute left-0 mt-2 min-w-max bg-white border border-[#E3E8F0] rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto animate-in fade-in">
+                <ul className="absolute left-0 mt-2 min-w-max bg-white border border-[#E3E8F0] rounded-xl shadow-none z-50 max-h-60 overflow-y-auto animate-in fade-in">
                   {userAdsAccounts.map((account) => (
                     <li
                       key={account.id}
-                      className={`px-4 py-2 cursor-pointer hover:bg-blue-50 text-sm text-gray-900 flex items-center gap-1 ${
+                      className={`px-4 py-2 cursor-pointer hover:bg-blue-50 text-sm text-[#5e5e5e] flex items-center gap-1 ${
                         selectedAdsAccount?.id === account.id ? "bg-blue-50 font-semibold" : ""
                       }`}
                       onClick={() => handleSelectAccount(account)}
                     >
-                      <span className="whitespace-nowrap">{account["Account Name Editable"] || account.name}</span>-<span className="text-[#7A7D9C]">{formatAccountNumber(account.Id || account.id || "")}</span>
+                      <span className="whitespace-nowrap">{account["Account Name Editable"] || account.name}</span>-<span>{formatAccountNumber(account.Id || account.id || "")}</span>
                     </li>
                   ))}
                 </ul>
@@ -150,56 +150,47 @@ export function Header() {
                   height={32}
                   className="rounded-full object-cover border border-[#E3E8F0]"
                 />
-                <span className="hidden md:inline text-base font-medium text-gray-900">{userName}</span>
+                <span className="hidden md:inline text-base font-medium text-[#5e5e5e]">{userName}</span>
                 <ChevronDown className="w-5 h-5 text-blue-600" />
                 {menuOpen && (
-                  <div className="absolute right-0 top-12 z-50 min-w-[180px] bg-white rounded-xl shadow-lg border border-[#E3E8F0] py-2">
+                  <div className="absolute right-0 top-12 z-50 min-w-[180px] bg-white rounded-xl shadow-none border border-[#E3E8F0] py-2">
                     <button
-                      className="w-full text-left px-4 py-2 text-[16px] text-[#232360] hover:bg-blue-50"
+                      className="w-full text-left px-4 py-2 flex items-center gap-2 text-[16px] text-[#5e5e5e] hover:bg-blue-50"
                       onClick={() => {
                         router.push("/settings/my-profile")
                         setMenuOpen(false)
                       }}
                     >
-                      My Profile
+                      <User className="w-4 h-4" /> My Profile
                     </button>
                     <button
-                      className="w-full text-left px-4 py-2 text-[16px] text-[#232360] hover:bg-blue-50"
+                      className="w-full text-left px-4 py-2 flex items-center gap-2 text-[16px] text-[#5e5e5e] hover:bg-blue-50"
                       onClick={() => {
                         router.push("/settings")
                         setMenuOpen(false)
                       }}
                     >
-                      Settings
+                      <Settings className="w-4 h-4" /> Settings
                     </button>
                     <button
-                      className="w-full text-left px-4 py-2 text-[16px] text-[#232360] hover:bg-blue-50"
-                      onClick={() => {
-                        router.push("/summary")
-                        setMenuOpen(false)
-                      }}
-                    >
-                      Summary
-                    </button>
-                    <button
-                      className="w-full text-left px-4 py-2 text-[16px] text-[#232360] hover:bg-blue-50"
+                      className="w-full text-left px-4 py-2 flex items-center gap-2 text-[16px] text-[#5e5e5e] hover:bg-blue-50"
                       onClick={() => {
                         show()
                         setMenuOpen(false)
                       }}
                     >
-                      Help
+                      <HelpCircle className="w-4 h-4" /> Help
                     </button>
                     <div className="my-1 border-t border-gray-200" />
                     <button
-                      className="w-full text-left px-4 py-2 text-[16px] text-red-600 hover:bg-red-50"
+                      className="w-full text-left px-4 py-2 flex items-center gap-2 text-[16px] text-red-600 hover:bg-red-50"
                       onClick={async () => {
                         await logout()
                         router.push("/auth")
                         setMenuOpen(false)
                       }}
                     >
-                      Log out
+                      <LogOut className="w-4 h-4" /> Log out
                     </button>
                   </div>
                 )}
@@ -220,6 +211,16 @@ export function Header() {
               >
                 <Plus className="w-5 h-5" />
               </Button>
+              {userAdsAccounts.length >= 2 && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-blue-600"
+                  onClick={() => router.push("/summary")}
+                >
+                  <BarChart2 className="w-5 h-5" />
+                </Button>
+              )}
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen((v) => !v)}
@@ -227,12 +228,7 @@ export function Header() {
               >
                 {mobileMenuOpen ? (
                   <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12M6 18h12"
-                    />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 ) : (
                   <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -249,7 +245,7 @@ export function Header() {
         <div className="md:hidden absolute top-16 left-0 w-full bg-white border-b border-gray-200 px-4 py-3 z-40">
           <div className="relative">
             <button
-              className="flex items-center justify-between w-full px-4 py-3 border border-[#E3E8F0] bg-white rounded-xl shadow-none text-[#7A7D9C] text-base font-medium hover:border-blue-400 transition-all"
+              className="flex items-center justify-between w-full px-4 py-3 border border-[#E3E8F0] bg-white rounded-xl shadow-none text-[#5e5e5e] text-base font-medium hover:border-blue-400 transition-all"
               onClick={() => setDropdownOpen((v) => !v)}
               type="button"
             >
@@ -266,19 +262,17 @@ export function Header() {
             </button>
 
             {dropdownOpen && (
-              <ul className="absolute left-0 mt-2 w-full bg-white border border-[#E3E8F0] rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto animate-in fade-in">
+              <ul className="absolute left-0 mt-2 w-full bg-white border border-[#E3E8F0] rounded-xl shadow-none z-50 max-h-60 overflow-y-auto animate-in fade-in">
                 {userAdsAccounts.map((account) => (
                   <li
                     key={account.id}
-                    className={`px-4 py-3 cursor-pointer hover:bg-blue-50 text-sm text-gray-900 flex items-center justify-between ${
+                    className={`px-4 py-3 cursor-pointer hover:bg-blue-50 text-sm text-[#5e5e5e] flex items-center justify-between ${
                       selectedAdsAccount?.id === account.id ? "bg-blue-50 font-semibold" : ""
                     }`}
                     onClick={() => handleSelectAccount(account)}
                   >
                     <span className="truncate">{account["Account Name Editable"] || account.name}</span>
-                    <span className="text-[#7A7D9C] ml-2 shrink-0">
-                      {formatAccountNumber(account.Id || account.id || "")}
-                    </span>
+                    <span className="ml-2 shrink-0">{formatAccountNumber(account.Id || account.id || "")}</span>
                   </li>
                 ))}
               </ul>
@@ -288,7 +282,7 @@ export function Header() {
       )}
 
       <div
-        className={`md:hidden bg-white border-t border-gray-200 shadow-lg absolute left-0 w-full z-50 transition-all duration-300 overflow-hidden ${
+        className={`md:hidden bg-white border-t border-gray-200 shadow-none absolute left-0 w-full z-50 transition-all duration-300 overflow-hidden ${
           mobileMenuOpen ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
         }`}
         style={{
@@ -304,9 +298,9 @@ export function Header() {
                   router.push("/settings/my-profile")
                   setMobileMenuOpen(false)
                 }}
-                className="w-full justify-start"
+                className="w-full justify-start text-[#5e5e5e] flex items-center gap-2"
               >
-                My Profile
+                <User className="w-4 h-4" /> My Profile
               </Button>
               <Button
                 variant="ghost"
@@ -314,19 +308,9 @@ export function Header() {
                   router.push("/settings")
                   setMobileMenuOpen(false)
                 }}
-                className="w-full justify-start"
+                className="w-full justify-start text-[#5e5e5e] flex items-center gap-2"
               >
-                Settings
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  router.push("/summary")
-                  setMobileMenuOpen(false)
-                }}
-                className="w-full justify-start"
-              >
-                Summary
+                <Settings className="w-4 h-4" /> Settings
               </Button>
               <Button
                 variant="ghost"
@@ -334,9 +318,9 @@ export function Header() {
                   show()
                   setMobileMenuOpen(false)
                 }}
-                className="w-full justify-start"
+                className="w-full justify-start text-[#5e5e5e] flex items-center gap-2"
               >
-                Help
+                <HelpCircle className="w-4 h-4" /> Help
               </Button>
               <div className="my-1 border-t border-gray-200" />
               <Button
@@ -346,9 +330,9 @@ export function Header() {
                   router.push("/auth")
                   setMobileMenuOpen(false)
                 }}
-                className="w-full justify-start"
+                className="w-full justify-start flex items-center gap-2"
               >
-                Log out
+                <LogOut className="w-4 h-4" /> Log out
               </Button>
             </div>
           )}
