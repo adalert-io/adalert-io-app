@@ -1242,23 +1242,34 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           if (userDoc.exists()) {
             const userData = userDoc.data();
             const contactIds = {
-              Pipedrive: userData.Pipedrive,
+              // Pipedrive: userData.Pipedrive,
               Mailchimp: userData.Mailchimp,
               "Sendgrid Marketing": userData["Sendgrid Marketing"],
             };
 
             // Only attempt to remove contacts if any contact IDs exist
             if (Object.values(contactIds).some((id) => id)) {
-              const { removeUserContacts } = await import(
-                "@/services/contacts"
-              );
-              const removalResult = await removeUserContacts(contactIds);
+              try {
+                const response = await fetch("/api/contacts/remove", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ contactIds }),
+                });
 
-              if (removalResult.errors.length > 0) {
-                console.warn(
-                  `Contact removal errors for user ${userId}:`,
-                  removalResult.errors
-                );
+                if (response.ok) {
+                  const removalResult = await response.json();
+
+                  if (removalResult.result.errors.length > 0) {
+                    console.warn(
+                      `Contact removal errors for user ${userId}:`,
+                      removalResult.result.errors
+                    );
+                  }
+                }
+              } catch (error) {
+                console.warn("Failed to remove contacts:", error);
               }
             }
           }

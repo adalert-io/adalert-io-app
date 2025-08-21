@@ -48,7 +48,7 @@ export interface UserDocument {
   "uid": string;
   "Inviter"?: any; // Optional field for inviter reference
   "Opt In For Text Message"?: boolean;
-  "Pipedrive"?: string; // PipeDrive person ID
+  // 'Pipedrive'?: string; // PipeDrive person ID
   "Mailchimp"?: string; // MailChimp subscriber ID
   "Sendgrid Marketing"?: string; // SendGrid contact ID
 }
@@ -185,8 +185,24 @@ export async function createUserDocuments(
       ? user.displayName || user.email?.split("@")[0] || "User"
       : user.displayName || user.email?.split("@")[0] || "User";
 
-    const { createUserContacts } = await import("@/services/contacts");
-    const contactResult = await createUserContacts(user, userName);
+    let contactResult = { success: false, contactIds: {}, errors: [] };
+
+    try {
+      const response = await fetch("/api/contacts/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ user, userName }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        contactResult = result.result;
+      }
+    } catch (error) {
+      console.warn("Failed to create contacts:", error);
+    }
 
     // Create user document with contact IDs
     const userData: any = {

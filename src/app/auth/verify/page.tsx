@@ -46,25 +46,42 @@ function VerifyEmailPageContent() {
         // Create user documents after successful verification
         await createUserDocuments(user, false, true);
 
-        // Create contacts in external platforms
-        const { createUserContacts } = await import("@/services/contacts");
+        // Create contacts in external platforms using the new API
         const userName =
           user.displayName || user.email?.split("@")[0] || "User";
-        const contactResult = await createUserContacts(user, userName);
 
-        // Update user document with contact IDs if they were created
-        if (contactResult.success) {
-          const { doc, updateDoc } = await import("firebase/firestore");
-          const { db } = await import("@/lib/firebase/config");
-          await updateDoc(
-            doc(db, "users", user.uid),
-            contactResult.contactIds as any
-          );
-        }
+        try {
+          const response = await fetch("/api/contacts/create", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ user, userName }),
+          });
 
-        // Log any contact creation errors
-        if (contactResult.errors.length > 0) {
-          console.warn("Contact creation errors:", contactResult.errors);
+          if (response.ok) {
+            const contactResult = await response.json();
+
+            // Update user document with contact IDs if they were created
+            if (contactResult.result.success) {
+              const { doc, updateDoc } = await import("firebase/firestore");
+              const { db } = await import("@/lib/firebase/config");
+              await updateDoc(
+                doc(db, "users", user.uid),
+                contactResult.result.contactIds as any
+              );
+            }
+
+            // Log any contact creation errors
+            if (contactResult.result.errors.length > 0) {
+              console.warn(
+                "Contact creation errors:",
+                contactResult.result.errors
+              );
+            }
+          }
+        } catch (error) {
+          console.warn("Failed to create contacts:", error);
         }
 
         toast.success("Email verified successfully!");
