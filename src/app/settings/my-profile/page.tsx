@@ -128,7 +128,7 @@ export default function MyProfileTab() {
                   onClick={handleAvatarClick}
                   disabled={isGoogleSignUp}
                 >
-                  <Camera className="w-6 h-6 text-blue-600" />
+                  <Camera className="w-6 h-6 text-[#155dfc]" />
                 </button>
                 {/* Hidden file input */}
                 <input
@@ -154,7 +154,7 @@ export default function MyProfileTab() {
                     className="pl-10"
                     disabled={isGoogleSignUp}
                   />
-                  <User className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
+                  <User className="absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]" />
                 </div>
                 <div className="relative">
                   <Input
@@ -165,7 +165,7 @@ export default function MyProfileTab() {
                     type="email"
                     disabled={isGoogleSignUp}
                   />
-                  <Mail className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
+                  <Mail className="absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]" />
                 </div>
                 <div className="relative flex items-center">
                   {/* Country selector (static for now) */}

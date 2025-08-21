@@ -287,77 +287,63 @@ export default function UsersSubtab() {
     });
 
     return (
-      <div className="rounded-md border">
-        <table className="min-w-full text-xs">
-          <thead>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th key={header.id} className="px-2 py-2 text-left">
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="hover:bg-gray-50">
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-2 py-2 align-top">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {/* Pagination Controls */}
-        <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
-          <div />
-          <div>
-            Page {table.getState().pagination.pageIndex + 1} of{" "}
-            {table.getPageCount()}
-          </div>
-          <div className="flex gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => table.setPageIndex(0)}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <ChevronsLeft className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <ChevronLeftIcon className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              <ChevronRightIcon className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-              disabled={!table.getCanNextPage()}
-            >
-              <ChevronsRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
+   <div className="rounded-2xl border border-[#e5e5e5] overflow-hidden text-xs">
+  <table className="min-w-full text-xs">
+    <thead className="bg-gray-50">
+      {table.getHeaderGroups().map((headerGroup) => (
+        <tr key={headerGroup.id}>
+          {headerGroup.headers.map((header) => (
+            <th key={header.id} className="px-2 py-2 text-left text-gray-500">
+              {flexRender(
+                header.column.columnDef.header,
+                header.getContext()
+              )}
+            </th>
+          ))}
+        </tr>
+      ))}
+    </thead>
+    <tbody>
+      {table.getRowModel().rows.map((row) => (
+        <tr key={row.id} className="hover:bg-gray-50">
+          {row.getVisibleCells().map((cell) => (
+            <td key={cell.id} className="px-2 py-2 align-top">
+              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+            </td>
+          ))}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+
+  {/* Pagination Controls */}
+  <div className="flex items-center justify-between mt-4 px-2 py-2 text-xs text-gray-500">
+    <div />
+    <div>
+      Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+    </div>
+    <div className="flex gap-1">
+      <Button variant="ghost" size="icon" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
+        <ChevronsLeft className="w-4 h-4" />
+      </Button>
+      <Button variant="ghost" size="icon" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
+        <ChevronLeftIcon className="w-4 h-4" />
+      </Button>
+      <Button variant="ghost" size="icon" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+        <ChevronRightIcon className="w-4 h-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+        disabled={!table.getCanNextPage()}
+      >
+        <ChevronsRight className="w-4 h-4" />
+      </Button>
+    </div>
+  </div>
+</div>
+
     );
   }
 
@@ -479,7 +465,7 @@ export default function UsersSubtab() {
             <div className="flex-1 flex items-center justify-end gap-2">
               {/* Search UI */}
               {showSearch && (
-                <div className="flex items-center border rounded-lg px-3 py-1 bg-white shadow-sm focus-within:ring-2 focus-within:ring-blue-200 transition-all">
+                <div className="flex items-center border rounded-lg px-3 py-1 bg-white shadow-none focus-within:ring-2 focus-within:ring-blue-200 transition-all">
                   <input
                     className="outline-none border-none bg-transparent text-sm text-gray-500 placeholder-gray-400 flex-1 min-w-[180px]"
                     placeholder="Search for users"
@@ -509,7 +495,7 @@ export default function UsersSubtab() {
                 <MagnifyingGlassIcon className="w-6 h-6 text-[#015AFD]" />
               </Button>
               <select
-                className="border rounded-md px-2 py-1 text-xs"
+                className="flex items-center border rounded-lg px-3 py-1 bg-white shadow-none focus-within:ring-2 focus-within:ring-blue-200 transition-all"
                 value={pageSize}
                 onChange={(e) => setPageSize(Number(e.target.value))}
               >
@@ -558,7 +544,7 @@ export default function UsersSubtab() {
                       userDoc?.uid !== editingUser?.uid
                     }
                   />
-                  <UserCircle className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
+                  <UserCircle className="absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]" />
                 </div>
               )}
               <div className="relative">
@@ -569,7 +555,7 @@ export default function UsersSubtab() {
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={screen === "edit"}
                 />
-                <Mail className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
+                <Mail className="absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]" />
               </div>
               {/* Role dropdown */}
               <div className="relative role-dropdown">
@@ -579,9 +565,9 @@ export default function UsersSubtab() {
                   onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
                 >
                   <span className="flex items-center gap-2">
-                    <User className="w-5 h-5 text-blue-400" /> {role}
+                    <User className="w-5 h-5 text-[#155dfc]" /> {role}
                   </span>
-                  <ChevronDown className="ml-auto w-4 h-4 text-blue-400" />
+                  <ChevronDown className="ml-auto w-4 h-4 text-[#155dfc]" />
                 </button>
                 {roleDropdownOpen && (
                   <div className="absolute z-10 mt-1 w-full bg-white border rounded shadow-lg">
@@ -621,12 +607,12 @@ export default function UsersSubtab() {
                   }
                 >
                   <span className="flex items-center gap-2">
-                    <Users className="w-5 h-5 text-blue-400" />
+                    <Users className="w-5 h-5 text-[#155dfc]" />
                     {role === "Admin"
                       ? "All Ad Accounts"
                       : `${selectedAds.length}/${adsAccounts.length} selected`}
                   </span>
-                  <ChevronDown className="ml-auto w-4 h-4 text-blue-400" />
+                  <ChevronDown className="ml-auto w-4 h-4 text-[#155dfc]" />
                 </button>
                 {/* Multi-select dropdown (mock) */}
                 {adsDropdownOpen && role === "Manager" && (

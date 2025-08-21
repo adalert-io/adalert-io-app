@@ -151,7 +151,7 @@ export default function AlertsSubtab() {
       {error && <div className="mb-4 text-red-600">{error}</div>}
       {/* Email/SMS */}
       <div className="flex flex-col md:flex-row gap-4 mb-8">
-        <Card className="flex-1 p-4 border-2">
+        <Card className="flex-1 p-4 border-2 shadow-none">
           <div className="flex flex-row items-center justify-center gap-3 w-full h-full">
             <Checkbox
               checked={!!localSettings["Send Email Alerts"]}
@@ -167,7 +167,7 @@ export default function AlertsSubtab() {
             </label>
           </div>
         </Card>
-        <Card className="flex-1 p-4 flex flex-col gap-2 border-2">
+        <Card className="flex-1 p-4 flex flex-col gap-2 border-2 shadow-none">
           <div className="flex items-center gap-3">
             <Checkbox
               checked={!!localSettings["Send SMS Alerts"]}
@@ -203,7 +203,7 @@ export default function AlertsSubtab() {
         <div className="font-semibold text-lg mb-2">Severity</div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {getFieldsByGroup("Severity").map((f) => (
-            <Card key={f.key} className="flex items-center gap-3 p-4">
+            <Card key={f.key} className="flex items-center gap-3 p-4 shadow-none">
               <div className="flex flex-row items-center gap-3 w-full h-full">
                 <Checkbox
                   checked={!!localSettings[f.key]}
@@ -227,7 +227,7 @@ export default function AlertsSubtab() {
         <div className="font-semibold text-lg mb-2">Level</div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {getFieldsByGroup("Level").map((f) => (
-            <Card key={f.key} className="flex items-center gap-3 p-4">
+            <Card key={f.key} className="flex items-center gap-3 p-4 shadow-none">
               <div className="flex flex-row items-center gap-3 w-full h-full">
                 <Checkbox
                   checked={!!localSettings[f.key]}
@@ -251,7 +251,7 @@ export default function AlertsSubtab() {
         <div className="font-semibold text-lg mb-2">Type</div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {getFieldsByGroup("Type").map((f) => (
-            <Card key={f.key} className="flex items-center gap-3 p-4">
+            <Card key={f.key} className="flex items-center gap-3 p-4 shadow-none">
               <div className="flex flex-row items-center gap-3 w-full h-full">
                 <Checkbox
                   checked={!!localSettings[f.key]}

@@ -195,7 +195,7 @@ export default function CompanyDetailsSubtab() {
             value={formData.companyName}
             onChange={(e) => handleInputChange("companyName", e.target.value)}
           />
-          <User className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
+          <User className="absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]" />
         </div>
       </div>
 
@@ -211,7 +211,7 @@ export default function CompanyDetailsSubtab() {
               value={formData.address}
               onChange={(e) => handleInputChange("address", e.target.value)}
             />
-            <Building className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
+            <Building className="absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]" />
           </div>
 
           {/* State */}
@@ -222,13 +222,13 @@ export default function CompanyDetailsSubtab() {
               value={formData.state}
               onChange={(e) => handleInputChange("state", e.target.value)}
             />
-            <MapPin className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
+            <MapPin className="absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]" />
           </div>
 
           {/* Country */}
           <div className="relative">
             <div className="absolute left-3 top-2.5 z-10">
-              <Globe className="w-5 h-5 text-blue-400" />
+              <Globe className="w-5 h-5 text-[#155dfc]" />
             </div>
             {isClient ? (
               <Select
@@ -269,7 +269,7 @@ export default function CompanyDetailsSubtab() {
               value={formData.website}
               onChange={(e) => handleInputChange("website", e.target.value)}
             />
-            <Globe className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
+            <Globe className="absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]" />
           </div>
 
           {/* VAT */}
@@ -282,7 +282,7 @@ export default function CompanyDetailsSubtab() {
               value={formData.vat}
               onChange={(e) => handleInputChange("vat", e.target.value)}
             />
-            <FileText className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
+            <FileText className="absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]" />
           </div>
         </div>
 
@@ -296,7 +296,7 @@ export default function CompanyDetailsSubtab() {
               value={formData.city}
               onChange={(e) => handleInputChange("city", e.target.value)}
             />
-            <Building className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
+            <Building className="absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]" />
           </div>
 
           {/* Zip Code */}
@@ -307,7 +307,7 @@ export default function CompanyDetailsSubtab() {
               value={formData.zipCode}
               onChange={(e) => handleInputChange("zipCode", e.target.value)}
             />
-            <MapPin className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
+            <MapPin className="absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]" />
           </div>
 
           {/* Telephone */}
@@ -357,7 +357,7 @@ export default function CompanyDetailsSubtab() {
                 value={formData.telephone}
                 onChange={(e) => handlePhoneNumberChange(e.target.value)}
               />
-              <Phone className="absolute right-3 top-2.5 w-4 h-4 text-blue-400" />
+              <Phone className="absolute right-3 top-2.5 w-4 h-4 text-[#155dfc]" />
             </div>
           </div>
 
@@ -369,7 +369,7 @@ export default function CompanyDetailsSubtab() {
               value={formData.timezone}
               onChange={(e) => handleInputChange("timezone", e.target.value)}
             />
-            <Clock className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
+            <Clock className="absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]" />
           </div>
 
           {/* Email */}
@@ -380,7 +380,7 @@ export default function CompanyDetailsSubtab() {
               value={formData.email}
               onChange={(e) => handleInputChange("email", e.target.value)}
             />
-            <Mail className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
+            <Mail className="absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]" />
           </div>
         </div>
       </div>
