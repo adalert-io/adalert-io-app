@@ -64,9 +64,14 @@ export function Header() {
       if (menuRef.current && !menuRef.current.contains(target)) {
         setMenuOpen(false)
       }
-      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
-        setDropdownOpen(false)
-      }
+    if (
+  dropdownRef.current &&
+  !dropdownRef.current.contains(target) &&
+  !(target as HTMLElement).closest("li")
+) {
+  setDropdownOpen(false)
+}
+
     }
     document.addEventListener("mousedown", handleClick)
     return () => document.removeEventListener("mousedown", handleClick)
@@ -109,7 +114,7 @@ export function Header() {
                       className={`px-4 py-2 cursor-pointer hover:bg-blue-50 text-sm text-[#5e5e5e] flex items-center gap-1 ${
                         selectedAdsAccount?.id === account.id ? "bg-blue-50 font-semibold" : ""
                       }`}
-                      onClick={() => handleSelectAccount(account)}
+                      onClick={(e) => handleSelectAccount(account)}
                     >
                       <span className="whitespace-nowrap font-bold">{account["Account Name Editable"] || account.name}</span>-
                       <span>{formatAccountNumber(account.Id || account.id || "")}</span>
