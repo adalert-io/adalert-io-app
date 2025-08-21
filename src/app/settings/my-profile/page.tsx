@@ -17,8 +17,12 @@ export default function MyProfileTab() {
   const [email, setEmail] = useState(userDoc?.Email || "");
   const [phone, setPhone] = useState(userDoc?.Telephone || "");
   const [telephoneDialCode, setTelephoneDialCode] = useState("+1");
-  const [optInForTextMessage, setOptInForTextMessage] = useState(userDoc?.["Opt In For Text Message"] ?? true);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(userDoc?.Avatar || null);
+  const [optInForTextMessage, setOptInForTextMessage] = useState(
+    userDoc?.["Opt In For Text Message"] ?? true
+  );
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(
+    userDoc?.Avatar || null
+  );
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { updateMyProfile } = useAlertSettingsStore();
@@ -89,12 +93,13 @@ export default function MyProfileTab() {
     }
   };
 
-  const avatarUrl = avatarPreview || userDoc?.Avatar || "/images/default-avatar.png";
-  const isSaveEnabled = (
+  const avatarUrl =
+    avatarPreview || userDoc?.Avatar || "/images/default-avatar.png";
+  const isSaveEnabled =
     name.trim() !== "" &&
     email.trim() !== "" &&
-    ((phone.trim() !== "" && optInForTextMessage) || (phone.trim() === "" && !optInForTextMessage))
-  );
+    ((phone.trim() !== "" && optInForTextMessage) ||
+      (phone.trim() === "" && !optInForTextMessage));
 
   return (
     <div className="flex flex-col items-center w-full min-h-[80vh]">
@@ -102,8 +107,14 @@ export default function MyProfileTab() {
         <div className="bg-white rounded-2xl shadow-md p-8 border border-gray-200">
           <h2 className="text-2xl font-bold mb-1">My Profile</h2>
           <p className="text-gray-500 mb-6">
-            View or edit your profile. You can include or exclude yourself from email alerts or control the frequency from {" "}
-            <Link href="/settings/settings/alerts" className="text-blue-600 underline">alert settings</Link>
+            View or edit your profile. You can include or exclude yourself from
+            email alerts or control the frequency from{" "}
+            <Link
+              href="/settings/settings/alerts"
+              className="text-blue-600 underline"
+            >
+              alert settings
+            </Link>
           </p>
           <div className="flex flex-col md:flex-row gap-8">
             {/* Avatar and Name */}
@@ -114,8 +125,9 @@ export default function MyProfileTab() {
                     src={avatarUrl}
                     alt={name || "User avatar"}
                     className="w-full h-full object-cover"
-                    onError={e => {
-                      (e.currentTarget as HTMLImageElement).src = "/images/default-avatar.png";
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src =
+                        "/images/default-avatar.png";
                     }}
                   />
                 </div>
@@ -144,12 +156,14 @@ export default function MyProfileTab() {
             </div>
             {/* Personal Info Form */}
             <div className="flex-1 bg-white rounded-xl border border-gray-100 p-8">
-              <div className="text-lg font-semibold mb-6">Personal information</div>
+              <div className="text-lg font-semibold mb-6">
+                Personal information
+              </div>
               <form className="flex flex-col gap-4">
                 <div className="relative">
                   <Input
                     value={name}
-                    onChange={e => setName(e.target.value)}
+                    onChange={(e) => setName(e.target.value)}
                     placeholder="Name"
                     className="pl-10"
                     disabled={isGoogleSignUp}
@@ -159,7 +173,7 @@ export default function MyProfileTab() {
                 <div className="relative">
                   <Input
                     value={email}
-                    onChange={e => setEmail(e.target.value)}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="Email"
                     className="pl-10"
                     type="email"
@@ -171,15 +185,15 @@ export default function MyProfileTab() {
                   {/* Country selector (static for now) */}
                   <select
                     value={telephoneDialCode}
-                    onChange={e => setTelephoneDialCode(e.target.value)}
+                    onChange={(e) => setTelephoneDialCode(e.target.value)}
                     className="h-10 rounded-l-md border border-gray-200 bg-gray-50 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    disabled
                   >
                     <option value="+1">🇺🇸 +1</option>
-                    <option value="+1">🇨🇦 +1</option>
                   </select>
                   <Input
                     value={phone}
-                    onChange={e => setPhone(e.target.value)}
+                    onChange={(e) => setPhone(e.target.value)}
                     placeholder="Phone"
                     className="rounded-l-none"
                     type="tel"
@@ -189,23 +203,41 @@ export default function MyProfileTab() {
                   <Checkbox
                     id="sms-consent"
                     checked={optInForTextMessage}
-                    onCheckedChange={checked => setOptInForTextMessage(checked === true)}
+                    onCheckedChange={(checked) =>
+                      setOptInForTextMessage(checked === true)
+                    }
                     className={CHECKBOX_CLASS}
                   />
-                  <label htmlFor="sms-consent" className="text-xs text-gray-600 select-none">
-                    I consent to opting in for text messages. Message and data rate changes may apply. Change in your alert settings to opt out. This feature is only available in the US.
+                  <label
+                    htmlFor="sms-consent"
+                    className="text-xs text-gray-600 select-none"
+                  >
+                    I consent to opting in for text messages. Message and data
+                    rate changes may apply. Change in your alert settings to opt
+                    out. This feature is only available in the US.
                   </label>
                 </div>
               </form>
             </div>
           </div>
           <div className="flex justify-center mt-8">
-            <Button className="w-full max-w-md bg-blue-600 text-white text-lg font-bold py-3 rounded shadow-md" onClick={handleSave} disabled={!isSaveEnabled || isSaving}>
-              {isSaving ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>) : "Save"}
+            <Button
+              className="w-full max-w-md bg-blue-600 text-white text-lg font-bold py-3 rounded shadow-md"
+              onClick={handleSave}
+              disabled={!isSaveEnabled || isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save"
+              )}
             </Button>
           </div>
         </div>
       </div>
     </div>
   );
-} 
+}
