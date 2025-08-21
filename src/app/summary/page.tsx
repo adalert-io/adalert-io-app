@@ -147,7 +147,7 @@ export default function Summary() {
                 </div>
               )}
             </div>
-            <p className="text-[#7A7D9C] text-sm sm:text-base mt-2 max-w-2xl">
+            <p className="text-[#7A7D9C] text-[0.75rem] sm:text-base mt-2 max-w-2xl">
               We have already prioritized the work for you. Start from the top row and work your way down.
             </p>
           </div>
@@ -156,7 +156,7 @@ export default function Summary() {
             {showSearch && (
               <div className="flex items-center border rounded-lg px-3 py-2 bg-white shadow-sm focus-within:ring-2 focus-within:ring-blue-200 transition-all min-w-[200px] sm:min-w-[250px]">
                 <input
-                  className="outline-none border-none bg-transparent text-sm text-gray-700 placeholder-gray-400 flex-1"
+                  className="outline-none border-none bg-transparent text-[0.75rem] text-gray-700 placeholder-gray-400 flex-1"
                   placeholder="Search ads accounts"
                   value={searchValue}
                   onChange={(e) => setSearchValue(e.target.value)}
@@ -185,7 +185,7 @@ export default function Summary() {
             </Button>
             <div className="relative">
               <select
-                className="appearance-none border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm bg-white shadow-none hover:border-gray-300 transition-colors focus:ring-2 focus:ring-blue-200 focus:border-blue-300 cursor-pointer font-medium text-gray-700"
+                className="appearance-none border border-gray-200 rounded-lg px-4 py-2 pr-10 text-[0.75rem] bg-white shadow-none hover:border-gray-300 transition-colors focus:ring-2 focus:ring-blue-200 focus:border-blue-300 cursor-pointer font-medium text-gray-700"
                 value={pageSize}
                 onChange={(e) => {
                   setPageSize(Number(e.target.value))
@@ -208,9 +208,9 @@ export default function Summary() {
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-2xl shadow-none border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-none border border-[#e5e5e5] overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
+            <table className="min-w-full text-[0.75rem]">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-4 py-4 text-center font-semibold text-gray-700">Connected</th>
@@ -290,7 +290,7 @@ export default function Summary() {
                             Checking
                           </span>
                         ) : acc.showingAds ? (
-                          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-700 font-regular text-sm">
+                          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-700 font-regular text-[0.75rem]">
                             <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
                               <rect width="16" height="16" rx="8" fill="#22C55E" />
                               <path
@@ -304,7 +304,7 @@ export default function Summary() {
                             Yes
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-100 text-red-700 font-regular text-sm">
+                          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-100 text-red-700 font-regular text-[0.75rem]">
                             <div className="w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
                               <X className="w-2.5 h-2.5 text-white stroke-[2.5]" />
                             </div>
@@ -320,21 +320,21 @@ export default function Summary() {
                               className="inline-block w-3 h-3 rounded-full"
                               style={{ background: ALERT_SEVERITY_COLORS.CRITICAL }}
                             />
-                            <span className="text-sm font-regular text-gray-900">{acc.impact.critical}</span>
+                            <span className="text-[0.75rem] font-regular text-gray-900">{acc.impact.critical}</span>
                           </span>
                           <span className="flex items-center gap-2">
                             <span
                               className="inline-block w-3 h-3 rounded-full"
                               style={{ background: ALERT_SEVERITY_COLORS.MEDIUM }}
                             />
-                            <span className="text-sm font-regular text-gray-900">{acc.impact.medium}</span>
+                            <span className="text-[0.75rem] font-regular text-gray-900">{acc.impact.medium}</span>
                           </span>
                           <span className="flex items-center gap-2">
                             <span
                               className="inline-block w-3 h-3 rounded-full"
                               style={{ background: ALERT_SEVERITY_COLORS.LOW }}
                             />
-                            <span className="text-sm font-regular text-gray-900">{acc.impact.low}</span>
+                            <span className="text-[0.75rem] font-regular text-gray-900">{acc.impact.low}</span>
                           </span>
                         </div>
                       </td>
@@ -354,14 +354,14 @@ export default function Summary() {
                             {/* Percentage label */}
                             {acc.progressBar.percent < 15 ? (
                               <span
-                                className="absolute top-0 left-0 h-6 flex items-center text-gray-900 text-sm font-regular select-none"
+                                className="absolute top-0 left-0 h-6 flex items-center text-gray-900 text-[0.75rem] font-regular select-none"
                                 style={{ left: `calc(${acc.progressBar.percent}% + 12px)` }}
                               >
                                 {acc.progressBar.percent.toFixed(1)}%
                               </span>
                             ) : (
                               <span
-                                className="absolute top-0 h-6 flex items-center text-white text-sm font-regular select-none drop-shadow-sm"
+                                className="absolute top-0 h-6 flex items-center text-white text-[0.75rem] font-regular select-none drop-shadow-sm"
                                 style={{
                                   left: `calc(${acc.progressBar.percent / 2}% )`,
                                   transform: "translateX(-50%)",
@@ -393,7 +393,7 @@ export default function Summary() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200 gap-4">
-            <div className="text-sm text-gray-600 font-medium">
+            <div className="text-[0.75rem] text-gray-600 font-medium">
               Showing {pagedAccounts.length > 0 ? (page - 1) * pageSize + 1 : 0} to{" "}
               {Math.min(page * pageSize, filteredAccounts.length)} of {filteredAccounts.length} accounts
             </div>
@@ -445,14 +445,14 @@ export default function Summary() {
                         variant={1 === page ? "default" : "outline"}
                         size="sm"
                         onClick={() => setPage(1)}
-                        className="h-8 w-8 p-0 text-sm font-medium"
+                        className="h-8 w-8 p-0 text-[0.75rem] font-medium"
                       >
                         1
                       </Button>,
                     )
                     if (startPage > 2) {
                       pages.push(
-                        <span key="ellipsis1" className="px-2 text-gray-400 text-sm">
+                        <span key="ellipsis1" className="px-2 text-gray-400 text-[0.75rem]">
                           ...
                         </span>,
                       )
@@ -467,7 +467,7 @@ export default function Summary() {
                         variant={i === page ? "default" : "outline"}
                         size="sm"
                         onClick={() => setPage(i)}
-                        className="h-8 w-8 p-0 text-sm font-medium"
+                        className="h-8 w-8 p-0 text-[0.75rem] font-medium"
                       >
                         {i}
                       </Button>,
@@ -478,7 +478,7 @@ export default function Summary() {
                   if (endPage < totalPages) {
                     if (endPage < totalPages - 1) {
                       pages.push(
-                        <span key="ellipsis2" className="px-2 text-gray-400 text-sm">
+                        <span key="ellipsis2" className="px-2 text-gray-400 text-[0.75rem]">
                           ...
                         </span>,
                       )
@@ -489,7 +489,7 @@ export default function Summary() {
                         variant={totalPages === page ? "default" : "outline"}
                         size="sm"
                         onClick={() => setPage(totalPages)}
-                        className="h-8 w-8 p-0 text-sm font-medium"
+                        className="h-8 w-8 p-0 text-[0.75rem] font-medium"
                       >
                         {totalPages}
                       </Button>,

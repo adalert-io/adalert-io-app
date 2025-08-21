@@ -630,7 +630,7 @@ export default function Dashboard() {
     });
 
     return (
-      <div className="relative overflow-x-auto shadow-md sm:rounded-lg mt-6">
+      <div className="relative overflow-x-auto border border-[#e5e5e5] sm:rounded-lg mt-6">
   <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
     <thead className="text-xs bg-[#f4f6fa] text-[#000] uppercase">
       {table.getHeaderGroups().map((headerGroup) => (
@@ -1210,7 +1210,7 @@ export default function Dashboard() {
           currencySymbol={selectedAdsAccount?.["Currency Symbol"] || "$"}
         />
         {/* Alerts Table */}
-        <div className="bg-white rounded-2xl shadow-md p-4">
+        <div className="bg-white rounded-2xl border border-[#e5e5e5] p-4">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1">
               <h2 className="text-lg font-bold text-gray-900">Alerts</h2>
@@ -1342,7 +1342,7 @@ export default function Dashboard() {
             <div className="flex gap-2">
               {/* Search UI */}
               {showSearch && (
-                <div className="flex items-center border rounded-lg px-3 py-1 bg-white shadow-sm focus-within:ring-2 focus-within:ring-blue-200 transition-all">
+                <div className="flex items-center border rounded-lg px-3 py-1 bg-white shadow-none focus-within:ring-2 focus-within:ring-blue-200 transition-all">
                   <input
                     className="outline-none border-none bg-transparent text-sm text-gray-500 placeholder-gray-400 flex-1 min-w-[180px]"
                     placeholder="Search for alerts"
@@ -1451,7 +1451,7 @@ export default function Dashboard() {
                 </span>
               </Button>
               <select
-                className="border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm bg-white shadow-sm hover:border-gray-300 transition-colors focus:ring-2 focus:ring-blue-200 focus:border-blue-300 cursor-pointer font-medium text-gray-700"
+                className="border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm bg-white shadow-none hover:border-gray-300 transition-colors focus:ring-2 focus:ring-blue-200 focus:border-blue-300 cursor-pointer font-medium text-gray-700"
                 value={pageSize}
                 onChange={(e) => setPageSize(Number(e.target.value))}
               >

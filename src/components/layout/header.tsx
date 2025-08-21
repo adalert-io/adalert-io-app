@@ -26,6 +26,7 @@ export function Header() {
   const [menuOpen, setMenuOpen] = React.useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
   const menuRef = React.useRef<HTMLDivElement>(null)
+  const dropdownRef = React.useRef<HTMLDivElement>(null)
   const router = useRouter()
   const pathname = usePathname()
   const { show } = useIntercomContext()
@@ -56,17 +57,20 @@ export function Header() {
   const userName = userDoc?.Name || userDoc?.Email || "User"
   const userInitial = getInitial(userName)
 
-  // Handle menu open/close and outside click
+  // Close menus when clicking outside
   React.useEffect(() => {
-    if (!menuOpen) return
     function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      const target = e.target as Node
+      if (menuRef.current && !menuRef.current.contains(target)) {
         setMenuOpen(false)
+      }
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
+        setDropdownOpen(false)
       }
     }
     document.addEventListener("mousedown", handleClick)
     return () => document.removeEventListener("mousedown", handleClick)
-  }, [menuOpen])
+  }, [])
 
   return (
     <header className="w-full bg-[#FAFBFF] h-16 flex items-center border-b border-[#F0F1F6] px-4 md:px-6 lg:px-20 relative">
@@ -79,7 +83,7 @@ export function Header() {
           </Link>
 
           {user && userAdsAccounts.length > 0 && (
-            <div className="relative ml-4 hidden md:inline-block">
+            <div className="relative ml-4 hidden md:inline-block z-[70]" ref={dropdownRef}>
               <button
                 className="flex items-center gap-2 px-4 py-2 border border-[#E3E8F0] bg-white rounded-xl shadow-none text-[#5e5e5e] text-base font-medium w-fit hover:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-200 transition-all"
                 onClick={() => setDropdownOpen((v) => !v)}
@@ -98,7 +102,7 @@ export function Header() {
               </button>
 
               {dropdownOpen && (
-                <ul className="absolute left-0 mt-2 min-w-max bg-white border border-[#E3E8F0] rounded-xl shadow-none z-50 max-h-60 overflow-y-auto animate-in fade-in">
+                <ul className="absolute left-0 mt-2 min-w-max bg-white border border-[#E3E8F0] rounded-xl shadow-none z-[80] max-h-60 overflow-y-auto animate-in fade-in">
                   {userAdsAccounts.map((account) => (
                     <li
                       key={account.id}
@@ -107,7 +111,8 @@ export function Header() {
                       }`}
                       onClick={() => handleSelectAccount(account)}
                     >
-                      <span className="whitespace-nowrap">{account["Account Name Editable"] || account.name}</span>-<span>{formatAccountNumber(account.Id || account.id || "")}</span>
+                      <span className="whitespace-nowrap font-bold">{account["Account Name Editable"] || account.name}</span>-
+                      <span>{formatAccountNumber(account.Id || account.id || "")}</span>
                     </li>
                   ))}
                 </ul>
@@ -153,7 +158,7 @@ export function Header() {
                 <span className="hidden md:inline text-base font-medium text-[#5e5e5e]">{userName}</span>
                 <ChevronDown className="w-5 h-5 text-blue-600" />
                 {menuOpen && (
-                  <div className="absolute right-0 top-12 z-50 min-w-[180px] bg-white rounded-xl shadow-none border border-[#E3E8F0] py-2">
+                  <div className="absolute right-0 top-12 z-[80] min-w-[180px] bg-white rounded-xl shadow-none border border-[#E3E8F0] py-2">
                     <button
                       className="w-full text-left px-4 py-2 flex items-center gap-2 text-[16px] text-[#5e5e5e] hover:bg-blue-50"
                       onClick={() => {
@@ -183,7 +188,7 @@ export function Header() {
                     </button>
                     <div className="my-1 border-t border-gray-200" />
                     <button
-                      className="w-full text-left px-4 py-2 flex items-center gap-2 text-[16px] text-red-600 hover:bg-red-50"
+                      className="w-full text-left px-4 py-2 flex items-center gap-2 text-[16px] text-[#5e5e5e]  hover:bg-blue-50"
                       onClick={async () => {
                         await logout()
                         router.push("/auth")
@@ -199,7 +204,7 @@ export function Header() {
           )}
         </div>
 
-        {/* Mobile actions - First row: Logo, Plus, Toggle */}
+        {/* Mobile actions - First row */}
         <div className="md:hidden flex items-center gap-2">
           {user && userDoc && (
             <>
@@ -212,12 +217,7 @@ export function Header() {
                 <Plus className="w-5 h-5" />
               </Button>
               {userAdsAccounts.length >= 2 && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-blue-600"
-                  onClick={() => router.push("/summary")}
-                >
+                <Button variant="ghost" size="icon" className="text-blue-600" onClick={() => router.push("/summary")}>
                   <BarChart2 className="w-5 h-5" />
                 </Button>
               )}
@@ -241,48 +241,9 @@ export function Header() {
         </div>
       </div>
 
-      {user && userDoc && userAdsAccounts.length > 0 && (
-        <div className="md:hidden absolute top-16 left-0 w-full bg-white border-b border-gray-200 px-4 py-3 z-40">
-          <div className="relative">
-            <button
-              className="flex items-center justify-between w-full px-4 py-3 border border-[#E3E8F0] bg-white rounded-xl shadow-none text-[#5e5e5e] text-base font-medium hover:border-blue-400 transition-all"
-              onClick={() => setDropdownOpen((v) => !v)}
-              type="button"
-            >
-              <span className="truncate">
-                {!pathname || !pathname.startsWith("/dashboard")
-                  ? "Select an ads account"
-                  : selectedAdsAccount
-                    ? `${
-                        selectedAdsAccount["Account Name Editable"] || selectedAdsAccount.name || "Account"
-                      } – ${formatAccountNumber(selectedAdsAccount.Id || selectedAdsAccount.id || "")}`
-                    : "Select an ads account"}
-              </span>
-              <ChevronDown className="w-5 h-5 text-blue-600 shrink-0 ml-2" />
-            </button>
-
-            {dropdownOpen && (
-              <ul className="absolute left-0 mt-2 w-full bg-white border border-[#E3E8F0] rounded-xl shadow-none z-50 max-h-60 overflow-y-auto animate-in fade-in">
-                {userAdsAccounts.map((account) => (
-                  <li
-                    key={account.id}
-                    className={`px-4 py-3 cursor-pointer hover:bg-blue-50 text-sm text-[#5e5e5e] flex items-center justify-between ${
-                      selectedAdsAccount?.id === account.id ? "bg-blue-50 font-semibold" : ""
-                    }`}
-                    onClick={() => handleSelectAccount(account)}
-                  >
-                    <span className="truncate">{account["Account Name Editable"] || account.name}</span>
-                    <span className="ml-2 shrink-0">{formatAccountNumber(account.Id || account.id || "")}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      )}
-
+      {/* Mobile menu */}
       <div
-        className={`md:hidden bg-white border-t border-gray-200 shadow-none absolute left-0 w-full z-50 transition-all duration-300 overflow-hidden ${
+        className={`md:hidden bg-white border-t border-gray-200 shadow-none absolute left-0 w-full z-40 transition-all duration-300 overflow-hidden ${
           mobileMenuOpen ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
         }`}
         style={{
@@ -322,15 +283,15 @@ export function Header() {
               >
                 <HelpCircle className="w-4 h-4" /> Help
               </Button>
-              <div className="my-1 border-t border-gray-200" />
+            <div className="my-1 border-t border-gray-200" />
               <Button
-                variant="destructive"
+                variant="ghost"
                 onClick={async () => {
                   await logout()
                   router.push("/auth")
                   setMobileMenuOpen(false)
                 }}
-                className="w-full justify-start flex items-center gap-2"
+                className="w-full justify-start text-[#5e5e5e] flex items-center gap-2"
               >
                 <LogOut className="w-4 h-4" /> Log out
               </Button>
@@ -338,6 +299,47 @@ export function Header() {
           )}
         </div>
       </div>
+
+      {/* Mobile account dropdown */}
+      {user && userDoc && userAdsAccounts.length > 0 && (
+        <div className="md:hidden absolute top-16 left-0 w-full bg-white border-b border-gray-200 px-4 py-3 z-[70]">
+          <div className="relative" ref={dropdownRef}>
+            <button
+              className="flex items-center justify-between w-full px-4 py-3 border border-[#E3E8F0] bg-white rounded-xl shadow-none text-[#5e5e5e] text-base font-medium hover:border-blue-400 transition-all"
+              onClick={() => setDropdownOpen((v) => !v)}
+              type="button"
+            >
+              <span className="truncate">
+                {!pathname || !pathname.startsWith("/dashboard")
+                  ? "Select an ads account"
+                  : selectedAdsAccount
+                    ? `${
+                        selectedAdsAccount["Account Name Editable"] || selectedAdsAccount.name || "Account"
+                      } – ${formatAccountNumber(selectedAdsAccount.Id || selectedAdsAccount.id || "")}`
+                    : "Select an ads account"}
+              </span>
+              <ChevronDown className="w-5 h-5 text-blue-600 shrink-0 ml-2" />
+            </button>
+
+            {dropdownOpen && (
+              <ul className="absolute left-0 mt-2 w-full bg-white border border-[#E3E8F0] rounded-xl shadow-none z-[90] max-h-60 overflow-y-auto animate-in fade-in">
+                {userAdsAccounts.map((account) => (
+                  <li
+                    key={account.id}
+                    className={`px-4 py-3 cursor-pointer hover:bg-blue-50 text-sm text-[#5e5e5e] flex items-center justify-between ${
+                      selectedAdsAccount?.id === account.id ? "bg-blue-50 font-semibold" : ""
+                    }`}
+                    onClick={() => handleSelectAccount(account)}
+                  >
+                    <span className="truncate">{account["Account Name Editable"] || account.name}</span>
+                    <span className="ml-2 shrink-0">{formatAccountNumber(account.Id || account.id || "")}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   )
 }

@@ -299,8 +299,8 @@ export function AddAdsAccount() {
           <CardContent className="p-6 md:p-10 flex flex-col items-center">
             <h1 className="text-xl md:text-3xl font-bold text-center mb-4 md:mb-6">
               {userAdsAccounts && userAdsAccounts.length > 0
-                ? "Add new ads account"
-                : "Let's add your first ads account"}
+                ? "Add new ads account(s)"
+                : "Let's add your first ads account(s)"}
             </h1>
 
             {adsAccounts && adsAccounts.length > 0 && (
@@ -384,7 +384,7 @@ export function AddAdsAccount() {
               >
                 {isLoading && <Loader2 className="h-5 w-5 animate-spin" />}
                 {userAdsAccounts && userAdsAccounts.length > 0
-                  ? "Add another Google Ads account"
+                  ? "Connect"
                   : "Connect"}
               </Button>
             )}
