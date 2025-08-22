@@ -936,7 +936,7 @@ export default function Dashboard() {
         >
           {/* Row 2: Cards in a row (Critical, Medium, Low, Spend MTD/Budget) */}
     <div className="flex gap-4 flex-wrap justify-center max-w-full">
-  <Card className="w-full sm:w-64 md:w-[210px] h-[90px] shadow-none bg-white border-l-4 border-[#E53935]">
+  <Card className="w-full sm:w-64 md:w-[200px] h-[90px] shadow-none bg-white border-l-4 border-[#E53935]">
     <CardContent className="h-full flex flex-col items-center justify-center p-2">
       <span className="text-2xl font-bold text-[#E53935]">
         {criticalCount}
@@ -947,7 +947,7 @@ export default function Dashboard() {
     </CardContent>
   </Card>
 
-  <Card className="w-full sm:w-64 md:w-[210px] h-[90px] shadow-none bg-white border-l-4 border-[#FBC02D]">
+  <Card className="w-full sm:w-64 md:w-[200px] h-[90px] shadow-none bg-white border-l-4 border-[#FBC02D]">
     <CardContent className="h-full flex flex-col items-center justify-center p-2">
       <span className="text-2xl font-bold text-[#FBC02D]">
         {mediumCount}
@@ -958,7 +958,7 @@ export default function Dashboard() {
     </CardContent>
   </Card>
 
-  <Card className="w-full sm:w-64 md:w-[210px] h-[90px] shadow-none bg-white border-l-4 border-[#FFEB3B]">
+  <Card className="w-full sm:w-64 md:w-[200px] h-[90px] shadow-none bg-white border-l-4 border-[#FFEB3B]">
     <CardContent className="h-full flex flex-col items-center justify-center p-2">
       <span className="text-2xl font-bold text-[#FFEB3B]">
         {lowCount}
@@ -974,7 +974,7 @@ export default function Dashboard() {
 
          <div className="flex flex-grow-0 flex-shrink-0 justify-end w-full md:w-auto mt-4 md:mt-0">
   {/* Spend MTD / Monthly Budget Card */}
-  <Card className="bg-[#fff] border border-[#E3E8F0] rounded-xl shadow-none p-0 w-full md:w-[500px] h-[180px] gap-2 flex flex-col justify-between">
+  <Card className="bg-[#fff] border border-[#E3E8F0] rounded-xl shadow-none p-0 w-full md:w-[500px] h-[175px] gap-2 flex flex-col justify-between">
     <div className="flex justify-between items-start px-6 pt-4">
       <div className="flex flex-col gap-1">
         <span className="text-xs text-[#7A7D9C] font-medium flex items-center gap-1">

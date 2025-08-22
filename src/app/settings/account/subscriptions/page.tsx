@@ -7,6 +7,9 @@ import { useAlertSettingsStore } from "@/lib/store/settings-store";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useEffect, useState } from "react";
 import { SUBSCRIPTION_PRICES } from "@/lib/constants";
+import moment from "moment";
+import { SUBSCRIPTION_STATUS, SUBSCRIPTION_PERIODS } from "@/lib/constants";
+
 
 export default function SubscriptionsSubtab() {
   const { adsAccounts, fetchAdsAccounts, loading, deleteCompanyAccount } = useAlertSettingsStore();
@@ -38,6 +41,42 @@ export default function SubscriptionsSubtab() {
   };
 
   const subscriptionPrice = calculateSubscriptionPrice();
+  const { subscription } = useAlertSettingsStore();
+
+  let statusText = "";
+  let statusColor = "";
+  let statusBg = "";
+  if (subscription) {
+    const status = subscription["User Status"];
+    const trialStart = subscription["Free Trial Start Date"]?.toDate
+      ? subscription["Free Trial Start Date"].toDate()
+      : null;
+    const trialEnd = trialStart
+      ? moment(trialStart).add(SUBSCRIPTION_PERIODS.TRIAL_DAYS, "days")
+      : null;
+    const now = moment();
+
+    if (status === SUBSCRIPTION_STATUS.PAYING) {
+      statusText = "Paid Plan Active";
+      statusColor = "#24B04D";
+      statusBg = "#e9ffef";
+    } else if (status === SUBSCRIPTION_STATUS.TRIAL_NEW && trialEnd && now.isBefore(trialEnd)) {
+      statusText = "Free Trial";
+      statusColor = "#24B04D";
+      statusBg = "#e9ffef";
+    } else if (status === SUBSCRIPTION_STATUS.CANCELLED || status === SUBSCRIPTION_STATUS.PAYMENT_FAILED) {
+      statusText = "Subscription Canceled";
+      statusColor = "#ee1b23";
+      statusBg = "#ffebee";
+    } else if (
+      (status === SUBSCRIPTION_STATUS.TRIAL_NEW || status === SUBSCRIPTION_STATUS.TRIAL_ENDED) &&
+      trialEnd && now.isAfter(trialEnd)
+    ) {
+      statusText = "Free Trial Ended";
+      statusColor = "#ee1b23";
+      statusBg = "#ffebee";
+    }
+  }
 
   // TODO: need to test
   const handleDeleteCompanyAccount = async () => {
@@ -52,11 +91,15 @@ export default function SubscriptionsSubtab() {
     }
   };
 
+
+
+
   return (
     <div className="space-y-6">
       {/* Main Subscription Card */}
       <div className="bg-white p-4">
         <h2 className="text-xl font-bold mb-6">Subscriptions</h2>
+
 
         {/* Current Status */}
         <div className="mb-6">
@@ -65,11 +108,23 @@ export default function SubscriptionsSubtab() {
               <span className="text-blue-600">${subscriptionPrice}</span>
               <span className="text-gray-600 font-normal text-xl">/Monthly</span>
             </div>
+            <div>
+              {statusText && (
+  <div
+    className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium mb-2"
+    style={{ color: statusColor, background: statusBg }}
+  >
+    {statusText}
+  </div>
+)}
+            
             <div className="bg-gray-100 px-3 py-1 rounded-full">
-              <span className="text-blue-600 font-semibold">
+              
+              <span className="text-blue-600 font-semibold text-[18px]">
                 {connectedAccountsCount}
               </span>
-              <span className="text-gray-600"> Connected ads account(s)</span>
+              <span className="text-gray-600 text-[16px]"> Connected ads account(s)</span>
+            </div>
             </div>
           </div>
           <div className="text-gray-700">
@@ -132,7 +187,7 @@ export default function SubscriptionsSubtab() {
       </div>
 
       {/* Account Cancellation */}
-      <div className="flex items-center gap-3 text-gray-700 ml-4">
+      <div className="flex items-center gap-3 text-gray-700 ml-4 text-[14px]">
         <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0" />
         <span>
           I would like to{" "}

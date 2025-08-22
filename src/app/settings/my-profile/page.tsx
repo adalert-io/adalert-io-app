@@ -99,7 +99,7 @@ export default function MyProfileTab() {
   return (
     <div className="flex flex-col items-center w-full min-h-[80vh]">
       <div className="w-full max-w-5xl">
-        <div className="bg-white rounded-2xl shadow-md p-8 border border-gray-200">
+        <div className="bg-white rounded-2xl shadow-md p-8 border border-[#e5e5e5]">
           <h2 className="text-2xl font-bold mb-1">My Profile</h2>
           <p className="text-gray-500 mb-6">
             View or edit your profile. You can include or exclude yourself from email alerts or control the frequency from {" "}
@@ -107,17 +107,18 @@ export default function MyProfileTab() {
           </p>
           <div className="flex flex-col md:flex-row gap-8">
             {/* Avatar and Name */}
-            <div className="flex flex-col items-center flex-1 bg-white rounded-xl border border-gray-100 p-8">
-              <div className="relative w-32 h-32 flex items-center justify-center mb-4">
+            <div className="flex flex-col items-center flex-1 bg-white rounded-xl border border-[#e5e5e5] p-8">
+              <div className="relative w-25 h-25 flex items-center justify-center mb-4">
                 <div className="w-full h-full border rounded-full overflow-hidden bg-gray-50 flex items-center justify-center">
-                  <img
-                    src={avatarUrl}
-                    alt={name || "User avatar"}
-                    className="w-full h-full object-cover"
-                    onError={e => {
-                      (e.currentTarget as HTMLImageElement).src = "/images/default-avatar.png";
-                    }}
-                  />
+                <img
+  src={avatarUrl}
+  alt={name || "User avatar"}
+  className="w-25 h-25 rounded-full object-cover"
+  onError={e => {
+    (e.currentTarget as HTMLImageElement).src = "/images/default-avatar.png";
+  }}
+/>
+
                 </div>
                 {/* Camera icon button */}
                 <button
@@ -140,10 +141,10 @@ export default function MyProfileTab() {
                   disabled={isGoogleSignUp}
                 />
               </div>
-              <div className="text-xl font-bold text-center">{name}</div>
+              <div className="text-xl font-bold text-center mt-2">{name}</div>
             </div>
             {/* Personal Info Form */}
-            <div className="flex-1 bg-white rounded-xl border border-gray-100 p-8">
+            <div className="flex-1 bg-white rounded-xl border border-[#e5e5e5] p-8">
               <div className="text-lg font-semibold mb-6">Personal information</div>
               <form className="flex flex-col gap-4">
                 <div className="relative">

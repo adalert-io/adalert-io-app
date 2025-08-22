@@ -188,125 +188,195 @@ export default function AdAccountsSubtab() {
     },
   ];
 
-  function AdsAccountsDataTable() {
-    const [pageIndex, setPageIndex] = useState(0);
+function AdsAccountsDataTable() {
+  const [pageIndex, setPageIndex] = useState(0);
 
-    const table = useReactTable({
-      data: filteredAdsAccounts,
-      columns,
-      getCoreRowModel: getCoreRowModel(),
-      getPaginationRowModel: getPaginationRowModel(),
-      state: {
-        pagination: {
-          pageIndex,
-          pageSize,
-        },
+  const table = useReactTable({
+    data: filteredAdsAccounts,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    state: {
+      pagination: {
+        pageIndex,
+        pageSize,
       },
-      onPaginationChange: (updater) => {
-        if (typeof updater === "function") {
-          const next = updater({ pageIndex, pageSize });
-          setPageIndex(next.pageIndex);
-          setPageSize(next.pageSize);
-        } else {
-          if (updater.pageIndex !== undefined) {
-            setPageIndex(updater.pageIndex);
-          }
-          if (updater.pageSize !== undefined) {
-            setPageSize(updater.pageSize);
-          }
-        }
-      },
-      pageCount: Math.ceil(filteredAdsAccounts.length / pageSize),
-      getRowId: (row) => {
-        if (!row.original) {
-          return row.id || Math.random().toString();
-        }
-        if (!row.original.id) {
-          return row.id || Math.random().toString();
-        }
-        return row.original.id;
-      },
-    });
+    },
+    onPaginationChange: (updater) => {
+      if (typeof updater === "function") {
+        const next = updater({ pageIndex, pageSize });
+        setPageIndex(next.pageIndex);
+        setPageSize(next.pageSize);
+      } else {
+        if (updater.pageIndex !== undefined) setPageIndex(updater.pageIndex);
+        if (updater.pageSize !== undefined) setPageSize(updater.pageSize);
+      }
+    },
+    pageCount: Math.ceil(filteredAdsAccounts.length / pageSize),
+    getRowId: (row) => {
+      if (!row.original) return row.id || Math.random().toString();
+      if (!row.original.id) return row.id || Math.random().toString();
+      return row.original.id;
+    },
+  });
 
-    return (
-     <div className="rounded-md border overflow-hidden">
-  <table className="min-w-full text-xs [border-collapse:separate] [border-spacing:0]">
-    <thead className="bg-gray-50">
-      {table.getHeaderGroups().map((headerGroup) => (
-        <tr key={headerGroup.id}>
-          {headerGroup.headers.map((header) => (
-            <th
-              key={header.id}
-              className="px-2 py-2 text-left text-gray-600"
-            >
-              {flexRender(
-                header.column.columnDef.header,
-                header.getContext()
-              )}
-            </th>
-          ))}
-        </tr>
-      ))}
-    </thead>
-    <tbody>
-      {table.getRowModel().rows.map((row) => (
-        <tr key={row.id} className="hover:bg-gray-50">
-          {row.getVisibleCells().map((cell) => (
-            <td key={cell.id} className="px-2 py-2 align-top">
-              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-            </td>
-          ))}
-        </tr>
-      ))}
-    </tbody>
-  </table>
+  const total = filteredAdsAccounts.length;
+  const start = total ? pageIndex * pageSize + 1 : 0;
+  const end = Math.min((pageIndex + 1) * pageSize, total);
+  const totalPages = table.getPageCount();
 
-  {/* Pagination Controls */}
-  <div className="flex items-center justify-between mt-4 px-2 py-2 text-xs text-gray-500">
-    <div />
-    <div>
-      Page {table.getState().pagination.pageIndex + 1} of{" "}
-      {table.getPageCount()}
-    </div>
-    <div className="flex gap-1">
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => table.setPageIndex(0)}
-        disabled={!table.getCanPreviousPage()}
-      >
-        <ChevronsLeft className="w-4 h-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => table.previousPage()}
-        disabled={!table.getCanPreviousPage()}
-      >
-        <ChevronLeftIcon className="w-4 h-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => table.nextPage()}
-        disabled={!table.getCanNextPage()}
-      >
-        <ChevronRightIcon className="w-4 h-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-        disabled={!table.getCanNextPage()}
-      >
-        <ChevronsRight className="w-4 h-4" />
-      </Button>
-    </div>
-  </div>
-</div>
-
-    );
+  // Reference-style page numbers
+  const maxVisiblePages = 5;
+  const halfVisible = Math.floor(maxVisiblePages / 2);
+  let startPage = Math.max(1, pageIndex + 1 - halfVisible);
+  let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+  if (endPage - startPage + 1 < maxVisiblePages) {
+    startPage = Math.max(1, endPage - maxVisiblePages + 1);
   }
+  const pages: (number | string)[] = [];
+  if (startPage > 1) {
+    pages.push(1);
+    if (startPage > 2) pages.push("ellipsis-start");
+  }
+  for (let i = startPage; i <= endPage; i++) pages.push(i);
+  if (endPage < totalPages) {
+    if (endPage < totalPages - 1) pages.push("ellipsis-end");
+    pages.push(totalPages);
+  }
+
+  return (
+    <div className="bg-white rounded-2xl shadow-none border border-[#e5e5e5] overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="min-w-full text-[0.75rem]">
+          <thead className="bg-gray-50 border-b border-gray-200">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <th
+                    key={header.id}
+                    className="px-4 py-4 text-left font-semibold text-gray-700"
+                  >
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+
+          <tbody className="divide-y divide-gray-100">
+            {table.getRowModel().rows.map((row) => (
+              <tr key={row.id} className="hover:bg-gray-50 transition-colors">
+                {row.getVisibleCells().map((cell) => (
+                  <td key={cell.id} className="px-4 py-6 align-top text-gray-900">
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
+                ))}
+              </tr>
+            ))}
+
+            {table.getRowModel().rows.length === 0 && (
+              <tr>
+                <td
+                  className="px-4 py-12 text-center text-gray-500"
+                  colSpan={table.getAllColumns().length}
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <svg className="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    No accounts found.
+                  </div>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Footer like reference */}
+      <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200 gap-4">
+        <div className="text-[0.75rem] text-gray-600 font-medium">
+          Showing {total ? start : 0} to {end} of {total} accounts
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* First */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.setPageIndex(0)}
+            disabled={!table.getCanPreviousPage()}
+            className="h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="First page"
+          >
+            <ChevronsLeft className="w-4 h-4" />
+          </Button>
+
+          {/* Prev */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+            className="h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Previous page"
+          >
+            <ChevronLeftIcon className="w-4 h-4" />
+          </Button>
+
+          {/* Numbers */}
+          <div className="flex items-center gap-1">
+            {pages.map((p, idx) =>
+              typeof p === "number" ? (
+                <Button
+                  key={`${p}-${idx}`}
+                  variant={p === pageIndex + 1 ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => table.setPageIndex(p - 1)}
+                  className="h-8 w-8 p-0 text-[0.75rem] font-medium"
+                >
+                  {p}
+                </Button>
+              ) : (
+                <span key={`${p}-${idx}`} className="px-2 text-gray-400 text-[0.75rem]">
+                  …
+                </span>
+              )
+            )}
+          </div>
+
+          {/* Next */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+            className="h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Next page"
+          >
+            <ChevronRightIcon className="w-4 h-4" />
+          </Button>
+
+          {/* Last */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.setPageIndex(totalPages - 1)}
+            disabled={!table.getCanNextPage()}
+            className="h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Last page"
+          >
+            <ChevronsRight className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
   // Handle save button click
   const handleSave = async () => {
