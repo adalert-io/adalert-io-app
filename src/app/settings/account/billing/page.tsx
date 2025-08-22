@@ -220,7 +220,7 @@ const cards = [
         <div className="flex items-center gap-4 mb-6">
           <div className="text-sm text-gray-600">Accepted cards:</div>
           <div className="flex gap-2">
-           <div className="flex gap-3 items-center">
+           <div className="flex gap-[2px] items-center">
       {cards.map((card) => (
         <img
           key={card.name}
@@ -237,9 +237,7 @@ const cards = [
      <div className="space-y-4">
   {/* Card Details */}
   <div>
-    <Label className="text-sm font-medium text-gray-700">
-      Card details
-    </Label>
+
     <div className="mt-1 border border-gray-300 rounded-md p-3">
       <CardElement 
         options={stripeConfig.cardElementOptions}
@@ -252,15 +250,13 @@ const cards = [
 
   {/* Name on Card */}
   <div>
-    <Label htmlFor="nameOnCard" className="text-sm font-medium text-gray-700">
-      Name on card
-    </Label>
+    
     <div className="relative mt-1">
       <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#155dfc] w-4 h-4" />
       <Input
         id="nameOnCard"
         type="text"
-        placeholder="John Doe"
+        placeholder="Name on card"
         value={formData.nameOnCard}
         onChange={(e) => handleInputChange('nameOnCard', e.target.value)}
         className="pl-10"
@@ -270,15 +266,13 @@ const cards = [
 
   {/* Street Address */}
   <div>
-    <Label htmlFor="streetAddress" className="text-sm font-medium text-gray-700">
-      Street address
-    </Label>
+ 
     <div className="relative mt-1">
       <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#155dfc] w-4 h-4" />
       <Input
         id="streetAddress"
         type="text"
-        placeholder="123 Main St"
+        placeholder="Street address"
         value={formData.streetAddress}
         onChange={(e) => handleInputChange('streetAddress', e.target.value)}
         className="pl-10"
@@ -289,15 +283,13 @@ const cards = [
   {/* City and State Row */}
   <div className="grid grid-cols-2 gap-4">
     <div>
-      <Label htmlFor="city" className="text-sm font-medium text-gray-700">
-        City
-      </Label>
+      
       <div className="relative mt-1">
         <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#155dfc] w-4 h-4" />
         <Input
           id="city"
           type="text"
-          placeholder="New York"
+          placeholder="City"
           value={formData.city}
           onChange={(e) => handleInputChange('city', e.target.value)}
           className="pl-10"
@@ -305,15 +297,13 @@ const cards = [
       </div>
     </div>
     <div>
-      <Label htmlFor="state" className="text-sm font-medium text-gray-700">
-        State
-      </Label>
+       
       <div className="relative mt-1">
         <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#155dfc] w-4 h-4" />
         <Input
           id="state"
           type="text"
-          placeholder="NY"
+          placeholder="State"
           value={formData.state}
           onChange={(e) => handleInputChange('state', e.target.value)}
           className="pl-10"
@@ -325,9 +315,7 @@ const cards = [
   {/* Country and Zip Row */}
   <div className="grid grid-cols-2 gap-4">
     <div>
-      <Label htmlFor="country" className="text-sm font-medium text-gray-700">
-        Country
-      </Label>
+      
       <div className="relative mt-1">
         <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#155dfc] w-4 h-4 z-10" />
         {isClient ? (
@@ -350,7 +338,6 @@ const cards = [
                 paddingLeft: '2.5rem',
                 border: '1px solid #d1d5db',
                 borderRadius: '0.375rem',
-                minHeight: '2.5rem',
                 '&:hover': {
                   borderColor: '#3b82f6'
                 }
@@ -367,9 +354,7 @@ const cards = [
       </div>
     </div>
     <div>
-      <Label htmlFor="zip" className="text-sm font-medium text-gray-700">
-        Zip
-      </Label>
+       
       <div className="relative mt-1">
         <Target className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#155dfc] w-4 h-4" />
         <Input
@@ -387,11 +372,11 @@ const cards = [
 
 
         {/* Submit Button */}
-        <div className="mt-8">
+        <div className="mt-8 flex justify-center">
           <Button
             onClick={handleSubmit}
             disabled={isSubmitting || !stripe || !isFormValid()}
-            className="w-full bg-gray-800 text-white hover:bg-gray-900 py-3 text-lg font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="bg-blue-600 text-white hover:bg-blue-700"
           >
             {isSubmitting ? (
               <>

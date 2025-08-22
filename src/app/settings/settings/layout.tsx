@@ -25,7 +25,7 @@ export default function SettingsTabLayout({ children }: { children: React.ReactN
         <Link
           key={subtab.value}
           href={`/settings/settings/${subtab.value}`}
-          className={`px-4 py-2 font-medium text-base transition-all ${
+          className={`px-4 py-2 font-normal text-base transition-all ${
             currentSubtab === subtab.value
               ? 'bg-blue-600 text-white'
               : 'text-[#7A7D9C] hover:bg-blue-50'

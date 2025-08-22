@@ -25,7 +25,7 @@ export default function AccountTabLayout({ children }: { children: React.ReactNo
         <Link
           key={subtab.value}
           href={`/settings/account/${subtab.value}`}
-          className={`px-4 py-2 font-medium text-base transition-all ${
+          className={`px-4 py-2 font-normal text-base transition-all ${
             currentSubtab === subtab.value
               ? 'bg-blue-600 text-white'
               : 'text-[#7A7D9C] hover:bg-blue-50'

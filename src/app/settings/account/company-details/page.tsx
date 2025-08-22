@@ -388,7 +388,7 @@ export default function CompanyDetailsSubtab() {
       {/* Save Button */}
       <div className="mt-8 flex justify-center">
         <Button
-          className="bg-blue-600 text-white text-lg font-bold px-12 py-3 rounded shadow-md hover:bg-blue-700"
+          className="bg-blue-600 text-white hover:bg-blue-700"
           onClick={handleSave}
           disabled={isSaving}
         >

@@ -304,7 +304,7 @@ export function AddAdsAccount() {
             </h1>
 
             {adsAccounts && adsAccounts.length > 0 && (
-              <div className="w-full max-h-72 overflow-y-auto flex flex-col gap-4 mb-6 md:mb-8">
+              <div className="w-full max-h-112 overflow-y-auto flex flex-col gap-4 mb-6 md:mb-8">
                 {adsAccounts.map((acc, idx) => {
                   const isSelected = acc["Is Selected"];
                   const isConnected = acc["Is Connected"];
@@ -319,57 +319,57 @@ export function AddAdsAccount() {
                     ? Number(acc["Monthly Budget"]).toLocaleString()
                     : "";
                   return (
-                    <div
-                      key={acc.id || idx}
-                      className={`border rounded-xl p-4 bg-white shadow-sm cursor-pointer transition-all ${
-                        isSelected || isConnected
-                          ? "border-blue-600"
-                          : "border-gray-200"
-                      }`}
-                      onClick={() => handleCardClick(idx)}
-                    >
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
-                        <div>
-                          <div className="text-sm font-semibold text-gray-800">
-                            Google Ads Account ID: {formatAccountId(acc.Id)}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            Account Name: {acc["Account Name Editable"]}
-                          </div>
-                        </div>
-                        {acc["Is Connected"] && (
-                          <span className="mt-2 sm:mt-0 flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 rounded-lg text-xs font-medium">
-                            <CheckCheck className="w-4 h-4 text-green-600" />{" "}
-                            Connected
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100">
-                          <DollarSign className="w-5 h-5 text-blue-600" />
-                        </span>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          min={0}
-                          className={`flex-1 border rounded-lg px-4 py-2 text-base md:text-lg font-semibold outline-none transition-all text-right ${
-                            isInvalid
-                              ? "border-red-500 focus:border-red-500"
-                              : "border-gray-200"
-                          }`}
-                          value={inputValue}
-                          onFocus={() =>
-                            handleBudgetFocus(idx, acc["Monthly Budget"] || "")
-                          }
-                          onBlur={handleBudgetBlur}
-                          onChange={(e) =>
-                            handleBudgetChange(idx, e.target.value)
-                          }
-                          onClick={(e) => e.stopPropagation()}
-                          placeholder="0"
-                        />
-                      </div>
-                    </div>
+<div
+  key={acc.id || idx}
+  className={`flex border rounded-xl p-4 bg-white border-[#5e5e5e] cursor-pointer transition-all ${
+    isSelected || isConnected ? "border-blue-600" : "border-gray-200"
+  }`}
+  onClick={() => handleCardClick(idx)}
+>
+  <div className="w-1/2 flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
+    <div>
+          {acc["Is Connected"] && (
+      <span className="mt-2 sm:mt-0 flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 rounded-lg text-xs font-medium w-fit mb-2">
+  <CheckCheck className="w-4 h-4 text-green-600" /> Connected
+</span>
+
+    )}
+      <div className="text-sm font-semibold text-gray-800">
+        Google Ads Account ID: {formatAccountId(acc.Id)}
+      </div>
+      <div className="text-sm text-gray-500">
+        Account Name: {acc["Account Name Editable"]}
+      </div>
+    </div>
+  
+  </div>
+
+  <div className="w-1/2 items-center gap-2 mt-2">
+<div className="text-sm font-semibold text-gray-800 text-right mb-2">
+       Monthly Budget
+      </div>
+    <div className="flex items-center mt-2 sm:mt-0 gap-2">
+    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100">
+      <DollarSign className="w-5 h-5 text-blue-600" />
+    </span>
+    <input
+      type="text"
+      inputMode="numeric"
+      min={0}
+      className={`flex-1 border rounded-lg px-4 py-2 text-base md:text-lg font-semibold outline-none transition-all text-right ${
+        isInvalid ? "border-red-500 focus:border-red-500" : "border-gray-200"
+      }`}
+      value={inputValue}
+      onFocus={() => handleBudgetFocus(idx, acc["Monthly Budget"] || "")}
+      onBlur={handleBudgetBlur}
+      onChange={(e) => handleBudgetChange(idx, e.target.value)}
+      onClick={(e) => e.stopPropagation()}
+      placeholder="0"
+    />
+    </div>
+  </div>
+</div>
+
                   );
                 })}
               </div>

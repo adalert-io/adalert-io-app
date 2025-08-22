@@ -161,7 +161,7 @@ export default function AlertsSubtab() {
             />
             <label
               htmlFor="email-alerts"
-              className="text-base font-medium select-none"
+              className="text-base font-normal select-none"
             >
               Send me in <span className="font-bold">Email</span> alerts
             </label>
@@ -178,7 +178,7 @@ export default function AlertsSubtab() {
             />
             <label
               htmlFor="sms-alerts"
-              className="text-base font-medium select-none"
+              className="text-base font-normal select-none"
             >
               Send me in <span className="font-bold">SMS</span> alerts{" "}
               <span className="font-normal text-xs">
@@ -213,7 +213,7 @@ export default function AlertsSubtab() {
                 />
                 <label
                   htmlFor={f.id}
-                  className="text-base font-medium select-none"
+                  className="text-base font-normal select-none"
                 >
                   {f.label}
                 </label>
@@ -237,7 +237,7 @@ export default function AlertsSubtab() {
                 />
                 <label
                   htmlFor={f.id}
-                  className="text-base font-medium select-none"
+                  className="text-base font-normal select-none"
                 >
                   {f.label}
                 </label>
@@ -261,7 +261,7 @@ export default function AlertsSubtab() {
                 />
                 <label
                   htmlFor={f.id}
-                  className="text-base font-medium select-none"
+                  className="text-base font-normal select-none"
                 >
                   {f.label}
                 </label>
@@ -274,7 +274,7 @@ export default function AlertsSubtab() {
         <Button
           onClick={handleSave}
           disabled={saving || loading}
-          className="bg-blue-600 text-white text-lg font-bold px-12 py-3 rounded shadow-md hover:bg-blue-700 transition-all"
+          className="bg-blue-600 text-white hover:bg-blue-700"
         >
           {saving ? "Saving..." : "Save"}
         </Button>
