@@ -133,10 +133,10 @@ export default function AdAccountsSubtab() {
     },
     {
       accessorKey: "Is Connected",
-      header: "Connected",
+      header: "Status",
       cell: ({ row }) => (
         <span className={row.original["Is Connected"] ? "text-green-600" : "text-red-600"}>
-          {row.original["Is Connected"] ? "yes" : "no"}
+          {row.original["Is Connected"] ? "Connected" : "Disconnected"}
         </span>
       ),
     },
