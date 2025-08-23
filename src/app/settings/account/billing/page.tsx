@@ -204,6 +204,7 @@ const cards = [
               <span className="text-gray-600 font-normal text-xl">/Monthly</span>
             </div>
             <div className="bg-gray-100 px-3 py-1 rounded-full">
+              
               <span className="text-blue-600 font-semibold">
                 {connectedAccountsCount}
               </span>
