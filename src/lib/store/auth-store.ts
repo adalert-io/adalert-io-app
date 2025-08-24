@@ -10,7 +10,7 @@ import {
   updateProfile,
   sendEmailVerification,
   sendPasswordResetEmail,
-  ActionCodeSettings,
+  ActionCodeSettings
 } from "firebase/auth";
 import { authConfig } from "../config/auth-config";
 import {
@@ -22,7 +22,7 @@ import {
   updateDoc,
   query,
   where,
-  getDocs,
+  getDocs
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import moment from "moment";
@@ -30,7 +30,7 @@ import {
   SUBSCRIPTION_STATUS,
   SUBSCRIPTION_PERIODS,
   USER_TYPES,
-  COLLECTIONS,
+  COLLECTIONS
 } from "@/lib/constants";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
@@ -132,7 +132,7 @@ async function checkSubscriptionStatus(userId: string): Promise<boolean> {
         await updateDoc(
           doc(db, COLLECTIONS.SUBSCRIPTIONS, subscriptionDoc.id),
           {
-            "User Status": SUBSCRIPTION_STATUS.TRIAL_ENDED,
+            "User Status": SUBSCRIPTION_STATUS.TRIAL_ENDED
           }
         );
         return false;
@@ -140,10 +140,10 @@ async function checkSubscriptionStatus(userId: string): Promise<boolean> {
     }
   }
 
-  // Check Trial Ended or Cancelled status
+  // Check Trial Ended or Canceled status
   if (
     userStatus === SUBSCRIPTION_STATUS.TRIAL_ENDED ||
-    userStatus === SUBSCRIPTION_STATUS.CANCELLED
+    userStatus === SUBSCRIPTION_STATUS.CANCELED
   ) {
     return false;
   }
@@ -191,9 +191,9 @@ export async function createUserDocuments(
       const response = await fetch("/api/contacts/create", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify({ user, userName }),
+        body: JSON.stringify({ user, userName })
       });
 
       if (response.ok) {
@@ -217,7 +217,7 @@ export async function createUserDocuments(
       "Telephone": user.phoneNumber,
       "uid": user.uid,
       email: user.email,
-      "Opt In For Text Message": false,
+      "Opt In For Text Message": false
     };
 
     // Add contact IDs if they were created successfully
@@ -237,7 +237,7 @@ export async function createUserDocuments(
     await setDoc(authTrackerRef, {
       "Is Ads Account Authenticating": false,
       "Nav To Settings - Ads Account": false,
-      "User": userRef,
+      "User": userRef
     });
 
     // Create alertSettings document
@@ -261,7 +261,7 @@ export async function createUserDocuments(
       "Type Optimization Score": true,
       "Type Policy": true,
       "Type Serving Ads": true,
-      "User": userRef,
+      "User": userRef
     });
 
     if (createStripeAndSubscription) {
@@ -272,7 +272,7 @@ export async function createUserDocuments(
         user.uid
       );
       await setDoc(stripeCompaniesRef, {
-        "User": userRef,
+        "User": userRef
       });
 
       // Create subscriptions document
@@ -280,7 +280,7 @@ export async function createUserDocuments(
       await setDoc(subscriptionsRef, {
         "User": userRef,
         "Free Trial Start Date": serverTimestamp(),
-        "User Status": SUBSCRIPTION_STATUS.TRIAL_NEW,
+        "User Status": SUBSCRIPTION_STATUS.TRIAL_NEW
       });
     }
   }
@@ -348,7 +348,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // Send verification email with dynamic action URL
       const actionCodeSettings: ActionCodeSettings = {
         url: authConfig.getActionUrl(),
-        handleCodeInApp: true,
+        handleCodeInApp: true
       };
       await sendEmailVerification(userCredential.user, actionCodeSettings);
 
@@ -398,7 +398,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // Set custom parameters
       provider.setCustomParameters({
         prompt: "select_account",
-        login_hint: "",
+        login_hint: ""
       });
 
       const userCredential = await signInWithPopup(auth, provider);
@@ -447,7 +447,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // Send verification email with dynamic action URL
       const actionCodeSettings: ActionCodeSettings = {
         url: authConfig.getActionUrl(),
-        handleCodeInApp: true,
+        handleCodeInApp: true
       };
       await sendEmailVerification(user, actionCodeSettings);
     } catch (err: any) {
@@ -463,7 +463,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ loading: true, error: null });
       const actionCodeSettings: ActionCodeSettings = {
         url: authConfig.getActionUrl(),
-        handleCodeInApp: true,
+        handleCodeInApp: true
       };
       await sendPasswordResetEmail(auth, email, actionCodeSettings);
     } catch (err: any) {
@@ -535,5 +535,5 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       console.error("Error in post-auth navigation:", err);
       set({ error: err.message });
     }
-  },
+  }
 }));

@@ -10,13 +10,13 @@ import {
   doc,
   setDoc,
   serverTimestamp,
-  deleteDoc,
+  deleteDoc
 } from "firebase/firestore";
 import {
   ref,
   uploadBytes,
   getDownloadURL,
-  deleteObject,
+  deleteObject
 } from "firebase/storage";
 import { User } from "firebase/auth";
 import { formatAccountNumber, getFirebaseFnPath } from "../utils";
@@ -181,7 +181,7 @@ interface AlertSettingsState {
     stripe,
     elements,
     toast,
-    onBack,
+    onBack
   }: {
     formData: any;
     stripe: any;
@@ -222,7 +222,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         set({
           alertSettings: { id: docSnap.id, ...docSnap.data() } as AlertSettings,
           loading: false,
-          loadedUserId: userId,
+          loadedUserId: userId
         });
       } else {
         set({ alertSettings: null, loading: false, loadedUserId: userId });
@@ -268,7 +268,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         "User Type": docSnap.data()["User Type"],
         "User Access": docSnap.data()["User Access"],
         "Avatar": docSnap.data()["Avatar"],
-        "Is Google Sign Up": docSnap.data()["Is Google Sign Up"],
+        "Is Google Sign Up": docSnap.data()["Is Google Sign Up"]
       }));
       set({ users, usersLoaded: true, loading: false });
     } catch (error: any) {
@@ -288,7 +288,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         "User Type": docSnap.data()["User Type"],
         "User Access": docSnap.data()["User Access"],
         "Avatar": docSnap.data()["Avatar"],
-        "Is Google Sign Up": docSnap.data()["Is Google Sign Up"],
+        "Is Google Sign Up": docSnap.data()["Is Google Sign Up"]
       }));
       set({ users, usersLoaded: true, loading: false });
     } catch (error: any) {
@@ -312,7 +312,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           docSnap.data()["Account Name Editable"] ||
           docSnap.data()["Account Name Original"] ||
           formatAccountNumber(docSnap.data()["Id"]),
-        "Selected Users": docSnap.data()["Selected Users"],
+        "Selected Users": docSnap.data()["Selected Users"]
       }));
       set({ adsAccounts, adsAccountsLoaded: true, loading: false });
     } catch (error: any) {
@@ -335,7 +335,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           docSnap.data()["Account Name Editable"] ||
           docSnap.data()["Account Name Original"] ||
           formatAccountNumber(docSnap.data()["Id"]),
-        "Selected Users": docSnap.data()["Selected Users"],
+        "Selected Users": docSnap.data()["Selected Users"]
       }));
       set({ adsAccounts, adsAccountsLoaded: true, loading: false });
     } catch (error: any) {
@@ -386,7 +386,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             "Platform": data["Platform"] || "Google",
             "Monthly Budget": data["Monthly Budget"] || 0,
             "Selected Users": selectedUsers,
-            "Send Me Alert": data["Send Me Alert"] || false,
+            "Send Me Alert": data["Send Me Alert"] || false
           };
         })
         .filter(Boolean) as AdsAccount[];
@@ -394,7 +394,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       set({
         adsAccountsForTab: adsAccounts,
         adsAccountsForTabLoaded: true,
-        loading: false,
+        loading: false
       });
     } catch (error: any) {
       set({ error: error.message, loading: false });
@@ -428,7 +428,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
 
           if (!userAlreadySelected) {
             return updateDoc(docSnap.ref, {
-              "Selected Users": [...currentSelectedUsers, userRef],
+              "Selected Users": [...currentSelectedUsers, userRef]
             });
           }
         });
@@ -455,7 +455,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             // Add user to selected ads accounts
             if (!userAlreadySelected) {
               return updateDoc(docSnap.ref, {
-                "Selected Users": [...currentSelectedUsers, userRef],
+                "Selected Users": [...currentSelectedUsers, userRef]
               });
             }
           } else {
@@ -466,7 +466,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
                   user.id !== userId && !user.path?.includes(userId)
               );
               return updateDoc(docSnap.ref, {
-                "Selected Users": updatedSelectedUsers,
+                "Selected Users": updatedSelectedUsers
               });
             }
           }
@@ -600,7 +600,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       const response = await fetch("/api/send-email", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           toEmail,
@@ -610,9 +610,9 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           tags: {
             UserName: userName,
             UpdaterUserType: updaterUserType,
-            UpdaterUserName: updaterUserName,
-          },
-        }),
+            UpdaterUserName: updaterUserName
+          }
+        })
       });
 
       if (!response.ok) {
@@ -647,7 +647,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         invitedAt: serverTimestamp(),
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         status: "pending",
-        companyAdmin: userDoc?.["Company Admin"],
+        companyAdmin: userDoc?.["Company Admin"]
       };
       await setDoc(invitationRef, invitationData);
       await get().sendInvitationEmail(email, invitationRef.id);
@@ -670,9 +670,9 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           tags: {
             ApplicationName: APPLICATION_NAME,
             Link: invitationLink,
-            ExpiresIn: "7 days",
-          },
-        }),
+            ExpiresIn: "7 days"
+          }
+        })
       });
       if (!response.ok) {
         const errorData = await response.json();
@@ -761,11 +761,11 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         const response = await fetch(path, {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            adsAccountId: accountId,
-          }),
+            adsAccountId: accountId
+          })
         });
 
         if (!response.ok) {
@@ -851,8 +851,8 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
                       body: JSON.stringify({
                         subscriptionId: stripeSubscriptionId,
                         subscriptionItemId: subscriptionItemId,
-                        quantity: newQuantity,
-                      }),
+                        quantity: newQuantity
+                      })
                     });
 
                     if (!response.ok) {
@@ -902,7 +902,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       const updatePromises = snap.docs.map((docSnap) =>
         updateDoc(docSnap.ref, {
           "Monthly Budget": monthly,
-          "Daily Budget": daily,
+          "Daily Budget": daily
         })
       );
       await Promise.all(updatePromises);
@@ -964,7 +964,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         Email,
         "Opt In For Text Message": optInForTextMessage,
         Telephone,
-        "Telephone Dial Code": TelephoneDialCode,
+        "Telephone Dial Code": TelephoneDialCode
       };
       if (updates["User Type"] !== undefined) {
         updateData["User Type"] = updates["User Type"];
@@ -1134,8 +1134,8 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 subscriptionId: stripeSubscriptionId,
-                customerId: stripeCustomerId,
-              }),
+                customerId: stripeCustomerId
+              })
             });
 
             if (!response.ok) {
@@ -1145,7 +1145,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
               );
             } else {
               console.log(
-                `Successfully cancelled Stripe subscription ${stripeSubscriptionId}`
+                `Successfully canceled Stripe subscription ${stripeSubscriptionId}`
               );
             }
           } catch (error) {
@@ -1208,11 +1208,11 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             const response = await fetch(path, {
               method: "POST",
               headers: {
-                "Content-Type": "application/json",
+                "Content-Type": "application/json"
               },
               body: JSON.stringify({
-                adminEmail: adminEmail,
-              }),
+                adminEmail: adminEmail
+              })
             });
 
             if (!response.ok) {
@@ -1244,7 +1244,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             const contactIds = {
               // Pipedrive: userData.Pipedrive,
               Mailchimp: userData.Mailchimp,
-              "Sendgrid Marketing": userData["Sendgrid Marketing"],
+              "Sendgrid Marketing": userData["Sendgrid Marketing"]
             };
 
             // Only attempt to remove contacts if any contact IDs exist
@@ -1253,9 +1253,9 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
                 const response = await fetch("/api/contacts/remove", {
                   method: "POST",
                   headers: {
-                    "Content-Type": "application/json",
+                    "Content-Type": "application/json"
                   },
-                  body: JSON.stringify({ contactIds }),
+                  body: JSON.stringify({ contactIds })
                 });
 
                 if (response.ok) {
@@ -1303,7 +1303,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         set({
           stripeCompany: { id: docSnap.id, ...docSnap.data() },
           stripeCompanyLoaded: true,
-          loading: false,
+          loading: false
         });
       } else {
         set({ stripeCompany: null, stripeCompanyLoaded: true, loading: false });
@@ -1331,7 +1331,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         await setDoc(newDocRef, {
           User: userRef,
           ...updates,
-          createdAt: serverTimestamp(),
+          createdAt: serverTimestamp()
         });
         await get().fetchStripeCompany(userId);
       }
@@ -1354,7 +1354,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         set({
           subscription: { id: docSnap.id, ...docSnap.data() },
           subscriptionLoaded: true,
-          loading: false,
+          loading: false
         });
       } else {
         set({ subscription: null, subscriptionLoaded: true, loading: false });
@@ -1376,13 +1376,13 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         set({
           paymentMethods: { id: docSnap.id, ...docSnap.data() },
           paymentMethodsLoaded: true,
-          loading: false,
+          loading: false
         });
       } else {
         set({
           paymentMethods: null,
           paymentMethodsLoaded: true,
-          loading: false,
+          loading: false
         });
       }
     } catch (error: any) {
@@ -1400,7 +1400,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         console.log("docSnap", docSnap.data());
         set({
           paymentMethods: { id: docSnap.id, ...docSnap.data() },
-          loading: false,
+          loading: false
         });
       } else {
         set({ paymentMethods: null, loading: false });
@@ -1418,7 +1418,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     stripe,
     elements,
     toast,
-    onBack,
+    onBack
   }: {
     formData: any;
     stripe: any;
@@ -1489,9 +1489,9 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
               city: formData.city,
               state: formData.state,
               postal_code: formData.zip,
-              country: formData.country,
-            },
-          },
+              country: formData.country
+            }
+          }
         });
         if (error) {
           toast.error(error.message || "Payment method creation failed");
@@ -1508,8 +1508,8 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             city: formData.city,
             state: formData.state,
             postal_code: formData.zip,
-            country: formData.country,
-          },
+            country: formData.country
+          }
         };
         if (stripeCompany) {
           customerEmail = stripeCompany.Email || customerEmail;
@@ -1520,8 +1520,8 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
               city: stripeCompany["City"] || formData.city,
               state: stripeCompany["State"] || formData.state,
               postal_code: stripeCompany["Zip"] || formData.zip,
-              country: stripeCompany["Country"] || formData.country,
-            },
+              country: stripeCompany["Country"] || formData.country
+            }
           };
         }
 
@@ -1534,7 +1534,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           city: formData.city,
           state: formData.state,
           country: formData.country,
-          zip: formData.zip,
+          zip: formData.zip
         };
 
         console.log("Sending billing details to API:", billingDetailsPayload);
@@ -1542,7 +1542,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         const customerResult = await paymentService.createStripeCustomer({
           userId,
           paymentMethodId: paymentMethod.id,
-          billingDetails: billingDetailsPayload,
+          billingDetails: billingDetailsPayload
         });
         if (!customerResult.success) {
           toast.error(
@@ -1564,8 +1564,8 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             city: formData.city,
             state: formData.state,
             country: formData.country,
-            zip: formData.zip,
-          },
+            zip: formData.zip
+          }
         });
         if (!saveResult.success) {
           toast.error(
@@ -1616,7 +1616,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
               City: address.city || "",
               State: address.state || "",
               Country: countryName || "",
-              Zip: address.postal_code || "",
+              Zip: address.postal_code || ""
             });
           }
         } catch (err) {
@@ -1634,7 +1634,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         console.log("subSnap: ", subSnap);
         if (!subSnap.empty) {
           await updateDoc(subSnap.docs[0].ref, {
-            "Stripe Customer Id": customerId,
+            "Stripe Customer Id": customerId
           });
         }
 
@@ -1647,7 +1647,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             customerId,
             priceId,
             quantity: adsAccountsCount,
-            paymentMethodId: paymentMethod.id,
+            paymentMethodId: paymentMethod.id
           });
           const subRes = await fetch("/api/stripe-subscriptions", {
             method: "POST",
@@ -1656,8 +1656,8 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
               customerId,
               priceId,
               quantity: adsAccountsCount,
-              paymentMethodId: paymentMethod.id,
-            }),
+              paymentMethodId: paymentMethod.id
+            })
           });
           const subData = await subRes.json();
           console.log("subData: ", subData);
@@ -1675,7 +1675,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
               "Stripe Subscription Id": subData.subscriptionId,
               "Stripe Subscription Item Id(s)":
                 subData.subscriptionItemIds || [],
-              "User Status": "Paying",
+              "User Status": "Paying"
             });
           }
           toast.success("You've successfully subscribed to AdAlerts.io");
@@ -1726,9 +1726,9 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
               city: formData.city,
               state: formData.state,
               postal_code: formData.zip,
-              country: formData.country,
-            },
-          },
+              country: formData.country
+            }
+          }
         });
         if (error) {
           toast.error(error.message || "Payment method creation failed");
@@ -1747,8 +1747,8 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             action: "replace",
             customerId: stripeCustomerId,
             paymentMethodId: paymentMethod.id,
-            oldPaymentMethodId: oldPaymentMethodId || null,
-          }),
+            oldPaymentMethodId: oldPaymentMethodId || null
+          })
         });
 
         const paymentMethodData = await paymentMethodRes.json();
@@ -1772,8 +1772,8 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             city: formData.city,
             state: formData.state,
             country: formData.country,
-            zip: formData.zip,
-          },
+            zip: formData.zip
+          }
         });
         if (!saveResult.success) {
           toast.error(
@@ -1824,7 +1824,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
               City: address.city || "",
               State: address.state || "",
               Country: countryName || "",
-              Zip: address.postal_code || "",
+              Zip: address.postal_code || ""
             });
           }
         } catch (err) {
@@ -1844,5 +1844,5 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       );
       set({ loading: false, error: error.message });
     }
-  },
+  }
 }));
