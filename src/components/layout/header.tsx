@@ -126,7 +126,8 @@ export function Header() {
       if (
         dropdownRef.current &&
         !dropdownRef.current.contains(target) &&
-        !(target as HTMLElement).closest("li")
+        !(target as HTMLElement).closest("li") &&
+        !(target as HTMLElement).closest("ul") // Don't close when clicking on the dropdown list
       ) {
         setDropdownOpen(false);
       }
