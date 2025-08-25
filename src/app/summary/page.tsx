@@ -340,7 +340,7 @@ export default function Summary() {
                       </td>
                       {/* Budget Pacing */}
                       <td className="px-4 py-6 min-w-[240px]">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 ">
                           {/* Progress bar */}
                           <div className="relative w-full h-6 flex items-center">
                             <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-6 rounded-full bg-white border-1 border-[#E3E8F0] shadow-none" />
@@ -380,7 +380,7 @@ export default function Summary() {
                           </div>
                           {/* Dot color */}
                           <span
-                            className="inline-block w-3 h-3 rounded-full border border-white shadow-none"
+                            className="inline-block w-3 h-3 rounded-full border border-white shadow-none mr-6"
                             style={{ background: getDotColor(acc.spendMtdIndicatorKey) }}
                           />
                         </div>
