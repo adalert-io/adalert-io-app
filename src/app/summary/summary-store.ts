@@ -86,6 +86,8 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
         ...docSnap.data(),
       }));
 
+      console.log("adsAccounts: ", adsAccounts);
+
       // 2. For each account, fetch dashboardDaily, spendMtd, kpiData, spendMtdIndicator, showingAdsLabel, and alert counts
       const alertOptionSets =
         useAlertOptionSetsStore.getState().alertOptionSets;
@@ -304,10 +306,6 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
 
               // After creating the record, fetch it
               const updatedShowingAdsSnap = await getDocs(showingAdsQuery);
-              console.log(
-                "updatedShowingAdsSnap.docs[0].data(): ",
-                updatedShowingAdsSnap.docs[0].data(),
-              );
               if (!updatedShowingAdsSnap.empty) {
                 showingAds =
                   updatedShowingAdsSnap.docs[0].data()["Is Showing Ads"] ??
