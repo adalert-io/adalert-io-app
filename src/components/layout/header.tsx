@@ -26,9 +26,18 @@ export function Header() {
   const { user, userDoc, logout } = useAuthStore()
   const { subscription } = useAlertSettingsStore()
 
+  const [, forceUpdate] = React.useReducer((x) => x + 1, 0)
+
+  React.useEffect(() => {
+    if (subscription) {
+      forceUpdate()
+    }
+  }, [subscription])
+
   let statusText: React.ReactNode = ""
   let statusColor = ""
   let statusBg = ""
+  let isTrialExpired = false
 
   if (subscription) {
     const status = subscription["User Status"]
@@ -37,6 +46,14 @@ export function Header() {
       : null
     const trialEnd = trialStart ? moment(trialStart).add(SUBSCRIPTION_PERIODS.TRIAL_DAYS, "days") : null
     const now = moment()
+
+    if (
+      (status === SUBSCRIPTION_STATUS.TRIAL_NEW || status === SUBSCRIPTION_STATUS.TRIAL_ENDED) &&
+      trialEnd &&
+      now.isAfter(trialEnd)
+    ) {
+      isTrialExpired = true
+    }
 
     // 🚀 Show only in trial / expired / canceled states
     if (status === SUBSCRIPTION_STATUS.TRIAL_NEW && trialEnd && now.isBefore(trialEnd)) {
@@ -214,8 +231,9 @@ export function Header() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-blue-600"
-                  onClick={() => router.push("/add-ads-account")}
+                  className={`text-blue-600 ${isTrialExpired ? "opacity-50 cursor-not-allowed" : ""}`}
+                  onClick={() => !isTrialExpired && router.push("/add-ads-account")}
+                  disabled={isTrialExpired}
                 >
                   <Plus className="w-5 h-5" />
                 </Button>
@@ -254,24 +272,39 @@ export function Header() {
                       >
                         <User className="w-4 h-4" /> My Profile
                       </button>
-                      <button
-                        className="w-full text-left px-4 py-2 flex items-center gap-2 text-[16px] text-[#5e5e5e] hover:bg-blue-50"
-                        onClick={() => {
-                          router.push("/settings")
-                          setMenuOpen(false)
-                        }}
-                      >
-                        <Settings className="w-4 h-4" /> Settings
-                      </button>
-                      <button
-                        className="w-full text-left px-4 py-2 flex items-center gap-2 text-[16px] text-[#5e5e5e] hover:bg-blue-50"
-                        onClick={() => {
-                          show()
-                          setMenuOpen(false)
-                        }}
-                      >
-                        <HelpCircle className="w-4 h-4" /> Help
-                      </button>
+                      {isTrialExpired && (
+                        <button
+                          className="w-full text-left px-4 py-2 flex items-center gap-2 text-[16px] text-[#5e5e5e] hover:bg-blue-50"
+                          onClick={() => {
+                            router.push("/settings/account/billing")
+                            setMenuOpen(false)
+                          }}
+                        >
+                          <CreditCard className="w-4 h-4" /> Billing
+                        </button>
+                      )}
+                      {!isTrialExpired && (
+                        <button
+                          className="w-full text-left px-4 py-2 flex items-center gap-2 text-[16px] text-[#5e5e5e] hover:bg-blue-50"
+                          onClick={() => {
+                            router.push("/settings")
+                            setMenuOpen(false)
+                          }}
+                        >
+                          <Settings className="w-4 h-4" /> Settings
+                        </button>
+                      )}
+                      {!isTrialExpired && (
+                        <button
+                          className="w-full text-left px-4 py-2 flex items-center gap-2 text-[16px] text-[#5e5e5e] hover:bg-blue-50"
+                          onClick={() => {
+                            show()
+                            setMenuOpen(false)
+                          }}
+                        >
+                          <HelpCircle className="w-4 h-4" /> Help
+                        </button>
+                      )}
                       <div className="my-1 border-t border-gray-200" />
                       <button
                         className="w-full text-left px-4 py-2 flex items-center gap-2 text-[16px] text-[#5e5e5e] hover:bg-blue-50"
@@ -297,8 +330,9 @@ export function Header() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-blue-600"
-                  onClick={() => router.push("/add-ads-account")}
+                  className={`text-blue-600 ${isTrialExpired ? "opacity-50 cursor-not-allowed" : ""}`}
+                  onClick={() => !isTrialExpired && router.push("/add-ads-account")}
+                  disabled={isTrialExpired}
                 >
                   <Plus className="w-5 h-5" />
                 </Button>
@@ -349,26 +383,42 @@ export function Header() {
                 >
                   <User className="w-4 h-4" /> My Profile
                 </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    router.push("/settings")
-                    setMobileMenuOpen(false)
-                  }}
-                  className="w-full justify-start text-[#5e5e5e] flex items-center gap-2"
-                >
-                  <Settings className="w-4 h-4" /> Settings
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    show()
-                    setMobileMenuOpen(false)
-                  }}
-                  className="w-full justify-start text-[#5e5e5e] flex items-center gap-2"
-                >
-                  <HelpCircle className="w-4 h-4" /> Help
-                </Button>
+                {isTrialExpired && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      router.push("/settings/account/billing")
+                      setMobileMenuOpen(false)
+                    }}
+                    className="w-full justify-start text-[#5e5e5e] flex items-center gap-2"
+                  >
+                    <CreditCard className="w-4 h-4" /> Billing
+                  </Button>
+                )}
+                {!isTrialExpired && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      router.push("/settings")
+                      setMobileMenuOpen(false)
+                    }}
+                    className="w-full justify-start text-[#5e5e5e] flex items-center gap-2"
+                  >
+                    <Settings className="w-4 h-4" /> Settings
+                  </Button>
+                )}
+                {!isTrialExpired && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      show()
+                      setMobileMenuOpen(false)
+                    }}
+                    className="w-full justify-start text-[#5e5e5e] flex items-center gap-2"
+                  >
+                    <HelpCircle className="w-4 h-4" /> Help
+                  </Button>
+                )}
                 <div className="my-1 border-t border-gray-200" />
                 <Button
                   variant="ghost"
