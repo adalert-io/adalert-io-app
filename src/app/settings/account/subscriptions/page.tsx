@@ -11,8 +11,14 @@ import moment from "moment";
 import { SUBSCRIPTION_STATUS, SUBSCRIPTION_PERIODS } from "@/lib/constants";
 
 export default function SubscriptionsSubtab() {
-  const { adsAccounts, fetchAdsAccounts, loading, deleteCompanyAccount } =
-    useAlertSettingsStore();
+  const {
+    adsAccounts,
+    fetchAdsAccounts,
+    loading,
+    deleteCompanyAccount,
+    subscription,
+    fetchSubscription,
+  } = useAlertSettingsStore();
   const { userDoc, logout } = useAuthStore();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -22,6 +28,13 @@ export default function SubscriptionsSubtab() {
       fetchAdsAccounts(userDoc["Company Admin"]);
     }
   }, [userDoc, adsAccounts.length, fetchAdsAccounts]);
+
+  // Fetch subscription when component loads and subscription is empty
+  useEffect(() => {
+    if (userDoc?.["Company Admin"] && !subscription) {
+      fetchSubscription(userDoc["Company Admin"]);
+    }
+  }, [userDoc, subscription, fetchSubscription]);
 
   const connectedAccountsCount = adsAccounts.length;
 
@@ -41,7 +54,6 @@ export default function SubscriptionsSubtab() {
   };
 
   const subscriptionPrice = calculateSubscriptionPrice();
-  const { subscription } = useAlertSettingsStore();
 
   let statusText = "";
   let statusColor = "";
