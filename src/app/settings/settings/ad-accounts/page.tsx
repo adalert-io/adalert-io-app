@@ -36,6 +36,7 @@ import React from "react";
 import { toast } from "sonner";
 import { formatAccountNumber } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { CheckCheck, X } from "lucide-react";
 
 
 export default function AdAccountsSubtab() {
@@ -106,7 +107,7 @@ export default function AdAccountsSubtab() {
   const columns: ColumnDef<any>[] = [
     {
       accessorKey: "Id",
-      header: "Account Number",
+      header: "ID",
       cell: ({ row }) => <span>{formatAccountNumber(row.original["Id"])}</span>,
     },
     {
@@ -135,14 +136,30 @@ export default function AdAccountsSubtab() {
       accessorKey: "Is Connected",
       header: "Status",
       cell: ({ row }) => (
-        <span className={row.original["Is Connected"] ? "text-green-600" : "text-red-600"}>
-          {row.original["Is Connected"] ? "Connected" : "Disconnected"}
-        </span>
+       <span
+  className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${
+    row.original["Is Connected"]
+      ? "bg-green-50 text-green-700"
+      : "bg-red-50 text-red-700"
+  }`}
+>
+  {row.original["Is Connected"] ? (
+    <>
+      <CheckCheck className="w-4 h-4 text-green-600" />
+      Connected
+    </>
+  ) : (
+    <>
+      <X className="w-4 h-4 text-red-600" />
+      Disconnected
+    </>
+  )}
+</span>
       ),
     },
     {
       accessorKey: "Send Me Alert",
-      header: "Send me alert",
+      header: "Send me alerts",
       cell: ({ row }) => (
         <Switch
           checked={row.original["Send Me Alert"] || false}
@@ -164,7 +181,7 @@ export default function AdAccountsSubtab() {
       cell: ({ row }) => (
         <div className="flex gap-2 items-center">
           <button
-            className="text-blue-600 hover:text-blue-800"
+            className="text-blue-600 hover:text-blue-800 cursor-pointer"
             onClick={() => {
               setEditingAccount(row.original);
               setScreen("edit");
@@ -173,7 +190,7 @@ export default function AdAccountsSubtab() {
             <Edit2 className="w-5 h-5" />
           </button>
           <button 
-            className="text-red-500 hover:text-red-700"
+            className="text-red-500 hover:text-red-700 cursor-pointer"
             onClick={() => {
               setDeletingAccount(row.original);
               setShowDeleteModal(true);
@@ -248,23 +265,24 @@ function AdsAccountsDataTable() {
     <div className="bg-white rounded-2xl shadow-none border border-[#e5e5e5] overflow-hidden">
       <div className="overflow-x-auto">
         <table className="min-w-full text-[0.75rem]">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className="px-4 py-4 text-left font-semibold text-gray-700"
-                  >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
+     <thead className="bg-gray-50 border-b border-gray-200">
+  {table.getHeaderGroups().map((headerGroup) => (
+    <tr key={headerGroup.id}>
+      {headerGroup.headers.map((header) => (
+        <th
+          key={header.id}
+          className="px-4 py-4 text-left font-semibold text-gray-700 whitespace-nowrap"
+        >
+          {flexRender(
+            header.column.columnDef.header,
+            header.getContext()
+          )}
+        </th>
+      ))}
+    </tr>
+  ))}
+</thead>
+
 
           <tbody className="divide-y divide-gray-100">
             {table.getRowModel().rows.map((row) => (
@@ -465,7 +483,7 @@ function AdsAccountsDataTable() {
                 <MagnifyingGlassIcon className="w-6 h-6 text-[#015AFD]" />
               </Button>
               <select
-                className="border rounded-md px-2 py-1 text-xs"
+                className="border rounded-md px-2 py-2 text-xs"
                 value={pageSize}
                 onChange={(e) => setPageSize(Number(e.target.value))}
               >
@@ -580,14 +598,8 @@ function AdsAccountsDataTable() {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             {/* Header */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <img 
-                  src="/images/adAlert-logo-words.avif" 
-                  alt="adAlert.io" 
-                  className="h-8 w-auto"
-                />
-              </div>
+            <div className="flex items-center justify-end">
+             
               <button
                 onClick={() => {
                   setShowDeleteModal(false);
@@ -602,7 +614,7 @@ function AdsAccountsDataTable() {
             {/* Content */}
             <div className="mb-6">
               <p className="text-gray-700">
-                Do you want to remove your ads account:{" "}
+               Are you sure you want to remove your ads account{" "}
                 <span className="font-bold">
                   {deletingAccount.name} - {formatAccountNumber(deletingAccount["Id"])}
                 </span>

@@ -193,29 +193,55 @@ export default function UsersSubtab() {
       header: "Access",
       cell: ({ row }) => <span>{row.original["User Access"]}</span>,
     },
-    {
-      id: "actions",
-      header: "",
-      cell: ({ row }) => (
-        <div className="flex gap-2 items-center">
-          <button
-            className="text-blue-600 hover:text-blue-800 cursor-pointer"
-            onClick={() => {
+   {
+  id: "actions",
+  header: "",
+  cell: ({ row }) => {
+    const isSingleRow = filteredUsers.length === 1; // ✅ check for only 1 row
+
+    return (
+      <div className="flex gap-2 items-center">
+        <button
+          className={`${
+            isSingleRow
+              ? "text-gray-400 cursor-not-allowed"
+              : "text-blue-600 hover:text-blue-800 cursor-pointer"
+          }`}
+          disabled={isSingleRow}
+          onClick={() => {
+            if (!isSingleRow) {
               setEditingUser(row.original);
               setRole(row.original["User Type"] || "Admin");
               setScreen("edit");
-            }}
-          >
-            <Edit2 className="w-5 h-5" />
-          </button>
-          <button className="text-red-500 hover:text-red-700 cursor-pointer">
-            <Trash2 className="w-5 h-5" />
-          </button>
-        </div>
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
+            }
+          }}
+        >
+          <Edit2 className="w-5 h-5" />
+        </button>
+
+        <button
+          className={`${
+            isSingleRow
+              ? "text-gray-400 cursor-not-allowed"
+              : "text-red-500 hover:text-red-700 cursor-pointer"
+          }`}
+          disabled={isSingleRow}
+          onClick={() => {
+            if (!isSingleRow) {
+              // delete logic yaha daalo
+              console.log("Delete user", row.original.id);
+            }
+          }}
+        >
+          <Trash2 className="w-5 h-5" />
+        </button>
+      </div>
+    );
+  },
+  enableSorting: false,
+  enableHiding: false,
+}
+
   ];
 
   // Filter users based on search
@@ -585,7 +611,7 @@ export default function UsersSubtab() {
                 <MagnifyingGlassIcon className="w-6 h-6 text-[#015AFD]" />
               </Button>
               <select
-                className="flex items-center border rounded-lg px-3 py-1 bg-white shadow-none focus-within:ring-2 focus-within:ring-blue-200 transition-all"
+                className="flex items-center border rounded-lg px-2 py-2 bg-white shadow-none focus-within:ring-2 focus-within:ring-blue-200 transition-all text-xs"
                 value={pageSize}
                 onChange={(e) => setPageSize(Number(e.target.value))}
               >
@@ -778,7 +804,7 @@ export default function UsersSubtab() {
                 </div>
               )}
               <Button
-                className="bg-blue-300 text-white text-lg font-bold px-12 py-3 rounded shadow-md mt-4"
+                className="bg-[#155DFC] text-white text-lg font-bold px-12 py-3 rounded shadow-md mt-4"
                 disabled={isSaveDisabled}
                 onClick={handleSave}
               >
