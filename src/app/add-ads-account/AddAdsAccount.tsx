@@ -416,7 +416,7 @@ export function AddAdsAccount() {
 
             <div className="flex items-center justify-center text-gray-500 text-sm mb-2 w-full">
               <InfoCircledIcon className="mr-2 w-5 h-5 text-blue-500" />
-              You can unlink any ad account from the settings at any time.
+              You can unlink any ad account from settings at any time.
             </div>
 
        

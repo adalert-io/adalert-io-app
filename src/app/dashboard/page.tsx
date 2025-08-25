@@ -1058,7 +1058,7 @@ export default function Dashboard() {
           {isEditingBudget ? (
             <>
               <Button
-                className="p-4 bg-[#156CFF] hover:bg-[#156CFF]/90 text-white font-semibold px-1 py-0.5 rounded-md text-xs h-6 min-w-[50px]"
+                className="p-4 bg-[#156CFF] hover:bg-[#156CFF]/90 text-white font-semibold px-3 py-0.5 rounded-md text-xs h-6 min-w-[50px]"
                 onClick={handleConfirmBudget}
                 disabled={
                   isUpdatingBudget || !budgetInput || Number(budgetInput) < 0
