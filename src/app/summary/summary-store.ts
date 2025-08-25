@@ -76,7 +76,7 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
       const adsAccountQuery = query(
         adsAccountRef,
         where("User", "==", companyAdminRef),
-        where("Is Selected", "==", true)
+        where("Is Selected", "==", true),
       );
       const adsAccountSnap = await getDocs(adsAccountQuery);
       const adsAccounts = adsAccountSnap.docs.map((docSnap) => ({
@@ -94,17 +94,17 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
           const tomorrow = moment().endOf("day");
           const dashboardDailiesRef = collection(
             db,
-            COLLECTIONS.DASHBOARD_DAILIES
+            COLLECTIONS.DASHBOARD_DAILIES,
           );
           const dashboardDailyQuery = query(
             dashboardDailiesRef,
             where(
               "Ads Account",
               "==",
-              doc(db, COLLECTIONS.ADS_ACCOUNTS, account.id)
+              doc(db, COLLECTIONS.ADS_ACCOUNTS, account.id),
             ),
             where("Created Date", ">=", Timestamp.fromDate(today.toDate())),
-            where("Created Date", "<=", Timestamp.fromDate(tomorrow.toDate()))
+            where("Created Date", "<=", Timestamp.fromDate(tomorrow.toDate())),
           );
           const dashboardDailySnap = await getDocs(dashboardDailyQuery);
           let dashboardDaily: DashboardDaily | null = null;
@@ -116,7 +116,7 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
           } else {
             // Document doesn't exist, create a new one
             const newDashboardDailyRef = doc(
-              collection(db, COLLECTIONS.DASHBOARD_DAILIES)
+              collection(db, COLLECTIONS.DASHBOARD_DAILIES),
             );
             const now = Timestamp.now();
 
@@ -164,7 +164,7 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
                   const dashboardDailyRef = doc(
                     db,
                     COLLECTIONS.DASHBOARD_DAILIES,
-                    dashboardDaily.id
+                    dashboardDaily.id,
                   );
                   await updateDoc(dashboardDailyRef, {
                     "Spend MTD": result.spendMtd,
@@ -230,14 +230,14 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
                 const result = await response.json();
                 console.log("result: ", result);
                 const indicatorAlert = freshAlertOptionSets.find(
-                  (item) => item["Key"] === result.alert
+                  (item) => item["Key"] === result.alert,
                 );
 
                 // Update the dashboardDaily document
                 const dashboardDailyRef = doc(
                   db,
                   COLLECTIONS.DASHBOARD_DAILIES,
-                  dashboardDaily.id
+                  dashboardDaily.id,
                 );
                 await updateDoc(dashboardDailyRef, {
                   "Spend MTD Indicator Alert": indicatorAlert || null,
@@ -257,7 +257,7 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
           let showingAds: boolean | null = null;
           const showingAdsRef = collection(
             db,
-            COLLECTIONS.DASHBOARD_SHOWING_ADS
+            COLLECTIONS.DASHBOARD_SHOWING_ADS,
           );
           const startOfHour = moment().startOf("hour").toDate();
           const endOfHour = moment().endOf("hour").toDate();
@@ -266,20 +266,20 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
             where(
               "Ads Account",
               "==",
-              doc(db, COLLECTIONS.ADS_ACCOUNTS, account.id)
+              doc(db, COLLECTIONS.ADS_ACCOUNTS, account.id),
             ),
             where("Date", ">=", startOfHour),
-            where("Date", "<=", endOfHour)
+            where("Date", "<=", endOfHour),
           );
           const showingAdsSnap = await getDocs(showingAdsQuery);
 
           if (showingAdsSnap.size === 0) {
             // No record exists for the current hour, trigger label check
             console.log(
-              "No 'Dashboard Showing Ads' record for the current hour. Triggering label check."
+              "No 'Dashboard Showing Ads' record for the current hour. Triggering label check.",
             );
             const path = getFirebaseFnPath(
-              "dashboard-display-showing-ads-label-fb"
+              "dashboard-display-showing-ads-label-fb",
             );
 
             await fetch(path, {
@@ -294,11 +294,19 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
 
             // After creating the record, fetch it
             const updatedShowingAdsSnap = await getDocs(showingAdsQuery);
+            console.log(
+              "updatedShowingAdsSnap.docs[0].data(): ",
+              updatedShowingAdsSnap.docs[0].data(),
+            );
             if (!updatedShowingAdsSnap.empty) {
               showingAds =
                 updatedShowingAdsSnap.docs[0].data()["Is Showing Ads"] ?? null;
             }
           } else {
+            console.log(
+              "else showingAdsSnap.docs[0].data(): ",
+              showingAdsSnap.docs[0].data(),
+            );
             // Record already exists, use it
             showingAds =
               showingAdsSnap.docs[0].data()["Is Showing Ads"] ?? null;
@@ -311,8 +319,8 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
             where(
               "Ads Account",
               "==",
-              doc(db, COLLECTIONS.ADS_ACCOUNTS, account.id)
-            )
+              doc(db, COLLECTIONS.ADS_ACCOUNTS, account.id),
+            ),
           );
           const alertsSnap = await getDocs(alertsQuery);
           let critical = 0,
@@ -336,6 +344,7 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
             : 0;
           const dayPercent = (day / daysInMonth) * 100;
 
+          console.log("account.id: ", account.id);
           console.log("monthlyBudget: ", monthlyBudget);
           console.log("spend: ", spend);
           console.log("monthlyBudget: ", monthlyBudget);
@@ -343,6 +352,8 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
           console.log("dayPercent: ", dayPercent);
           console.log("day: ", day);
           console.log("daysInMonth: ", daysInMonth);
+          console.log("showingAds: ", showingAds);
+          console.log("--------------------------------");
 
           return {
             id: account.id,
@@ -361,7 +372,7 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
             dashboardDailyId: dashboardDaily ? dashboardDaily.id : null,
             progressBar: { percent, dayPercent, day, daysInMonth },
           } as SummaryAdsAccount;
-        })
+        }),
       );
       set({
         accounts: fetchAll,

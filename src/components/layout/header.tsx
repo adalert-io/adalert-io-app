@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useUserAdsAccountsStore } from "@/lib/store/user-ads-accounts-store";
-import { useAlertSettingsStore } from "@/lib/store/settings-store";
 import { formatAccountNumber } from "@/lib/utils";
 import {
   ChevronDown,
@@ -34,7 +33,7 @@ export function Header() {
   const { user, userDoc, logout } = useAuthStore();
   const { userAdsAccounts, selectedAdsAccount, setSelectedAdsAccount } =
     useUserAdsAccountsStore();
-  const { subscription, fetchSubscription } = useAlertSettingsStore();
+  const { subscription } = useAuthStore();
   const [dropdownOpen, setDropdownOpen] = React.useState(false);
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
@@ -44,12 +43,8 @@ export function Header() {
   const pathname = usePathname();
   const { show } = useIntercomContext();
 
-  // Fetch subscription when component mounts
-  React.useEffect(() => {
-    if (userDoc?.["Company Admin"]) {
-      fetchSubscription(userDoc["Company Admin"]);
-    }
-  }, [userDoc?.["Company Admin"], fetchSubscription]);
+  // Subscription data is now automatically fetched by auth store
+  // No need to manually fetch here
 
   // Check if subscription is expired/limited
   const isSubscriptionExpired = React.useMemo(() => {

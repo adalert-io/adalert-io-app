@@ -10,7 +10,7 @@ import {
   updateProfile,
   sendEmailVerification,
   sendPasswordResetEmail,
-  ActionCodeSettings
+  ActionCodeSettings,
 } from "firebase/auth";
 import { authConfig } from "../config/auth-config";
 import {
@@ -22,7 +22,7 @@ import {
   updateDoc,
   query,
   where,
-  getDocs
+  getDocs,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import moment from "moment";
@@ -30,7 +30,7 @@ import {
   SUBSCRIPTION_STATUS,
   SUBSCRIPTION_PERIODS,
   USER_TYPES,
-  COLLECTIONS
+  COLLECTIONS,
 } from "@/lib/constants";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
@@ -60,11 +60,13 @@ interface AuthState {
   error: string | null;
   isFullAccess: boolean;
   router: AppRouterInstance | null;
+  subscription: any | null; // Add subscription to auth state
   setUser: (user: User | null) => void;
   setUserDoc: (userDoc: UserDocument | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setRouter: (router: AppRouterInstance) => void;
+  setSubscription: (subscription: any) => void; // Add setter for subscription
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
@@ -118,13 +120,16 @@ async function checkSubscriptionStatus(userId: string): Promise<boolean> {
 
   console.log("subscriptionData", subscriptionData);
 
+  // Store subscription data in auth store
+  useAuthStore.getState().setSubscription(subscriptionData);
+
   // Check Trial New status
   if (userStatus === SUBSCRIPTION_STATUS.TRIAL_NEW) {
     const trialStartDate = subscriptionData["Free Trial Start Date"]?.toDate();
     if (trialStartDate) {
       const trialEndDate = moment(trialStartDate).add(
         SUBSCRIPTION_PERIODS.TRIAL_DAYS,
-        "days"
+        "days",
       );
 
       if (now.isAfter(trialEndDate)) {
@@ -132,8 +137,8 @@ async function checkSubscriptionStatus(userId: string): Promise<boolean> {
         await updateDoc(
           doc(db, COLLECTIONS.SUBSCRIPTIONS, subscriptionDoc.id),
           {
-            "User Status": SUBSCRIPTION_STATUS.TRIAL_ENDED
-          }
+            "User Status": SUBSCRIPTION_STATUS.TRIAL_ENDED,
+          },
         );
         return false;
       }
@@ -155,7 +160,7 @@ async function checkSubscriptionStatus(userId: string): Promise<boolean> {
     if (failedStartDate) {
       const gracePeriodEnd = moment(failedStartDate).add(
         SUBSCRIPTION_PERIODS.PAYMENT_FAILED_GRACE_DAYS,
-        "days"
+        "days",
       );
 
       if (now.isAfter(gracePeriodEnd)) {
@@ -172,7 +177,7 @@ async function checkSubscriptionStatus(userId: string): Promise<boolean> {
 export async function createUserDocuments(
   user: User,
   isGoogleSignUp: boolean = false,
-  createStripeAndSubscription: boolean = true
+  createStripeAndSubscription: boolean = true,
 ) {
   // Check if user document already exists
   const userRef = doc(db, COLLECTIONS.USERS, user.uid);
@@ -191,9 +196,9 @@ export async function createUserDocuments(
       const response = await fetch("/api/contacts/create", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ user, userName })
+        body: JSON.stringify({ user, userName }),
       });
 
       if (response.ok) {
@@ -217,7 +222,7 @@ export async function createUserDocuments(
       "Telephone": user.phoneNumber,
       "uid": user.uid,
       email: user.email,
-      "Opt In For Text Message": false
+      "Opt In For Text Message": false,
     };
 
     // Add contact IDs if they were created successfully
@@ -237,7 +242,7 @@ export async function createUserDocuments(
     await setDoc(authTrackerRef, {
       "Is Ads Account Authenticating": false,
       "Nav To Settings - Ads Account": false,
-      "User": userRef
+      "User": userRef,
     });
 
     // Create alertSettings document
@@ -261,7 +266,7 @@ export async function createUserDocuments(
       "Type Optimization Score": true,
       "Type Policy": true,
       "Type Serving Ads": true,
-      "User": userRef
+      "User": userRef,
     });
 
     if (createStripeAndSubscription) {
@@ -269,10 +274,10 @@ export async function createUserDocuments(
       const stripeCompaniesRef = doc(
         db,
         COLLECTIONS.STRIPE_COMPANIES,
-        user.uid
+        user.uid,
       );
       await setDoc(stripeCompaniesRef, {
-        "User": userRef
+        "User": userRef,
       });
 
       // Create subscriptions document
@@ -280,7 +285,7 @@ export async function createUserDocuments(
       await setDoc(subscriptionsRef, {
         "User": userRef,
         "Free Trial Start Date": serverTimestamp(),
-        "User Status": SUBSCRIPTION_STATUS.TRIAL_NEW
+        "User Status": SUBSCRIPTION_STATUS.TRIAL_NEW,
       });
     }
   }
@@ -293,11 +298,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   error: null,
   isFullAccess: false,
   router: null,
+  subscription: null, // Initialize subscription
   setUser: (user) => set({ user }),
   setUserDoc: (userDoc) => set({ userDoc }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
   setRouter: (router) => set({ router }),
+  setSubscription: (subscription) => set({ subscription }), // Setter for subscription
 
   fetchUserDocument: async (userId: string) => {
     try {
@@ -341,14 +348,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
-        password
+        password,
       );
       await updateProfile(userCredential.user, { displayName: fullName });
 
       // Send verification email with dynamic action URL
       const actionCodeSettings: ActionCodeSettings = {
         url: authConfig.getActionUrl(),
-        handleCodeInApp: true
+        handleCodeInApp: true,
       };
       await sendEmailVerification(userCredential.user, actionCodeSettings);
 
@@ -367,7 +374,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
-        password
+        password,
       );
       set({ user: userCredential.user });
 
@@ -398,7 +405,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // Set custom parameters
       provider.setCustomParameters({
         prompt: "select_account",
-        login_hint: ""
+        login_hint: "",
       });
 
       const userCredential = await signInWithPopup(auth, provider);
@@ -427,7 +434,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ loading: true, error: null });
       await signOut(auth);
-      set({ user: null, userDoc: null });
+      set({ user: null, userDoc: null, subscription: null }); // Clear subscription on logout
     } catch (err: any) {
       set({ error: err.message });
       throw err;
@@ -447,7 +454,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // Send verification email with dynamic action URL
       const actionCodeSettings: ActionCodeSettings = {
         url: authConfig.getActionUrl(),
-        handleCodeInApp: true
+        handleCodeInApp: true,
       };
       await sendEmailVerification(user, actionCodeSettings);
     } catch (err: any) {
@@ -463,7 +470,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ loading: true, error: null });
       const actionCodeSettings: ActionCodeSettings = {
         url: authConfig.getActionUrl(),
-        handleCodeInApp: true
+        handleCodeInApp: true,
       };
       await sendPasswordResetEmail(auth, email, actionCodeSettings);
     } catch (err: any) {
@@ -491,7 +498,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         adsAccountRef,
         where("User", "==", companyAdminRef),
         where("Is Connected", "==", true),
-        where("Selected Users", "array-contains", userRef)
+        where("Selected Users", "array-contains", userRef),
       );
 
       const adsAccountSnap = await getDocs(adsAccountQuery);
@@ -535,5 +542,5 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       console.error("Error in post-auth navigation:", err);
       set({ error: err.message });
     }
-  }
+  },
 }));
