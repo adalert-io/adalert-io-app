@@ -351,7 +351,7 @@ export function AddAdsAccount() {
         Google Ads Account ID: {formatAccountId(acc.Id)}
       </div>
       <div className="text-sm text-gray-500">
-        Account Name: {acc["Account Name Editable"]}
+       {acc["Account Name Editable"]}
       </div>
     </div>
   

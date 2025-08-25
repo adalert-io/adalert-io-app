@@ -178,9 +178,9 @@ export default function UsersSubtab() {
       header: "Access Level",
       cell: ({ row }) => (
         <span
-          className={`inline-block px-3 py-1 rounded-md text-white text-xs font-bold ${
+          className={`inline-block px-3 py-1 rounded-md text-blue-700 text-xs font-bold ${
             row.original["User Type"] === "Admin"
-              ? "bg-blue-700"
+              ? "bg-blue-100"
               : "bg-blue-400"
           }`}
         >
@@ -199,7 +199,7 @@ export default function UsersSubtab() {
       cell: ({ row }) => (
         <div className="flex gap-2 items-center">
           <button
-            className="text-blue-600 hover:text-blue-800"
+            className="text-blue-600 hover:text-blue-800 cursor-pointer"
             onClick={() => {
               setEditingUser(row.original);
               setRole(row.original["User Type"] || "Admin");
@@ -208,7 +208,7 @@ export default function UsersSubtab() {
           >
             <Edit2 className="w-5 h-5" />
           </button>
-          <button className="text-red-500 hover:text-red-700">
+          <button className="text-red-500 hover:text-red-700 cursor-pointer">
             <Trash2 className="w-5 h-5" />
           </button>
         </div>
