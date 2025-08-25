@@ -44,6 +44,44 @@ const Select = dynamic(() => import("react-select"), {
 
 // Payment Form Component
 function PaymentForm({ onBack }: { onBack: () => void }) {
+  // Subscription status badge logic (duplicated inside PaymentForm)
+const { subscription } = useAlertSettingsStore();
+
+let statusText = "";
+let statusColor = "";
+let statusBg = "";
+
+if (subscription) {
+  const status = subscription["User Status"];
+  const trialStart = subscription["Free Trial Start Date"]?.toDate ? subscription["Free Trial Start Date"].toDate() : null;
+  const trialEnd = trialStart ? moment(trialStart).add(SUBSCRIPTION_PERIODS.TRIAL_DAYS, "days") : null;
+  const now = moment();
+
+  if (status === SUBSCRIPTION_STATUS.PAYING) {
+    statusText = "Paid Plan Active";
+    statusColor = "#24B04D";
+    statusBg = "#e9ffef";
+  } else if (status === SUBSCRIPTION_STATUS.TRIAL_NEW && trialEnd && now.isBefore(trialEnd)) {
+    statusText = "Free Trial";
+    statusColor = "#24B04D";
+    statusBg = "#e9ffef";
+  } else if (
+    status === SUBSCRIPTION_STATUS.CANCELLED ||
+    status === SUBSCRIPTION_STATUS.PAYMENT_FAILED
+  ) {
+    statusText = "Subscription Canceled";
+    statusColor = "#ee1b23";
+    statusBg = "#ffebee";
+  } else if (
+    (status === SUBSCRIPTION_STATUS.TRIAL_NEW || status === SUBSCRIPTION_STATUS.TRIAL_ENDED) &&
+    trialEnd && now.isAfter(trialEnd)
+  ) {
+    statusText = "Free Trial Ended";
+    statusColor = "#ee1b23";
+    statusBg = "#ffebee";
+  }
+}
+
   const stripe = useStripe();
   const elements = useElements();
   const { userDoc } = useAuthStore();
@@ -198,19 +236,29 @@ const cards = [
       </button>
 
       {/* Subscription Summary */}
-     <div className="flex items-center justify-between gap-4 mb-4">
-            <div className="text-3xl font-bold">
-              <span className="text-blue-600">${subscriptionPrice}</span>
-              <span className="text-gray-600 font-normal text-xl">/Monthly</span>
-            </div>
-            <div className="bg-gray-100 px-3 py-1 rounded-full">
-              
-              <span className="text-blue-600 font-semibold">
-                {connectedAccountsCount}
-              </span>
-              <span className="text-gray-600"> Connected ads account(s)</span>
-            </div>
-          </div>
+    <div className="flex items-center justify-between gap-4 mb-4">
+  <div className="text-3xl font-bold">
+    <span className="text-blue-600">${subscriptionPrice}</span>
+    <span className="text-gray-600 font-normal text-[1.05rem]">/Monthly</span>
+  </div>
+  <div className="flex flex-col items-end">
+    {statusText && (
+      <div
+        className="inline-flex items-center gap-2 px-3 py-1 mb-2 rounded-full text-sm font-medium"
+        style={{ color: statusColor, background: statusBg }}
+      >
+        {statusText}
+      </div>
+    )}
+    <div className="bg-gray-100 px-3 py-1 rounded-full">
+      <span className="text-blue-600 font-semibold">
+        {connectedAccountsCount}
+      </span>
+      <span className="text-gray-600"> Connected ads account(s)</span>
+    </div>
+  </div>
+</div>
+
 
       {/* Payment Method Form */}
       <div>

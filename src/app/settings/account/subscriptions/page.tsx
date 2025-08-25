@@ -106,7 +106,7 @@ export default function SubscriptionsSubtab() {
           <div className="flex items-center gap-4 mb-4 justify-between">
             <div className="text-3xl font-bold">
               <span className="text-blue-600">${subscriptionPrice}</span>
-              <span className="text-gray-600 font-normal text-xl">/Monthly</span>
+              <span className="text-gray-600 font-normal text-[1.05rem]">/Monthly</span>
             </div>
             <div>
               {statusText && (
@@ -188,11 +188,11 @@ export default function SubscriptionsSubtab() {
 
       {/* Account Cancellation */}
       <div className="flex items-center gap-3 text-gray-700 ml-4 text-[14px]">
-        <AlertTriangle className="h-3 w-3 text-red-500 flex-shrink-0" />
+        <AlertTriangle className="h-3 w-3 text-[#df5967] flex-shrink-0" />
         <span>
           I would like to{" "}
           <button
-            className="text-red-500 hover:underline font-medium"
+            className="text-[#df5967] hover:underline font-medium cursor-pointer"
             onClick={() => setShowDeleteModal(true)}
           >
             cancel
