@@ -23,8 +23,15 @@ function getInitial(nameOrEmail: string) {
 }
 
 export function Header() {
-  const { user, userDoc, logout } = useAuthStore()
-  const { subscription } = useAlertSettingsStore()
+const { user, userDoc, logout } = useAuthStore()
+const { subscription, fetchSubscription } = useAlertSettingsStore()
+
+React.useEffect(() => {
+  if (userDoc?.["Company Admin"]) {
+    fetchSubscription(userDoc["Company Admin"])
+  }
+}, [userDoc?.["Company Admin"], fetchSubscription])
+
 
   const [, forceUpdate] = React.useReducer((x) => x + 1, 0)
 
