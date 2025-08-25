@@ -6,11 +6,15 @@ import { useAuthStore } from "@/lib/store/auth-store"
 import { useUserAdsAccountsStore } from "@/lib/store/user-ads-accounts-store"
 import { formatAccountNumber } from "@/lib/utils"
 import { ChevronDown, Plus, BarChart2, HelpCircle, User, Settings, LogOut } from "lucide-react"
+import { CalendarDays ,ClockAlert, CreditCard  } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import * as React from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { useIntercomContext } from "@/components/intercom"
-
+import { useAlertSettingsStore } from "@/lib/store/settings-store"
+import moment from "moment"
+import { SUBSCRIPTION_STATUS, SUBSCRIPTION_PERIODS } from "@/lib/constants"
 // Utility to get initial from name or email
 function getInitial(nameOrEmail: string) {
   if (!nameOrEmail) return ""
@@ -21,6 +25,57 @@ function getInitial(nameOrEmail: string) {
 
 export function Header() {
   const { user, userDoc, logout } = useAuthStore()
+const { subscription } = useAlertSettingsStore()
+let statusText: React.ReactNode = ""
+let statusColor = ""
+let statusBg = ""
+
+if (subscription) {
+  const status = subscription["User Status"]
+  const trialStart = subscription["Free Trial Start Date"]?.toDate ? subscription["Free Trial Start Date"].toDate() : null
+  const trialEnd = trialStart ? moment(trialStart).add(SUBSCRIPTION_PERIODS.TRIAL_DAYS, "days") : null
+  const now = moment()
+
+  // 🚀 Show only in trial / expired / canceled states
+  if (status === SUBSCRIPTION_STATUS.TRIAL_NEW && trialEnd && now.isBefore(trialEnd)) {
+    // Free trial still running
+    const daysLeft = trialEnd.diff(now, "days")
+    statusText = (
+      <span className="flex items-center justify-center gap-2">
+        <CalendarDays className="w-4 h-4" />
+        Free Trial – <strong>{daysLeft}</strong> day(s) left
+      </span>
+    )
+    statusColor = "#084298"
+    statusBg = "#cfe2ff"
+  } else if (
+    (status === SUBSCRIPTION_STATUS.TRIAL_NEW || status === SUBSCRIPTION_STATUS.TRIAL_ENDED) &&
+    trialEnd && now.isAfter(trialEnd)
+  ) {
+    // Free trial ended
+    statusText = (
+      <span className="flex items-center justify-center gap-2">
+        <ClockAlert className="w-4 h-4" />
+        You're on a free trial with <strong>0 days left</strong> – Add your payment method below to continue using adAlert.io
+      </span>
+    )
+    statusColor = "#000000ff"
+    statusBg = "#ffebee"
+  } else if (status === SUBSCRIPTION_STATUS.CANCELLED || status === SUBSCRIPTION_STATUS.PAYMENT_FAILED) {
+    // Subscription canceled or payment failed
+    statusText = (
+      <span className="flex items-center justify-center gap-2">
+       <CreditCard  className="w-4 h-4" />
+        <strong>Subscription Canceled</strong>
+      </span>
+    )
+    statusColor = "#000000ff"
+    statusBg = "#ffebee"
+  }
+}
+
+
+
   const { userAdsAccounts, selectedAdsAccount, setSelectedAdsAccount } = useUserAdsAccountsStore()
   const [dropdownOpen, setDropdownOpen] = React.useState(false)
   const [menuOpen, setMenuOpen] = React.useState(false)
@@ -78,7 +133,15 @@ export function Header() {
   }, [])
 
   return (
-    <header className="w-full bg-[#FAFBFF] h-16 flex items-center border-b border-[#F0F1F6] px-4 md:px-6 lg:px-20 relative">
+    <>
+   {statusText && (
+  <div
+    className="w-full text-center text-sm py-4 px-4 text-[16px] font-normal"
+    style={{ background: statusBg, color: statusColor }}
+  >
+    {statusText}
+  </div>
+)} <header className="w-full bg-[#FAFBFF] h-16 flex items-center border-b border-[#F0F1F6] px-4 md:px-6 lg:px-20 relative">
       <div className="flex w-full max-w-[1440px] mx-auto items-center justify-between">
         {/* Left: Logo + Account Dropdown */}
         <div className="flex items-center gap-3 min-w-0">
@@ -346,5 +409,9 @@ export function Header() {
         </div>
       )}
     </header>
+    
+    </>
   )
+    
+    
 }

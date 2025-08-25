@@ -302,7 +302,20 @@ export function AddAdsAccount() {
                 ? "Add new ads account(s)"
                 : "Let's add your first ads account(s)"}
             </h1>
-
+     {adsAccounts && adsAccounts.length > 0 && (
+              <div className="flex items-center text-gray-500 text-sm mb-6 md:mb-8 w-full justify-center">
+                <InfoCircledIcon className="mr-2 w-5 h-5 text-blue-500" />
+                Not the right ads account?{" "}
+                <button
+                  className="ml-1 text-blue-600 underline font-medium hover:text-blue-800 hover:cursor-pointer"
+                  onClick={handleConnectGoogleAds}
+                  type="button"
+                >
+                  Click here
+                </button>
+                &nbsp;to switch to a different one.
+              </div>
+            )}
             {adsAccounts && adsAccounts.length > 0 && (
               <div className="w-full max-h-112 overflow-y-auto flex flex-col gap-4 mb-6 md:mb-8">
                 {adsAccounts.map((acc, idx) => {
@@ -406,35 +419,25 @@ export function AddAdsAccount() {
               You can unlink any ad account from the settings at any time.
             </div>
 
-            {adsAccounts && adsAccounts.length > 0 && (
-              <div className="flex items-center text-gray-500 text-sm mb-6 md:mb-8 w-full justify-center">
-                <InfoCircledIcon className="mr-2 w-5 h-5 text-blue-500" />
-                Not the right ads account?{" "}
-                <button
-                  className="ml-1 text-blue-600 underline font-medium hover:text-blue-800 hover:cursor-pointer"
-                  onClick={handleConnectGoogleAds}
-                  type="button"
-                >
-                  Click here
-                </button>
-                &nbsp;to switch to a different one.
-              </div>
-            )}
+       
 
-            <div className="flex flex-col sm:flex-row gap-4 w-full justify-center mt-2">
-              <div className="flex flex-col items-center bg-gray-50 rounded-xl p-4 w-full sm:w-48">
-                <ShieldCheck className="w-7 h-7 text-blue-500 mb-2" />
-                <span className="font-medium text-gray-800">
-                  Secure Connection
-                </span>
-              </div>
-              <div className="flex flex-col items-center bg-gray-50 rounded-xl p-4 w-full sm:w-48">
-                <CheckCircle className="w-7 h-7 text-green-500 mb-2" />
-                <span className="font-medium text-gray-800">
-                  MCC Compatible
-                </span>
-              </div>
-            </div>
+       {(!adsAccounts || adsAccounts.length === 0) && (
+  <div className="flex flex-col sm:flex-row gap-4 w-full justify-center mt-2">
+    <div className="flex flex-col items-center bg-gray-50 rounded-xl p-4 w-full sm:w-48">
+      <ShieldCheck className="w-7 h-7 text-blue-500 mb-2" />
+      <span className="font-medium text-gray-800">
+        Secure Connection
+      </span>
+    </div>
+    <div className="flex flex-col items-center bg-gray-50 rounded-xl p-4 w-full sm:w-48">
+      <CheckCircle className="w-7 h-7 text-green-500 mb-2" />
+      <span className="font-medium text-gray-800">
+        MCC Compatible
+      </span>
+    </div>
+  </div>
+)}
+
           </CardContent>
         </Card>
       </main>
