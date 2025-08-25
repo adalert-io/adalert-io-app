@@ -444,6 +444,8 @@ export default function Dashboard() {
     }, 1500);
     return () => clearTimeout(handler);
   }, [searchValue]);
+const checkboxClass =
+  "shadow-none border-[#c5c5c5] text-[#c5c5c5] data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600";
 
   // Alerts Table Columns
   const useAlertColumns = (
@@ -454,6 +456,7 @@ export default function Dashboard() {
       id: "select",
       header: ({ table }) => (
         <Checkbox
+        className={checkboxClass}
           checked={table.getIsAllPageRowsSelected()}
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           aria-label="Select all"
@@ -461,6 +464,7 @@ export default function Dashboard() {
       ),
       cell: ({ row }) => (
         <Checkbox
+        className={checkboxClass}
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
           aria-label="Select row"
@@ -630,89 +634,95 @@ export default function Dashboard() {
     });
 
     return (
-      <div className="relative overflow-x-auto border border-[#e5e5e5] sm:rounded-lg mt-6">
-  <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-    <thead className="text-xs bg-[#f4f6fa] text-[#000] uppercase">
-      {table.getHeaderGroups().map((headerGroup) => (
-        <tr key={headerGroup.id}>
-          {headerGroup.headers.map((header) => (
-            <th key={header.id} className="px-6 py-3">
-              {flexRender(header.column.columnDef.header, header.getContext())}
-            </th>
+     <div className="bg-white rounded-2xl shadow-none border border-[#e5e5e5] overflow-hidden mt-6">
+<table className="min-w-full text-[1rem]">
+  {/* Table Head (Summary style) */}
+  <thead className="bg-gray-50 border-b border-gray-200">
+    {table.getHeaderGroups().map((headerGroup) => (
+      <tr key={headerGroup.id}>
+        {headerGroup.headers.map((header) => (
+          <th
+            key={header.id}
+            className="px-4 py-4 text-left font-semibold text-gray-700"
+          >
+            {flexRender(header.column.columnDef.header, header.getContext())}
+          </th>
+        ))}
+      </tr>
+    ))}
+  </thead>
+
+  {/* Table Body */}
+  <tbody className="divide-y divide-gray-100">
+    {table.getRowModel().rows.map((row) => (
+      <React.Fragment key={row.id}>
+        <tr className="hover:bg-gray-50 transition-colors text-sm">
+          {row.getVisibleCells().map((cell) => (
+            <td key={cell.id} className="px-4 py-6 text-gray-900">
+              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+            </td>
           ))}
         </tr>
-      ))}
-    </thead>
-    <tbody>
-      {table.getRowModel().rows.map((row) => (
-        <React.Fragment key={row.id}>
-          <tr className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-            {row.getVisibleCells().map((cell) => (
-              <td key={cell.id} className="px-6 py-4">
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-              </td>
-            ))}
+
+        {expandedRowIds.includes(row.id) && (
+          <tr className="bg-gray-50">
+            <td colSpan={columns.length} className="px-4 py-4">
+              <div
+                className="prose max-w-none text-[1rem] text-gray-700"
+                dangerouslySetInnerHTML={{
+                  __html: row.original["Long Description"] || "",
+                }}
+              />
+            </td>
           </tr>
+        )}
+      </React.Fragment>
+    ))}
+  </tbody>
+</table>
 
-          {expandedRowIds.includes(row.id) && (
-            <tr className="bg-gray-50 dark:bg-gray-900  text-dark">
-              <td colSpan={columns.length} className="px-6 py-4">
-                <div
-                  className="prose max-w-none text-sm"
-                  dangerouslySetInnerHTML={{
-                    __html: row.original["Long Description"] || "",
-                  }}
-                />
-              </td>
-            </tr>
-          )}
-        </React.Fragment>
-      ))}
-    </tbody>
-  </table>
-
-  {/* Pagination stays the same */}
-  <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
-    <div />
-    <div>
-      Page {table.getState().pagination.pageIndex + 1} of{" "}
-      {table.getPageCount()}
-    </div>
-    <div className="flex gap-1">
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => table.setPageIndex(0)}
-        disabled={!table.getCanPreviousPage()}
-      >
-        <ChevronsLeft className="w-4 h-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => table.previousPage()}
-        disabled={!table.getCanPreviousPage()}
-      >
-        <ChevronLeft className="w-4 h-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => table.nextPage()}
-        disabled={!table.getCanNextPage()}
-      >
-        <ChevronRight className="w-4 h-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-        disabled={!table.getCanNextPage()}
-      >
-        <ChevronsRight className="w-4 h-4" />
-      </Button>
-    </div>
+{/* Pagination (Summary style) */}
+<div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50 text-xs text-gray-500">
+  <div />
+  <div>
+    Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
   </div>
+  <div className="flex gap-1">
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => table.setPageIndex(0)}
+      disabled={!table.getCanPreviousPage()}
+    >
+      <ChevronsLeft className="w-4 h-4" />
+    </Button>
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => table.previousPage()}
+      disabled={!table.getCanPreviousPage()}
+    >
+      <ChevronLeft className="w-4 h-4" />
+    </Button>
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => table.nextPage()}
+      disabled={!table.getCanNextPage()}
+    >
+      <ChevronRight className="w-4 h-4" />
+    </Button>
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+      disabled={!table.getCanNextPage()}
+    >
+      <ChevronsRight className="w-4 h-4" />
+    </Button>
+  </div>
+</div>
+
       </div>
 
     );

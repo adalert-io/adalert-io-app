@@ -202,11 +202,7 @@ export default function UsersSubtab() {
     return (
       <div className="flex gap-2 items-center">
         <button
-          className={`${
-            isSingleRow
-              ? "text-gray-400 cursor-not-allowed"
-              : "text-blue-600 hover:text-blue-800 cursor-pointer"
-          }`}
+          className="text-blue-600 hover:text-blue-800 cursor-pointer"
           disabled={isSingleRow}
           onClick={() => {
             if (!isSingleRow) {
