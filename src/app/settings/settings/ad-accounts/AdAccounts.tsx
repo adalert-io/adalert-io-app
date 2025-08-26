@@ -606,13 +606,9 @@ export default function AdAccountsSubtab() {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             {/* Header */}
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-end">
               <div className="flex items-center gap-2">
-                <img
-                  src="/images/adAlert-logo-words.avif"
-                  alt="adAlert.io"
-                  className="h-8 w-auto"
-                />
+
               </div>
               <button
                 onClick={() => {
@@ -628,7 +624,7 @@ export default function AdAccountsSubtab() {
             {/* Content */}
             <div className="mb-6">
               <p className="text-gray-700">
-                Do you want to remove your ads account:{" "}
+                Are you sure you want to remove your ad account:{" "}
                 <span className="font-bold">
                   {deletingAccount.name} - {formatAccountNumber(deletingAccount["Id"])}
                 </span>
