@@ -181,7 +181,7 @@ export default function AdAccountsSubtab() {
       cell: ({ row }) => (
         <div className="flex gap-2 items-center">
           <button
-            className="text-blue-600 hover:text-blue-800"
+            className="text-blue-600 hover:text-blue-800 cursor-pointer"
             onClick={() => {
               setEditingAccount(row.original);
               setScreen("edit");
@@ -190,7 +190,7 @@ export default function AdAccountsSubtab() {
             <Edit2 className="w-5 h-5" />
           </button>
           <button
-            className="text-red-500 hover:text-red-700"
+            className="text-red-500 hover:text-red-700 cusror-pointer"
             onClick={() => {
               setDeletingAccount(row.original);
               setShowDeleteModal(true);
