@@ -14,11 +14,7 @@ import {
   Settings,
   LogOut,
   CreditCard,
-
-} from "lucide-react";
-import { 
-   CalendarDays,
-   CircleAlert
+  CalendarDays
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import * as React from "react";
@@ -150,9 +146,8 @@ export function Header() {
           subscription["User Status"] === SUBSCRIPTION_STATUS.TRIAL_ENDED) && (
           <div className="w-full bg-[#FFEBEE] px-4 md:px-6 lg:px-20 py-4">
             <div className="max-w-[1440px] mx-auto text-center">
-             
               <span className="text-gray-900 text-sm">
-                 <CalendarDays className="w-4 h-4 inline-block mr-1" />
+                <CalendarDays className="w-4 h-4 inline-block mr-1" />
                 You're on a free trial with{" "}
               </span>
               <span className="text-gray-900 text-sm font-bold">
