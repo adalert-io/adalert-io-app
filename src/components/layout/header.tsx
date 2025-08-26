@@ -13,8 +13,7 @@ import {
   User,
   Settings,
   LogOut,
-  CreditCard,
-  CalendarDays
+  
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import * as React from "react";
@@ -147,7 +146,6 @@ export function Header() {
           <div className="w-full bg-[#FFEBEE] px-4 md:px-6 lg:px-20 py-4">
             <div className="max-w-[1440px] mx-auto text-center">
               <span className="text-gray-900 text-sm">
-                <CalendarDays className="w-4 h-4 inline-block mr-1" />
                 You're on a free trial with{" "}
               </span>
               <span className="text-gray-900 text-sm font-bold">
@@ -166,7 +164,6 @@ export function Header() {
           <div className="w-full bg-[#FFEBEE] px-4 md:px-6 lg:px-20 py-4">
             <div className="max-w-[1440px] mx-auto text-center">
               <span className="text-gray-900 text-sm">
-                <CreditCard className="w-4 h-4 inline-block mr-1" />
                 Your subscription payment has failed. Please update your payment
                 method to avoid any service interruptions.{" "}
               </span>
