@@ -185,10 +185,10 @@ export default function UsersSubtab() {
       header: "Access Level",
       cell: ({ row }) => (
         <span
-          className={`inline-block px-3 py-1 rounded-md text-white text-xs font-bold ${
+          className={`inline-block px-3 py-1 rounded-md text-blue-700 text-xs font-bold ${
             row.original["User Type"] === "Admin"
-              ? "bg-blue-700"
-              : "bg-blue-400"
+              ? "bg-blue-200"
+              : "bg-blue-100"
           }`}
         >
           {row.original["User Type"]}
@@ -222,7 +222,7 @@ export default function UsersSubtab() {
           {!row.original.isInvitation && (
             <>
               <button
-                className="text-blue-600 hover:text-blue-800"
+                className="text-blue-600 hover:text-blue-800 cursor-pointer"
                 onClick={() => {
                   setEditingUser(row.original);
                   setRole(row.original["User Type"] || "Admin");
@@ -231,14 +231,14 @@ export default function UsersSubtab() {
               >
                 <Edit2 className="w-5 h-5" />
               </button>
-              <button className="text-red-500 hover:text-red-700">
+              <button className="text-red-500 hover:text-red-700 cursor-pointer">
                 <Trash2 className="w-5 h-5" />
               </button>
             </>
           )}
           {row.original.isInvitation && (
             <button
-              className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer" 
               onClick={async () => {
                 if (resendingInvitationId) return; // Prevent multiple clicks
 
@@ -919,7 +919,7 @@ export default function UsersSubtab() {
                 </div>
               )}
               <Button
-                className="bg-blue-300 text-white text-lg font-bold px-12 py-3 rounded shadow-md mt-4"
+                className="bg-blue-600 text-white text-lg font-bold px-6 py-3 rounded shadow-md mt-4 inline-flex items-center justify-center hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isSaveDisabled}
                 onClick={handleSave}
               >
