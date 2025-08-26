@@ -13,6 +13,8 @@ import {
   User,
   Settings,
   LogOut,
+  Calendar1Icon,
+  CreditCardIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import * as React from "react";
@@ -142,9 +144,10 @@ export function Header() {
       {subscription &&
         (subscription["User Status"] === SUBSCRIPTION_STATUS.TRIAL_NEW ||
           subscription["User Status"] === SUBSCRIPTION_STATUS.TRIAL_ENDED) && (
-          <div className="w-full bg-[#FFEBEE] px-4 md:px-6 lg:px-20 py-1">
+          <div className="w-full bg-[#FFEBEE] px-4 md:px-6 lg:px-20 py-4">
             <div className="max-w-[1440px] mx-auto text-center">
               <span className="text-gray-900 text-sm">
+                <Calendar1Icon className="inline w-4 h-4 mb-1 mr-1" />
                 You're on a free trial with{" "}
               </span>
               <span className="text-gray-900 text-sm font-bold">
@@ -163,6 +166,7 @@ export function Header() {
           <div className="w-full bg-[#FFEBEE] px-4 md:px-6 lg:px-20 py-1">
             <div className="max-w-[1440px] mx-auto text-center">
               <span className="text-gray-900 text-sm">
+                <CreditCardIcon className="inline w-4 h-4 mb-1 mr-1" />
                 Your subscription payment has failed. Please update your payment
                 method to avoid any service interruptions.{" "}
               </span>
