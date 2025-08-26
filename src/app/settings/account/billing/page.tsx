@@ -53,10 +53,11 @@ const Select = dynamic(() => import("react-select"), {
 
 // Payment Form Component
 function PaymentForm({ onBack }: { onBack: () => void }) {
+
   const stripe = useStripe();
   const elements = useElements();
   const { userDoc } = useAuthStore();
-  const { adsAccounts, paymentMethods } = useAlertSettingsStore();
+  const { adsAccounts, paymentMethods, subscription } = useAlertSettingsStore();
   const [isClient, setIsClient] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCardComplete, setIsCardComplete] = useState(false);
@@ -203,6 +204,50 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
       </div>
     );
   }
+let statusText = "";
+let statusColor = "";
+let statusBg = "";
+
+if (subscription) {
+  const status = subscription["User Status"];
+  const trialStart = subscription["Free Trial Start Date"]?.toDate
+    ? subscription["Free Trial Start Date"].toDate()
+    : null;
+  const trialEnd = trialStart
+    ? moment(trialStart).add(SUBSCRIPTION_PERIODS.TRIAL_DAYS, "days")
+    : null;
+  const now = moment();
+
+  if (status === SUBSCRIPTION_STATUS.PAYING) {
+    statusText = "Paid Plan Active";
+    statusColor = "#24B04D";
+    statusBg = "#e9ffef";
+  } else if (
+    status === SUBSCRIPTION_STATUS.TRIAL_NEW &&
+    trialEnd &&
+    now.isBefore(trialEnd)
+  ) {
+    statusText = "Free Trial";
+    statusColor = "#24B04D";
+    statusBg = "#e9ffef";
+  } else if (
+    status === SUBSCRIPTION_STATUS.CANCELED ||
+    status === SUBSCRIPTION_STATUS.PAYMENT_FAILED
+  ) {
+    statusText = "Subscription Canceled";
+    statusColor = "#ee1b23";
+    statusBg = "#ffebee";
+  } else if (
+    (status === SUBSCRIPTION_STATUS.TRIAL_NEW ||
+      status === SUBSCRIPTION_STATUS.TRIAL_ENDED) &&
+    trialEnd &&
+    now.isAfter(trialEnd)
+  ) {
+    statusText = "Free Trial Ended";
+    statusColor = "#ee1b23";
+    statusBg = "#ffebee";
+  }
+}
 
   return (
     <div className="bg-white rounded-2xl shadow-md p-8">
@@ -221,12 +266,24 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
           <span className="text-blue-600">${subscriptionPrice}</span>
           <span className="text-gray-600 font-normal text-xl">/Monthly</span>
         </div>
-        <div className="bg-gray-100 px-3 py-1 rounded-full">
-          <span className="text-blue-600 font-semibold">
-            {connectedAccountsCount}
-          </span>
-          <span className="text-gray-600"> Connected ads account(s)</span>
-        </div>
+        <div className="flex flex-col items-start">
+  {statusText && (
+    <div
+      className="flex justify-center gap-2 px-8 py-1 rounded-full text-sm font-medium mb-2"
+      style={{ color: statusColor, background: statusBg }}
+    >
+      {statusText}
+    </div>
+  )}
+
+  <div className="bg-gray-100 px-3 py-1 rounded-full">
+    <span className="text-blue-600 font-semibold">
+      {connectedAccountsCount}
+    </span>
+    <span className="text-gray-600"> Connected ads account(s)</span>
+  </div>
+</div>
+
       </div>
 
       {/* Payment Method Form */}
@@ -650,7 +707,7 @@ export default function BillingSubtab() {
                   <div className="flex flex-col gap-4">
                     {statusText && (
                       <div
-                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium"
+                        className="flex justify-center gap-2 px-6 py-1 rounded-full text-sm font-medium"
                         style={{ color: statusColor, background: statusBg }}
                       >
                         {statusText}
