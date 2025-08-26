@@ -241,10 +241,10 @@ const cards = [
     <span className="text-blue-600">${subscriptionPrice}</span>
     <span className="text-gray-600 font-normal text-[1.05rem]">/Monthly</span>
   </div>
-  <div className="flex flex-col items-end">
+  <div className="flex flex-col items-start">
     {statusText && (
       <div
-        className="inline-flex items-center gap-2 px-3 py-1 mb-2 rounded-full text-sm font-medium"
+        className="inline-flex items-center gap-2 px-10 py-1 mb-2 rounded-full text-sm font-medium"
         style={{ color: statusColor, background: statusBg }}
       >
         {statusText}
@@ -621,10 +621,10 @@ export default function BillingSubtab() {
                   )}
 
                   {/* Status and Actions */}
-                  <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-4 items-start">
                     {statusText && (
                       <div
-                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium"
+                        className="inline-flex items-center gap-2 py-1 rounded-full text-sm font-medium px-10"
                         style={{ color: statusColor, background: statusBg }}
                       >
                         {statusText}

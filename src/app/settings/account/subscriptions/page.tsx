@@ -111,7 +111,7 @@ export default function SubscriptionsSubtab() {
             <div>
               {statusText && (
   <div
-    className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium mb-2"
+    className="inline-flex items-center gap-2 px-10 py-1 rounded-full text-sm font-medium mb-2"
     style={{ color: statusColor, background: statusBg }}
   >
     {statusText}
