@@ -638,96 +638,214 @@ export default function Dashboard() {
     });
 
     return (
-      <div className="relative overflow-x-auto border border-[#e5e5e5] sm:rounded-lg mt-6">
-        <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-          <thead className="text-xs bg-[#f4f6fa] text-[#000] uppercase">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th key={header.id} className="px-6 py-3">
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext(),
-                    )}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.map((row) => (
-              <React.Fragment key={row.id}>
-                <tr className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-6 py-4">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </td>
-                  ))}
-                </tr>
-
-                {expandedRowIds.includes(row.id) && (
-                  <tr className="bg-gray-50 dark:bg-gray-900  text-dark">
-                    <td colSpan={columns.length} className="px-6 py-4">
-                      <div
-                        className="prose max-w-none text-sm"
-                        dangerouslySetInnerHTML={{
-                          __html: row.original["Long Description"] || "",
-                        }}
-                      />
-                    </td>
-                  </tr>
+      <div className="bg-white rounded-2xl shadow-none border border-[#e5e5e5] overflow-hidden mt-6">
+  <div className="overflow-x-auto">
+    <table className="min-w-full text-[0.75rem]">
+      {/* Header */}
+      <thead className="bg-gray-50 border-b border-gray-200">
+        {table.getHeaderGroups().map((headerGroup) => (
+          <tr key={headerGroup.id}>
+            {headerGroup.headers.map((header) => (
+              <th
+                key={header.id}
+                className="px-4 py-4 text-left font-semibold text-gray-700"
+              >
+                {flexRender(
+                  header.column.columnDef.header,
+                  header.getContext(),
                 )}
-              </React.Fragment>
+              </th>
             ))}
-          </tbody>
-        </table>
+          </tr>
+        ))}
+      </thead>
 
-        {/* Pagination stays the same */}
-        <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
-          <div />
-          <div>
-            Page {table.getState().pagination.pageIndex + 1} of{" "}
-            {table.getPageCount()}
-          </div>
-          <div className="flex gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => table.setPageIndex(0)}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <ChevronsLeft className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-              disabled={!table.getCanNextPage()}
-            >
-              <ChevronsRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
+      {/* Body */}
+      <tbody className="divide-y divide-gray-100">
+        {table.getRowModel().rows.map((row) => (
+          <React.Fragment key={row.id}>
+            <tr className="hover:bg-gray-50 transition-colors">
+              {row.getVisibleCells().map((cell) => (
+                <td
+      key={cell.id}
+      className={`px-4 py-6 text-gray-900 text-[0.75rem] ${
+        expandedRowIds.includes(row.id) ? "font-bold" : "font-normal"
+      }`}
+    >
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </td>
+              ))}
+            </tr>
+
+            {expandedRowIds.includes(row.id) && (
+              <tr className="bg-gray-50">
+                <td colSpan={columns.length} className="py-4 ps-20">
+                  <div
+                    className="prose max-w-none text-sm"
+                    dangerouslySetInnerHTML={{
+                      __html: row.original["Long Description"] || "",
+                    }}
+                  />
+                </td>
+              </tr>
+            )}
+          </React.Fragment>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  {/* Footer with pagination */}
+  <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200 gap-4">
+    {/* Showing text */}
+    <div className="text-[0.75rem] text-gray-600 font-medium">
+      Showing{" "}
+      {table.getRowModel().rows.length > 0
+        ? table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1
+        : 0}{" "}
+      to{" "}
+      {Math.min(
+        (table.getState().pagination.pageIndex + 1) *
+          table.getState().pagination.pageSize,
+        table.getFilteredRowModel().rows.length,
+      )}{" "}
+      of {table.getFilteredRowModel().rows.length} results
+    </div>
+
+    {/* Pagination buttons */}
+    <div className="flex items-center gap-3">
+      {/* First */}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => table.setPageIndex(0)}
+        disabled={!table.getCanPreviousPage()}
+        className="h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <ChevronsLeft className="w-4 h-4" />
+      </Button>
+
+      {/* Prev */}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => table.previousPage()}
+        disabled={!table.getCanPreviousPage()}
+        className="h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <ChevronLeft className="w-4 h-4" />
+      </Button>
+
+      {/* Page numbers */}
+      <div className="flex items-center gap-1">
+        {(() => {
+          const maxVisiblePages = 5;
+          const page = table.getState().pagination.pageIndex + 1;
+          const totalPages = table.getPageCount();
+          const halfVisible = Math.floor(maxVisiblePages / 2);
+          let startPage = Math.max(1, page - halfVisible);
+          const endPage = Math.min(
+            totalPages,
+            startPage + maxVisiblePages - 1,
+          );
+
+          if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+          }
+
+          const pages = [];
+
+          if (startPage > 1) {
+            pages.push(
+              <Button
+                key={1}
+                variant={1 === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => table.setPageIndex(0)}
+                className="h-8 w-8 p-0 text-[0.75rem] font-medium"
+              >
+                1
+              </Button>,
+            );
+            if (startPage > 2) {
+              pages.push(
+                <span
+                  key="ellipsis1"
+                  className="px-2 text-gray-400 text-[0.75rem]"
+                >
+                  ...
+                </span>,
+              );
+            }
+          }
+
+          for (let i = startPage; i <= endPage; i++) {
+            pages.push(
+              <Button
+                key={i}
+                variant={i === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => table.setPageIndex(i - 1)}
+                className="h-8 w-8 p-0 text-[0.75rem] font-medium"
+              >
+                {i}
+              </Button>,
+            );
+          }
+
+          if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+              pages.push(
+                <span
+                  key="ellipsis2"
+                  className="px-2 text-gray-400 text-[0.75rem]"
+                >
+                  ...
+                </span>,
+              );
+            }
+            pages.push(
+              <Button
+                key={totalPages}
+                variant={totalPages === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => table.setPageIndex(totalPages - 1)}
+                className="h-8 w-8 p-0 text-[0.75rem] font-medium"
+              >
+                {totalPages}
+              </Button>,
+            );
+          }
+
+          return pages;
+        })()}
       </div>
+
+      {/* Next */}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => table.nextPage()}
+        disabled={!table.getCanNextPage()}
+        className="h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <ChevronRight className="w-4 h-4" />
+      </Button>
+
+      {/* Last */}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+        disabled={!table.getCanNextPage()}
+        className="h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <ChevronsRight className="w-4 h-4" />
+      </Button>
+    </div>
+  </div>
+</div>
+
     );
   }
 
