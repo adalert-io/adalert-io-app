@@ -144,19 +144,23 @@ export function Header() {
       {subscription &&
         (subscription["User Status"] === SUBSCRIPTION_STATUS.TRIAL_NEW ||
           subscription["User Status"] === SUBSCRIPTION_STATUS.TRIAL_ENDED) && (
-          <div className="w-full bg-[#FFEBEE] px-4 md:px-6 lg:px-20 py-4">
+          <div className="w-full bg-[#FFEBEE] px-4 md:px-6 lg:px-20 py-2">
             <div className="max-w-[1440px] mx-auto text-center">
-              <span className="text-gray-900 text-sm">
+              <span className="text-gray-900 text-[13px]">
                 <Calendar1Icon className="inline w-4 h-4 mb-1 mr-1" />
                 You're on a free trial with{" "}
               </span>
-              <span className="text-gray-900 text-sm font-bold">
+              <span className="text-gray-900 text-[13px] font-bold">
                 {trialDaysLeft} days left
               </span>
-              <span className="text-gray-900 text-sm">
+              <span className="text-gray-900 text-[13px]">
                 {" "}
-                - Add your payment method below to continue using adAlert.io
+                - Upgrade for 24/7 monitoring and peace of mind!
               </span>
+              <button
+                onClick={() => router.push("/settings/account/billing")}
+                className="text-white rounded rounded-[10px] border px-2 py-1 bg-blue-600 font-medium hover:bg-blue-700 transition-colors text-[13px] ml-1 cursor-pointer"
+                >Upgrade Now</button>
             </div>
           </div>
         )}
