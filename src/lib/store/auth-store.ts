@@ -51,6 +51,7 @@ export interface UserDocument {
   // 'Pipedrive'?: string; // PipeDrive person ID
   "Mailchimp"?: string; // MailChimp subscriber ID
   "Sendgrid Marketing"?: string; // SendGrid contact ID
+  "Country"?: string;
 }
 
 interface AuthState {
@@ -60,11 +61,13 @@ interface AuthState {
   error: string | null;
   isFullAccess: boolean;
   router: AppRouterInstance | null;
+  subscription: any | null; // Add subscription to auth state
   setUser: (user: User | null) => void;
   setUserDoc: (userDoc: UserDocument | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setRouter: (router: AppRouterInstance) => void;
+  setSubscription: (subscription: any) => void; // Add setter for subscription
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
@@ -118,13 +121,16 @@ async function checkSubscriptionStatus(userId: string): Promise<boolean> {
 
   console.log("subscriptionData", subscriptionData);
 
+  // Store subscription data in auth store
+  useAuthStore.getState().setSubscription(subscriptionData);
+
   // Check Trial New status
   if (userStatus === SUBSCRIPTION_STATUS.TRIAL_NEW) {
     const trialStartDate = subscriptionData["Free Trial Start Date"]?.toDate();
     if (trialStartDate) {
       const trialEndDate = moment(trialStartDate).add(
         SUBSCRIPTION_PERIODS.TRIAL_DAYS,
-        "days"
+        "days",
       );
 
       if (now.isAfter(trialEndDate)) {
@@ -133,17 +139,17 @@ async function checkSubscriptionStatus(userId: string): Promise<boolean> {
           doc(db, COLLECTIONS.SUBSCRIPTIONS, subscriptionDoc.id),
           {
             "User Status": SUBSCRIPTION_STATUS.TRIAL_ENDED,
-          }
+          },
         );
         return false;
       }
     }
   }
 
-  // Check Trial Ended or Cancelled status
+  // Check Trial Ended or Canceled status
   if (
     userStatus === SUBSCRIPTION_STATUS.TRIAL_ENDED ||
-    userStatus === SUBSCRIPTION_STATUS.CANCELLED
+    userStatus === SUBSCRIPTION_STATUS.CANCELED
   ) {
     return false;
   }
@@ -155,7 +161,7 @@ async function checkSubscriptionStatus(userId: string): Promise<boolean> {
     if (failedStartDate) {
       const gracePeriodEnd = moment(failedStartDate).add(
         SUBSCRIPTION_PERIODS.PAYMENT_FAILED_GRACE_DAYS,
-        "days"
+        "days",
       );
 
       if (now.isAfter(gracePeriodEnd)) {
@@ -172,7 +178,7 @@ async function checkSubscriptionStatus(userId: string): Promise<boolean> {
 export async function createUserDocuments(
   user: User,
   isGoogleSignUp: boolean = false,
-  createStripeAndSubscription: boolean = true
+  createStripeAndSubscription: boolean = true,
 ) {
   // Check if user document already exists
   const userRef = doc(db, COLLECTIONS.USERS, user.uid);
@@ -269,7 +275,7 @@ export async function createUserDocuments(
       const stripeCompaniesRef = doc(
         db,
         COLLECTIONS.STRIPE_COMPANIES,
-        user.uid
+        user.uid,
       );
       await setDoc(stripeCompaniesRef, {
         "User": userRef,
@@ -293,11 +299,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   error: null,
   isFullAccess: false,
   router: null,
+  subscription: null, // Initialize subscription
   setUser: (user) => set({ user }),
   setUserDoc: (userDoc) => set({ userDoc }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
   setRouter: (router) => set({ router }),
+  setSubscription: (subscription) => set({ subscription }), // Setter for subscription
 
   fetchUserDocument: async (userId: string) => {
     try {
@@ -341,7 +349,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
-        password
+        password,
       );
       await updateProfile(userCredential.user, { displayName: fullName });
 
@@ -367,7 +375,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
-        password
+        password,
       );
       set({ user: userCredential.user });
 
@@ -427,7 +435,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ loading: true, error: null });
       await signOut(auth);
-      set({ user: null, userDoc: null });
+      set({ user: null, userDoc: null, subscription: null }); // Clear subscription on logout
     } catch (err: any) {
       set({ error: err.message });
       throw err;
@@ -491,7 +499,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         adsAccountRef,
         where("User", "==", companyAdminRef),
         where("Is Connected", "==", true),
-        where("Selected Users", "array-contains", userRef)
+        where("Selected Users", "array-contains", userRef),
       );
 
       const adsAccountSnap = await getDocs(adsAccountQuery);

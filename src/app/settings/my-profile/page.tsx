@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,6 +9,14 @@ import { toast } from "sonner";
 import { CHECKBOX_CLASS } from "@/lib/constants";
 import { useAlertSettingsStore } from "@/lib/store/settings-store";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+import { countries } from "countries-list";
+
+// Dynamically import react-select to avoid SSR issues
+const Select = dynamic(() => import("react-select"), {
+  ssr: false,
+  loading: () => <div className="h-10 bg-gray-100 rounded animate-pulse" />,
+});
 
 export default function MyProfileTab() {
   const { userDoc } = useAuthStore();
@@ -16,13 +24,61 @@ export default function MyProfileTab() {
   const [name, setName] = useState(userDoc?.Name || "");
   const [email, setEmail] = useState(userDoc?.Email || "");
   const [phone, setPhone] = useState(userDoc?.Telephone || "");
-  const [telephoneDialCode, setTelephoneDialCode] = useState("+1");
-  const [optInForTextMessage, setOptInForTextMessage] = useState(userDoc?.["Opt In For Text Message"] ?? true);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(userDoc?.Avatar || null);
+  const [telephoneDialCode, setTelephoneDialCode] = useState(
+    userDoc?.["Telephone Dial Code"] || "+1",
+  );
+  const [selectedCountry, setSelectedCountry] = useState("United States");
+  const [optInForTextMessage, setOptInForTextMessage] = useState(
+    userDoc?.["Opt In For Text Message"] ?? true,
+  );
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(
+    userDoc?.Avatar || null,
+  );
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { updateMyProfile } = useAlertSettingsStore();
   const [isSaving, setIsSaving] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  // Dial code options filtered from countries-list to only show +1
+  const dialCodeOptions = useMemo(() => {
+    console.log("countries: ", countries);
+    return Object.entries(countries)
+      .filter(([code, country]) => {
+        console.log("country: ", country);
+        console.log("code: ", code);
+        // Handle both string and array phone codes, convert to string for comparison
+        const phoneCode = Array.isArray(country.phone)
+          ? country.phone[0]
+          : country.phone;
+        return phoneCode.toString() === "1";
+      })
+      .map(([code, country]) => ({
+        value: country.phone,
+        label: `+${
+          Array.isArray(country.phone) ? country.phone[0] : country.phone
+        } ${country.name}`,
+        displayLabel: `+${
+          Array.isArray(country.phone) ? country.phone[0] : country.phone
+        }`,
+        countryName: country.name,
+        // flag: "🇺🇸", // Since we're only showing US, we can use US flag
+      }));
+  }, []);
+
+  // Get selected dial code option
+  const selectedDialCode = useMemo(() => {
+    // Since all +1 options have the same phone code, we need to match by country name
+    return (
+      dialCodeOptions.find(
+        (option) => option.countryName === selectedCountry,
+      ) || null
+    );
+  }, [dialCodeOptions, selectedCountry]);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Clean up object URL when component unmounts or avatarPreview changes
   useEffect(() => {
@@ -39,6 +95,10 @@ export default function MyProfileTab() {
     setName(userDoc?.Name || "");
     setEmail(userDoc?.Email || "");
     setPhone(userDoc?.Telephone || "");
+    setTelephoneDialCode(userDoc?.["Telephone Dial Code"] || "+1");
+    // For now, default to United States since Country field doesn't exist yet
+    // This will be updated when the user makes a selection
+    setSelectedCountry(userDoc?.Country || "United States");
     setOptInForTextMessage(userDoc?.["Opt In For Text Message"] ?? true);
     setAvatarPreview(userDoc?.Avatar || null);
   }, [userDoc]);
@@ -63,6 +123,13 @@ export default function MyProfileTab() {
     }
   };
 
+  // Handler for dial code change
+  const handleDialCodeChange = (selectedOption: any) => {
+    const dialCode = selectedOption?.value;
+    setTelephoneDialCode(`+${dialCode}`);
+    setSelectedCountry(selectedOption?.countryName || "United States");
+  };
+
   // Save handler (stub)
   const handleSave = async () => {
     if (!userDoc?.uid) {
@@ -77,6 +144,7 @@ export default function MyProfileTab() {
         optInForTextMessage: optInForTextMessage,
         Telephone: phone,
         TelephoneDialCode: telephoneDialCode,
+        Country: selectedCountry,
         avatarFile: avatarFile,
         currentAvatarUrl: userDoc?.Avatar || null,
       });
@@ -89,12 +157,13 @@ export default function MyProfileTab() {
     }
   };
 
-  const avatarUrl = avatarPreview || userDoc?.Avatar || "/images/default-avatar.png";
-  const isSaveEnabled = (
+  const avatarUrl =
+    avatarPreview || userDoc?.Avatar || "/images/default-avatar.png";
+  const isSaveEnabled =
     name.trim() !== "" &&
     email.trim() !== "" &&
-    ((phone.trim() !== "" && optInForTextMessage) || (phone.trim() === "" && !optInForTextMessage))
-  );
+    ((phone.trim() !== "" && optInForTextMessage) ||
+      (phone.trim() === "" && !optInForTextMessage));
 
   return (
     <div className="flex flex-col items-center w-full min-h-[80vh]">
@@ -102,23 +171,29 @@ export default function MyProfileTab() {
         <div className="bg-white rounded-2xl shadow-md p-8 border border-[#e5e5e5]">
           <h2 className="text-2xl font-bold mb-1">My Profile</h2>
           <p className="text-gray-500 mb-6">
-            View or edit your profile. You can include or exclude yourself from email alerts or control the frequency from {" "}
-            <Link href="/settings/settings/alerts" className="text-blue-600 underline">alert settings</Link>
+            View or edit your profile. You can include or exclude yourself from
+            email alerts or control the frequency from{" "}
+            <Link
+              href="/settings/settings/alerts"
+              className="text-blue-600 underline"
+            >
+              alert settings
+            </Link>
           </p>
           <div className="flex flex-col md:flex-row gap-8">
             {/* Avatar and Name */}
             <div className="flex flex-col items-center flex-1 bg-white rounded-xl border border-[#e5e5e5] p-8">
               <div className="relative w-25 h-25 flex items-center justify-center mb-4">
                 <div className="w-full h-full border rounded-full overflow-hidden bg-gray-50 flex items-center justify-center">
-                <img
-  src={avatarUrl}
-  alt={name || "User avatar"}
-  className="w-25 h-25 rounded-full object-cover"
-  onError={e => {
-    (e.currentTarget as HTMLImageElement).src = "/images/default-avatar.png";
-  }}
-/>
-
+                  <img
+                    src={avatarUrl}
+                    alt={name || "User avatar"}
+                    className="w-25 h-25 rounded-full object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src =
+                        "/images/default-avatar.png";
+                    }}
+                  />
                 </div>
                 {/* Camera icon button */}
                 <button
@@ -145,12 +220,14 @@ export default function MyProfileTab() {
             </div>
             {/* Personal Info Form */}
             <div className="flex-1 bg-white rounded-xl border border-[#e5e5e5] p-8">
-              <div className="text-lg font-semibold mb-6">Personal information</div>
+              <div className="text-lg font-semibold mb-6">
+                Personal information
+              </div>
               <form className="flex flex-col gap-4">
                 <div className="relative">
                   <Input
                     value={name}
-                    onChange={e => setName(e.target.value)}
+                    onChange={(e) => setName(e.target.value)}
                     placeholder="Name"
                     className="pl-10"
                     disabled={isGoogleSignUp}
@@ -160,7 +237,7 @@ export default function MyProfileTab() {
                 <div className="relative">
                   <Input
                     value={email}
-                    onChange={e => setEmail(e.target.value)}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="Email"
                     className="pl-10"
                     type="email"
@@ -169,18 +246,47 @@ export default function MyProfileTab() {
                   <Mail className="absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]" />
                 </div>
                 <div className="relative flex items-center">
-                  {/* Country selector (static for now) */}
-                  <select
-                    value={telephoneDialCode}
-                    onChange={e => setTelephoneDialCode(e.target.value)}
-                    className="h-10 rounded-l-md border border-gray-200 bg-gray-50 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-                    disabled
-                  >
-                    <option value="+1">🇺🇸 +1</option>
-                  </select>
+                  {/* Country selector using react-select */}
+                  <div className="w-32">
+                    {isClient ? (
+                      <Select
+                        placeholder="+1"
+                        options={dialCodeOptions}
+                        value={
+                          selectedDialCode
+                            ? {
+                                ...selectedDialCode,
+                                label: selectedDialCode.displayLabel,
+                              }
+                            : null
+                        }
+                        onChange={handleDialCodeChange}
+                        isSearchable={false}
+                        className="react-select-container"
+                        classNamePrefix="react-select"
+                        styles={{
+                          control: (provided) => ({
+                            ...provided,
+                            border: "1px solid #d1d5db",
+                            borderRadius: "0.375rem",
+                            minHeight: "2.5rem",
+                            "&:hover": {
+                              borderColor: "#3b82f6",
+                            },
+                          }),
+                          placeholder: (provided) => ({
+                            ...provided,
+                            color: "#9ca3af",
+                          }),
+                        }}
+                      />
+                    ) : (
+                      <div className="h-10 bg-gray-100 rounded animate-pulse" />
+                    )}
+                  </div>
                   <Input
                     value={phone}
-                    onChange={e => setPhone(e.target.value)}
+                    onChange={(e) => setPhone(e.target.value)}
                     placeholder="Phone"
                     className="rounded-l-none"
                     type="tel"
@@ -190,23 +296,41 @@ export default function MyProfileTab() {
                   <Checkbox
                     id="sms-consent"
                     checked={optInForTextMessage}
-                    onCheckedChange={checked => setOptInForTextMessage(checked === true)}
+                    onCheckedChange={(checked) =>
+                      setOptInForTextMessage(checked === true)
+                    }
                     className={CHECKBOX_CLASS}
                   />
-                  <label htmlFor="sms-consent" className="text-xs text-gray-600 select-none">
-                    I consent to opting in for text messages. Message and data rate changes may apply. Change in your alert settings to opt out. This feature is only available in the US.
+                  <label
+                    htmlFor="sms-consent"
+                    className="text-xs text-gray-600 select-none"
+                  >
+                    I consent to opting in for text messages. Message and data
+                    rate changes may apply. Change in your alert settings to opt
+                    out. This feature is only available in the US.
                   </label>
                 </div>
               </form>
             </div>
           </div>
           <div className="flex justify-center mt-8">
-            <Button className="w-full max-w-[150px] flex justify-center bg-blue-600 text-white text-lg font-bold py-3 rounded shadow-md " onClick={handleSave} disabled={!isSaveEnabled || isSaving}>
-              {isSaving ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>) : "Save"}
+            <Button
+              className="w-full max-w-[150px] flex justify-center bg-blue-600 text-white text-lg font-bold py-3 rounded shadow-md "
+              onClick={handleSave}
+              disabled={!isSaveEnabled || isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save"
+              )}
             </Button>
           </div>
         </div>
       </div>
     </div>
   );
-} 
+}

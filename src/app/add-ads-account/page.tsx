@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { AddAdsAccount } from "./AddAdsAccount";
+import AddAdsAccountWrapper from "./AddAdsAccountWrapper";
 import { Loader2 } from "lucide-react";
 
 function LoadingFallback() {
@@ -18,7 +18,7 @@ function LoadingFallback() {
 export default function AddAdsAccountPage() {
   return (
     <Suspense fallback={<LoadingFallback />}>
-      <AddAdsAccount />
+      <AddAdsAccountWrapper />
     </Suspense>
   );
 }

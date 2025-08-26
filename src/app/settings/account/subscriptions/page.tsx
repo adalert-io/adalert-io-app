@@ -10,9 +10,15 @@ import { SUBSCRIPTION_PRICES } from "@/lib/constants";
 import moment from "moment";
 import { SUBSCRIPTION_STATUS, SUBSCRIPTION_PERIODS } from "@/lib/constants";
 
-
 export default function SubscriptionsSubtab() {
-  const { adsAccounts, fetchAdsAccounts, loading, deleteCompanyAccount } = useAlertSettingsStore();
+  const {
+    adsAccounts,
+    fetchAdsAccounts,
+    loading,
+    deleteCompanyAccount,
+    subscription,
+    fetchSubscription,
+  } = useAlertSettingsStore();
   const { userDoc, logout } = useAuthStore();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -22,6 +28,13 @@ export default function SubscriptionsSubtab() {
       fetchAdsAccounts(userDoc["Company Admin"]);
     }
   }, [userDoc, adsAccounts.length, fetchAdsAccounts]);
+
+  // Fetch subscription when component loads and subscription is empty
+  useEffect(() => {
+    if (userDoc?.["Company Admin"] && !subscription) {
+      fetchSubscription(userDoc["Company Admin"]);
+    }
+  }, [userDoc, subscription, fetchSubscription]);
 
   const connectedAccountsCount = adsAccounts.length;
 
@@ -41,7 +54,6 @@ export default function SubscriptionsSubtab() {
   };
 
   const subscriptionPrice = calculateSubscriptionPrice();
-  const { subscription } = useAlertSettingsStore();
 
   let statusText = "";
   let statusColor = "";
@@ -60,17 +72,26 @@ export default function SubscriptionsSubtab() {
       statusText = "Paid Plan Active";
       statusColor = "#24B04D";
       statusBg = "#e9ffef";
-    } else if (status === SUBSCRIPTION_STATUS.TRIAL_NEW && trialEnd && now.isBefore(trialEnd)) {
+    } else if (
+      status === SUBSCRIPTION_STATUS.TRIAL_NEW &&
+      trialEnd &&
+      now.isBefore(trialEnd)
+    ) {
       statusText = "Free Trial";
       statusColor = "#24B04D";
       statusBg = "#e9ffef";
-    } else if (status === SUBSCRIPTION_STATUS.CANCELLED || status === SUBSCRIPTION_STATUS.PAYMENT_FAILED) {
+    } else if (
+      status === SUBSCRIPTION_STATUS.CANCELED ||
+      status === SUBSCRIPTION_STATUS.PAYMENT_FAILED
+    ) {
       statusText = "Subscription Canceled";
       statusColor = "#ee1b23";
       statusBg = "#ffebee";
     } else if (
-      (status === SUBSCRIPTION_STATUS.TRIAL_NEW || status === SUBSCRIPTION_STATUS.TRIAL_ENDED) &&
-      trialEnd && now.isAfter(trialEnd)
+      (status === SUBSCRIPTION_STATUS.TRIAL_NEW ||
+        status === SUBSCRIPTION_STATUS.TRIAL_ENDED) &&
+      trialEnd &&
+      now.isAfter(trialEnd)
     ) {
       statusText = "Free Trial Ended";
       statusColor = "#ee1b23";
@@ -91,40 +112,40 @@ export default function SubscriptionsSubtab() {
     }
   };
 
-
-
-
   return (
     <div className="space-y-6">
       {/* Main Subscription Card */}
       <div className="bg-white p-4">
         <h2 className="text-xl font-bold mb-6">Subscriptions</h2>
 
-
         {/* Current Status */}
         <div className="mb-6">
           <div className="flex items-center gap-4 mb-4 justify-between">
             <div className="text-3xl font-bold">
               <span className="text-blue-600">${subscriptionPrice}</span>
-              <span className="text-gray-600 font-normal text-[1.05rem]">/Monthly</span>
+              <span className="text-gray-600 font-normal text-xl">
+                /Monthly
+              </span>
             </div>
             <div>
               {statusText && (
-  <div
-    className="inline-flex items-center gap-2 px-10 py-1 rounded-full text-sm font-medium mb-2"
-    style={{ color: statusColor, background: statusBg }}
-  >
-    {statusText}
-  </div>
-)}
-            
-            <div className="bg-gray-100 px-3 py-1 rounded-full">
-              
-              <span className="text-blue-600 font-semibold text-[18px]">
-                {connectedAccountsCount}
-              </span>
-              <span className="text-gray-600 text-[16px]"> Connected ads account(s)</span>
-            </div>
+                <div
+                  className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium mb-2"
+                  style={{ color: statusColor, background: statusBg }}
+                >
+                  {statusText}
+                </div>
+              )}
+
+              <div className="bg-gray-100 px-3 py-1 rounded-full">
+                <span className="text-blue-600 font-semibold text-[18px]">
+                  {connectedAccountsCount}
+                </span>
+                <span className="text-gray-600 text-[16px]">
+                  {" "}
+                  Connected ads account(s)
+                </span>
+              </div>
             </div>
           </div>
           <div className="text-gray-700">
@@ -188,11 +209,11 @@ export default function SubscriptionsSubtab() {
 
       {/* Account Cancellation */}
       <div className="flex items-center gap-3 text-gray-700 ml-4 text-[14px]">
-        <AlertTriangle className="h-3 w-3 text-[#df5967] flex-shrink-0" />
+        <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0" />
         <span>
           I would like to{" "}
           <button
-            className="text-[#df5967] hover:underline font-medium cursor-pointer"
+            className="text-red-500 hover:underline font-medium"
             onClick={() => setShowDeleteModal(true)}
           >
             cancel
@@ -207,8 +228,7 @@ export default function SubscriptionsSubtab() {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             {/* Header */}
-            <div className="flex items-center justify-end mb-4">
-
+            <div className="flex items-center justify-between mb-4">
               <button
                 onClick={() => setShowDeleteModal(false)}
                 className="text-gray-400 hover:text-gray-600"
