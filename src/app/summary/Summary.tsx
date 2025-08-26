@@ -349,7 +349,7 @@ export default function Summary() {
                   <th className="px-4 py-4 text-left font-semibold text-gray-700">
                     Impact
                   </th>
-                  <th className="px-4 py-4 text-left font-semibold text-gray-700">
+                  <th className="px-4 py-4 text-left font-semibold text-gray-700 pr-8">
                     Budget Pacing
                   </th>
                 </tr>
@@ -581,7 +581,7 @@ export default function Summary() {
                         </div>
                       </td>
                       {/* Budget Pacing */}
-                      <td className="px-4 py-6 min-w-[240px]">
+                      <td className="px-4 py-6 min-w-[240px] pr-8">
                         <div className="flex items-center gap-3">
                           {/* Progress bar */}
                           <div className="relative w-full h-6 flex items-center">
