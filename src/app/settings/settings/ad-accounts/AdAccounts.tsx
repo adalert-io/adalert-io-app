@@ -20,6 +20,8 @@ import {
   CheckCircle,
   Loader2,
   Bell,
+  CheckCheck,
+
 } from "lucide-react";
 import { useAlertSettingsStore } from "@/lib/store/settings-store";
 import { useAuthStore } from "@/lib/store/auth-store";
@@ -53,7 +55,7 @@ export default function AdAccountsSubtab() {
   const [monthlyBudgetInput, setMonthlyBudgetInput] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [sendAlert, setSendAlert] = useState(false);
-  
+
   const { userDoc } = useAuthStore();
   const {
     adsAccountsForTab,
@@ -106,7 +108,7 @@ export default function AdAccountsSubtab() {
   const columns: ColumnDef<any>[] = [
     {
       accessorKey: "Id",
-      header: "Account Number",
+      header: "Account ID",
       cell: ({ row }) => <span>{formatAccountNumber(row.original["Id"])}</span>,
     },
     {
@@ -135,8 +137,23 @@ export default function AdAccountsSubtab() {
       accessorKey: "Is Connected",
       header: "Connected",
       cell: ({ row }) => (
-        <span className={row.original["Is Connected"] ? "text-green-600" : "text-red-600"}>
-          {row.original["Is Connected"] ? "yes" : "no"}
+        <span
+          className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-sm font-medium ${row.original["Is Connected"]
+              ? "bg-green-100 text-green-700"
+              : "bg-red-100 text-red-700"
+            }`}
+        >
+          {row.original["Is Connected"] ? (
+            <>
+              <CheckCheck className="w-4 h-4" />
+              Connected
+            </>
+          ) : (
+            <>
+              <XIcon className="w-4 h-4" />
+              Disconnected
+            </>
+          )}
         </span>
       ),
     },
@@ -172,7 +189,7 @@ export default function AdAccountsSubtab() {
           >
             <Edit2 className="w-5 h-5" />
           </button>
-          <button 
+          <button
             className="text-red-500 hover:text-red-700"
             onClick={() => {
               setDeletingAccount(row.original);
@@ -188,194 +205,199 @@ export default function AdAccountsSubtab() {
     },
   ];
 
-function AdsAccountsDataTable() {
-  const [pageIndex, setPageIndex] = useState(0);
+  function AdsAccountsDataTable() {
+    const [pageIndex, setPageIndex] = useState(0);
 
-  const table = useReactTable({
-    data: filteredAdsAccounts,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    state: {
-      pagination: {
-        pageIndex,
-        pageSize,
+    const table = useReactTable({
+      data: filteredAdsAccounts,
+      columns,
+      getCoreRowModel: getCoreRowModel(),
+      getPaginationRowModel: getPaginationRowModel(),
+      state: {
+        pagination: {
+          pageIndex,
+          pageSize,
+        },
       },
-    },
-    onPaginationChange: (updater) => {
-      if (typeof updater === "function") {
-        const next = updater({ pageIndex, pageSize });
-        setPageIndex(next.pageIndex);
-        setPageSize(next.pageSize);
-      } else {
-        if (updater.pageIndex !== undefined) setPageIndex(updater.pageIndex);
-        if (updater.pageSize !== undefined) setPageSize(updater.pageSize);
-      }
-    },
-    pageCount: Math.ceil(filteredAdsAccounts.length / pageSize),
-    getRowId: (row) => {
-      if (!row.original) return row.id || Math.random().toString();
-      if (!row.original.id) return row.id || Math.random().toString();
-      return row.original.id;
-    },
-  });
+      onPaginationChange: (updater) => {
+        if (typeof updater === "function") {
+          const next = updater({ pageIndex, pageSize });
+          setPageIndex(next.pageIndex);
+          setPageSize(next.pageSize);
+        } else {
+          if (updater.pageIndex !== undefined) setPageIndex(updater.pageIndex);
+          if (updater.pageSize !== undefined) setPageSize(updater.pageSize);
+        }
+      },
+      pageCount: Math.ceil(filteredAdsAccounts.length / pageSize),
+      getRowId: (row) => {
+        if (!row.original) return row.id || Math.random().toString();
+        if (!row.original.id) return row.id || Math.random().toString();
+        return row.original.id;
+      },
+    });
 
-  const total = filteredAdsAccounts.length;
-  const start = total ? pageIndex * pageSize + 1 : 0;
-  const end = Math.min((pageIndex + 1) * pageSize, total);
-  const totalPages = table.getPageCount();
+    const total = filteredAdsAccounts.length;
+    const start = total ? pageIndex * pageSize + 1 : 0;
+    const end = Math.min((pageIndex + 1) * pageSize, total);
+    const totalPages = table.getPageCount();
 
-  // Reference-style page numbers
-  const maxVisiblePages = 5;
-  const halfVisible = Math.floor(maxVisiblePages / 2);
-  let startPage = Math.max(1, pageIndex + 1 - halfVisible);
-  let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-  if (endPage - startPage + 1 < maxVisiblePages) {
-    startPage = Math.max(1, endPage - maxVisiblePages + 1);
-  }
-  const pages: (number | string)[] = [];
-  if (startPage > 1) {
-    pages.push(1);
-    if (startPage > 2) pages.push("ellipsis-start");
-  }
-  for (let i = startPage; i <= endPage; i++) pages.push(i);
-  if (endPage < totalPages) {
-    if (endPage < totalPages - 1) pages.push("ellipsis-end");
-    pages.push(totalPages);
-  }
+    // Reference-style page numbers
+    const maxVisiblePages = 5;
+    const halfVisible = Math.floor(maxVisiblePages / 2);
+    let startPage = Math.max(1, pageIndex + 1 - halfVisible);
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    const pages: (number | string)[] = [];
+    if (startPage > 1) {
+      pages.push(1);
+      if (startPage > 2) pages.push("ellipsis-start");
+    }
+    for (let i = startPage; i <= endPage; i++) pages.push(i);
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) pages.push("ellipsis-end");
+      pages.push(totalPages);
+    }
 
-  return (
-    <div className="bg-white rounded-2xl shadow-none border border-[#e5e5e5] overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="min-w-full text-[0.75rem]">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className="px-4 py-4 text-left font-semibold text-gray-700"
+    return (
+      <div className="bg-white rounded-2xl shadow-none border border-[#e5e5e5] overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-[0.75rem]">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <th
+                      key={header.id}
+                      className="px-4 py-4 text-left font-semibold text-gray-700 whitespace-nowrap overflow-hidden text-ellipsis max-w-[170px]"
+                    >
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+
+
+            <tbody className="divide-y divide-gray-100">
+              {table.getRowModel().rows.map((row) => (
+                <tr key={row.id} className="hover:bg-gray-50 transition-colors">
+                  {row.getVisibleCells().map((cell) => (
+                    <td
+                      key={cell.id}
+                      className="px-4 py-6 align-top text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis max-w-[170px]"
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+
+                  ))}
+                </tr>
+              ))}
+
+              {table.getRowModel().rows.length === 0 && (
+                <tr>
+                  <td
+                    className="px-4 py-12 text-center text-gray-500"
+                    colSpan={table.getAllColumns().length}
                   >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-
-          <tbody className="divide-y divide-gray-100">
-            {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="hover:bg-gray-50 transition-colors">
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-4 py-6 align-top text-gray-900">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    <div className="flex flex-col items-center gap-2">
+                      <svg className="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      No accounts found.
+                    </div>
                   </td>
-                ))}
-              </tr>
-            ))}
-
-            {table.getRowModel().rows.length === 0 && (
-              <tr>
-                <td
-                  className="px-4 py-12 text-center text-gray-500"
-                  colSpan={table.getAllColumns().length}
-                >
-                  <div className="flex flex-col items-center gap-2">
-                    <svg className="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
-                    No accounts found.
-                  </div>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Footer like reference */}
-      <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200 gap-4">
-        <div className="text-[0.75rem] text-gray-600 font-medium">
-          Showing {total ? start : 0} to {end} of {total} accounts
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* First */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.setPageIndex(0)}
-            disabled={!table.getCanPreviousPage()}
-            className="h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label="First page"
-          >
-            <ChevronsLeft className="w-4 h-4" />
-          </Button>
-
-          {/* Prev */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-            className="h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label="Previous page"
-          >
-            <ChevronLeftIcon className="w-4 h-4" />
-          </Button>
-
-          {/* Numbers */}
-          <div className="flex items-center gap-1">
-            {pages.map((p, idx) =>
-              typeof p === "number" ? (
-                <Button
-                  key={`${p}-${idx}`}
-                  variant={p === pageIndex + 1 ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => table.setPageIndex(p - 1)}
-                  className="h-8 w-8 p-0 text-[0.75rem] font-medium"
-                >
-                  {p}
-                </Button>
-              ) : (
-                <span key={`${p}-${idx}`} className="px-2 text-gray-400 text-[0.75rem]">
-                  …
-                </span>
-              )
-            )}
+        {/* Footer like reference */}
+        <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200 gap-4">
+          <div className="text-[0.75rem] text-gray-600 font-medium">
+            Showing {total ? start : 0} to {end} of {total} accounts
           </div>
 
-          {/* Next */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-            className="h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label="Next page"
-          >
-            <ChevronRightIcon className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-3">
+            {/* First */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.setPageIndex(0)}
+              disabled={!table.getCanPreviousPage()}
+              className="h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="First page"
+            >
+              <ChevronsLeft className="w-4 h-4" />
+            </Button>
 
-          {/* Last */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.setPageIndex(totalPages - 1)}
-            disabled={!table.getCanNextPage()}
-            className="h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label="Last page"
-          >
-            <ChevronsRight className="w-4 h-4" />
-          </Button>
+            {/* Prev */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+              className="h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Previous page"
+            >
+              <ChevronLeftIcon className="w-4 h-4" />
+            </Button>
+
+            {/* Numbers */}
+            <div className="flex items-center gap-1">
+              {pages.map((p, idx) =>
+                typeof p === "number" ? (
+                  <Button
+                    key={`${p}-${idx}`}
+                    variant={p === pageIndex + 1 ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => table.setPageIndex(p - 1)}
+                    className="h-8 w-8 p-0 text-[0.75rem] font-medium"
+                  >
+                    {p}
+                  </Button>
+                ) : (
+                  <span key={`${p}-${idx}`} className="px-2 text-gray-400 text-[0.75rem]">
+                    …
+                  </span>
+                )
+              )}
+            </div>
+
+            {/* Next */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+              className="h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Next page"
+            >
+              <ChevronRightIcon className="w-4 h-4" />
+            </Button>
+
+            {/* Last */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.setPageIndex(totalPages - 1)}
+              disabled={!table.getCanNextPage()}
+              className="h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Last page"
+            >
+              <ChevronsRight className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
 
   // Handle save button click
@@ -493,8 +515,10 @@ function AdsAccountsDataTable() {
           >
             <ChevronLeft className="w-5 h-5" /> Back to Accounts
           </button>
-          <h2 className="text-2xl font-bold mb-6">Edit Ads Account Details</h2>
-          <div className="flex flex-col md:flex-row gap-8">
+
+          <h2 className="text-2xl font-bold mb-6 text-center">Edit Ads Account Details</h2>
+
+          <div className="flex flex-col md:flex-row gap-8 justify-center">
             <div className="flex-1 flex flex-col gap-4 max-w-md">
               <div className="relative">
                 <Input
@@ -508,7 +532,7 @@ function AdsAccountsDataTable() {
               <div className="text-sm text-gray-500">
                 The ad account you wish to monitor ads for
               </div>
-              
+
               {/* Google Ads Account Details */}
               <div className="border rounded-lg p-4 bg-gray-50">
                 <div className="flex items-center justify-between mb-2">
@@ -525,7 +549,8 @@ function AdsAccountsDataTable() {
                       <CheckCircle className="w-3 h-3" />
                       Connected
                     </span>
-                    <button className="text-red-500 hover:text-red-700"
+                    <button
+                      className="text-red-500 hover:text-red-700"
                       onClick={() => {
                         setDeletingAccount(editingAccount);
                         setShowDeleteModal(true);
@@ -536,7 +561,7 @@ function AdsAccountsDataTable() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="relative">
                 <Input
                   placeholder="Monthly Budget"
@@ -548,9 +573,9 @@ function AdsAccountsDataTable() {
                 />
                 <DollarSign className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
               </div>
-              
+
               <Button
-                className="bg-blue-600 text-white text-lg font-bold px-12 py-3 rounded shadow-md mt-4"
+                className="bg-blue-600 text-white text-lg font-bold px-12 py-3 rounded shadow-md mt-4 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isSaveDisabled}
                 onClick={handleSave}
               >
@@ -563,18 +588,19 @@ function AdsAccountsDataTable() {
                   "Save"
                 )}
               </Button>
-              
-              <div className="flex items-center gap-2 text-sm text-blue-600">
-                <div className="w-4 h-4 rounded-full bg-blue-100 flex items-center justify-center">
-                  <span className="text-xs font-bold">i</span>
+
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <div className="w-4 h-4 rounded-full bg-gray-100 flex items-center justify-center">
+                  <span className="text-xs font-bold text-gray-500">i</span>
                 </div>
                 You can unlink this ad account anytime by clicking the delete button
               </div>
             </div>
           </div>
         </div>
+
       )}
-      
+
       {/* Delete Confirmation Modal */}
       {showDeleteModal && deletingAccount && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
@@ -582,9 +608,9 @@ function AdsAccountsDataTable() {
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <img 
-                  src="/images/adAlert-logo-words.avif" 
-                  alt="adAlert.io" 
+                <img
+                  src="/images/adAlert-logo-words.avif"
+                  alt="adAlert.io"
                   className="h-8 w-auto"
                 />
               </div>
@@ -598,7 +624,7 @@ function AdsAccountsDataTable() {
                 <XIcon className="w-5 h-5" />
               </button>
             </div>
-            
+
             {/* Content */}
             <div className="mb-6">
               <p className="text-gray-700">
@@ -609,7 +635,7 @@ function AdsAccountsDataTable() {
                 ?
               </p>
             </div>
-            
+
             {/* Action Buttons */}
             <div className="flex gap-3">
               <Button
