@@ -51,6 +51,7 @@ export interface UserDocument {
   // 'Pipedrive'?: string; // PipeDrive person ID
   "Mailchimp"?: string; // MailChimp subscriber ID
   "Sendgrid Marketing"?: string; // SendGrid contact ID
+  "Country"?: string;
 }
 
 interface AuthState {

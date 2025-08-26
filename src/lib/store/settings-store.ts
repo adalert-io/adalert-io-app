@@ -165,6 +165,7 @@ interface AlertSettingsState {
       optInForTextMessage,
       Telephone,
       TelephoneDialCode,
+      Country,
       avatarFile,
       currentAvatarUrl,
       ...updates
@@ -174,6 +175,7 @@ interface AlertSettingsState {
       optInForTextMessage: boolean;
       Telephone: string;
       TelephoneDialCode: string;
+      Country?: string;
       avatarFile?: File | null;
       currentAvatarUrl?: string | null;
       [key: string]: any;
@@ -991,6 +993,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       optInForTextMessage,
       Telephone,
       TelephoneDialCode,
+      Country,
       avatarFile,
       currentAvatarUrl,
       ...updates
@@ -1000,6 +1003,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       optInForTextMessage: boolean;
       Telephone: string;
       TelephoneDialCode: string;
+      Country?: string;
       avatarFile?: File | null;
       currentAvatarUrl?: string | null;
       [key: string]: any;
@@ -1038,6 +1042,9 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         Telephone,
         "Telephone Dial Code": TelephoneDialCode,
       };
+      if (Country !== undefined) {
+        updateData.Country = Country;
+      }
       if (updates["User Type"] !== undefined) {
         updateData["User Type"] = updates["User Type"];
       }
