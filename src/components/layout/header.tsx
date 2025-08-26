@@ -13,7 +13,6 @@ import {
   User,
   Settings,
   LogOut,
-  
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import * as React from "react";
@@ -143,7 +142,7 @@ export function Header() {
       {subscription &&
         (subscription["User Status"] === SUBSCRIPTION_STATUS.TRIAL_NEW ||
           subscription["User Status"] === SUBSCRIPTION_STATUS.TRIAL_ENDED) && (
-          <div className="w-full bg-[#FFEBEE] px-4 md:px-6 lg:px-20 py-4">
+          <div className="w-full bg-[#FFEBEE] px-4 md:px-6 lg:px-20 py-1">
             <div className="max-w-[1440px] mx-auto text-center">
               <span className="text-gray-900 text-sm">
                 You're on a free trial with{" "}
@@ -161,7 +160,7 @@ export function Header() {
       {/* Payment Failed Banner */}
       {subscription &&
         subscription["User Status"] === SUBSCRIPTION_STATUS.PAYMENT_FAILED && (
-          <div className="w-full bg-[#FFEBEE] px-4 md:px-6 lg:px-20 py-4">
+          <div className="w-full bg-[#FFEBEE] px-4 md:px-6 lg:px-20 py-1">
             <div className="max-w-[1440px] mx-auto text-center">
               <span className="text-gray-900 text-sm">
                 Your subscription payment has failed. Please update your payment

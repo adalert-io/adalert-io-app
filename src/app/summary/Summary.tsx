@@ -581,7 +581,7 @@ export default function Summary() {
                         </div>
                       </td>
                       {/* Budget Pacing */}
-                      <td className="px-6 py-6 min-w-[240px] mr-4">
+                      <td className="px-4 py-6 min-w-[240px]">
                         <div className="flex items-center gap-3">
                           {/* Progress bar */}
                           <div className="relative w-full h-6 flex items-center">
