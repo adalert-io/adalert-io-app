@@ -942,10 +942,13 @@ export default function Dashboard() {
   }
 
   const handleDownloadCsv = () => {
-    if (selectedAlerts.length === 0) return;
+    const alertsToDownload =
+      selectedAlerts.length === 0 ? filteredAlerts : selectedAlerts;
+    if (alertsToDownload.length === 0) return;
+
     const csvRows = [
       ["Alert", "Date Found", "Is Archived", "Severity"],
-      ...selectedAlerts.map((alert) => [
+      ...alertsToDownload.map((alert) => [
         alert?.["Alert"],
         formatDate(alert?.["Date Found"]),
         alert?.["Is Archived"] ? "Yes" : "No",
@@ -1620,7 +1623,6 @@ export default function Dashboard() {
                 variant="outline"
                 size="icon"
                 className="relative"
-                disabled={selectedAlerts.length === 0}
                 onClick={handleDownloadCsv}
               >
                 <FileIcon className="w-6 h-6 text-[#015AFD]" />
