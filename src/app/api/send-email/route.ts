@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     if (!toEmail) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       });
       return NextResponse.json(
         { error: "Email configuration error" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
     // Prepare the email data following SendGrid template format
     const email = {
-      to: "mzhou@decodifi.uk", // toEmail,
+      to: toEmail,
       from: fromEmail,
       templateId: templateId,
       dynamic_template_data: tags,
@@ -57,13 +57,13 @@ export async function POST(request: NextRequest) {
       console.error("SendGrid API error:", { message, code, response });
       return NextResponse.json(
         { error: "Failed to send email", details: message },
-        { status: response.statusCode || 500 }
+        { status: response.statusCode || 500 },
       );
     }
 
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
