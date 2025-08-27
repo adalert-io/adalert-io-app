@@ -154,10 +154,11 @@ function KpiMetricsRow({
           <button
             key={p.key}
             type="button"
-            className={`px-4 py-2 rounded-lg font-semibold border transition-colors text-base ${activePeriod === p.key
+            className={`px-4 py-2 rounded-lg font-semibold border transition-colors text-base ${
+              activePeriod === p.key
                 ? "bg-[#015AFD] text-white border-[#015AFD]"
                 : "bg-white text-[#015AFD] border-[#015AFD] hover:bg-blue-50"
-              }`}
+            }`}
             onClick={() => setActivePeriod(p.key)}
           >
             {p.label}
@@ -179,15 +180,15 @@ function KpiMetricsRow({
                 pct > 0
                   ? "text-red-600"
                   : pct < 0
-                    ? "text-green-600"
-                    : "text-black";
+                  ? "text-green-600"
+                  : "text-black";
             } else {
               pctColor =
                 pct > 0
                   ? "text-green-600"
                   : pct < 0
-                    ? "text-red-600"
-                    : "text-black";
+                  ? "text-red-600"
+                  : "text-black";
             }
           }
           let valueDisplay = value;
@@ -208,9 +209,9 @@ function KpiMetricsRow({
             pct === 0
               ? "0%"
               : `${pct > 0 ? "+" : ""}${Number(pct).toLocaleString("en-US", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}%`;
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}%`;
           return (
             <Card
               key={field.label}
@@ -451,100 +452,100 @@ export default function Dashboard() {
     expandedRowIds: string[],
     setExpandedRowIds: React.Dispatch<React.SetStateAction<string[]>>,
   ): ColumnDef<any>[] => [
-      {
-        id: "select",
-        header: ({ table }) => (
-          <Checkbox
-            checked={table.getIsAllPageRowsSelected()}
-            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-            aria-label="Select all"
-          />
-        ),
-        cell: ({ row }) => (
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Select row"
-          />
-        ),
-        enableSorting: false,
-        enableHiding: false,
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      accessorKey: "date",
+      header: "Found",
+      cell: ({ row }) => {
+        const dateObj = row.original["Date Found"]?.toDate?.();
+        const formatted = dateObj ? moment(dateObj).format("DD MMM") : "-";
+        return <span>{formatted}</span>;
       },
-      {
-        accessorKey: "date",
-        header: "Found",
-        cell: ({ row }) => {
-          const dateObj = row.original["Date Found"]?.toDate?.();
-          const formatted = dateObj ? moment(dateObj).format("DD MMM") : "-";
-          return <span>{formatted}</span>;
-        },
-      },
-      {
-        accessorKey: "severity",
-        header: "Severity",
-        cell: ({ row }) => {
-          let color = ALERT_SEVERITY_COLORS.LOW; // default fallback
-          if (
-            row.original.Severity?.toLowerCase() ===
-            ALERT_SEVERITIES.CRITICAL.toLowerCase()
-          ) {
-            color = ALERT_SEVERITY_COLORS.CRITICAL;
-          } else if (
-            row.original.Severity?.toLowerCase() ===
-            ALERT_SEVERITIES.MEDIUM.toLowerCase()
-          ) {
-            color = ALERT_SEVERITY_COLORS.MEDIUM;
-          }
+    },
+    {
+      accessorKey: "severity",
+      header: "Severity",
+      cell: ({ row }) => {
+        let color = ALERT_SEVERITY_COLORS.LOW; // default fallback
+        if (
+          row.original.Severity?.toLowerCase() ===
+          ALERT_SEVERITIES.CRITICAL.toLowerCase()
+        ) {
+          color = ALERT_SEVERITY_COLORS.CRITICAL;
+        } else if (
+          row.original.Severity?.toLowerCase() ===
+          ALERT_SEVERITIES.MEDIUM.toLowerCase()
+        ) {
+          color = ALERT_SEVERITY_COLORS.MEDIUM;
+        }
 
-          return (
-            <span
-              className="inline-block w-3 h-3 rounded-full"
-              style={{ backgroundColor: color }}
-            />
-          );
-        },
+        return (
+          <span
+            className="inline-block w-3 h-3 rounded-full"
+            style={{ backgroundColor: color }}
+          />
+        );
       },
+    },
 
-      {
-        accessorKey: "description",
-        header: "Description",
-        cell: ({ row }) => <span>{row.original.Alert}</span>,
+    {
+      accessorKey: "description",
+      header: "Description",
+      cell: ({ row }) => <span>{row.original.Alert}</span>,
+    },
+    {
+      accessorKey: "type",
+      header: "Type",
+      cell: ({ row }) => <span>{row.original.Type}</span>,
+    },
+    {
+      accessorKey: "level",
+      header: "Level",
+      cell: ({ row }) => <span>{row.original.Level}</span>,
+    },
+    {
+      id: "expand",
+      header: "",
+      cell: ({ row }) => {
+        const isExpanded = expandedRowIds.includes(row.id);
+        return (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              setExpandedRowIds((ids: string[]) =>
+                isExpanded
+                  ? ids.filter((id: string) => id !== row.id)
+                  : [...ids, row.id],
+              );
+            }}
+          >
+            {isExpanded ? <ChevronUp /> : <ChevronDown />}
+          </Button>
+        );
       },
-      {
-        accessorKey: "type",
-        header: "Type",
-        cell: ({ row }) => <span>{row.original.Type}</span>,
-      },
-      {
-        accessorKey: "level",
-        header: "Level",
-        cell: ({ row }) => <span>{row.original.Level}</span>,
-      },
-      {
-        id: "expand",
-        header: "",
-        cell: ({ row }) => {
-          const isExpanded = expandedRowIds.includes(row.id);
-          return (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                setExpandedRowIds((ids: string[]) =>
-                  isExpanded
-                    ? ids.filter((id: string) => id !== row.id)
-                    : [...ids, row.id],
-                );
-              }}
-            >
-              {isExpanded ? <ChevronUp /> : <ChevronDown />}
-            </Button>
-          );
-        },
-        enableSorting: false,
-        enableHiding: false,
-      },
-    ];
+      enableSorting: false,
+      enableHiding: false,
+    },
+  ];
 
   function AlertsDataTable({
     pageSize,
@@ -667,10 +668,16 @@ export default function Dashboard() {
                     {row.getVisibleCells().map((cell) => (
                       <td
                         key={cell.id}
-                        className={`px-4 py-6 text-gray-900 text-[0.75rem] ${expandedRowIds.includes(row.id) ? "font-bold" : "font-normal"
-                          }`}
+                        className={`px-4 py-6 text-gray-900 text-[0.75rem] ${
+                          expandedRowIds.includes(row.id)
+                            ? "font-bold"
+                            : "font-normal"
+                        }`}
                       >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
                       </td>
                     ))}
                   </tr>
@@ -699,12 +706,14 @@ export default function Dashboard() {
           <div className="text-[0.75rem] text-gray-600 font-medium">
             Showing{" "}
             {table.getRowModel().rows.length > 0
-              ? table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1
+              ? table.getState().pagination.pageIndex *
+                  table.getState().pagination.pageSize +
+                1
               : 0}{" "}
             to{" "}
             {Math.min(
               (table.getState().pagination.pageIndex + 1) *
-              table.getState().pagination.pageSize,
+                table.getState().pagination.pageSize,
               table.getFilteredRowModel().rows.length,
             )}{" "}
             of {table.getFilteredRowModel().rows.length} results
@@ -843,7 +852,6 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-
     );
   }
 
@@ -999,12 +1007,13 @@ export default function Dashboard() {
                 </svg>
               </span>
               <span
-                className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 ${!adsLabel
+                className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 ${
+                  !adsLabel
                     ? "bg-[#E9F6EA] text-[#7A7D9C]"
                     : adsLabel["Is Showing Ads"]
-                      ? "bg-[#E9F6EA] text-[#34A853]"
-                      : "bg-[#ffebee] text-[#ee1b23]"
-                  }`}
+                    ? "bg-[#E9F6EA] text-[#34A853]"
+                    : "bg-[#ffebee] text-[#ee1b23]"
+                }`}
               >
                 {!adsLabel ? (
                   <svg width="18" height="18" fill="none" viewBox="0 0 18 18">
@@ -1049,8 +1058,8 @@ export default function Dashboard() {
                 {!adsLabel
                   ? "Checking"
                   : adsLabel["Is Showing Ads"]
-                    ? "Showing Ad"
-                    : "Not Showing Ad"}
+                  ? "Showing Ad"
+                  : "Not Showing Ad"}
               </span>
               <span className="text-xl md:text-2xl font-bold text-gray-900">
                 {selectedAdsAccount?.["Account Name Editable"] || "-"}
@@ -1063,30 +1072,30 @@ export default function Dashboard() {
                 spendMtdIndicatorLoading ||
                 kpiDataLoading ||
                 currencySymbolLoading) && (
-                  <span className="ml-4 px-3 py-1 rounded-xl bg-blue-100 text-blue-900 flex items-center gap-2 text-base font-semibold animate-fade-in">
-                    <svg
-                      className="animate-spin h-5 w-5 text-blue-500"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v8z"
-                      />
-                    </svg>
-                    analyzing...
-                  </span>
-                )}
+                <span className="ml-4 px-3 py-1 rounded-xl bg-blue-100 text-blue-900 flex items-center gap-2 text-base font-semibold animate-fade-in">
+                  <svg
+                    className="animate-spin h-5 w-5 text-blue-500"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8z"
+                    />
+                  </svg>
+                  analyzing...
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -1166,7 +1175,8 @@ export default function Dashboard() {
                       {spendMtdLoading
                         ? "--"
                         : dashboardDaily?.["Spend MTD"] != null
-                          ? `${selectedAdsAccount?.["Currency Symbol"] || "$"
+                        ? `${
+                            selectedAdsAccount?.["Currency Symbol"] || "$"
                           }${Number(dashboardDaily["Spend MTD"]).toLocaleString(
                             "en-US",
                             {
@@ -1174,13 +1184,13 @@ export default function Dashboard() {
                               maximumFractionDigits: 2,
                             },
                           )}`
-                          : "--"}
+                        : "--"}
                     </span>
                     <span className="ml-1 mt-1">
                       {(() => {
                         const key =
                           dashboardDaily?.["Spend MTD Indicator Alert"]?.[
-                          "Key"
+                            "Key"
                           ];
                         let color = "#1BC47D"; // green default
                         if (
@@ -1261,11 +1271,11 @@ export default function Dashboard() {
                           {selectedAdsAccount?.["Currency Symbol"] || "$"}
                           {selectedAdsAccount?.["Monthly Budget"] != null
                             ? Number(
-                              selectedAdsAccount["Monthly Budget"],
-                            ).toLocaleString("en-US", {
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 0,
-                            })
+                                selectedAdsAccount["Monthly Budget"],
+                              ).toLocaleString("en-US", {
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              })
                             : "--"}
                         </span>
                       </>
@@ -1284,6 +1294,7 @@ export default function Dashboard() {
                   const percent = budget
                     ? Math.min((spend / budget) * 100, 100)
                     : 0;
+                  const percentText = budget ? (spend / budget) * 100 : 0;
                   const now = moment();
                   const day = now.date();
                   const daysInMonth = now.daysInMonth();
@@ -1306,7 +1317,7 @@ export default function Dashboard() {
                           className="absolute top-0 left-0 h-6 flex items-center text-black text-xs font-semibold select-none"
                           style={{ left: `calc(${percent}% + 8px)` }}
                         >
-                          {percent.toFixed(1)}%
+                          {percentText.toFixed(1)}%
                         </span>
                       ) : (
                         <span
@@ -1316,7 +1327,7 @@ export default function Dashboard() {
                             transform: "translateX(-50%)",
                           }}
                         >
-                          {percent.toFixed(1)}%
+                          {percentText.toFixed(1)}%
                         </span>
                       )}
                       {/* Current day marker */}

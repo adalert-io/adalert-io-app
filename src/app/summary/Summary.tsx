@@ -589,7 +589,7 @@ export default function Summary() {
                             <div
                               className="absolute left-0 top-1/2 -translate-y-1/2 h-6 rounded-full bg-[#156CFF] shadow-sm"
                               style={{
-                                width: `${acc.progressBar.percent}%`,
+                                width: `${acc.progressBar.percent.toFixed(1)}%`,
                                 minWidth: acc.progressBar.percent > 0 ? 10 : 0,
                               }}
                             />
@@ -601,7 +601,7 @@ export default function Summary() {
                                   left: `calc(${acc.progressBar.percent}% + 12px)`,
                                 }}
                               >
-                                {acc.progressBar.percent.toFixed(1)}%
+                                {acc.progressBar.percentText.toFixed(1)}%
                               </span>
                             ) : (
                               <span
@@ -613,7 +613,7 @@ export default function Summary() {
                                   transform: "translateX(-50%)",
                                 }}
                               >
-                                {acc.progressBar.percent.toFixed(1)}%
+                                {acc.progressBar.percentText.toFixed(1)}%
                               </span>
                             )}
                             {/* Vertical line for current day */}
