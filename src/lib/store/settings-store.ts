@@ -975,8 +975,8 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       const snap = await getDocs(q);
       const updatePromises = snap.docs.map((docSnap) =>
         updateDoc(docSnap.ref, {
-          "Monthly Budget": monthly,
-          "Daily Budget": daily,
+          "MonthlyBudget": monthly,
+          "DailyBudget": daily,
         }),
       );
       await Promise.all(updatePromises);
