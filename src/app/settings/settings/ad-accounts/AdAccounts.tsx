@@ -135,7 +135,7 @@ export default function AdAccountsSubtab() {
     },
     {
       accessorKey: "Is Connected",
-      header: "Connected",
+      header: "Status",
       cell: ({ row }) => (
         <span
           className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-normal ${row.original["Is Connected"]
@@ -159,7 +159,7 @@ export default function AdAccountsSubtab() {
     },
     {
       accessorKey: "Send Me Alert",
-      header: "Send me alert",
+      header: "Send me alerts",
       cell: ({ row }) => (
         <Switch
           checked={row.original["Send Me Alert"] || false}

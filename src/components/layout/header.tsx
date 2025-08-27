@@ -155,11 +155,11 @@ export function Header() {
               </span>
               <span className="text-gray-900 text-[13px]">
                 {" "}
-                - Upgrade for 24/7 monitoring and peace of mind!
+                - Upgrade for 24/7 monitoring and peace of mind! 
               </span>
               <button
                 onClick={() => router.push("/settings/account/billing")}
-                className="text-white rounded rounded-[5px] border px-2 py-1 bg-[#da486b] font-medium hover:bg-blue-700 transition-colors text-[13px] ml-1 cursor-pointer"
+                className="text-white rounded rounded-[5px] border px-3 py-1 bg-[#da486b] font-medium hover:bg-[#000] transition-colors text-[12px] ml-3 cursor-pointer"
                 >Upgrade Now</button>
             </div>
           </div>
@@ -172,7 +172,7 @@ export function Header() {
               <span className="text-gray-900 text-sm">
                 <CreditCardIcon className="inline w-4 h-4 mb-1 mr-1" />
                 Your subscription payment has failed. Please update your payment
-                method to avoid any service interruptions.{" "}
+                method to avoid any service interruptions.{" "} 
               </span>
               <button
                 onClick={() => router.push("/settings/account/billing")}
