@@ -126,11 +126,3 @@
     grid-template-columns: 1fr;
 }
 }
-@media(max-width:640px){
-.custom-db {
-   height:100% !important
-}
-.custom-db button {
-    width: 100%;
-}
-}

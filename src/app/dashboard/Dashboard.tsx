@@ -155,8 +155,8 @@ function KpiMetricsRow({
             key={p.key}
             type="button"
             className={`px-4 py-2 rounded-lg font-semibold border transition-colors text-base ${activePeriod === p.key
-                ? "bg-[#015AFD] text-white border-[#015AFD]"
-                : "bg-white text-[#015AFD] border-[#015AFD] hover:bg-blue-50"
+              ? "bg-[#015AFD] text-white border-[#015AFD]"
+              : "bg-white text-[#015AFD] border-[#015AFD] hover:bg-blue-50"
               }`}
             onClick={() => setActivePeriod(p.key)}
           >
@@ -445,7 +445,8 @@ export default function Dashboard() {
     }, 1500);
     return () => clearTimeout(handler);
   }, [searchValue]);
-
+const checkboxClass =
+  "shadow-none border-[#c5c5c5] text-[#c5c5c5] data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600";
   // Alerts Table Columns
   const useAlertColumns = (
     expandedRowIds: string[],
@@ -458,6 +459,7 @@ export default function Dashboard() {
             checked={table.getIsAllPageRowsSelected()}
             onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
             aria-label="Select all"
+             className={checkboxClass}
           />
         ),
         cell: ({ row }) => (
@@ -465,6 +467,7 @@ export default function Dashboard() {
             checked={row.getIsSelected()}
             onCheckedChange={(value) => row.toggleSelected(!!value)}
             aria-label="Select row"
+             className={checkboxClass}
           />
         ),
         enableSorting: false,
@@ -639,9 +642,9 @@ export default function Dashboard() {
     return (
       <div className="bg-white rounded-2xl shadow-none border border-[#e5e5e5] overflow-hidden mt-6">
         <div className="overflow-x-auto">
-          <table className="min-w-full text-[0.75rem]">
+          <table className="min-w-full">
             {/* Header */}
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-gray-50 border-b border-gray-200 text-[0.85rem]">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
@@ -660,14 +663,14 @@ export default function Dashboard() {
             </thead>
 
             {/* Body */}
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 text-[1rem]">
               {table.getRowModel().rows.map((row) => (
                 <React.Fragment key={row.id}>
                   <tr className="hover:bg-gray-50 transition-colors">
                     {row.getVisibleCells().map((cell) => (
                       <td
                         key={cell.id}
-                        className={`px-4 py-6 text-gray-900 text-[0.75rem] ${expandedRowIds.includes(row.id) ? "font-bold" : "font-normal"
+                        className={`px-4 py-3 text-gray-900 text-[.95rem] ${expandedRowIds.includes(row.id) ? "font-medium" : "font-normal"
                           }`}
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -1000,10 +1003,10 @@ export default function Dashboard() {
               </span>
               <span
                 className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 ${!adsLabel
-                    ? "bg-[#E9F6EA] text-[#7A7D9C]"
-                    : adsLabel["Is Showing Ads"]
-                      ? "bg-[#E9F6EA] text-[#34A853]"
-                      : "bg-[#ffebee] text-[#ee1b23]"
+                  ? "bg-[#E9F6EA] text-[#7A7D9C]"
+                  : adsLabel["Is Showing Ads"]
+                    ? "bg-[#E9F6EA] text-[#34A853]"
+                    : "bg-[#ffebee] text-[#ee1b23]"
                   }`}
               >
                 {!adsLabel ? (
@@ -1381,237 +1384,237 @@ export default function Dashboard() {
         />
         {/* Alerts Table */}
         <div className="bg-white rounded-2xl border border-[#e5e5e5] p-4 max-[991px]:block whitespace-nowrap overflow-x-auto">
-<div className="flex flex-col gap-3 mb-2">
-  {/* Parent row: behaves like row on desktop, column on mobile */}
-  <div className="flex justify-between items-start max-[599px]:flex-col max-[599px]:gap-3">
-    
-    {/* Left Side (Heading, tooltips, settings, selection) */}
-    <div className="flex items-center gap-2 flex-wrap">
-      <h2 className="text-lg font-bold text-gray-900">Alerts</h2>
+          <div className="flex flex-col gap-3 mb-2">
+            {/* Parent row: behaves like row on desktop, column on mobile */}
+            <div className="flex justify-between items-start max-[599px]:flex-col max-[599px]:gap-3">
 
-      {alertsLoading && (
-        <div className="flex items-center gap-2 ml-2">
-          <svg
-            className="animate-spin h-4 w-4 text-blue-500"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8v8z"
-            />
-          </svg>
-          <span className="text-xs text-blue-600 font-medium">
-            Updating...
-          </span>
-        </div>
-      )}
+              {/* Left Side (Heading, tooltips, settings, selection) */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-lg font-bold text-gray-900">Alerts</h2>
 
-      {/* Auto-refresh tooltip */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button
-            type="button"
-            className="p-0.5 rounded hover:bg-gray-100 transition-colors"
-            aria-label="Auto-refresh active"
-          >
-            <svg
-              className="w-3 h-3 text-green-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          </button>
-        </TooltipTrigger>
-        <TooltipContent side="top" align="center" className="max-w-xs text-xs">
-          Alerts will automatically refresh every 15 minutes
-        </TooltipContent>
-      </Tooltip>
+                {alertsLoading && (
+                  <div className="flex items-center gap-2 ml-2">
+                    <svg
+                      className="animate-spin h-4 w-4 text-blue-500"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v8z"
+                      />
+                    </svg>
+                    <span className="text-xs text-blue-600 font-medium">
+                      Updating...
+                    </span>
+                  </div>
+                )}
 
-      {/* Info tooltip */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button
-            type="button"
-            className="p-0.5 rounded hover:bg-gray-100 transition-colors"
-            aria-label="Alerts information"
-          >
-            <AlertTriangle className="w-3 h-3 text-gray-400" />
-          </button>
-        </TooltipTrigger>
-        <TooltipContent side="top" align="center" className="max-w-xs text-xs">
-          There might be data discrepancies between the results shown in the
-          adAlert dashboard and what's reported by the ad vendor due to
-          retroactive data updates made by the vendor.
-        </TooltipContent>
-      </Tooltip>
+                {/* Auto-refresh tooltip */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      className="p-0.5 rounded hover:bg-gray-100 transition-colors"
+                      aria-label="Auto-refresh active"
+                    >
+                      <svg
+                        className="w-3 h-3 text-green-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" align="center" className="max-w-xs text-xs">
+                    Alerts will automatically refresh every 15 minutes
+                  </TooltipContent>
+                </Tooltip>
 
-      <button
-        type="button"
-        onClick={() => router.push("/settings")}
-        className="text-xs text-gray-400 hover:text-gray-600 hover:underline cursor-pointer transition-colors"
-      >
-        Settings
-      </button>
+                {/* Info tooltip */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      className="p-0.5 rounded hover:bg-gray-100 transition-colors"
+                      aria-label="Alerts information"
+                    >
+                      <AlertTriangle className="w-3 h-3 text-gray-400" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" align="center" className="max-w-xs text-xs">
+                    There might be data discrepancies between the results shown in the
+                    adAlert dashboard and what's reported by the ad vendor due to
+                    retroactive data updates made by the vendor.
+                  </TooltipContent>
+                </Tooltip>
 
-      {/* Selection bar */}
-      {selectedAlerts.length > 0 && (
-        <div className="flex items-center gap-2 ml-4">
-          <span className="font-semibold text-sm text-[#232360]">
-            {selectedAlerts.length} Selected
-          </span>
-          <span className="h-5 border-l border-gray-200 mx-1" />
-          <Button
-            className="bg-[#156CFF] hover:bg-[#156CFF]/90 text-white font-semibold h-7 px-3 py-1 rounded-md text-xs"
-            disabled={isArchiving}
-            onClick={async () => {
-              setIsArchiving(true);
-              try {
-                const shouldArchive = filters.label === "Unarchive";
-                if (selectedAdsAccount) {
-                  await archiveAlerts(
-                    selectedAlerts
-                      .filter(
-                        (a): a is Alert => !!a && typeof a.id === "string",
-                      )
-                      .map((a) => a.id),
-                    shouldArchive,
-                    selectedAdsAccount.id,
-                  );
-                }
-                setSelectedAlertIds([]);
-              } catch (err) {
-                console.error("Failed to update alerts", err);
-              } finally {
-                setIsArchiving(false);
-              }
-            }}
-          >
-            {filters.label === "Unarchive" ? "Archive" : "Unarchive"}
-          </Button>
-        </div>
-      )}
-    </div>
+                <button
+                  type="button"
+                  onClick={() => router.push("/settings")}
+                  className="text-xs text-gray-400 hover:text-gray-600 hover:underline cursor-pointer transition-colors"
+                >
+                  Settings
+                </button>
 
-    {/* Right Side (Search, filters, export, rows select) */}
-    <div className="flex gap-2 flex-wrap justify-end max-[599px]:justify-start">
-      {showSearch && (
-        <div className="flex items-center border rounded-lg px-3 py-1 bg-white shadow-none focus-within:ring-2 focus-within:ring-blue-200 transition-all min-w-[200px]">
-          <input
-            className="outline-none border-none bg-transparent text-sm text-gray-500 placeholder-gray-400 flex-1"
-            placeholder="Search for alerts"
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-            autoFocus
-          />
-          {searchValue && (
-            <button
-              type="button"
-              className="ml-1 text-gray-400 hover:text-gray-600"
-              onClick={() => setSearchValue("")}
-              aria-label="Clear search"
-            >
-              <XIcon className="w-5 h-5" />
-            </button>
-          )}
-        </div>
-      )}
+                {/* Selection bar */}
+                {selectedAlerts.length > 0 && (
+                  <div className="flex items-center gap-2 ml-4">
+                    <span className="font-semibold text-sm text-[#232360]">
+                      {selectedAlerts.length} Selected
+                    </span>
+                    <span className="h-5 border-l border-gray-200 mx-1" />
+                    <Button
+                      className="bg-[#156CFF] hover:bg-[#156CFF]/90 text-white font-semibold h-7 px-3 py-1 rounded-md text-xs"
+                      disabled={isArchiving}
+                      onClick={async () => {
+                        setIsArchiving(true);
+                        try {
+                          const shouldArchive = filters.label === "Unarchive";
+                          if (selectedAdsAccount) {
+                            await archiveAlerts(
+                              selectedAlerts
+                                .filter(
+                                  (a): a is Alert => !!a && typeof a.id === "string",
+                                )
+                                .map((a) => a.id),
+                              shouldArchive,
+                              selectedAdsAccount.id,
+                            );
+                          }
+                          setSelectedAlertIds([]);
+                        } catch (err) {
+                          console.error("Failed to update alerts", err);
+                        } finally {
+                          setIsArchiving(false);
+                        }
+                      }}
+                    >
+                      {filters.label === "Unarchive" ? "Archive" : "Unarchive"}
+                    </Button>
+                  </div>
+                )}
+              </div>
 
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={() => setShowSearch((v) => !v)}
-        className={showSearch ? "border-blue-200" : ""}
-        aria-label="Show search"
-      >
-        <MagnifyingGlassIcon className="w-6 h-6 text-[#015AFD]" />
-      </Button>
+              {/* Right Side (Search, filters, export, rows select) */}
+              <div className="flex gap-2 flex-wrap justify-end max-[599px]:justify-start">
+                {showSearch && (
+                  <div className="flex items-center border rounded-lg px-3 py-1 bg-white shadow-none focus-within:ring-2 focus-within:ring-blue-200 transition-all min-w-[200px]">
+                    <input
+                      className="outline-none border-none bg-transparent text-sm text-gray-500 placeholder-gray-400 flex-1"
+                      placeholder="Search for alerts"
+                      value={searchValue}
+                      onChange={(e) => setSearchValue(e.target.value)}
+                      autoFocus
+                    />
+                    {searchValue && (
+                      <button
+                        type="button"
+                        className="ml-1 text-gray-400 hover:text-gray-600"
+                        onClick={() => setSearchValue("")}
+                        aria-label="Clear search"
+                      >
+                        <XIcon className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
+                )}
 
-      <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-        <PopoverTrigger asChild>
-          <Button variant="outline" size="icon" aria-label="Open filters">
-            <Filter className="w-6 h-6 text-[#015AFD]" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="end">
-          <FilterPopover
-            filterState={filters}
-            onFilterChange={handleFilterChange}
-            onClose={() => setIsFilterOpen(false)}
-          />
-        </PopoverContent>
-      </Popover>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setShowSearch((v) => !v)}
+                  className={showSearch ? "border-blue-200" : ""}
+                  aria-label="Show search"
+                >
+                  <MagnifyingGlassIcon className="w-6 h-6 text-[#015AFD]" />
+                </Button>
 
-      {/* PDF button */}
-      <Button
-        variant="outline"
-        size="icon"
-        className="relative"
-        disabled={isGeneratingPdf}
-        onClick={async () => {
-          if (!selectedAdsAccount) return;
-          setIsGeneratingPdf(true);
-          try {
-            await generateAlertsPdf(selectedAdsAccount);
-          } catch (err) {
-            console.error("Failed to generate PDF", err);
-          } finally {
-            setIsGeneratingPdf(false);
-          }
-        }}
-        aria-label="Export PDF"
-      >
-        <FileIcon className="w-6 h-6 text-[#015AFD]" />
-        <span className="absolute bottom-0 right-0 text-[8px] font-bold text-[#015AFD] pr-[2px] pb-[1px] leading-none pointer-events-none">
-          PDF
-        </span>
-      </Button>
+                <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="icon" aria-label="Open filters">
+                      <Filter className="w-6 h-6 text-[#015AFD]" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <FilterPopover
+                      filterState={filters}
+                      onFilterChange={handleFilterChange}
+                      onClose={() => setIsFilterOpen(false)}
+                    />
+                  </PopoverContent>
+                </Popover>
 
-      {/* CSV button */}
-      <Button
-        variant="outline"
-        size="icon"
-        className="relative"
-        disabled={selectedAlerts.length === 0}
-        onClick={handleDownloadCsv}
-        aria-label="Export CSV"
-      >
-        <FileIcon className="w-6 h-6 text-[#015AFD]" />
-        <span className="absolute bottom-0 right-0 text-[8px] font-bold text-[#015AFD] pr-[2px] pb-[1px] leading-none pointer-events-none">
-          CSV
-        </span>
-      </Button>
+                {/* PDF button */}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="relative"
+                  disabled={isGeneratingPdf}
+                  onClick={async () => {
+                    if (!selectedAdsAccount) return;
+                    setIsGeneratingPdf(true);
+                    try {
+                      await generateAlertsPdf(selectedAdsAccount);
+                    } catch (err) {
+                      console.error("Failed to generate PDF", err);
+                    } finally {
+                      setIsGeneratingPdf(false);
+                    }
+                  }}
+                  aria-label="Export PDF"
+                >
+                  <FileIcon className="w-6 h-6 text-[#015AFD]" />
+                  <span className="absolute bottom-0 right-0 text-[8px] font-bold text-[#015AFD] pr-[2px] pb-[1px] leading-none pointer-events-none">
+                    PDF
+                  </span>
+                </Button>
 
-      <select
-        className="border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm bg-white shadow-none hover:border-gray-300 transition-colors focus:ring-2 focus:ring-blue-200 focus:border-blue-300 cursor-pointer font-medium text-gray-700"
-        value={pageSize}
-        onChange={(e) => setPageSize(Number(e.target.value))}
-      >
-        <option value={15}>15 rows</option>
-        <option value={25}>25 rows</option>
-        <option value={50}>50 rows</option>
-        <option value={100}>100 rows</option>
-      </select>
-    </div>
-  </div>
-</div>
+                {/* CSV button */}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="relative"
+                  disabled={selectedAlerts.length === 0}
+                  onClick={handleDownloadCsv}
+                  aria-label="Export CSV"
+                >
+                  <FileIcon className="w-6 h-6 text-[#015AFD]" />
+                  <span className="absolute bottom-0 right-0 text-[8px] font-bold text-[#015AFD] pr-[2px] pb-[1px] leading-none pointer-events-none">
+                    CSV
+                  </span>
+                </Button>
+
+                <select
+                  className="border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm bg-white shadow-none hover:border-gray-300 transition-colors focus:ring-2 focus:ring-blue-200 focus:border-blue-300 cursor-pointer font-medium text-gray-700"
+                  value={pageSize}
+                  onChange={(e) => setPageSize(Number(e.target.value))}
+                >
+                  <option value={15}>15 rows</option>
+                  <option value={25}>25 rows</option>
+                  <option value={50}>50 rows</option>
+                  <option value={100}>100 rows</option>
+                </select>
+              </div>
+            </div>
+          </div>
 
           <div className="relative">
             <AlertsDataTable
