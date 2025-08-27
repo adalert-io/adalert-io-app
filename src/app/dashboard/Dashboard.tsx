@@ -445,8 +445,8 @@ export default function Dashboard() {
     }, 1500);
     return () => clearTimeout(handler);
   }, [searchValue]);
-const checkboxClass =
-  "shadow-none border-[#c5c5c5] text-[#c5c5c5] data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600";
+  const checkboxClass =
+    "shadow-none border-[#c5c5c5] text-[#c5c5c5] data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600";
   // Alerts Table Columns
   const useAlertColumns = (
     expandedRowIds: string[],
@@ -459,7 +459,7 @@ const checkboxClass =
             checked={table.getIsAllPageRowsSelected()}
             onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
             aria-label="Select all"
-             className={checkboxClass}
+            className={checkboxClass}
           />
         ),
         cell: ({ row }) => (
@@ -467,7 +467,7 @@ const checkboxClass =
             checked={row.getIsSelected()}
             onCheckedChange={(value) => row.toggleSelected(!!value)}
             aria-label="Select row"
-             className={checkboxClass}
+            className={checkboxClass}
           />
         ),
         enableSorting: false,
@@ -937,10 +937,14 @@ const checkboxClass =
   }
 
   const handleDownloadCsv = () => {
-    if (selectedAlerts.length === 0) return;
+    // Use selected alerts if any, otherwise all filtered alerts
+    const exportAlerts = selectedAlerts.length > 0 ? selectedAlerts : filteredAlerts;
+
+    if (exportAlerts.length === 0) return;
+
     const csvRows = [
       ["Alert", "Date Found", "Is Archived", "Severity"],
-      ...selectedAlerts.map((alert) => [
+      ...exportAlerts.map((alert) => [
         alert?.["Alert"],
         formatDate(alert?.["Date Found"]),
         alert?.["Is Archived"] ? "Yes" : "No",
@@ -955,6 +959,7 @@ const checkboxClass =
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     saveAs(blob, "alerts.csv");
   };
+
 
   const [isArchiving, setIsArchiving] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -1592,7 +1597,6 @@ const checkboxClass =
                   variant="outline"
                   size="icon"
                   className="relative"
-                  disabled={selectedAlerts.length === 0}
                   onClick={handleDownloadCsv}
                   aria-label="Export CSV"
                 >
@@ -1601,6 +1605,7 @@ const checkboxClass =
                     CSV
                   </span>
                 </Button>
+
 
                 <select
                   className="border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm bg-white shadow-none hover:border-gray-300 transition-colors focus:ring-2 focus:ring-blue-200 focus:border-blue-300 cursor-pointer font-medium text-gray-700"
