@@ -529,19 +529,16 @@ export default function Dashboard() {
         cell: ({ row }) => {
           const isExpanded = expandedRowIds.includes(row.id);
           return (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                setExpandedRowIds((ids: string[]) =>
-                  isExpanded
-                    ? ids.filter((id: string) => id !== row.id)
-                    : [...ids, row.id],
-                );
-              }}
-            >
-              {isExpanded ? <ChevronUp /> : <ChevronDown />}
-            </Button>
+           <Button
+  variant="ghost"
+  size="icon"
+  onClick={() => {
+    setExpandedRowIds(isExpanded ? [] : [row.id]); // ✅ only 1 open at a time
+  }}
+>
+  {isExpanded ? <ChevronUp /> : <ChevronDown />}
+</Button>
+
           );
         },
         enableSorting: false,
@@ -1105,7 +1102,7 @@ export default function Dashboard() {
         >
           {/* Row 2: Cards in a row (Critical, Medium, Low, Spend MTD/Budget) */}
           <div className="flex gap-4 flex-nowrap justify-center max-w-full h-full md:flex-wrap  lg:flex-wrap max-[767px]:pb-0 flex-nowrap max-[1211px]:justify-start flex">
-            <Card className="w-full sm:w-64 md:w-[190px] h-[90px] shadow-none bg-white border-l-4 border-[#E53935] max-[767px]:w-[32%] ">
+            <Card className="w-full sm:w-64 md:w-[190px] h-[90px] shadow-none bg-white border-l-4 border-[#ED1A22] max-[767px]:w-[32%] ">
               <CardContent className="h-full flex flex-col items-center justify-center p-2">
                 <span className="text-2xl font-bold text-[#E53935]">
                   {criticalCount}
@@ -1116,7 +1113,7 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card className="w-full sm:w-64 md:w-[190px] h-[90px] shadow-none bg-white border-l-4 border-[#FBC02D] max-[767px]:w-[32%]">
+            <Card className="w-full sm:w-64 md:w-[190px] h-[90px] shadow-none bg-white border-l-4 border-[#FF8028] max-[767px]:w-[32%]">
               <CardContent className="h-full flex flex-col items-center justify-center p-2">
                 <span className="text-2xl font-bold text-[#FBC02D]">
                   {mediumCount}
@@ -1127,7 +1124,7 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card className="w-full sm:w-64 md:w-[190px] h-[90px] shadow-none bg-white border-l-4 border-[#FFEB3B] max-[767px]:w-[32%]">
+            <Card className="w-full sm:w-64 md:w-[190px] h-[90px] shadow-none bg-white border-l-4 border-[#ECE31B] max-[767px]:w-[32%]">
               <CardContent className="h-full flex flex-col items-center justify-center p-2">
                 <span className="text-2xl font-bold text-[#FFEB3B]">
                   {lowCount}

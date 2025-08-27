@@ -51,9 +51,9 @@ export const ALERT_SEVERITIES = {
 };
 
 export const ALERT_SEVERITY_COLORS = {
-  CRITICAL: "#E53935",
-  MEDIUM: "#FB8C00",
-  LOW: "#FB8C00"
+  CRITICAL: "#ED1A22",
+  MEDIUM: "#FF8028",
+  LOW: "#ECE31B"
 };
 
 // Reusable class for checkboxes
