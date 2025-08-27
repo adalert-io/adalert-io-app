@@ -206,7 +206,7 @@ export default function UsersSubtab() {
       cell: ({ row }) => {
         if (row.original.isInvitation) {
           return (
-            <span className="inline-block px-3 py-1 rounded-md text-white text-xs font-bold bg-yellow-600">
+            <span className="inline-block px-3 py-1 rounded-md text-[#5a3402] text-xs font-bold bg-[#ff970075]">
               Pending
             </span>
           );

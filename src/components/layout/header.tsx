@@ -210,7 +210,7 @@ export function Header() {
                 ref={dropdownRef}
               >
                 <button
-                  className={`flex items-center gap-2 px-4 py-2 border border-[#E3E8F0] bg-white rounded-xl shadow-none text-[#5e5e5e] text-base font-medium w-fit transition-all ${
+                  className={`flex items-center gap-2 px-4 py-2 border border-[#E3E8F0] bg-white rounded-xl shadow-none text-[#5e5e5e] text-base font-normal w-fit transition-all ${
                     isSubscriptionExpired
                       ? "opacity-50 cursor-not-allowed"
                       : "hover:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-200"

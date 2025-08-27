@@ -209,11 +209,11 @@ export default function SubscriptionsSubtab() {
 
       {/* Account Cancellation */}
       <div className="flex items-center gap-3 text-gray-700 ml-4 text-[14px]">
-        <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0" />
+        <AlertTriangle className="h-4 w-4 text-[#df5967] flex-shrink-0" />
         <span>
           I would like to{" "}
           <button
-            className="text-red-500 hover:underline font-medium"
+            className="text-[#df5967] hover:underline font-medium cursor-pointer"
             onClick={() => setShowDeleteModal(true)}
           >
             cancel
