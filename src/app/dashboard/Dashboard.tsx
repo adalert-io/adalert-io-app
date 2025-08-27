@@ -1096,8 +1096,8 @@ export default function Dashboard() {
           style={{ minWidth: 0 }}
         >
           {/* Row 2: Cards in a row (Critical, Medium, Low, Spend MTD/Budget) */}
-          <div className="flex gap-4 flex-wrap justify-center max-w-full">
-            <Card className="w-full sm:w-64 md:w-[200px] h-[90px] shadow-none bg-white border-l-4 border-[#E53935]">
+          <div className="flex gap-4 flex-wrap justify-center max-w-full max-[1211px]:justify-start flex pb-[65px]">
+            <Card className="w-full sm:w-64 md:w-[190px] h-[90px] shadow-none bg-white border-l-4 border-[#E53935] ">
               <CardContent className="h-full flex flex-col items-center justify-center p-2">
                 <span className="text-2xl font-bold text-[#E53935]">
                   {criticalCount}
@@ -1108,7 +1108,7 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card className="w-full sm:w-64 md:w-[200px] h-[90px] shadow-none bg-white border-l-4 border-[#FBC02D]">
+            <Card className="w-full sm:w-64 md:w-[190px] h-[90px] shadow-none bg-white border-l-4 border-[#FBC02D]">
               <CardContent className="h-full flex flex-col items-center justify-center p-2">
                 <span className="text-2xl font-bold text-[#FBC02D]">
                   {mediumCount}
@@ -1119,7 +1119,7 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card className="w-full sm:w-64 md:w-[200px] h-[90px] shadow-none bg-white border-l-4 border-[#FFEB3B]">
+            <Card className="w-full sm:w-64 md:w-[190px] h-[90px] shadow-none bg-white border-l-4 border-[#FFEB3B]">
               <CardContent className="h-full flex flex-col items-center justify-center p-2">
                 <span className="text-2xl font-bold text-[#FFEB3B]">
                   {lowCount}
@@ -1380,7 +1380,7 @@ export default function Dashboard() {
           currencySymbol={selectedAdsAccount?.["Currency Symbol"] || "$"}
         />
         {/* Alerts Table */}
-        <div className="bg-white rounded-2xl border border-[#e5e5e5] p-4">
+        <div className="bg-white rounded-2xl border border-[#e5e5e5] p-4 max-[991px]:block whitespace-nowrap overflow-x-auto">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1">
               <h2 className="text-lg font-bold text-gray-900">Alerts</h2>
