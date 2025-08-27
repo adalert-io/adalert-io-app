@@ -159,7 +159,7 @@ export function Header() {
               </span>
               <button
                 onClick={() => router.push("/settings/account/billing")}
-                className="text-white rounded rounded-[10px] border px-2 py-1 bg-blue-600 font-medium hover:bg-blue-700 transition-colors text-[13px] ml-1 cursor-pointer"
+                className="text-white rounded rounded-[5px] border px-2 py-1 bg-[#da486b] font-medium hover:bg-blue-700 transition-colors text-[13px] ml-1 cursor-pointer"
                 >Upgrade Now</button>
             </div>
           </div>
@@ -176,7 +176,7 @@ export function Header() {
               </span>
               <button
                 onClick={() => router.push("/settings/account/billing")}
-                className="text-blue-400 font-bold underline hover:text-blue-500 transition-colors text-sm"
+                className=" bg-[#da486b] rounded-[5px] text-blue-400 font-bold underline hover:text-blue-500 transition-colors text-sm"
               >
                 Update
               </button>

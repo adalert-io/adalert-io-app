@@ -223,7 +223,7 @@ export default function Summary() {
       <Header />
       <main className="max-w-[1440px] mx-auto px-4 sm:px-6 py-4 sm:py-6">
         {/* Top header row */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4 max-[767px]:mt-[65px]">
           <div className="flex flex-col items-start w-full lg:w-auto">
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
@@ -333,7 +333,7 @@ export default function Summary() {
 
         {/* Table */}
         <div className="bg-white rounded-2xl shadow-none border border-[#e5e5e5] overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="max-[991px]:block whitespace-nowrap overflow-x-auto">
             <table className="min-w-full text-[0.75rem]">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
