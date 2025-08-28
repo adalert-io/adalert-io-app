@@ -54,6 +54,7 @@ import {
 import { saveAs } from "file-saver";
 import type { Alert } from "@/lib/store/dashboard-store";
 import { formatAccountNumber } from "@/lib/utils";
+import { toast } from "sonner";
 
 const KPI_PERIODS = [
   { label: "7 days vs. prior", key: "7" },
@@ -260,6 +261,7 @@ export default function Dashboard() {
     updateMonthlyBudget,
     archiveAlerts,
     generateAlertsPdf,
+    addAdAccountsVarProps,
     lastFetchedAccountId,
     setLastFetchedAccountId,
   } = useDashboardStore();
@@ -966,6 +968,7 @@ export default function Dashboard() {
 
   const [isArchiving, setIsArchiving] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isAddingVarProps, setIsAddingVarProps] = useState(false);
 
   return (
     <div className="min-h-screen bg-[#f5f7fb]">
@@ -1483,6 +1486,34 @@ export default function Dashboard() {
                 className="text-xs text-gray-400 hover:text-gray-600 hover:underline cursor-pointer transition-colors"
               >
                 Settings
+              </button>
+              {/* TODO: TESTING, NEED TO REMOVE */}
+              <button
+                type="button"
+                onClick={async () => {
+                  if (isAddingVarProps) return;
+                  setIsAddingVarProps(true);
+                  try {
+                    await addAdAccountsVarProps();
+                    toast.success(
+                      "Successfully added missing properties to ad account variables",
+                    );
+                  } catch (error) {
+                    console.error(
+                      "Failed to add ad account variable properties:",
+                      error,
+                    );
+                    toast.error("Failed to add ad account variable properties");
+                  } finally {
+                    setIsAddingVarProps(false);
+                  }
+                }}
+                disabled={isAddingVarProps}
+                className={`text-xs text-blue-600 hover:text-blue-800 hover:underline cursor-pointer transition-colors ml-4 ${
+                  isAddingVarProps ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+              >
+                {isAddingVarProps ? "Adding..." : "Add Ad Acc Var Props"}
               </button>
               {/* Selection bar inline with heading */}
               {selectedAlerts.length > 0 && (

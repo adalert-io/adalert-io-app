@@ -132,14 +132,15 @@ interface DashboardState {
   updateMonthlyBudget: (
     adsAccountId: string,
     newMonthlyBudget: number,
-    currentMonthlyBudget: number
+    currentMonthlyBudget: number,
   ) => Promise<boolean>;
   archiveAlerts: (
     alertIds: string[],
     shouldArchive: boolean,
-    adsAccountId: string
+    adsAccountId: string,
   ) => Promise<void>;
   generateAlertsPdf: (selectedAdsAccount: any) => Promise<void>;
+  addAdAccountsVarProps: () => Promise<void>;
 }
 
 export const useDashboardStore = create<DashboardState>((set, get) => ({
@@ -166,9 +167,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         where(
           "Ads Account",
           "==",
-          doc(db, COLLECTIONS.ADS_ACCOUNTS, adsAccountId)
+          doc(db, COLLECTIONS.ADS_ACCOUNTS, adsAccountId),
         ),
-        orderBy("Date Found", "desc")
+        orderBy("Date Found", "desc"),
       );
       const alertsSnap = await getDocs(alertsQuery);
       const alerts: Alert[] = alertsSnap.docs.map(
@@ -176,7 +177,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
           ({
             id: doc.id,
             ...(doc.data() as Partial<Alert>),
-          } as Alert)
+          } as Alert),
       );
 
       console.log("alerts from useDashboardStore: ", alerts);
@@ -191,13 +192,13 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     try {
       console.log(
         "fetchFirstAlerts - selectedAdsAccount: ",
-        selectedAdsAccount
+        selectedAdsAccount,
       );
 
       // Check if Get Alerts From First Load Done is false
       if (selectedAdsAccount["Get Alerts From First Load Done"] !== false) {
         console.log(
-          "Get Alerts From First Load Done is not false, skipping first alerts fetch"
+          "Get Alerts From First Load Done is not false, skipping first alerts fetch",
         );
         return;
       }
@@ -214,7 +215,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         for (let i = 0; i < 7; i++) {
           try {
             const path = getFirebaseFnPath(
-              "dashboard-get-alerts-for-once-per-day-fb"
+              "dashboard-get-alerts-for-once-per-day-fb",
             );
             const response = await fetch(path, {
               method: "POST",
@@ -230,7 +231,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
             if (!response.ok) {
               console.error(
                 `Failed to fetch alerts for index ${i}:`,
-                response.statusText
+                response.statusText,
               );
             } else {
               console.log(`Successfully fetched alerts for index ${i}`);
@@ -243,7 +244,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         // Make the call to dashboard-get-alerts-for-twice-per-day-fb
         try {
           const path = getFirebaseFnPath(
-            "dashboard-get-alerts-for-twice-per-day-fb"
+            "dashboard-get-alerts-for-twice-per-day-fb",
           );
           const response = await fetch(path, {
             method: "POST",
@@ -258,7 +259,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
           if (!response.ok) {
             console.error(
               "Failed to fetch twice-per-day alerts:",
-              response.statusText
+              response.statusText,
             );
           } else {
             console.log("Successfully fetched twice-per-day alerts");
@@ -270,7 +271,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         // Make the call to dashboard-get-alerts-for-four-times-per-day-fb
         try {
           const path = getFirebaseFnPath(
-            "dashboard-get-alerts-for-four-times-per-day-fb"
+            "dashboard-get-alerts-for-four-times-per-day-fb",
           );
           const response = await fetch(path, {
             method: "POST",
@@ -285,7 +286,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
           if (!response.ok) {
             console.error(
               "Failed to fetch four-times-per-day alerts:",
-              response.statusText
+              response.statusText,
             );
           } else {
             console.log("Successfully fetched four-times-per-day alerts");
@@ -297,7 +298,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         // Make the call to dashboard-get-alerts-for-six-times-per-day
         try {
           const path = getFirebaseFnPath(
-            "dashboard-get-alerts-for-six-times-per-day"
+            "dashboard-get-alerts-for-six-times-per-day",
           );
           const response = await fetch(path, {
             method: "POST",
@@ -312,7 +313,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
           if (!response.ok) {
             console.error(
               "Failed to fetch six-times-per-day alerts:",
-              response.statusText
+              response.statusText,
             );
           } else {
             console.log("Successfully fetched six-times-per-day alerts");
@@ -325,7 +326,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         await get().fetchAlerts(selectedAdsAccount.id);
       } else {
         console.log(
-          "Alerts are not empty, skipping API calls but updating flag"
+          "Alerts are not empty, skipping API calls but updating flag",
         );
       }
 
@@ -334,7 +335,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         const accountRef = doc(
           db,
           COLLECTIONS.ADS_ACCOUNTS,
-          selectedAdsAccount.id
+          selectedAdsAccount.id,
         );
         await updateDoc(accountRef, {
           "Get Alerts From First Load Done": true,
@@ -353,7 +354,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     try {
       console.log(
         "Fetching or creating dashboardDaily for adsAccountId:",
-        adsAccountId
+        adsAccountId,
       );
 
       // Get today's date range using moment.js
@@ -367,10 +368,10 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         where(
           "Ads Account",
           "==",
-          doc(db, COLLECTIONS.ADS_ACCOUNTS, adsAccountId)
+          doc(db, COLLECTIONS.ADS_ACCOUNTS, adsAccountId),
         ),
         where("Created Date", ">=", Timestamp.fromDate(today.toDate())),
-        where("Created Date", "<=", Timestamp.fromDate(tomorrow.toDate()))
+        where("Created Date", "<=", Timestamp.fromDate(tomorrow.toDate())),
       );
 
       const dashboardDailySnap = await getDocs(dashboardDailyQuery);
@@ -388,7 +389,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       } else {
         // Document doesn't exist, create a new one
         const newDashboardDailyRef = doc(
-          collection(db, COLLECTIONS.DASHBOARD_DAILIES)
+          collection(db, COLLECTIONS.DASHBOARD_DAILIES),
         );
         const now = Timestamp.now();
 
@@ -446,14 +447,14 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
         console.log(
           "Updated dashboardDaily with spend MTD:",
-          updatedDashboardDaily
+          updatedDashboardDaily,
         );
 
         // Update the Firestore document
         const dashboardDailyRef = doc(
           db,
           COLLECTIONS.DASHBOARD_DAILIES,
-          currentDashboardDaily.id
+          currentDashboardDaily.id,
         );
         await updateDoc(dashboardDailyRef, {
           "Spend MTD": result.spendMtd,
@@ -516,7 +517,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       console.log("Spend MTD indicator result:", result);
 
       const indicatorAlert = freshAlertOptionSets.find(
-        (item) => item["Key"] === result.alert
+        (item) => item["Key"] === result.alert,
       );
       console.log("indicatorAlert:", indicatorAlert);
 
@@ -531,7 +532,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         const dashboardDailyRef = doc(
           db,
           COLLECTIONS.DASHBOARD_DAILIES,
-          currentDashboardDaily.id
+          currentDashboardDaily.id,
         );
         await updateDoc(dashboardDailyRef, {
           "Spend MTD Indicator Alert": indicatorAlert || null,
@@ -600,7 +601,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         const dashboardDailyRef = doc(
           db,
           COLLECTIONS.DASHBOARD_DAILIES,
-          currentDashboardDaily.id
+          currentDashboardDaily.id,
         );
         await updateDoc(dashboardDailyRef, {
           ...result,
@@ -645,7 +646,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       console.log("adsAccount.Id: ", adsAccount.Id);
       console.log(
         'adsAccount["Manager Account Id"]: ',
-        adsAccount["Manager Account Id"]
+        adsAccount["Manager Account Id"],
       );
 
       const response = await fetch(path, {
@@ -691,20 +692,20 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         where(
           "Ads Account",
           "==",
-          doc(db, COLLECTIONS.ADS_ACCOUNTS, adsAccountId)
+          doc(db, COLLECTIONS.ADS_ACCOUNTS, adsAccountId),
         ),
         where("Date", ">=", startOfHour),
-        where("Date", "<=", endOfHour)
+        where("Date", "<=", endOfHour),
       );
 
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.size === 0) {
         console.log(
-          "No 'Dashboard Showing Ads' record for the current hour. Triggering label check."
+          "No 'Dashboard Showing Ads' record for the current hour. Triggering label check.",
         );
         const path = getFirebaseFnPath(
-          "dashboard-display-showing-ads-label-fb"
+          "dashboard-display-showing-ads-label-fb",
         );
 
         await fetch(path, {
@@ -730,7 +731,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         }
       } else {
         console.log(
-          "'Dashboard Showing Ads' record already exists for the current hour. Skipping label check."
+          "'Dashboard Showing Ads' record already exists for the current hour. Skipping label check.",
         );
 
         // Store the existing record in adsLabel state
@@ -751,7 +752,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   updateMonthlyBudget: async (
     adsAccountId: string,
     newMonthlyBudget: number,
-    currentMonthlyBudget: number
+    currentMonthlyBudget: number,
   ) => {
     if (newMonthlyBudget === currentMonthlyBudget) return false;
     const dailyBudget = Number((newMonthlyBudget / 30.4).toFixed(2));
@@ -765,7 +766,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       // Update adsAccountVariables
       const adsAccountVarQuery = query(
         collection(db, "adsAccountVariables"),
-        where("Ads Account", "==", accountRef)
+        where("Ads Account", "==", accountRef),
       );
       const adsAccountVarSnap = await getDocs(adsAccountVarQuery);
       if (!adsAccountVarSnap.empty) {
@@ -777,7 +778,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       }
       // Fetch the updated ads account
       const updatedDoc = await getDoc(
-        doc(db, COLLECTIONS.ADS_ACCOUNTS, adsAccountId)
+        doc(db, COLLECTIONS.ADS_ACCOUNTS, adsAccountId),
       );
       let updatedAccount = null;
       if (updatedDoc.exists()) {
@@ -819,7 +820,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   archiveAlerts: async (
     alertIds: string[],
     shouldArchive: boolean,
-    adsAccountId: string
+    adsAccountId: string,
   ) => {
     const { fetchAlerts } = get();
     const batch = writeBatch(db);
@@ -856,7 +857,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       // Call get-chatgpt-pdf endpoint
       const pdfPath = getFirebaseFnPath("get-chatgpt-pdf");
       const formattedAccountNumber = formatAccountNumber(
-        selectedAdsAccount["Id"]
+        selectedAdsAccount["Id"],
       );
       const pdfRes = await fetch(pdfPath, {
         method: "POST",
@@ -885,6 +886,67 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       }
     } catch (err) {
       console.error("Failed to generate PDF", err);
+    }
+  },
+
+  // TODO: Function for testing, need to remove
+  addAdAccountsVarProps: async () => {
+    try {
+      console.log(
+        "Starting to add missing properties to adsAccountVariables...",
+      );
+
+      // Import the DEFAULT_ADS_ACCOUNT_VARIABLE from constants
+      const { DEFAULT_ADS_ACCOUNT_VARIABLE } = await import("@/lib/constants");
+
+      // Get all documents from adsAccountVariables collection
+      const adsAccountVarRef = collection(db, "adsAccountVariables");
+      const adsAccountVarSnap = await getDocs(adsAccountVarRef);
+
+      console.log(
+        `Found ${adsAccountVarSnap.size} documents in adsAccountVariables collection`,
+      );
+
+      let updatedCount = 0;
+
+      // Loop through each document
+      for (const docSnap of adsAccountVarSnap.docs) {
+        const docData = docSnap.data();
+        let hasUpdates = false;
+        const updates: Record<string, any> = {};
+
+        // Check each property from DEFAULT_ADS_ACCOUNT_VARIABLE
+        for (const [key, defaultValue] of Object.entries(
+          DEFAULT_ADS_ACCOUNT_VARIABLE,
+        )) {
+          // If the property doesn't exist, add it with the default value
+          if (!(key in docData)) {
+            updates[key] = defaultValue;
+            hasUpdates = true;
+            console.log(
+              `Adding missing property '${key}' with value '${defaultValue}' to document ${docSnap.id}`,
+            );
+          }
+        }
+
+        // If there are updates, update the document
+        if (hasUpdates) {
+          await updateDoc(docSnap.ref, updates);
+          updatedCount++;
+          console.log(
+            `Updated document ${docSnap.id} with ${
+              Object.keys(updates).length
+            } new properties`,
+          );
+        }
+      }
+
+      console.log(
+        `Completed! Updated ${updatedCount} out of ${adsAccountVarSnap.size} documents`,
+      );
+    } catch (error: any) {
+      console.error("Error adding ad account variable properties:", error);
+      throw error;
     }
   },
 }));
