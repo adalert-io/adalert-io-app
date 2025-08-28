@@ -152,7 +152,9 @@ export function Header() {
                 - Upgrade for 24/7 monitoring and peace of mind!
               </span>
               <button
-                onClick={() => router.push('/settings/account/billing')}
+                onClick={() =>
+                  router.push('/settings/account/billing?show=payment-form')
+                }
                 className='text-white rounded rounded-[5px] border px-3 py-1 bg-[#da486b] font-medium hover:bg-[#000] transition-colors text-[12px] ml-3 cursor-pointer'
               >
                 Upgrade Now
