@@ -1759,6 +1759,15 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
               'User Status': 'Paying',
             });
           }
+
+          // Refresh subscription data in settings store
+          set({ subscriptionLoaded: false });
+          await get().fetchSubscription(userDoc['Company Admin']);
+
+          // Refresh auth store subscription and re-check status
+          const { useAuthStore } = await import('./auth-store');
+          await useAuthStore.getState().checkSubscriptionStatus(userDoc.uid);
+
           toast.success("You've successfully subscribed to AdAlerts.io");
 
           // Fetch invoices (implement /api/stripe-invoices)
@@ -1914,6 +1923,14 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             err,
           );
         }
+
+        // Refresh subscription data in settings store
+        set({ subscriptionLoaded: false });
+        await get().fetchSubscription(userDoc['Company Admin']);
+
+        // Refresh auth store subscription and re-check status
+        const { useAuthStore } = await import('./auth-store');
+        await useAuthStore.getState().checkSubscriptionStatus(userDoc.uid);
 
         toast.success('Payment method updated successfully!');
         onBack();
