@@ -15,7 +15,7 @@ export default function AccountTabLayout({ children }: { children: React.ReactNo
   const currentSubtab = pathname?.split('/')[3] || 'subscriptions';
 
   return (
-<div className="w-full flex flex-col items-start">
+<div className="w-full flex flex-col items-start p-4">
   {/* Outer Card */}
   <div className="bg-white rounded-2xl shadow w-full overflow-hidden">
     
@@ -25,7 +25,7 @@ export default function AccountTabLayout({ children }: { children: React.ReactNo
         <Link
           key={subtab.value}
           href={`/settings/account/${subtab.value}`}
-          className={`px-4 py-2 font-normal text-base transition-all ${
+          className={`px-2 py-2 font-normal text-base transition-all sm:px-4 ${
             currentSubtab === subtab.value
               ? 'bg-blue-600 text-white'
               : 'text-[#7A7D9C] hover:bg-blue-50'

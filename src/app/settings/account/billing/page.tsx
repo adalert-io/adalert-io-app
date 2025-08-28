@@ -261,7 +261,7 @@ if (subscription) {
       </button>
 
       {/* Subscription Summary */}
-      <div className="flex items-center justify-between gap-4 mb-4">
+      <div className="flex items-start justify-between gap-4 mb-4 sm:flex-row flex-col items-center">
         <div className="text-3xl font-bold">
           <span className="text-blue-600">${subscriptionPrice}</span>
           <span className="text-gray-600 font-normal text-xl">/Monthly</span>
@@ -295,7 +295,7 @@ if (subscription) {
 
         {/* Accepted Cards */}
         <div className="flex items-center gap-4 mb-6">
-          <div className="text-sm text-gray-600">Accepted cards:</div>
+          <div className="text-sm hidden text-gray-600 sm:block">Accepted cards: </div>
           <div className="flex gap-2">
             <div className="flex gap-[2px] items-center">
               {cards.map((card) => (
@@ -649,7 +649,7 @@ export default function BillingSubtab() {
               {/* Payment Method Section */}
               <div className="mb-8">
                 <h3 className="text-lg font-semibold mb-4">Payment Method</h3>
-                <div className="flex items-start gap-6">
+                <div className="flex flex-col items-start gap-6 sm:flex-row ">
                   {/* Payment Method Card */}
                   {paymentMethods ? (
                     <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-6 min-w-[320px]">
@@ -695,7 +695,7 @@ export default function BillingSubtab() {
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-gray-100 text-gray-600 rounded-lg p-6 min-w-[320px] flex items-center justify-center">
+                    <div className="bg-gray-100 text-gray-600 rounded-lg p-6 w-full   flex items-center justify-center sm:w-[320px]">
                       <div className="text-center">
                         <CreditCard className="w-8 h-8 mx-auto mb-2 text-gray-400" />
                         <p className="text-sm">No payment method</p>
@@ -704,7 +704,7 @@ export default function BillingSubtab() {
                   )}
 
                   {/* Status and Actions */}
-                  <div className="flex flex-col gap-4">
+                  <div className="flex w-full flex-col gap-4 sm:w-[320px]">
                     {statusText && (
                       <div
                         className="flex justify-center gap-2 px-6 py-1 rounded-full text-sm font-medium"

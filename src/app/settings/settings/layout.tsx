@@ -19,7 +19,7 @@ export default function SettingsTabLayout ({
   const currentSubtab = pathname?.split('/')[3] || 'alerts'
 
   return (
-    <div className='w-full flex flex-col items-start'>
+    <div className='w-full flex flex-col items-start p-4'>
       {/* Outer Card */}
       <div className='bg-white rounded-2xl shadow w-full overflow-hidden'>
         {/* Tabs */}

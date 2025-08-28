@@ -36,7 +36,7 @@ export default function SettingsLayout({
   return (
     <div className="min-h-screen bg-[#f5f7fb]">
       <Header />
-      <div className="w-full flex flex-col items-center mt-8">
+      <div className="w-full flex flex-col items-center mt-[90px] sm:mt-[90px] md:mt-8 ">
         <div className="flex gap-4 bg-white rounded-2xl shadow-md p-2 mb-8">
           {MAIN_TABS.map((tab) => {
             const isSettingsTab = tab.value === "settings";
@@ -56,7 +56,7 @@ export default function SettingsLayout({
                           : ""
                       }`
                 }
-                className={`px-6 py-2 rounded-xl font-semibold text-base transition-all ${
+                className={`px-3 py-2 rounded-sm font-semibold text-base transition-all sm:px-6 py-2 rounded-xl ${
                   currentMainTab === tab.value
                     ? "bg-blue-600 text-white"
                     : isDisabled

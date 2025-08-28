@@ -166,7 +166,7 @@ export default function MyProfileTab() {
       (phone.trim() === "" && !optInForTextMessage));
 
   return (
-    <div className="flex flex-col items-center w-full min-h-[80vh]">
+    <div className="flex flex-col items-center w-full min-h-[80vh] p-4">
       <div className="w-full max-w-5xl">
         <div className="bg-white rounded-2xl shadow-md p-8 border border-[#e5e5e5]">
           <h2 className="text-2xl font-bold mb-1">My Profile</h2>

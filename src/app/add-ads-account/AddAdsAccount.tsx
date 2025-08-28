@@ -285,7 +285,7 @@ export function AddAdsAccount() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
-      <main className="flex flex-1 items-center justify-center mt-12 md:mt-24 px-4 md:mb-24 mb-12">
+      <main className="flex flex-1 mt-[100px] items-center justify-center mt-12 md:mt-24 px-4 md:mb-24 mb-12">
         <Card className="w-full max-w-md md:max-w-2xl p-0 border border-gray-200 rounded-[15px] shadow-none bg-white">
           <CardContent className="p-6 md:p-10 flex flex-col items-center">
             <h1 className="text-xl md:text-3xl font-bold text-center mb-4 md:mb-6">
@@ -294,7 +294,7 @@ export function AddAdsAccount() {
                 : "Let's add your first ads account(s)"}
             </h1>
             {adsAccounts && adsAccounts.length > 0 && (
-              <div className="flex items-center text-gray-500 text-sm mb-6 md:mb-8 w-full justify-center">
+              <div className="flex items-center flex-col text-gray-500 text-sm mb-6 md:mb-8 w-full justify-center md:flex-row gap-1">
                 <InfoCircledIcon className="mr-2 w-5 h-5 text-blue-500" />
                 Not the right ads account?{" "}
                 <button
@@ -325,14 +325,14 @@ export function AddAdsAccount() {
                   return (
                     <div
                       key={acc.id || idx}
-                      className={`flex border rounded-xl p-4 bg-white border-[#5e5e5e] cursor-pointer transition-all ${
+                      className={`flex flex-col border rounded-xl p-4 bg-white border-[#5e5e5e] cursor-pointer transition-all md:flex-row ${
                         isSelected || isConnected
                           ? "border-blue-600"
                           : "border-gray-200"
                       }`}
                       onClick={() => handleCardClick(idx)}
                     >
-                      <div className="w-1/2 flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
+                      <div className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 md:w-1/2">
                         <div>
                           {acc["Is Connected"] && (
                             <span className="mt-2 sm:mt-0 flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 rounded-lg text-xs font-medium w-fit mb-2">
@@ -349,8 +349,8 @@ export function AddAdsAccount() {
                         </div>
                       </div>
 
-                      <div className="w-1/2 items-center gap-2 mt-2">
-                        <div className="text-sm font-semibold text-gray-800 text-right mb-2">
+                      <div className=" w-full items-center gap-2 mt-2 md:w-1/2">
+                        <div className="text-sm font-semibold text-gray-800 text-left mb-2 md:text-right">
                           Monthly Budget
                         </div>
                         <div className="flex items-center mt-2 sm:mt-0 gap-2">

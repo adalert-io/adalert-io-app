@@ -120,7 +120,7 @@ export default function SubscriptionsSubtab () {
 
         {/* Current Status */}
         <div className='mb-6'>
-          <div className='flex items-center gap-4 mb-4 justify-between'>
+          <div className='flex items-start  gap-4 mb-4 justify-between sm:flex-row flex-col items-center '>  
             <div className='text-3xl font-bold'>
               <span className='text-blue-600'>${subscriptionPrice}</span>
               <span className='text-gray-600 font-normal text-xl'>

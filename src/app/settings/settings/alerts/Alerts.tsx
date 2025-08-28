@@ -186,7 +186,7 @@ export default function AlertsSubtab() {
               </span>
             </label>
           </div>
-          <div className="flex items-center gap-2 mt-1 ml-7 text-xs text-gray-500 bg-gray-100 rounded-lg px-3 py-2">
+          <div className="flex flex-col items-center gap-2 mt-1 ml-0 text-xs text-gray-500 bg-gray-100 rounded-lg px-3 py-2 sm:flex-row sm:items-start sm:ml-7">
             <Info className="w-4 h-4 text-blue-400" />
             Update phone or withdraw consent in{" "}
             <Link
