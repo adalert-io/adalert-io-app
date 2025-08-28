@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -479,11 +478,16 @@ export default function BillingSubtab() {
     adsAccounts,
     fetchAdsAccounts,
   } = useAlertSettingsStore();
-  const searchParams = useSearchParams();
-  const showPaymentForm = searchParams.get('show') === 'payment-form';
-  const [screen, setScreen] = useState<'list' | 'payment-form'>(
-    showPaymentForm ? 'payment-form' : 'list',
-  );
+  const [screen, setScreen] = useState<'list' | 'payment-form'>('list');
+
+  // Read search params on client side after mount
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const showPaymentForm = searchParams.get('show') === 'payment-form';
+    if (showPaymentForm) {
+      setScreen('payment-form');
+    }
+  }, []);
   // Refetch userDoc on mount to ensure latest user type
   useEffect(() => {
     if (user?.uid) {
