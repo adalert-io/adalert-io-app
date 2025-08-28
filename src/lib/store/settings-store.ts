@@ -1,5 +1,5 @@
-import { create } from "zustand";
-import { db, storage } from "@/lib/firebase/config";
+import { create } from 'zustand';
+import { db, storage } from '@/lib/firebase/config';
 import {
   collection,
   query,
@@ -11,47 +11,47 @@ import {
   setDoc,
   serverTimestamp,
   deleteDoc,
-} from "firebase/firestore";
+} from 'firebase/firestore';
 import {
   ref,
   uploadBytes,
   getDownloadURL,
   deleteObject,
-} from "firebase/storage";
-import { User } from "firebase/auth";
-import { formatAccountNumber, getFirebaseFnPath } from "../utils";
-import { APPLICATION_NAME } from "../constants";
-import { CardElement } from "@stripe/react-stripe-js";
+} from 'firebase/storage';
+import { User } from 'firebase/auth';
+import { formatAccountNumber, getFirebaseFnPath } from '../utils';
+import { APPLICATION_NAME } from '../constants';
+import { CardElement } from '@stripe/react-stripe-js';
 
 export interface AlertSettings {
   id: string;
-  "Level Account": boolean;
-  "Level Ads": boolean;
-  "Level Keyword": boolean;
-  "Send Email Alerts": boolean;
-  "Send SMS Alerts": boolean;
-  "Send Weekly Summaries": boolean;
-  "Severity Critical": boolean;
-  "Severity Low": boolean;
-  "Severity Medium": boolean;
-  "Type Ad Performance": boolean;
-  "Type Brand Checker": boolean;
-  "Type Budget": boolean;
-  "Type KPI Trends": boolean;
-  "Type Keyword Performance": boolean;
-  "Type Landing Page": boolean;
-  "Type Optimization Score": boolean;
-  "Type Policy": boolean;
-  "Type Serving Ads": boolean;
+  'Level Account': boolean;
+  'Level Ads': boolean;
+  'Level Keyword': boolean;
+  'Send Email Alerts': boolean;
+  'Send SMS Alerts': boolean;
+  'Send Weekly Summaries': boolean;
+  'Severity Critical': boolean;
+  'Severity Low': boolean;
+  'Severity Medium': boolean;
+  'Type Ad Performance': boolean;
+  'Type Brand Checker': boolean;
+  'Type Budget': boolean;
+  'Type KPI Trends': boolean;
+  'Type Keyword Performance': boolean;
+  'Type Landing Page': boolean;
+  'Type Optimization Score': boolean;
+  'Type Policy': boolean;
+  'Type Serving Ads': boolean;
 }
 
 export interface UserRow {
   id: string;
   email: string;
   Name: string;
-  "User Type": string;
-  "User Access": string;
-  status?: "pending" | "accepted"; // Add status field
+  'User Type': string;
+  'User Access': string;
+  status?: 'pending' | 'accepted'; // Add status field
 }
 
 export interface Invitation {
@@ -63,22 +63,22 @@ export interface Invitation {
   invitedBy: string;
   invitedAt: any;
   expiresAt: any;
-  status: "pending" | "accepted";
+  status: 'pending' | 'accepted';
   companyAdmin: any;
 }
 
 export interface AdsAccount {
   id: string;
   name: string;
-  "Selected Users"?: any[]; // Array of user references
-  "Account Name Editable"?: string;
-  "Account Name Original"?: string;
-  "Id"?: string;
-  "Is Connected"?: boolean;
-  "Is Selected"?: boolean;
-  "Created Date"?: any;
-  "Platform"?: string;
-  "Monthly Budget"?: number;
+  'Selected Users'?: any[]; // Array of user references
+  'Account Name Editable'?: string;
+  'Account Name Original'?: string;
+  'Id'?: string;
+  'Is Connected'?: boolean;
+  'Is Selected'?: boolean;
+  'Created Date'?: any;
+  'Platform'?: string;
+  'Monthly Budget'?: number;
   // Add other fields as needed
 }
 
@@ -119,7 +119,7 @@ interface AlertSettingsState {
     userId: string,
     updates: {
       Name?: string;
-      "User Type"?: string;
+      'User Type'?: string;
       avatarFile?: File | null;
       currentAvatarUrl?: string | null;
     },
@@ -210,6 +210,7 @@ interface AlertSettingsState {
     toast: any;
     onBack: () => void;
   }) => Promise<void>;
+  deleteUserWithRecords: (userId: string, email: string) => Promise<void>;
 }
 
 export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
@@ -236,9 +237,9 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     if (get().loadedUserId === userId && get().alertSettings) return;
     set({ loading: true, error: null });
     try {
-      const alertSettingsRef = collection(db, "alertSettings");
-      const userRef = doc(db, "users", userId);
-      const q = query(alertSettingsRef, where("User", "==", userRef));
+      const alertSettingsRef = collection(db, 'alertSettings');
+      const userRef = doc(db, 'users', userId);
+      const q = query(alertSettingsRef, where('User', '==', userRef));
       const snap = await getDocs(q);
       if (!snap.empty) {
         const docSnap = snap.docs[0];
@@ -260,9 +261,9 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
   ) => {
     set({ loading: true, error: null });
     try {
-      const alertSettingsRef = collection(db, "alertSettings");
-      const userRef = doc(db, "users", userId);
-      const q = query(alertSettingsRef, where("User", "==", userRef));
+      const alertSettingsRef = collection(db, 'alertSettings');
+      const userRef = doc(db, 'users', userId);
+      const q = query(alertSettingsRef, where('User', '==', userRef));
       const snap = await getDocs(q);
       if (!snap.empty) {
         const docSnap = snap.docs[0];
@@ -281,18 +282,18 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     if (get().usersLoaded) return;
     set({ loading: true, error: null });
     try {
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("Company Admin", "==", companyAdminRef));
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('Company Admin', '==', companyAdminRef));
       const snap = await getDocs(q);
       const users: UserRow[] = snap.docs.map((docSnap) => ({
         id: docSnap.id,
         email: docSnap.data().email,
         Name: docSnap.data().Name,
-        "User Type": docSnap.data()["User Type"],
-        "User Access": docSnap.data()["User Access"],
-        "Avatar": docSnap.data()["Avatar"],
-        "Is Google Sign Up": docSnap.data()["Is Google Sign Up"],
-        "Company Admin": docSnap.data()["Company Admin"],
+        'User Type': docSnap.data()['User Type'],
+        'User Access': docSnap.data()['User Access'],
+        'Avatar': docSnap.data()['Avatar'],
+        'Is Google Sign Up': docSnap.data()['Is Google Sign Up'],
+        'Company Admin': docSnap.data()['Company Admin'],
       }));
       set({ users, usersLoaded: true, loading: false });
 
@@ -305,17 +306,17 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
   refreshUsers: async (companyAdminRef: any) => {
     set({ loading: true, error: null });
     try {
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("Company Admin", "==", companyAdminRef));
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('Company Admin', '==', companyAdminRef));
       const snap = await getDocs(q);
       const users: UserRow[] = snap.docs.map((docSnap) => ({
         id: docSnap.id,
         email: docSnap.data().email,
         Name: docSnap.data().Name,
-        "User Type": docSnap.data()["User Type"],
-        "User Access": docSnap.data()["User Access"],
-        "Avatar": docSnap.data()["Avatar"],
-        "Is Google Sign Up": docSnap.data()["Is Google Sign Up"],
+        'User Type': docSnap.data()['User Type'],
+        'User Access': docSnap.data()['User Access'],
+        'Avatar': docSnap.data()['Avatar'],
+        'Is Google Sign Up': docSnap.data()['Is Google Sign Up'],
       }));
       set({ users, usersLoaded: true, loading: false });
 
@@ -329,11 +330,11 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     if (get().invitationsLoaded) return;
     set({ loading: true, error: null });
     try {
-      const invitationsRef = collection(db, "invitations");
+      const invitationsRef = collection(db, 'invitations');
       const q = query(
         invitationsRef,
-        where("companyAdmin", "==", companyAdminRef),
-        where("status", "!=", "accepted"),
+        where('companyAdmin', '==', companyAdminRef),
+        where('status', '!=', 'accepted'),
       );
       const snap = await getDocs(q);
       const invitations: Invitation[] = snap.docs.map((docSnap) => {
@@ -363,7 +364,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
   deleteInvitation: async (invitationId: string) => {
     set({ loading: true, error: null });
     try {
-      const invitationRef = doc(db, "invitations", invitationId);
+      const invitationRef = doc(db, 'invitations', invitationId);
       await deleteDoc(invitationRef);
       set({ loading: false });
     } catch (error: any) {
@@ -374,20 +375,20 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     if (get().adsAccountsLoaded) return;
     set({ loading: true, error: null });
     try {
-      const adsAccountsRef = collection(db, "adsAccounts");
+      const adsAccountsRef = collection(db, 'adsAccounts');
       const q = query(
         adsAccountsRef,
-        where("User", "==", companyAdminRef),
-        where("Is Connected", "==", true),
+        where('User', '==', companyAdminRef),
+        where('Is Connected', '==', true),
       );
       const snap = await getDocs(q);
       const adsAccounts: AdsAccount[] = snap.docs.map((docSnap) => ({
         id: docSnap.id,
         name:
-          docSnap.data()["Account Name Editable"] ||
-          docSnap.data()["Account Name Original"] ||
-          formatAccountNumber(docSnap.data()["Id"]),
-        "Selected Users": docSnap.data()["Selected Users"],
+          docSnap.data()['Account Name Editable'] ||
+          docSnap.data()['Account Name Original'] ||
+          formatAccountNumber(docSnap.data()['Id']),
+        'Selected Users': docSnap.data()['Selected Users'],
       }));
       set({ adsAccounts, adsAccountsLoaded: true, loading: false });
     } catch (error: any) {
@@ -397,20 +398,20 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
   refreshAdsAccounts: async (companyAdminRef: any) => {
     set({ loading: true, error: null });
     try {
-      const adsAccountsRef = collection(db, "adsAccounts");
+      const adsAccountsRef = collection(db, 'adsAccounts');
       const q = query(
         adsAccountsRef,
-        where("User", "==", companyAdminRef),
-        where("Is Connected", "==", true),
+        where('User', '==', companyAdminRef),
+        where('Is Connected', '==', true),
       );
       const snap = await getDocs(q);
       const adsAccounts: AdsAccount[] = snap.docs.map((docSnap) => ({
         id: docSnap.id,
         name:
-          docSnap.data()["Account Name Editable"] ||
-          docSnap.data()["Account Name Original"] ||
-          formatAccountNumber(docSnap.data()["Id"]),
-        "Selected Users": docSnap.data()["Selected Users"],
+          docSnap.data()['Account Name Editable'] ||
+          docSnap.data()['Account Name Original'] ||
+          formatAccountNumber(docSnap.data()['Id']),
+        'Selected Users': docSnap.data()['Selected Users'],
       }));
       set({ adsAccounts, adsAccountsLoaded: true, loading: false });
     } catch (error: any) {
@@ -424,20 +425,20 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     if (get().adsAccountsForTabLoaded) return;
     set({ loading: true, error: null });
     try {
-      const adsAccountsRef = collection(db, "adsAccounts");
+      const adsAccountsRef = collection(db, 'adsAccounts');
       // const currentUserRef = doc(db, "users", currentUserId);
 
       const q = query(
         adsAccountsRef,
-        where("User", "==", companyAdminRef),
-        where("Is Selected", "==", true),
+        where('User', '==', companyAdminRef),
+        where('Is Selected', '==', true),
       );
       const snap = await getDocs(q);
 
       const adsAccounts: AdsAccount[] = snap.docs
         .map((docSnap) => {
           const data = docSnap.data();
-          const selectedUsers = data["Selected Users"] || [];
+          const selectedUsers = data['Selected Users'] || [];
           const hasUserAccess = selectedUsers.some(
             (userRef: any) =>
               userRef.id === currentUserId ||
@@ -449,19 +450,19 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           return {
             id: docSnap.id,
             name:
-              data["Account Name Editable"] ||
-              data["Account Name Original"] ||
-              formatAccountNumber(data["Id"]),
-            "Account Name Editable": data["Account Name Editable"],
-            "Account Name Original": data["Account Name Original"],
-            "Id": data["Id"],
-            "Is Connected": data["Is Connected"],
-            "Is Selected": data["Is Selected"],
-            "Created Date": data["Created Date"],
-            "Platform": data["Platform"] || "Google",
-            "Monthly Budget": data["Monthly Budget"] || 0,
-            "Selected Users": selectedUsers,
-            "Send Me Alert": data["Send Me Alert"] || false,
+              data['Account Name Editable'] ||
+              data['Account Name Original'] ||
+              formatAccountNumber(data['Id']),
+            'Account Name Editable': data['Account Name Editable'],
+            'Account Name Original': data['Account Name Original'],
+            'Id': data['Id'],
+            'Is Connected': data['Is Connected'],
+            'Is Selected': data['Is Selected'],
+            'Created Date': data['Created Date'],
+            'Platform': data['Platform'] || 'Google',
+            'Monthly Budget': data['Monthly Budget'] || 0,
+            'Selected Users': selectedUsers,
+            'Send Me Alert': data['Send Me Alert'] || false,
           };
         })
         .filter(Boolean) as AdsAccount[];
@@ -481,47 +482,47 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     selectedAds: string[],
   ) => {
     try {
-      const userRef = doc(db, "users", userId);
-      const { useAuthStore } = await import("./auth-store");
+      const userRef = doc(db, 'users', userId);
+      const { useAuthStore } = await import('./auth-store');
       const userDoc = useAuthStore.getState().userDoc;
 
-      if (userType === "Admin") {
+      if (userType === 'Admin') {
         // For Admin: Add user to all ads accounts
-        const adsAccountsRef = collection(db, "adsAccounts");
+        const adsAccountsRef = collection(db, 'adsAccounts');
         const q = query(
           adsAccountsRef,
-          where("User", "==", userDoc?.["Company Admin"]),
-          where("Is Connected", "==", true),
+          where('User', '==', userDoc?.['Company Admin']),
+          where('Is Connected', '==', true),
         );
         const snap = await getDocs(q);
 
         const updatePromises = snap.docs.map(async (docSnap) => {
-          const currentSelectedUsers = docSnap.data()["Selected Users"] || [];
+          const currentSelectedUsers = docSnap.data()['Selected Users'] || [];
           const userAlreadySelected = currentSelectedUsers.some(
             (user: any) => user.id === userId || user.path?.includes(userId),
           );
 
           if (!userAlreadySelected) {
             return updateDoc(docSnap.ref, {
-              "Selected Users": [...currentSelectedUsers, userRef],
+              'Selected Users': [...currentSelectedUsers, userRef],
             });
           }
         });
 
         await Promise.all(updatePromises.filter(Boolean));
-      } else if (userType === "Manager") {
+      } else if (userType === 'Manager') {
         // For Manager: Add user to selected ads accounts and remove from others
-        const adsAccountsRef = collection(db, "adsAccounts");
+        const adsAccountsRef = collection(db, 'adsAccounts');
         const q = query(
           adsAccountsRef,
-          where("User", "==", userDoc?.["Company Admin"]),
-          where("Is Connected", "==", true),
+          where('User', '==', userDoc?.['Company Admin']),
+          where('Is Connected', '==', true),
         );
         const snap = await getDocs(q);
 
         const updatePromises = snap.docs.map(async (docSnap) => {
           const accountId = docSnap.id;
-          const currentSelectedUsers = docSnap.data()["Selected Users"] || [];
+          const currentSelectedUsers = docSnap.data()['Selected Users'] || [];
           const userAlreadySelected = currentSelectedUsers.some(
             (user: any) => user.id === userId || user.path?.includes(userId),
           );
@@ -530,7 +531,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             // Add user to selected ads accounts
             if (!userAlreadySelected) {
               return updateDoc(docSnap.ref, {
-                "Selected Users": [...currentSelectedUsers, userRef],
+                'Selected Users': [...currentSelectedUsers, userRef],
               });
             }
           } else {
@@ -541,7 +542,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
                   user.id !== userId && !user.path?.includes(userId),
               );
               return updateDoc(docSnap.ref, {
-                "Selected Users": updatedSelectedUsers,
+                'Selected Users': updatedSelectedUsers,
               });
             }
           }
@@ -551,11 +552,11 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       }
 
       // Refresh ads accounts to update the state with latest data
-      if (userDoc && userDoc["Company Admin"]) {
-        await get().refreshAdsAccounts(userDoc["Company Admin"]);
+      if (userDoc && userDoc['Company Admin']) {
+        await get().refreshAdsAccounts(userDoc['Company Admin']);
       }
     } catch (error) {
-      console.error("Error updating ads accounts selected users:", error);
+      console.error('Error updating ads accounts selected users:', error);
       throw error;
     }
   },
@@ -563,7 +564,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     userId: string,
     updates: {
       Name?: string;
-      "User Type"?: string;
+      'User Type'?: string;
       avatarFile?: File | null;
       currentAvatarUrl?: string | null;
     },
@@ -601,20 +602,20 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             }
           } catch (error) {
             // Ignore errors when deleting old avatar (file might not exist)
-            console.warn("Could not delete old avatar:", error);
+            console.warn('Could not delete old avatar:', error);
           }
         }
       }
 
       // Update user document
-      const userRef = doc(db, "users", userId);
+      const userRef = doc(db, 'users', userId);
       const updateData: any = {};
 
       if (updates.Name !== undefined) {
         updateData.Name = updates.Name;
       }
-      if (updates["User Type"] !== undefined) {
-        updateData["User Type"] = updates["User Type"];
+      if (updates['User Type'] !== undefined) {
+        updateData['User Type'] = updates['User Type'];
       }
       if (avatarUrl !== undefined) {
         updateData.Avatar = avatarUrl;
@@ -623,24 +624,24 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       await updateDoc(userRef, updateData);
 
       // Update ads accounts selected users based on role
-      if (updates["User Type"] && selectedAds) {
+      if (updates['User Type'] && selectedAds) {
         await get().updateAdsAccountsSelectedUsers(
           userId,
-          updates["User Type"],
+          updates['User Type'],
           selectedAds,
         );
       }
 
       // Send email notification if requested
       if (notifyUser && currentUserDoc) {
-        const { useAuthStore } = await import("./auth-store");
+        const { useAuthStore } = await import('./auth-store');
         const userDoc = useAuthStore.getState().userDoc;
         if (userDoc) {
           await get().sendUserUpdateNotification(
             currentUserDoc.email,
             currentUserDoc.Name,
             updates.Name || currentUserDoc.Name,
-            userDoc["User Type"],
+            userDoc['User Type'],
             userDoc.Name,
           );
         }
@@ -651,10 +652,10 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       const currentUser = get().users.find((user) => user.id === userId);
       if (currentUser) {
         // Get the company admin ref from the auth store
-        const { useAuthStore } = await import("./auth-store");
+        const { useAuthStore } = await import('./auth-store');
         const userDoc = useAuthStore.getState().userDoc;
-        if (userDoc && userDoc["Company Admin"]) {
-          await get().refreshUsers(userDoc["Company Admin"]);
+        if (userDoc && userDoc['Company Admin']) {
+          await get().refreshUsers(userDoc['Company Admin']);
         }
       }
 
@@ -672,10 +673,10 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     updaterUserName: string,
   ) => {
     try {
-      const response = await fetch("/api/send-email", {
-        method: "POST",
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           toEmail,
@@ -692,13 +693,13 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to send email notification");
+        throw new Error(errorData.error || 'Failed to send email notification');
       }
 
       const result = await response.json();
-      console.log("Email notification sent successfully:", result);
+      console.log('Email notification sent successfully:', result);
     } catch (error) {
-      console.error("Error sending email notification:", error);
+      console.error('Error sending email notification:', error);
       throw error;
     }
   },
@@ -709,10 +710,10 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     selectedAds: string[],
   ) => {
     try {
-      console.log("inviteUser.....");
-      const { useAuthStore } = await import("./auth-store");
+      console.log('inviteUser.....');
+      const { useAuthStore } = await import('./auth-store');
       const userDoc = useAuthStore.getState().userDoc;
-      const invitationRef = doc(collection(db, "invitations"));
+      const invitationRef = doc(collection(db, 'invitations'));
       const invitationData = {
         email,
         userType,
@@ -721,14 +722,14 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         invitedBy: userDoc?.uid,
         invitedAt: serverTimestamp(),
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-        status: "pending",
-        companyAdmin: userDoc?.["Company Admin"],
+        status: 'pending',
+        companyAdmin: userDoc?.['Company Admin'],
       };
       await setDoc(invitationRef, invitationData);
       await get().sendInvitationEmail(email, invitationRef.id);
       return invitationRef.id;
     } catch (error) {
-      console.error("Error inviting user:", error);
+      console.error('Error inviting user:', error);
       throw error;
     }
   },
@@ -736,40 +737,40 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
   sendInvitationEmail: async (email: string, invitationId: string) => {
     try {
       const invitationLink = `${process.env.NEXT_PUBLIC_APP_URL}/auth/invite/${invitationId}`;
-      const response = await fetch("/api/send-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           toEmail: email,
           templateId: process.env.NEXT_PUBLIC_SENDGRID_TEMPLATE_ID_INVITE_USER,
           tags: {
             ApplicationName: APPLICATION_NAME,
             Link: invitationLink,
-            ExpiresIn: "7 days",
+            ExpiresIn: '7 days',
           },
         }),
       });
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to send invitation email");
+        throw new Error(errorData.error || 'Failed to send invitation email');
       }
     } catch (error) {
-      console.error("Error sending invitation email:", error);
+      console.error('Error sending invitation email:', error);
       throw error;
     }
   },
   updateAdsAccount: async (accountId: string, updates: any) => {
     set({ loading: true, error: null });
     try {
-      const accountRef = doc(db, "adsAccounts", accountId);
+      const accountRef = doc(db, 'adsAccounts', accountId);
       await updateDoc(accountRef, updates);
 
       // Refresh the ads accounts for tab data
-      const { useAuthStore } = await import("./auth-store");
+      const { useAuthStore } = await import('./auth-store');
       const userDoc = useAuthStore.getState().userDoc;
-      if (userDoc && userDoc["Company Admin"] && userDoc.uid) {
+      if (userDoc && userDoc['Company Admin'] && userDoc.uid) {
         await get().refreshAdsAccountsForTab(
-          userDoc["Company Admin"],
+          userDoc['Company Admin'],
           userDoc.uid,
         );
       }
@@ -783,15 +784,15 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
   toggleAdsAccountAlert: async (accountId: string, sendAlert: boolean) => {
     set({ loading: true, error: null });
     try {
-      const accountRef = doc(db, "adsAccounts", accountId);
-      await updateDoc(accountRef, { "Send Me Alert": sendAlert });
+      const accountRef = doc(db, 'adsAccounts', accountId);
+      await updateDoc(accountRef, { 'Send Me Alert': sendAlert });
 
       // Refresh the ads accounts for tab data
-      const { useAuthStore } = await import("./auth-store");
+      const { useAuthStore } = await import('./auth-store');
       const userDoc = useAuthStore.getState().userDoc;
-      if (userDoc && userDoc["Company Admin"] && userDoc.uid) {
+      if (userDoc && userDoc['Company Admin'] && userDoc.uid) {
         await get().refreshAdsAccountsForTab(
-          userDoc["Company Admin"],
+          userDoc['Company Admin'],
           userDoc.uid,
         );
       }
@@ -816,11 +817,11 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       // 1. Delete 'adsAccountVariables' where the 'Ads Account(reference)' = accountId
-      const adsAccountVariablesRef = collection(db, "adsAccountVariables");
-      const adsAccountRef = doc(db, "adsAccounts", accountId);
+      const adsAccountVariablesRef = collection(db, 'adsAccountVariables');
+      const adsAccountRef = doc(db, 'adsAccounts', accountId);
       const q = query(
         adsAccountVariablesRef,
-        where("Ads Account", "==", adsAccountRef),
+        where('Ads Account', '==', adsAccountRef),
       );
       const snap = await getDocs(q);
       const deleteVariablePromises = snap.docs.map((docSnap) =>
@@ -831,12 +832,12 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       // 2. Remove cronitor monitors for ads account
       try {
         const path = getFirebaseFnPath(
-          "remove-cronitor-monitors-for-ads-account-fb",
+          'remove-cronitor-monitors-for-ads-account-fb',
         );
         const response = await fetch(path, {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             adsAccountId: accountId,
@@ -845,18 +846,18 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
 
         if (!response.ok) {
           console.warn(
-            "Failed to remove cronitor monitors for ads account:",
+            'Failed to remove cronitor monitors for ads account:',
             await response.text(),
           );
         } else {
           console.log(
-            "Successfully removed cronitor monitors for ads account:",
+            'Successfully removed cronitor monitors for ads account:',
             accountId,
           );
         }
       } catch (error) {
         console.warn(
-          "Error removing cronitor monitors for ads account:",
+          'Error removing cronitor monitors for ads account:',
           error,
         );
       }
@@ -864,33 +865,33 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       // 3. Delete 'adsAccounts' document where id = accountId
       // (Soft delete: set a deleted flag, or hard delete: remove the document)
       // Here, we will hard delete:
-      await import("firebase/firestore").then(async (firestore) => {
+      await import('firebase/firestore').then(async (firestore) => {
         await firestore.deleteDoc(adsAccountRef);
       });
 
       // 4. Refresh the ads accounts for tab data
-      const { useAuthStore } = await import("./auth-store");
+      const { useAuthStore } = await import('./auth-store');
       const userDoc = useAuthStore.getState().userDoc;
-      if (userDoc && userDoc["Company Admin"] && userDoc.uid) {
+      if (userDoc && userDoc['Company Admin'] && userDoc.uid) {
         await get().refreshAdsAccountsForTab(
-          userDoc["Company Admin"],
+          userDoc['Company Admin'],
           userDoc.uid,
         );
       }
 
       // 5. Refresh ads accounts where User == Company Admin and Is Connected == true
-      if (userDoc && userDoc["Company Admin"]) {
-        await get().refreshAdsAccounts(userDoc["Company Admin"]);
+      if (userDoc && userDoc['Company Admin']) {
+        await get().refreshAdsAccounts(userDoc['Company Admin']);
       }
 
       // 6. Update subscription item quantity based on remaining ads accounts
-      if (userDoc && userDoc["Company Admin"]) {
+      if (userDoc && userDoc['Company Admin']) {
         try {
           // Get the subscription document
-          const subscriptionsRef = collection(db, "subscriptions");
+          const subscriptionsRef = collection(db, 'subscriptions');
           const subscriptionQuery = query(
             subscriptionsRef,
-            where("User", "==", userDoc["Company Admin"]),
+            where('User', '==', userDoc['Company Admin']),
           );
           const subscriptionSnap = await getDocs(subscriptionQuery);
 
@@ -898,21 +899,21 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             const subscriptionDoc = subscriptionSnap.docs[0];
             const subscriptionData = subscriptionDoc.data();
             const stripeSubscriptionId =
-              subscriptionData["Stripe Subscription Id"];
+              subscriptionData['Stripe Subscription Id'];
             // const stripeSubscriptionItemIds = subscriptionData["Stripe Subscription Item Id(s)"] || [];
 
             if (stripeSubscriptionId) {
               // Get the subscription item IDs
               const stripeSubscriptionItemIds =
-                subscriptionData["Stripe Subscription Item Id(s)"] || [];
+                subscriptionData['Stripe Subscription Item Id(s)'] || [];
 
               if (stripeSubscriptionItemIds.length > 0) {
                 // Get the updated count of connected ads accounts
-                const adsAccountsRef = collection(db, "adsAccounts");
+                const adsAccountsRef = collection(db, 'adsAccounts');
                 const adsAccountsQuery = query(
                   adsAccountsRef,
-                  where("User", "==", userDoc["Company Admin"]),
-                  where("Is Connected", "==", true),
+                  where('User', '==', userDoc['Company Admin']),
+                  where('Is Connected', '==', true),
                 );
                 const adsAccountsSnap = await getDocs(adsAccountsQuery);
                 const newQuantity = adsAccountsSnap.size;
@@ -920,9 +921,9 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
                 // Update each subscription item quantity
                 for (const subscriptionItemId of stripeSubscriptionItemIds) {
                   try {
-                    const response = await fetch("/api/stripe-subscriptions", {
-                      method: "PUT",
-                      headers: { "Content-Type": "application/json" },
+                    const response = await fetch('/api/stripe-subscriptions', {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
                         subscriptionId: stripeSubscriptionId,
                         subscriptionItemId: subscriptionItemId,
@@ -951,7 +952,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             }
           }
         } catch (error) {
-          console.warn("Error updating subscription item:", error);
+          console.warn('Error updating subscription item:', error);
         }
       }
 
@@ -967,22 +968,22 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     daily: number,
   ) => {
     try {
-      const adsAccountVariablesRef = collection(db, "adsAccountVariables");
-      const adsAccountRef = doc(db, "adsAccounts", accountId);
+      const adsAccountVariablesRef = collection(db, 'adsAccountVariables');
+      const adsAccountRef = doc(db, 'adsAccounts', accountId);
       const q = query(
         adsAccountVariablesRef,
-        where("Ads Account", "==", adsAccountRef),
+        where('Ads Account', '==', adsAccountRef),
       );
       const snap = await getDocs(q);
       const updatePromises = snap.docs.map((docSnap) =>
         updateDoc(docSnap.ref, {
-          "MonthlyBudget": monthly,
-          "DailyBudget": daily,
+          'MonthlyBudget': monthly,
+          'DailyBudget': daily,
         }),
       );
       await Promise.all(updatePromises);
     } catch (error) {
-      console.error("Error updating adsAccountVariables budgets:", error);
+      console.error('Error updating adsAccountVariables budgets:', error);
       throw error;
     }
   },
@@ -1030,24 +1031,24 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             }
           } catch (error) {
             // Ignore errors when deleting old avatar
-            console.warn("Could not delete old avatar:", error);
+            console.warn('Could not delete old avatar:', error);
           }
         }
       }
       // Update user document
-      const userRef = doc(db, "users", userId);
+      const userRef = doc(db, 'users', userId);
       const updateData: any = {
         Name,
         Email,
-        "Opt In For Text Message": optInForTextMessage,
+        'Opt In For Text Message': optInForTextMessage,
         Telephone,
-        "Telephone Dial Code": TelephoneDialCode,
+        'Telephone Dial Code': TelephoneDialCode,
       };
       if (Country !== undefined) {
         updateData.Country = Country;
       }
-      if (updates["User Type"] !== undefined) {
-        updateData["User Type"] = updates["User Type"];
+      if (updates['User Type'] !== undefined) {
+        updateData['User Type'] = updates['User Type'];
       }
       if (avatarUrl !== undefined) {
         updateData.Avatar = avatarUrl;
@@ -1055,17 +1056,17 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       await updateDoc(userRef, updateData);
       // If the updated user is the current user, update userDoc in auth-store
       try {
-        const { useAuthStore } = await import("./auth-store");
+        const { useAuthStore } = await import('./auth-store');
         const currentUser = useAuthStore.getState().user;
         if (currentUser && currentUser.uid === userId) {
           const userSnap = await getDocs(
-            query(collection(db, "users"), where("uid", "==", userId)),
+            query(collection(db, 'users'), where('uid', '==', userId)),
           );
           if (!userSnap.empty) {
             useAuthStore
               .getState()
               .setUserDoc(
-                userSnap.docs[0].data() as import("./auth-store").UserDocument,
+                userSnap.docs[0].data() as import('./auth-store').UserDocument,
               );
           }
         }
@@ -1074,13 +1075,13 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       }
       // If telephone is empty or optInForTextMessage is false, update alertSettings
       if (!Telephone || !optInForTextMessage) {
-        const alertSettingsRef = collection(db, "alertSettings");
-        const userDocRef = doc(db, "users", userId);
-        const q = query(alertSettingsRef, where("User", "==", userDocRef));
+        const alertSettingsRef = collection(db, 'alertSettings');
+        const userDocRef = doc(db, 'users', userId);
+        const q = query(alertSettingsRef, where('User', '==', userDocRef));
         const snap = await getDocs(q);
         if (!snap.empty) {
           const alertDoc = snap.docs[0];
-          await updateDoc(alertDoc.ref, { "Send SMS Alerts": false });
+          await updateDoc(alertDoc.ref, { 'Send SMS Alerts': false });
         }
       }
       set({ loading: false });
@@ -1095,10 +1096,10 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
   ) => {
     try {
       // 1. Delete 'adsAccountVariables' where 'User' == companyAdminRef
-      const adsAccountVariablesRef = collection(db, "adsAccountVariables");
+      const adsAccountVariablesRef = collection(db, 'adsAccountVariables');
       let q = query(
         adsAccountVariablesRef,
-        where("User", "==", companyAdminRef),
+        where('User', '==', companyAdminRef),
       );
       let snap = await getDocs(q);
       for (const docSnap of snap.docs) {
@@ -1106,16 +1107,16 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       }
 
       // 2. Get all adsAccounts ids for this company admin
-      const adsAccountsRef = collection(db, "adsAccounts");
-      q = query(adsAccountsRef, where("User", "==", companyAdminRef));
+      const adsAccountsRef = collection(db, 'adsAccounts');
+      q = query(adsAccountsRef, where('User', '==', companyAdminRef));
       snap = await getDocs(q);
       const adsAccountIds = snap.docs.map((doc) => doc.id);
       // Remove all adsAccountVariables where 'Ads Account' in adsAccountIds
       for (const adsAccountId of adsAccountIds) {
-        const adsAccountDocRef = doc(db, "adsAccounts", adsAccountId);
+        const adsAccountDocRef = doc(db, 'adsAccounts', adsAccountId);
         const q2 = query(
           adsAccountVariablesRef,
-          where("Ads Account", "==", adsAccountDocRef),
+          where('Ads Account', '==', adsAccountDocRef),
         );
         const snap2 = await getDocs(q2);
         for (const docSnap2 of snap2.docs) {
@@ -1124,8 +1125,8 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       }
 
       // 3. Delete all 'alerts' where 'User' == companyAdminRef
-      const alertsRef = collection(db, "alerts");
-      q = query(alertsRef, where("User", "==", companyAdminRef));
+      const alertsRef = collection(db, 'alerts');
+      q = query(alertsRef, where('User', '==', companyAdminRef));
       snap = await getDocs(q);
       for (const docSnap of snap.docs) {
         await deleteDoc(docSnap.ref);
@@ -1133,22 +1134,22 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
 
       // 4. Delete all 'adsAccounts' where 'User' == companyAdminRef
       snap = await getDocs(
-        (q = query(adsAccountsRef, where("User", "==", companyAdminRef))),
+        (q = query(adsAccountsRef, where('User', '==', companyAdminRef))),
       );
       for (const docSnap of snap.docs) {
         await deleteDoc(docSnap.ref);
       }
 
       // 5. Get all user ids for this company admin
-      const usersRef = collection(db, "users");
-      q = query(usersRef, where("Company Admin", "==", companyAdminRef));
+      const usersRef = collection(db, 'users');
+      q = query(usersRef, where('Company Admin', '==', companyAdminRef));
       snap = await getDocs(q);
       const userIds = snap.docs.map((doc) => doc.id);
       // Remove all alertSettings where 'User' in userIds
-      const alertSettingsRef = collection(db, "alertSettings");
+      const alertSettingsRef = collection(db, 'alertSettings');
       for (const userId of userIds) {
-        const userDocRef = doc(db, "users", userId);
-        const q2 = query(alertSettingsRef, where("User", "==", userDocRef));
+        const userDocRef = doc(db, 'users', userId);
+        const q2 = query(alertSettingsRef, where('User', '==', userDocRef));
         const snap2 = await getDocs(q2);
         for (const docSnap2 of snap2.docs) {
           await deleteDoc(docSnap2.ref);
@@ -1158,13 +1159,13 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       // 6. Remove all authenticationPageTrackers where 'User' in userIds
       const authenticationPageTrackersRef = collection(
         db,
-        "authenticationPageTrackers",
+        'authenticationPageTrackers',
       );
       for (const userId of userIds) {
-        const userDocRef = doc(db, "users", userId);
+        const userDocRef = doc(db, 'users', userId);
         const q2 = query(
           authenticationPageTrackersRef,
-          where("User", "==", userDocRef),
+          where('User', '==', userDocRef),
         );
         const snap2 = await getDocs(q2);
         for (const docSnap2 of snap2.docs) {
@@ -1173,24 +1174,24 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       }
 
       // 7. Delete all dashboardDailies where 'User' == companyAdminRef
-      const dashboardDailiesRef = collection(db, "dashboardDailies");
-      q = query(dashboardDailiesRef, where("User", "==", companyAdminRef));
+      const dashboardDailiesRef = collection(db, 'dashboardDailies');
+      q = query(dashboardDailiesRef, where('User', '==', companyAdminRef));
       snap = await getDocs(q);
       for (const docSnap of snap.docs) {
         await deleteDoc(docSnap.ref);
       }
 
       // 8. Delete all paymentMethods where 'User' == companyAdminRef
-      const paymentMethodsRef = collection(db, "paymentMethods");
-      q = query(paymentMethodsRef, where("User", "==", companyAdminRef));
+      const paymentMethodsRef = collection(db, 'paymentMethods');
+      q = query(paymentMethodsRef, where('User', '==', companyAdminRef));
       snap = await getDocs(q);
       for (const docSnap of snap.docs) {
         await deleteDoc(docSnap.ref);
       }
 
       // 9. Delete all stripeCompanies where 'User' == companyAdminRef
-      const stripeCompaniesRef = collection(db, "stripeCompanies");
-      q = query(stripeCompaniesRef, where("User", "==", companyAdminRef));
+      const stripeCompaniesRef = collection(db, 'stripeCompanies');
+      q = query(stripeCompaniesRef, where('User', '==', companyAdminRef));
       snap = await getDocs(q);
       for (const docSnap of snap.docs) {
         await deleteDoc(docSnap.ref);
@@ -1198,20 +1199,20 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
 
       // 10. Delete all subscriptions where 'User' == companyAdminRef
       // First, cancel Stripe subscription if it exists
-      const subscriptionsRef = collection(db, "subscriptions");
-      q = query(subscriptionsRef, where("User", "==", companyAdminRef));
+      const subscriptionsRef = collection(db, 'subscriptions');
+      q = query(subscriptionsRef, where('User', '==', companyAdminRef));
       snap = await getDocs(q);
       for (const docSnap of snap.docs) {
         const subscriptionData = docSnap.data();
-        const stripeSubscriptionId = subscriptionData["Stripe Subscription Id"];
-        const stripeCustomerId = subscriptionData["Stripe Customer Id"];
+        const stripeSubscriptionId = subscriptionData['Stripe Subscription Id'];
+        const stripeCustomerId = subscriptionData['Stripe Customer Id'];
 
         // Cancel Stripe subscription if it exists
         if (stripeSubscriptionId) {
           try {
-            const response = await fetch("/api/stripe-subscriptions", {
-              method: "DELETE",
-              headers: { "Content-Type": "application/json" },
+            const response = await fetch('/api/stripe-subscriptions', {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 subscriptionId: stripeSubscriptionId,
                 customerId: stripeCustomerId,
@@ -1241,10 +1242,10 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       }
 
       // 11. Remove all userTokens where 'User' in userIds
-      const userTokensRef = collection(db, "userTokens");
+      const userTokensRef = collection(db, 'userTokens');
       for (const userId of userIds) {
-        const userDocRef = doc(db, "users", userId);
-        const q2 = query(userTokensRef, where("User", "==", userDocRef));
+        const userDocRef = doc(db, 'users', userId);
+        const q2 = query(userTokensRef, where('User', '==', userDocRef));
         const snap2 = await getDocs(q2);
         for (const docSnap2 of snap2.docs) {
           await deleteDoc(docSnap2.ref);
@@ -1272,8 +1273,8 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         // Fetch the admin user document to get the email
         const adminUserDoc = await getDocs(
           query(
-            collection(db, "users"),
-            where("__name__", "==", companyAdminRef.id),
+            collection(db, 'users'),
+            where('__name__', '==', companyAdminRef.id),
           ),
         );
         if (!adminUserDoc.empty) {
@@ -1283,12 +1284,12 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
 
           if (adminEmail) {
             const path = getFirebaseFnPath(
-              "remove-cronitor-monitors-for-subscription-cancellation-fb",
+              'remove-cronitor-monitors-for-subscription-cancellation-fb',
             );
             const response = await fetch(path, {
-              method: "POST",
+              method: 'POST',
               headers: {
-                "Content-Type": "application/json",
+                'Content-Type': 'application/json',
               },
               body: JSON.stringify({
                 adminEmail: adminEmail,
@@ -1297,26 +1298,26 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
 
             if (!response.ok) {
               console.warn(
-                "Failed to remove cronitor monitors:",
+                'Failed to remove cronitor monitors:',
                 await response.text(),
               );
             } else {
               console.log(
-                "Successfully removed cronitor monitors for admin email:",
+                'Successfully removed cronitor monitors for admin email:',
                 adminEmail,
               );
             }
           }
         }
       } catch (error) {
-        console.warn("Error removing cronitor monitors:", error);
+        console.warn('Error removing cronitor monitors:', error);
       }
 
       // 15. Remove all users where id in userIds
       for (const userId of userIds) {
         try {
           // Get user document to retrieve contact IDs
-          const userRef = doc(db, "users", userId);
+          const userRef = doc(db, 'users', userId);
           const userDoc = await getDoc(userRef);
 
           if (userDoc.exists()) {
@@ -1324,16 +1325,16 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             const contactIds = {
               // Pipedrive: userData.Pipedrive,
               Mailchimp: userData.Mailchimp,
-              "Sendgrid Marketing": userData["Sendgrid Marketing"],
+              'Sendgrid Marketing': userData['Sendgrid Marketing'],
             };
 
             // Only attempt to remove contacts if any contact IDs exist
             if (Object.values(contactIds).some((id) => id)) {
               try {
-                const response = await fetch("/api/contacts/remove", {
-                  method: "POST",
+                const response = await fetch('/api/contacts/remove', {
+                  method: 'POST',
                   headers: {
-                    "Content-Type": "application/json",
+                    'Content-Type': 'application/json',
                   },
                   body: JSON.stringify({ contactIds }),
                 });
@@ -1349,13 +1350,13 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
                   }
                 }
               } catch (error) {
-                console.warn("Failed to remove contacts:", error);
+                console.warn('Failed to remove contacts:', error);
               }
             }
           }
 
           // Delete the user document
-          await deleteDoc(doc(db, "users", userId));
+          await deleteDoc(doc(db, 'users', userId));
         } catch (error) {
           console.error(`Error removing user ${userId}:`, error);
           // Continue with next user even if this one fails
@@ -1365,7 +1366,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       // 16. Log the user out
       await userLogout();
     } catch (error) {
-      console.error("Error deleting company account:", error);
+      console.error('Error deleting company account:', error);
       throw error;
     }
   },
@@ -1373,9 +1374,9 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     if (get().stripeCompanyLoaded && get().stripeCompany) return;
     set({ loading: true, error: null });
     try {
-      const stripeCompaniesRef = collection(db, "stripeCompanies");
-      const userRef = doc(db, "users", userId);
-      const q = query(stripeCompaniesRef, where("User", "==", userRef));
+      const stripeCompaniesRef = collection(db, 'stripeCompanies');
+      const userRef = doc(db, 'users', userId);
+      const q = query(stripeCompaniesRef, where('User', '==', userRef));
       const snap = await getDocs(q);
 
       if (!snap.empty) {
@@ -1395,9 +1396,9 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
   updateStripeCompany: async (userId: string, updates: any) => {
     set({ loading: true, error: null });
     try {
-      const stripeCompaniesRef = collection(db, "stripeCompanies");
-      const userRef = doc(db, "users", userId);
-      const q = query(stripeCompaniesRef, where("User", "==", userRef));
+      const stripeCompaniesRef = collection(db, 'stripeCompanies');
+      const userRef = doc(db, 'users', userId);
+      const q = query(stripeCompaniesRef, where('User', '==', userRef));
       const snap = await getDocs(q);
 
       if (!snap.empty) {
@@ -1426,8 +1427,8 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     if (get().subscriptionLoaded && get().subscription) return;
     set({ loading: true, error: null });
     try {
-      const subscriptionsRef = collection(db, "subscriptions");
-      const q = query(subscriptionsRef, where("User", "==", companyAdminRef));
+      const subscriptionsRef = collection(db, 'subscriptions');
+      const q = query(subscriptionsRef, where('User', '==', companyAdminRef));
       const snap = await getDocs(q);
       if (!snap.empty) {
         const docSnap = snap.docs[0];
@@ -1447,9 +1448,9 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     if (get().paymentMethodsLoaded && get().paymentMethods) return;
     set({ loading: true, error: null });
     try {
-      const paymentMethodsRef = collection(db, "paymentMethods");
-      const userRef = doc(db, "users", companyAdminRef.uid);
-      const q = query(paymentMethodsRef, where("User", "==", userRef));
+      const paymentMethodsRef = collection(db, 'paymentMethods');
+      const userRef = doc(db, 'users', companyAdminRef.uid);
+      const q = query(paymentMethodsRef, where('User', '==', userRef));
       const snap = await getDocs(q);
       if (!snap.empty) {
         const docSnap = snap.docs[0];
@@ -1472,12 +1473,12 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
   fetchPaymentMethodByUser: async (userRef: any) => {
     set({ loading: true, error: null });
     try {
-      const paymentMethodsRef = collection(db, "paymentMethods");
-      const q = query(paymentMethodsRef, where("User", "==", userRef));
+      const paymentMethodsRef = collection(db, 'paymentMethods');
+      const q = query(paymentMethodsRef, where('User', '==', userRef));
       const snap = await getDocs(q);
       if (!snap.empty) {
         const docSnap = snap.docs[0];
-        console.log("docSnap", docSnap.data());
+        console.log('docSnap', docSnap.data());
         set({
           paymentMethods: { id: docSnap.id, ...docSnap.data() },
           loading: false,
@@ -1509,34 +1510,34 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       // 1. Get userId from userDoc['Company Admin']
-      const { useAuthStore } = await import("./auth-store");
+      const { useAuthStore } = await import('./auth-store');
       const userDoc = useAuthStore.getState().userDoc;
-      if (!userDoc) throw new Error("User document not found");
-      let userId = "";
+      if (!userDoc) throw new Error('User document not found');
+      let userId = '';
       if (
-        userDoc["Company Admin"] &&
-        typeof userDoc["Company Admin"] === "object" &&
-        userDoc["Company Admin"].id
+        userDoc['Company Admin'] &&
+        typeof userDoc['Company Admin'] === 'object' &&
+        userDoc['Company Admin'].id
       ) {
-        userId = userDoc["Company Admin"].id;
-      } else if (typeof userDoc["Company Admin"] === "string") {
-        const match = userDoc["Company Admin"].match(/\/users\/(.+)/);
-        userId = match && match[1] ? match[1] : userDoc["Company Admin"];
+        userId = userDoc['Company Admin'].id;
+      } else if (typeof userDoc['Company Admin'] === 'string') {
+        const match = userDoc['Company Admin'].match(/\/users\/(.+)/);
+        userId = match && match[1] ? match[1] : userDoc['Company Admin'];
       }
-      console.log("userId: ", userId);
-      const userRef = doc(db, "users", userId);
+      console.log('userId: ', userId);
+      const userRef = doc(db, 'users', userId);
 
       // 2. Fetch user document
       const userSnap = await getDocs(
-        query(collection(db, "users"), where("__name__", "==", userId)),
+        query(collection(db, 'users'), where('__name__', '==', userId)),
       );
       const userData = userSnap.empty ? null : userSnap.docs[0].data();
-      if (!userData) throw new Error("User document not found");
+      if (!userData) throw new Error('User document not found');
 
       // 3. Fetch stripeCompanies where User == userId
-      const stripeCompaniesRef = collection(db, "stripeCompanies");
+      const stripeCompaniesRef = collection(db, 'stripeCompanies');
       const stripeCompaniesSnap = await getDocs(
-        query(stripeCompaniesRef, where("User", "==", userRef)),
+        query(stripeCompaniesRef, where('User', '==', userRef)),
       );
       const stripeCompanyDoc = stripeCompaniesSnap.empty
         ? null
@@ -1544,24 +1545,24 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       const stripeCompany = stripeCompanyDoc ? stripeCompanyDoc.data() : null;
 
       // 4. Fetch adsAccounts where User == userId and Is Connected == true
-      const adsAccountsRef = collection(db, "adsAccounts");
+      const adsAccountsRef = collection(db, 'adsAccounts');
       const adsAccountsSnap = await getDocs(
         query(
           adsAccountsRef,
-          where("User", "==", userRef),
-          where("Is Connected", "==", true),
+          where('User', '==', userRef),
+          where('Is Connected', '==', true),
         ),
       );
       const adsAccounts = adsAccountsSnap.docs.map((doc) => doc.data());
       const adsAccountsCount = adsAccounts.length;
-      console.log("adsAccountsCount: ", adsAccountsCount);
+      console.log('adsAccountsCount: ', adsAccountsCount);
 
       // 5. If paymentMethods is empty:
       if (!get().paymentMethods) {
         // Create payment method with Stripe
         const { error, paymentMethod } = await stripe.createPaymentMethod({
-          type: "card",
-          card: elements.getElement("card") || elements.getElement(CardElement),
+          type: 'card',
+          card: elements.getElement('card') || elements.getElement(CardElement),
           billing_details: {
             name: formData.nameOnCard,
             address: {
@@ -1574,7 +1575,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           },
         });
         if (error) {
-          toast.error(error.message || "Payment method creation failed");
+          toast.error(error.message || 'Payment method creation failed');
           set({ loading: false });
           return;
         }
@@ -1594,19 +1595,19 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         if (stripeCompany) {
           customerEmail = stripeCompany.Email || customerEmail;
           shipping = {
-            name: stripeCompany["Company Name"] || formData.nameOnCard,
+            name: stripeCompany['Company Name'] || formData.nameOnCard,
             address: {
-              line1: stripeCompany["Street Address"] || formData.streetAddress,
-              city: stripeCompany["City"] || formData.city,
-              state: stripeCompany["State"] || formData.state,
-              postal_code: stripeCompany["Zip"] || formData.zip,
-              country: stripeCompany["Country"] || formData.country,
+              line1: stripeCompany['Street Address'] || formData.streetAddress,
+              city: stripeCompany['City'] || formData.city,
+              state: stripeCompany['State'] || formData.state,
+              postal_code: stripeCompany['Zip'] || formData.zip,
+              country: stripeCompany['Country'] || formData.country,
             },
           };
         }
 
         // Create Stripe customer (API route should handle attaching payment method, shipping, and email)
-        const { paymentService } = await import("@/services/payment");
+        const { paymentService } = await import('@/services/payment');
 
         const billingDetailsPayload = {
           nameOnCard: formData.nameOnCard,
@@ -1617,7 +1618,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           zip: formData.zip,
         };
 
-        console.log("Sending billing details to API:", billingDetailsPayload);
+        console.log('Sending billing details to API:', billingDetailsPayload);
 
         const customerResult = await paymentService.createStripeCustomer({
           userId,
@@ -1626,13 +1627,13 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         });
         if (!customerResult.success) {
           toast.error(
-            customerResult.error || "Failed to create Stripe customer",
+            customerResult.error || 'Failed to create Stripe customer',
           );
           set({ loading: false });
           return;
         }
         const customerId = customerResult.customerId;
-        console.log("customerId: ", customerId);
+        console.log('customerId: ', customerId);
 
         // Save payment method details to Firestore
         const saveResult = await paymentService.savePaymentMethodDetails({
@@ -1649,7 +1650,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         });
         if (!saveResult.success) {
           toast.error(
-            saveResult.error || "Failed to save payment method details",
+            saveResult.error || 'Failed to save payment method details',
           );
           set({ loading: false });
           return;
@@ -1672,7 +1673,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           if (address.country) {
             try {
               // Use countries-list for country code to name
-              const { countries } = await import("countries-list");
+              const { countries } = await import('countries-list');
               const code = address.country as keyof typeof countries;
               countryName = countries[code]?.name || address.country;
             } catch (e) {
@@ -1682,39 +1683,39 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           }
 
           // Find the stripeCompanies document
-          const stripeCompaniesRef = collection(db, "stripeCompanies");
+          const stripeCompaniesRef = collection(db, 'stripeCompanies');
           const q = query(
             stripeCompaniesRef,
-            where("User", "==", userDoc["Company Admin"]),
+            where('User', '==', userDoc['Company Admin']),
           );
           const snap = await getDocs(q);
           if (!snap.empty) {
             const docSnap = snap.docs[0];
             await updateDoc(docSnap.ref, {
               Email: email,
-              "Street Address": address.line1 || "",
-              City: address.city || "",
-              State: address.state || "",
-              Country: countryName || "",
-              Zip: address.postal_code || "",
+              'Street Address': address.line1 || '',
+              City: address.city || '',
+              State: address.state || '',
+              Country: countryName || '',
+              Zip: address.postal_code || '',
             });
           }
         } catch (err) {
           console.error(
-            "Failed to update stripeCompanies billing address:",
+            'Failed to update stripeCompanies billing address:',
             err,
           );
         }
 
         // Update subscription doc with new Stripe Customer Id
-        const subscriptionsRef = collection(db, "subscriptions");
+        const subscriptionsRef = collection(db, 'subscriptions');
         const subSnap = await getDocs(
-          query(subscriptionsRef, where("User", "==", userRef)),
+          query(subscriptionsRef, where('User', '==', userRef)),
         );
-        console.log("subSnap: ", subSnap);
+        console.log('subSnap: ', subSnap);
         if (!subSnap.empty) {
           await updateDoc(subSnap.docs[0].ref, {
-            "Stripe Customer Id": customerId,
+            'Stripe Customer Id': customerId,
           });
         }
 
@@ -1723,15 +1724,15 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           // Call backend API to create subscription (implement /api/stripe-subscriptions)
           const priceId = process.env.NEXT_PUBLIC_STRIPE_SUBSCRIPTION_PRICE_ID;
           // Log all fields passed into the body for debugging
-          console.log("Creating Stripe subscription with:", {
+          console.log('Creating Stripe subscription with:', {
             customerId,
             priceId,
             quantity: adsAccountsCount,
             paymentMethodId: paymentMethod.id,
           });
-          const subRes = await fetch("/api/stripe-subscriptions", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+          const subRes = await fetch('/api/stripe-subscriptions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               customerId,
               priceId,
@@ -1740,11 +1741,11 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             }),
           });
           const subData = await subRes.json();
-          console.log("subData: ", subData);
+          console.log('subData: ', subData);
           if (!subRes.ok || subData.error) {
             toast.error(
-              (subData.error || "Stripe subscription error") +
-                " Your subscription payment has failed. Please update your payment method to avoid any service interruptions.",
+              (subData.error || 'Stripe subscription error') +
+                ' Your subscription payment has failed. Please update your payment method to avoid any service interruptions.',
             );
             set({ loading: false });
             return;
@@ -1752,10 +1753,10 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           // Update subscription doc with subscription id and status
           if (!subSnap.empty) {
             await updateDoc(subSnap.docs[0].ref, {
-              "Stripe Subscription Id": subData.subscriptionId,
-              "Stripe Subscription Item Id(s)":
+              'Stripe Subscription Id': subData.subscriptionId,
+              'Stripe Subscription Item Id(s)':
                 subData.subscriptionItemIds || [],
-              "User Status": "Paying",
+              'User Status': 'Paying',
             });
           }
           toast.success("You've successfully subscribed to AdAlerts.io");
@@ -1776,29 +1777,29 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         // https://bubble.io/page?id=adalerts-75228&tab=Workflow&name=el-tab-account-billing&type=custom&elements=bTMqY&wf_item=bTNVy
 
         // 1. Fetch the subscriptions document where 'User' equals userDoc['Company Admin']
-        const subscriptionsRef = collection(db, "subscriptions");
+        const subscriptionsRef = collection(db, 'subscriptions');
         const subQuery = query(
           subscriptionsRef,
-          where("User", "==", userDoc["Company Admin"]),
+          where('User', '==', userDoc['Company Admin']),
         );
         const subSnap = await getDocs(subQuery);
         if (subSnap.empty) {
-          toast.error("No subscription found for this user");
+          toast.error('No subscription found for this user');
           set({ loading: false });
           return;
         }
         const subscriptionDoc = subSnap.docs[0];
-        const stripeCustomerId = subscriptionDoc.data()["Stripe Customer Id"];
+        const stripeCustomerId = subscriptionDoc.data()['Stripe Customer Id'];
         if (!stripeCustomerId) {
-          toast.error("No Stripe Customer ID found in subscription");
+          toast.error('No Stripe Customer ID found in subscription');
           set({ loading: false });
           return;
         }
 
         // 2. Create payment method with Stripe
         const { error, paymentMethod } = await stripe.createPaymentMethod({
-          type: "card",
-          card: elements.getElement("card") || elements.getElement(CardElement),
+          type: 'card',
+          card: elements.getElement('card') || elements.getElement(CardElement),
           billing_details: {
             name: formData.nameOnCard,
             address: {
@@ -1811,20 +1812,20 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           },
         });
         if (error) {
-          toast.error(error.message || "Payment method creation failed");
+          toast.error(error.message || 'Payment method creation failed');
           set({ loading: false });
           return;
         }
 
         // 3. Replace payment method using API route
         const oldPaymentMethodId =
-          get().paymentMethods?.["Stripe Payment Method"];
+          get().paymentMethods?.['Stripe Payment Method'];
 
-        const paymentMethodRes = await fetch("/api/stripe-payment-methods", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        const paymentMethodRes = await fetch('/api/stripe-payment-methods', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            action: "replace",
+            action: 'replace',
             customerId: stripeCustomerId,
             paymentMethodId: paymentMethod.id,
             oldPaymentMethodId: oldPaymentMethodId || null,
@@ -1834,15 +1835,15 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         const paymentMethodData = await paymentMethodRes.json();
         if (!paymentMethodRes.ok || !paymentMethodData.success) {
           toast.error(
-            paymentMethodData.error || "Failed to update payment method",
+            paymentMethodData.error || 'Failed to update payment method',
           );
           set({ loading: false });
           return;
         }
 
         // 5. Update the new payment method details to Firestore
-        const userRef = doc(db, "users", userId);
-        const { paymentService } = await import("@/services/payment");
+        const userRef = doc(db, 'users', userId);
+        const { paymentService } = await import('@/services/payment');
         const saveResult = await paymentService.savePaymentMethodDetails({
           userRef: `/users/${userId}`,
           paymentMethod,
@@ -1857,7 +1858,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         });
         if (!saveResult.success) {
           toast.error(
-            saveResult.error || "Failed to save payment method details",
+            saveResult.error || 'Failed to save payment method details',
           );
           set({ loading: false });
           return;
@@ -1880,7 +1881,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           if (address.country) {
             try {
               // Use countries-list for country code to name
-              const { countries } = await import("countries-list");
+              const { countries } = await import('countries-list');
               const code = address.country as keyof typeof countries;
               countryName = countries[code]?.name || address.country;
             } catch (e) {
@@ -1890,39 +1891,93 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           }
 
           // Find the stripeCompanies document
-          const stripeCompaniesRef = collection(db, "stripeCompanies");
+          const stripeCompaniesRef = collection(db, 'stripeCompanies');
           const q = query(
             stripeCompaniesRef,
-            where("User", "==", userDoc["Company Admin"]),
+            where('User', '==', userDoc['Company Admin']),
           );
           const snap = await getDocs(q);
           if (!snap.empty) {
             const docSnap = snap.docs[0];
             await updateDoc(docSnap.ref, {
               Email: email,
-              "Street Address": address.line1 || "",
-              City: address.city || "",
-              State: address.state || "",
-              Country: countryName || "",
-              Zip: address.postal_code || "",
+              'Street Address': address.line1 || '',
+              City: address.city || '',
+              State: address.state || '',
+              Country: countryName || '',
+              Zip: address.postal_code || '',
             });
           }
         } catch (err) {
           console.error(
-            "Failed to update stripeCompanies billing address:",
+            'Failed to update stripeCompanies billing address:',
             err,
           );
         }
 
-        toast.success("Payment method updated successfully!");
+        toast.success('Payment method updated successfully!');
         onBack();
       }
     } catch (error: any) {
-      console.error("handleSubscriptionPayment error:", error);
+      console.error('handleSubscriptionPayment error:', error);
       toast.error(
-        error.message || "An error occurred while processing payment",
+        error.message || 'An error occurred while processing payment',
       );
       set({ loading: false, error: error.message });
+    }
+  },
+  deleteUserWithRecords: async (userId: string, email: string) => {
+    set({ loading: true, error: null });
+    try {
+      const userRef = doc(db, 'users', userId);
+
+      // 1) Delete 'adsAccountVariables' where User == userRef
+      {
+        const adsAccountVariablesRef = collection(db, 'adsAccountVariables');
+        const q = query(adsAccountVariablesRef, where('User', '==', userRef));
+        const snap = await getDocs(q);
+        await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
+      }
+
+      // 2) Delete 'adsAccounts' where User == userRef
+      {
+        const adsAccountsRef = collection(db, 'adsAccounts');
+        const q = query(adsAccountsRef, where('User', '==', userRef));
+        const snap = await getDocs(q);
+        await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
+      }
+
+      // 3) Delete 'alertSettings' where User == userRef
+      {
+        const alertSettingsRef = collection(db, 'alertSettings');
+        const q = query(alertSettingsRef, where('User', '==', userRef));
+        const snap = await getDocs(q);
+        await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
+      }
+
+      // 4) Delete 'userTokens' where User == userRef
+      {
+        const userTokensRef = collection(db, 'userTokens');
+        const q = query(userTokensRef, where('User', '==', userRef));
+        const snap = await getDocs(q);
+        await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
+      }
+
+      // 5) Delete 'invitations' where email matches
+      {
+        const invitationsRef = collection(db, 'invitations');
+        const q = query(invitationsRef, where('email', '==', email));
+        const snap = await getDocs(q);
+        await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
+      }
+
+      // 6) Delete the user document
+      await deleteDoc(userRef);
+
+      set({ loading: false });
+    } catch (error: any) {
+      set({ error: error.message, loading: false });
+      throw error;
     }
   },
 }));
