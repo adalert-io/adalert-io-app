@@ -997,7 +997,7 @@ export default function Dashboard() {
         {/* Top Section */}
         <div className=" flex flex-col md:flex-row gap-4 mb-6 w-full  max-[767px]:mt-[80px]">
           <div className="flex flex-col gap-2 w-full">
-            <div className="  flex items-center gap-3">
+            <div className="  flex flex-col items-center gap-3 md:flex-row">
               <span className="text-lg md:text-xl font-semibold text-gray-900">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -1087,7 +1087,7 @@ export default function Dashboard() {
                   ? 'Showing Ad'
                   : 'Not Showing Ad'}
               </span>
-              <span className="text-xl md:text-2xl font-bold text-gray-900">
+              <span className="text-xl text-center md:text-2xl font-bold text-gray-900 md:text-left">
                 {selectedAdsAccount?.['Account Name Editable'] || '-'}
                 {' - '}
                 {selectedAdsAccount?.['Id']
