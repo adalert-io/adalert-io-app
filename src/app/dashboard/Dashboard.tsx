@@ -234,9 +234,10 @@ function KpiMetricsRow({
 }
 
 export default function Dashboard() {
-  const { user } = useAuthStore();
+  const { user, userDoc } = useAuthStore();
   const router = useRouter();
-  const { selectedAdsAccount, userAdsAccounts } = useUserAdsAccountsStore();
+  const { selectedAdsAccount, userAdsAccounts, fetchUserAdsAccounts } =
+    useUserAdsAccountsStore();
   console.log('Selected Ads Account:', selectedAdsAccount);
   const {
     fetchAlerts,
@@ -333,7 +334,13 @@ export default function Dashboard() {
       return;
     }
     console.log('selectedAdsAccount: ', selectedAdsAccount);
-  }, [user, router, selectedAdsAccount]);
+    console.log('userDoc: ', userDoc);
+
+    // If selectedAdsAccount is empty and we have userDoc, fetch user ads accounts
+    if (!selectedAdsAccount && userDoc) {
+      fetchUserAdsAccounts(userDoc);
+    }
+  }, [user, router, selectedAdsAccount, userDoc, fetchUserAdsAccounts]);
 
   useEffect(() => {
     if (selectedAdsAccount && selectedAdsAccount.id !== lastFetchedAccountId) {
