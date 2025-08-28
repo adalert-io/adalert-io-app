@@ -1084,8 +1084,8 @@ export default function Dashboard() {
                 {!adsLabel
                   ? 'Checking'
                   : adsLabel['Is Showing Ads']
-                  ? 'Showing Ad'
-                  : 'Not Showing Ad'}
+                  ? 'Showing Ads'
+                  : 'Not Showing Ads'}
               </span>
               <span className="text-xl text-center md:text-2xl font-bold text-gray-900 md:text-left">
                 {selectedAdsAccount?.['Account Name Editable'] || '-'}
