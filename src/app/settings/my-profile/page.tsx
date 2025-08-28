@@ -245,9 +245,9 @@ export default function MyProfileTab() {
                   />
                   <Mail className="absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]" />
                 </div>
-                <div className="relative flex items-center">
+                <div className="relative flex flex-col items-center gap-2 sm:flex-row">
                   {/* Country selector using react-select */}
-                  <div className="w-32">
+                  <div className="w-full sm:w-32">
                     {isClient ? (
                       <Select
                         placeholder="+1"
