@@ -20,17 +20,25 @@ export default function SettingsLayout({
 }) {
   const pathname = usePathname();
   const currentMainTab = pathname?.split('/')[2] || 'settings';
-  const { subscription, isFullAccess } = useAuthStore();
+  const { subscription, isFullAccess, userDoc } = useAuthStore();
 
   // Use isFullAccess from auth store instead of calculating locally
   const isSubscriptionExpired = !isFullAccess;
+
+  // Filter tabs based on user type
+  const filteredTabs = MAIN_TABS.filter((tab) => {
+    if (tab.value === 'account' && userDoc?.['User Type'] === 'Manager') {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-[#f5f7fb]">
       <Header />
       <div className="w-full flex flex-col items-center mt-8">
         <div className="flex gap-4 bg-white rounded-2xl shadow-md p-2 mb-8">
-          {MAIN_TABS.map((tab) => {
+          {filteredTabs.map((tab) => {
             const isSettingsTab = tab.value === 'settings';
             const isDisabled = isSettingsTab && isSubscriptionExpired;
 

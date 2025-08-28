@@ -269,24 +269,28 @@ export function Header() {
           <div className="hidden md:flex items-center gap-4">
             {user && userDoc && (
               <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`text-blue-600 ${
-                    isSubscriptionExpired ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                  onClick={() =>
-                    !isSubscriptionExpired && router.push('/add-ads-account')
-                  }
-                  disabled={isSubscriptionExpired}
-                  title={
-                    isSubscriptionExpired
-                      ? 'Subscription expired. Please renew to add ads accounts.'
-                      : 'Add Ads Account'
-                  }
-                >
-                  <Plus className="w-5 h-5" />
-                </Button>
+                {userDoc['User Type'] !== 'Manager' && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`text-blue-600 ${
+                      isSubscriptionExpired
+                        ? 'opacity-50 cursor-not-allowed'
+                        : ''
+                    }`}
+                    onClick={() =>
+                      !isSubscriptionExpired && router.push('/add-ads-account')
+                    }
+                    disabled={isSubscriptionExpired}
+                    title={
+                      isSubscriptionExpired
+                        ? 'Subscription expired. Please renew to add ads accounts.'
+                        : 'Add Ads Account'
+                    }
+                  >
+                    <Plus className="w-5 h-5" />
+                  </Button>
+                )}
                 {userAdsAccounts.length >= 2 && (
                   <Button
                     variant="ghost"
@@ -383,24 +387,28 @@ export function Header() {
           <div className="md:hidden flex items-center gap-2">
             {user && userDoc && (
               <>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`text-blue-600 ${
-                    isSubscriptionExpired ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                  onClick={() =>
-                    !isSubscriptionExpired && router.push('/add-ads-account')
-                  }
-                  disabled={isSubscriptionExpired}
-                  title={
-                    isSubscriptionExpired
-                      ? 'Subscription expired. Please renew to add ads accounts.'
-                      : 'Add Ads Account'
-                  }
-                >
-                  <Plus className="w-5 h-5" />
-                </Button>
+                {userDoc['User Type'] !== 'Manager' && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`text-blue-600 ${
+                      isSubscriptionExpired
+                        ? 'opacity-50 cursor-not-allowed'
+                        : ''
+                    }`}
+                    onClick={() =>
+                      !isSubscriptionExpired && router.push('/add-ads-account')
+                    }
+                    disabled={isSubscriptionExpired}
+                    title={
+                      isSubscriptionExpired
+                        ? 'Subscription expired. Please renew to add ads accounts.'
+                        : 'Add Ads Account'
+                    }
+                  >
+                    <Plus className="w-5 h-5" />
+                  </Button>
+                )}
                 {userAdsAccounts.length >= 2 && (
                   <Button
                     variant="ghost"
