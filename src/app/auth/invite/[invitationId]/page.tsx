@@ -7,7 +7,7 @@ import {
   signInWithEmailAndPassword,
 } from "firebase/auth";
 import { db, auth } from "@/lib/firebase/config";
-import { createUserDocuments } from "@/lib/store/auth-store";
+import { createUserDocuments, useAuthStore } from "@/lib/store/auth-store";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -45,7 +45,7 @@ export default function AcceptInvitation({
     const fetchInvitation = async () => {
       try {
         const invitationDoc = await getDoc(
-          doc(db, "invitations", invitationId)
+          doc(db, "invitations", invitationId),
         );
         if (!invitationDoc.exists()) {
           toast.error("Invalid invitation link");
@@ -95,7 +95,7 @@ export default function AcceptInvitation({
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         invitation.email,
-        formData.password
+        formData.password,
       );
       // 2. Create user documents (without contacts for now)
       await createUserDocuments(userCredential.user, false, false);
@@ -162,7 +162,7 @@ export default function AcceptInvitation({
               const userAlreadySelected = currentSelectedUsers.some(
                 (user: any) =>
                   user.id === userCredential.user.uid ||
-                  user.path?.includes(userCredential.user.uid)
+                  user.path?.includes(userCredential.user.uid),
               );
 
               if (!userAlreadySelected) {
@@ -181,11 +181,21 @@ export default function AcceptInvitation({
       await signInWithEmailAndPassword(
         auth,
         invitation.email,
-        formData.password
+        formData.password,
       );
+
+      // 7. Set up auth store and handle navigation
+      const authStore = useAuthStore.getState();
+      authStore.setUser(userCredential.user);
+      authStore.setRouter(router);
+
+      // Fetch user document and check subscription status
+      await authStore.checkSubscriptionStatus(userCredential.user.uid);
+
+      // Handle post-auth navigation
+      await authStore.handlePostAuthNavigation();
+
       toast.success("Account activated! Welcome to the team!");
-      // TODO: need to check where to navigate to
-      router.push("/dashboard");
     } catch (error: any) {
       if (error.code === "auth/email-already-in-use") {
         toast.error("An account with this email already exists");

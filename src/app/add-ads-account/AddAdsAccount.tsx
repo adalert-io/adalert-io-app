@@ -83,8 +83,16 @@ export function AddAdsAccount() {
         const sub = await getSubscription(user.uid);
         setSubscription(sub);
 
-        if (token && tracker && tracker["Is Ads Account Authenticating"]) {
-          const data = await fetchAdsAccounts(token.id, user.uid);
+        if (
+          token &&
+          tracker &&
+          tracker["Is Ads Account Authenticating"] &&
+          userDoc
+        ) {
+          const data = await fetchAdsAccounts(
+            token.id,
+            userDoc["Company Admin"].id,
+          );
           setAdsAccounts(data.map((acc: any) => ({ ...acc })));
           await setAdsAccountAuthenticating(user.uid, false);
         }
@@ -185,7 +193,7 @@ export function AddAdsAccount() {
           return {
             ...updatePayload,
             "Is Connected": true,
-            User: doc(db, "users", user.uid),
+            User: doc(db, "users", userDoc["Company Admin"].id),
             "User Token": doc(db, "userTokens", userToken.id),
             "Monthly Budget": Number(acc["Monthly Budget"]),
           };
@@ -206,7 +214,7 @@ export function AddAdsAccount() {
           await updateDoc(doc(db, "adsAccounts", acc._id), {
             ...updatePayload,
             "Selected Users": arrayUnion(doc(db, COLLECTIONS.USERS, user.uid)),
-            User: doc(db, "users", user.uid),
+            User: doc(db, "users", userDoc["Company Admin"].id),
             "User Token": doc(db, "userTokens", userToken.id),
             "Monthly Budget": Number(acc["Monthly Budget"]),
           });
@@ -226,7 +234,7 @@ export function AddAdsAccount() {
           } else {
             await setDoc(adsAccountVarRef, {
               "Ads Account": doc(db, "adsAccounts", acc._id),
-              User: doc(db, "users", user.uid),
+              User: doc(db, "users", userDoc["Company Admin"].id),
               DailyBudget: acc["Daily Budget"] || 0,
               MonthlyBudget: acc["Monthly Budget"] || 0,
               "Created Date": new Date(),

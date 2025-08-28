@@ -1,7 +1,7 @@
-"use client";
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+'use client';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import {
   ChevronLeft,
   Search,
@@ -22,41 +22,44 @@ import {
   UserCircle,
   Loader2,
   RotateCcw,
-} from "lucide-react";
-import { useAlertSettingsStore } from "@/lib/store/settings-store";
-import { useAuthStore } from "@/lib/store/auth-store";
-import { Checkbox } from "@/components/ui/checkbox";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
+} from 'lucide-react';
+import { useAlertSettingsStore } from '@/lib/store/settings-store';
+import { useAuthStore } from '@/lib/store/auth-store';
+import { Checkbox } from '@/components/ui/checkbox';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
 import {
   useReactTable,
   getCoreRowModel,
   getPaginationRowModel,
   flexRender,
   ColumnDef,
-} from "@tanstack/react-table";
-import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
-import React, { useRef } from "react";
-import { toast } from "sonner";
+} from '@tanstack/react-table';
+import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
+import React, { useRef } from 'react';
+import { toast } from 'sonner';
 
 // Removed hardcoded ADS_ACCOUNTS - now using fetched data from store
 
 const checkboxClass =
-  "data-[state=checked]:bg-blue-700 data-[state=checked]:border-blue-700";
+  'data-[state=checked]:bg-blue-700 data-[state=checked]:border-blue-700';
 
 export default function UsersSubtab() {
-  const [screen, setScreen] = useState<"list" | "add" | "edit">("list");
+  const [screen, setScreen] = useState<'list' | 'add' | 'edit'>('list');
   const [editingUser, setEditingUser] = useState<any>(null);
-  const [role, setRole] = useState<"Admin" | "Manager">("Admin");
+  const [deletingUser, setDeletingUser] = useState<any>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [role, setRole] = useState<'Admin' | 'Manager'>('Admin');
   const [adsDropdownOpen, setAdsDropdownOpen] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [selectedAds, setSelectedAds] = useState<string[]>([]);
   const [pageSize, setPageSize] = useState(25);
   const [showSearch, setShowSearch] = useState(false);
-  const [searchValue, setSearchValue] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [adsSearchValue, setAdsSearchValue] = useState("");
-  const [debouncedAdsSearch, setDebouncedAdsSearch] = useState("");
+  const [searchValue, setSearchValue] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [adsSearchValue, setAdsSearchValue] = useState('');
+  const [debouncedAdsSearch, setDebouncedAdsSearch] = useState('');
   const { userDoc } = useAuthStore();
   const {
     users,
@@ -67,15 +70,21 @@ export default function UsersSubtab() {
     fetchAdsAccounts,
     updateUser,
     inviteUser,
+    deleteUserWithRecords,
+    refreshUsers,
+    refreshInvitations,
   } = useAlertSettingsStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
+  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [notifyUser, setNotifyUser] = useState(false);
   const [resendingInvitationId, setResendingInvitationId] = useState<
+    string | null
+  >(null);
+  const [deletingInvitationId, setDeletingInvitationId] = useState<
     string | null
   >(null);
 
@@ -93,24 +102,24 @@ export default function UsersSubtab() {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
       if (
-        !target.closest(".role-dropdown") &&
-        !target.closest(".ads-dropdown")
+        !target.closest('.role-dropdown') &&
+        !target.closest('.ads-dropdown')
       ) {
         setRoleDropdownOpen(false);
         setAdsDropdownOpen(false);
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   // Helper function to check if current user has access to an ads account
   const hasUserAccessToAccount = useCallback(
     (account: any) => {
-      if (!userDoc?.uid || !account["Selected Users"]) return false;
+      if (!userDoc?.uid || !account['Selected Users']) return false;
 
-      return account["Selected Users"].some((userRef: any) => {
+      return account['Selected Users'].some((userRef: any) => {
         // Check if the userRef is a Firestore document reference
         // Firestore references have a path property that includes the document ID
         return (
@@ -122,10 +131,10 @@ export default function UsersSubtab() {
   );
 
   useEffect(() => {
-    if (userDoc && userDoc["Company Admin"]) {
-      fetchUsers(userDoc["Company Admin"]);
-      fetchAdsAccounts(userDoc["Company Admin"]);
-      fetchInvitations(userDoc["Company Admin"]);
+    if (userDoc && userDoc['Company Admin']) {
+      fetchUsers(userDoc['Company Admin']);
+      fetchAdsAccounts(userDoc['Company Admin']);
+      fetchInvitations(userDoc['Company Admin']);
     }
   }, [userDoc, fetchUsers, fetchAdsAccounts, fetchInvitations]);
 
@@ -147,10 +156,10 @@ export default function UsersSubtab() {
 
   // Populate form data when editing user
   useEffect(() => {
-    if (screen === "edit" && editingUser) {
-      setRole(editingUser["User Type"] || "Admin");
-      setEmail(editingUser.email || "");
-      setName(editingUser.Name || "");
+    if (screen === 'edit' && editingUser) {
+      setRole(editingUser['User Type'] || 'Admin');
+      setEmail(editingUser.email || '');
+      setName(editingUser.Name || '');
       setNotifyUser(editingUser.NotifyUser || false);
 
       // Check which ads accounts the current user has access to
@@ -161,9 +170,9 @@ export default function UsersSubtab() {
 
         setSelectedAds(userSelectedAds);
       }
-    } else if (screen === "add") {
-      setEmail("");
-      setName("");
+    } else if (screen === 'add') {
+      setEmail('');
+      setName('');
       setNotifyUser(false);
     }
   }, [screen, editingUser, userDoc, adsAccounts, hasUserAccessToAccount]);
@@ -171,38 +180,38 @@ export default function UsersSubtab() {
   // Users Table Columns
   const columns: ColumnDef<any>[] = [
     {
-      accessorKey: "email",
-      header: "Email",
+      accessorKey: 'email',
+      header: 'Email',
       cell: ({ row }) => <span>{row.original.email}</span>,
     },
     {
-      accessorKey: "Name",
-      header: "Name",
+      accessorKey: 'Name',
+      header: 'Name',
       cell: ({ row }) => <span>{row.original.Name}</span>,
     },
     {
-      accessorKey: "User Type",
-      header: "Access Level",
+      accessorKey: 'User Type',
+      header: 'Access Level',
       cell: ({ row }) => (
         <span
           className={`inline-block px-3 py-1 rounded-md text-blue-700 text-xs font-bold ${
-            row.original["User Type"] === "Admin"
-              ? "bg-blue-200"
-              : "bg-blue-100"
+            row.original['User Type'] === 'Admin'
+              ? 'bg-blue-200'
+              : 'bg-blue-100'
           }`}
         >
-          {row.original["User Type"]}
+          {row.original['User Type']}
         </span>
       ),
     },
     {
-      accessorKey: "User Access",
-      header: "Access",
-      cell: ({ row }) => <span>{row.original["User Access"]}</span>,
+      accessorKey: 'User Access',
+      header: 'Access',
+      cell: ({ row }) => <span>{row.original['User Access']}</span>,
     },
     {
-      accessorKey: "status",
-      header: "Status",
+      accessorKey: 'status',
+      header: 'Status',
       cell: ({ row }) => {
         if (row.original.isInvitation) {
           return (
@@ -215,18 +224,18 @@ export default function UsersSubtab() {
       },
     },
     {
-      id: "actions",
-      header: "",
+      id: 'actions',
+      header: '',
       cell: ({ row }) => (
         <div className="flex gap-2 items-center">
           {!row.original.isInvitation && (
             <>
               <button
-                className="text-blue-600 hover:text-blue-800 cursor-pointer"
+                className="text-blue-600 hover:text-blue-800 cursor-pointer px-1"
                 onClick={() => {
                   setEditingUser(row.original);
-                  setRole(row.original["User Type"] || "Admin");
-                  setScreen("edit");
+                  setRole(row.original['User Type'] || 'Admin');
+                  setScreen('edit');
                 }}
               >
                 <Edit2 className="w-5 h-5" />
@@ -234,81 +243,123 @@ export default function UsersSubtab() {
               <button
                 className={`text-red-500 hover:text-red-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                   row.original.id === userDoc?.uid ||
-                  userDoc?.["User Type"] !== "Admin" ||
-                  row.original.id === userDoc?.["Company Admin"]?.id
-                    ? "opacity-50 cursor-not-allowed"
-                    : ""
+                  userDoc?.['User Type'] !== 'Admin' ||
+                  row.original.id === userDoc?.['Company Admin']?.id
+                    ? 'opacity-50 cursor-not-allowed'
+                    : ''
                 }`}
                 disabled={
                   row.original.id === userDoc?.uid ||
-                  userDoc?.["User Type"] !== "Admin" ||
-                  row.original.id === userDoc?.["Company Admin"]?.id
+                  userDoc?.['User Type'] !== 'Admin' ||
+                  row.original.id === userDoc?.['Company Admin']?.id
                 }
                 title={
                   row.original.id === userDoc?.uid
-                    ? "You cannot delete your own account"
-                    : userDoc?.["User Type"] !== "Admin"
-                    ? "Only admins can delete users"
-                    : row.original.id === userDoc?.["Company Admin"]?.id
-                    ? "Cannot delete the company admin"
-                    : "Delete user"
+                    ? 'You cannot delete your own account'
+                    : userDoc?.['User Type'] !== 'Admin'
+                    ? 'Only admins can delete users'
+                    : row.original.id === userDoc?.['Company Admin']?.id
+                    ? 'Cannot delete the company admin'
+                    : 'Delete user'
                 }
+                onClick={() => {
+                  setDeletingUser(row.original);
+                  setShowDeleteModal(true);
+                }}
               >
                 <Trash2 className="w-5 h-5" />
               </button>
             </>
           )}
           {row.original.isInvitation && (
-            <button
-              className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              onClick={async () => {
-                if (resendingInvitationId) return; // Prevent multiple clicks
+            <>
+              <button
+                className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                onClick={async () => {
+                  if (resendingInvitationId) return; // Prevent multiple clicks
 
-                try {
-                  setResendingInvitationId(row.original.id);
+                  try {
+                    setResendingInvitationId(row.original.id);
 
-                  // Get the invitation data from the original invitations array
-                  const invitation = invitations.find(
-                    (inv) => inv.id === row.original.id,
-                  );
-                  if (!invitation) return;
+                    // Get the invitation data from the original invitations array
+                    const invitation = invitations.find(
+                      (inv) => inv.id === row.original.id,
+                    );
+                    if (!invitation) return;
 
-                  // Resend invitation with the same data
-                  await inviteUser(
-                    invitation.email,
-                    invitation.userType,
-                    invitation.name,
-                    invitation.selectedAds,
-                  );
+                    // Resend invitation with the same data
+                    await inviteUser(
+                      invitation.email,
+                      invitation.userType,
+                      invitation.name,
+                      invitation.selectedAds,
+                    );
 
-                  // Delete the old invitation record
-                  const { deleteInvitation } = useAlertSettingsStore.getState();
-                  await deleteInvitation(invitation.id);
-
-                  // Refresh invitations to update the table
-                  if (userDoc && userDoc["Company Admin"]) {
-                    const { refreshInvitations } =
+                    // Delete the old invitation record
+                    const { deleteInvitation } =
                       useAlertSettingsStore.getState();
-                    await refreshInvitations(userDoc["Company Admin"]);
-                  }
+                    await deleteInvitation(invitation.id);
 
-                  toast.success("Invitation resent successfully!");
-                } catch (error: any) {
-                  console.error("Error resending invitation:", error);
-                  toast.error(error.message || "Failed to resend invitation");
-                } finally {
-                  setResendingInvitationId(null);
-                }
-              }}
-              disabled={resendingInvitationId === row.original.id}
-              title="Resend invitation"
-            >
-              {resendingInvitationId === row.original.id ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <RotateCcw className="w-4 h-4" />
-              )}
-            </button>
+                    // Refresh invitations to update the table
+                    if (userDoc && userDoc['Company Admin']) {
+                      const { refreshInvitations } =
+                        useAlertSettingsStore.getState();
+                      await refreshInvitations(userDoc['Company Admin']);
+                    }
+
+                    toast.success('Invitation resent successfully!');
+                  } catch (error: any) {
+                    console.error('Error resending invitation:', error);
+                    toast.error(error.message || 'Failed to resend invitation');
+                  } finally {
+                    setResendingInvitationId(null);
+                  }
+                }}
+                disabled={resendingInvitationId === row.original.id}
+                title="Resend invitation"
+              >
+                {resendingInvitationId === row.original.id ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="w-4 h-4" />
+                )}
+              </button>
+              <button
+                className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                onClick={async () => {
+                  if (deletingInvitationId) return; // Prevent multiple clicks
+
+                  try {
+                    setDeletingInvitationId(row.original.id);
+
+                    // Delete the invitation record
+                    const { deleteInvitation } =
+                      useAlertSettingsStore.getState();
+                    await deleteInvitation(row.original.id);
+
+                    // Refresh invitations to update the table
+                    if (userDoc && userDoc['Company Admin']) {
+                      await refreshInvitations(userDoc['Company Admin']);
+                    }
+
+                    toast.success('Invitation deleted successfully!');
+                  } catch (error: any) {
+                    console.error('Error deleting invitation:', error);
+                    toast.error(error.message || 'Failed to delete invitation');
+                  } finally {
+                    setDeletingInvitationId(null);
+                  }
+                }}
+                disabled={deletingInvitationId === row.original.id}
+                title="Delete invitation"
+              >
+                {deletingInvitationId === row.original.id ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Trash2 className="w-5 h-5" />
+                )}
+              </button>
+            </>
           )}
         </div>
       ),
@@ -323,7 +374,7 @@ export default function UsersSubtab() {
     const existingUserEmails = users.map((user) => user.email?.toLowerCase());
 
     const pendingInvitations = invitations
-      .filter((invitation) => invitation.status === "pending")
+      .filter((invitation) => invitation.status === 'pending')
       .filter(
         (invitation) =>
           !existingUserEmails.includes(invitation.email?.toLowerCase()),
@@ -332,15 +383,15 @@ export default function UsersSubtab() {
         id: invitation.id,
         email: invitation.email,
         Name: invitation.name,
-        "User Type": invitation.userType,
-        "User Access": "Pending",
-        status: "pending" as const,
+        'User Type': invitation.userType,
+        'User Access': 'Pending',
+        status: 'pending' as const,
         isInvitation: true,
       }));
 
     const existingUsers = users.map((user) => ({
       ...user,
-      status: "active" as const,
+      status: 'active' as const,
       isInvitation: false,
     }));
 
@@ -389,7 +440,7 @@ export default function UsersSubtab() {
         },
       },
       onPaginationChange: (updater) => {
-        if (typeof updater === "function") {
+        if (typeof updater === 'function') {
           const next = updater({ pageIndex, pageSize });
           setPageIndex(next.pageIndex);
           setPageSize(next.pageSize);
@@ -422,11 +473,11 @@ export default function UsersSubtab() {
     const pages = [];
     if (startPage > 1) {
       pages.push(1);
-      if (startPage > 2) pages.push("ellipsis-start");
+      if (startPage > 2) pages.push('ellipsis-start');
     }
     for (let i = startPage; i <= endPage; i++) pages.push(i);
     if (endPage < totalPages) {
-      if (endPage < totalPages - 1) pages.push("ellipsis-end");
+      if (endPage < totalPages - 1) pages.push('ellipsis-end');
       pages.push(totalPages);
     }
 
@@ -532,10 +583,10 @@ export default function UsersSubtab() {
             {/* Page numbers */}
             <div className="flex items-center gap-1">
               {pages.map((p, idx) =>
-                typeof p === "number" ? (
+                typeof p === 'number' ? (
                   <Button
                     key={`${p}-${idx}`}
-                    variant={p === pageIndex + 1 ? "default" : "outline"}
+                    variant={p === pageIndex + 1 ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => table.setPageIndex(p - 1)}
                     className="h-8 w-8 p-0 text-[0.75rem] font-medium"
@@ -584,8 +635,8 @@ export default function UsersSubtab() {
 
   // Disable logic for avatar upload
   const isAvatarUploadDisabled =
-    screen === "edit" &&
-    editingUser?.["Is Google Sign Up"] === true &&
+    screen === 'edit' &&
+    editingUser?.['Is Google Sign Up'] === true &&
     userDoc?.uid !== editingUser?.uid;
 
   // Handler to trigger file input
@@ -610,47 +661,47 @@ export default function UsersSubtab() {
 
   // Handle save button click
   const handleSave = async () => {
-    console.log("handleSave");
+    console.log('handleSave');
     if (isSaving) return;
 
     try {
       setIsSaving(true);
-      if (screen === "add") {
+      if (screen === 'add') {
         // Check if email already exists in users collection
-        const usersRef = collection(db, "users");
+        const usersRef = collection(db, 'users');
         const emailQuery = query(
           usersRef,
-          where("email", "==", email.toLowerCase()),
+          where('email', '==', email.toLowerCase()),
         );
         const emailSnapshot = await getDocs(emailQuery);
 
         if (!emailSnapshot.empty) {
-          toast.error("A user with this email already exists");
+          toast.error('A user with this email already exists');
           return;
         }
 
         let adsToInvite = selectedAds;
-        if (role === "Admin") {
+        if (role === 'Admin') {
           adsToInvite = adsAccounts.map((acc) => acc.id);
         }
         console.log({ email, role, name, selectedAds: adsToInvite });
         await inviteUser(email, role, name, adsToInvite);
-        toast.success("Invitation sent successfully!");
+        toast.success('Invitation sent successfully!');
 
         // Refresh invitations to show the new pending invitation
-        if (userDoc && userDoc["Company Admin"]) {
+        if (userDoc && userDoc['Company Admin']) {
           const { refreshInvitations } = useAlertSettingsStore.getState();
-          await refreshInvitations(userDoc["Company Admin"]);
+          await refreshInvitations(userDoc['Company Admin']);
         }
 
-        setScreen("list");
+        setScreen('list');
         setEditingUser(null);
-        setRole("Admin");
+        setRole('Admin');
         setSelectedAds([]);
         setAvatarPreview(null);
         setAvatarFile(null);
-        setName("");
-        setEmail("");
+        setName('');
+        setEmail('');
         setNotifyUser(false);
         return;
       }
@@ -659,7 +710,7 @@ export default function UsersSubtab() {
         editingUser.id,
         {
           Name: name,
-          "User Type": role,
+          'User Type': role,
           avatarFile: avatarFile,
           currentAvatarUrl: editingUser.Avatar,
         },
@@ -667,30 +718,30 @@ export default function UsersSubtab() {
         editingUser,
         selectedAds,
       );
-      toast.success("User updated successfully!");
+      toast.success('User updated successfully!');
 
       // Refresh both users and invitations to ensure data is up to date
-      if (userDoc && userDoc["Company Admin"]) {
+      if (userDoc && userDoc['Company Admin']) {
         const { refreshUsers, refreshInvitations } =
           useAlertSettingsStore.getState();
         await Promise.all([
-          refreshUsers(userDoc["Company Admin"]),
-          refreshInvitations(userDoc["Company Admin"]),
+          refreshUsers(userDoc['Company Admin']),
+          refreshInvitations(userDoc['Company Admin']),
         ]);
       }
 
-      setScreen("list");
+      setScreen('list');
       setEditingUser(null);
-      setRole("Admin");
+      setRole('Admin');
       setSelectedAds([]);
       setAvatarPreview(null);
       setAvatarFile(null);
-      setName("");
-      setEmail("");
+      setName('');
+      setEmail('');
       setNotifyUser(false);
     } catch (error: any) {
-      console.error("Error saving user:", error);
-      toast.error(error.message || "Failed to save user");
+      console.error('Error saving user:', error);
+      toast.error(error.message || 'Failed to save user');
     } finally {
       setIsSaving(false);
     }
@@ -700,7 +751,7 @@ export default function UsersSubtab() {
 
   return (
     <div className="bg-white p-4 min-h-[600px]">
-      {screen === "list" && (
+      {screen === 'list' && (
         <>
           <h2 className="text-2xl font-bold mb-1">Users</h2>
           <p className="text-gray-500 mb-6">
@@ -711,7 +762,7 @@ export default function UsersSubtab() {
             <Button
               variant="outline"
               className="flex items-center gap-2 w-full sm:w-auto justify-center text-blue-600 font-semibold bg-blue-50 border-blue-200"
-              onClick={() => setScreen("add")}
+              onClick={() => setScreen('add')}
             >
               <Plus className="w-5 h-5" /> Add New User
             </Button>
@@ -730,7 +781,7 @@ export default function UsersSubtab() {
                     <button
                       type="button"
                       className="ml-1 text-gray-400 hover:text-gray-600"
-                      onClick={() => setSearchValue("")}
+                      onClick={() => setSearchValue('')}
                       aria-label="Clear search"
                     >
                       <XIcon className="w-5 h-5" />
@@ -742,7 +793,7 @@ export default function UsersSubtab() {
                 variant="outline"
                 size="icon"
                 onClick={() => setShowSearch((v) => !v)}
-                className={showSearch ? "border-blue-200" : ""}
+                className={showSearch ? 'border-blue-200' : ''}
                 aria-label="Show search"
               >
                 <MagnifyingGlassIcon className="w-6 h-6 text-[#015AFD]" />
@@ -762,30 +813,30 @@ export default function UsersSubtab() {
           <UsersDataTable />
         </>
       )}
-      {(screen === "add" || screen === "edit") && (
+      {(screen === 'add' || screen === 'edit') && (
         <div className="w-full">
           <button
             className="flex items-center gap-2 text-blue-600 mb-6"
             onClick={() => {
-              setScreen("list");
+              setScreen('list');
               setEditingUser(null);
-              setRole("Admin");
+              setRole('Admin');
               setSelectedAds([]);
               setAvatarPreview(null);
               setAvatarFile(null);
-              setName("");
-              setEmail("");
+              setName('');
+              setEmail('');
               setNotifyUser(false);
             }}
           >
             <ChevronLeft className="w-5 h-5" /> Back to Users
           </button>
           <h2 className="text-2xl font-bold mb-6">
-            {screen === "add" ? "Add New User" : "Edit User"}
+            {screen === 'add' ? 'Add New User' : 'Edit User'}
           </h2>
           <div className="flex flex-col md:flex-row gap-8">
             <div className="flex-1 flex flex-col gap-4 max-w-md">
-              {screen === "edit" && (
+              {screen === 'edit' && (
                 <div className="relative">
                   <Input
                     placeholder="Name"
@@ -793,7 +844,7 @@ export default function UsersSubtab() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     disabled={
-                      editingUser?.["Is Google Sign Up"] === true &&
+                      editingUser?.['Is Google Sign Up'] === true &&
                       userDoc?.uid !== editingUser?.uid
                     }
                   />
@@ -806,7 +857,7 @@ export default function UsersSubtab() {
                   className="pl-10"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  disabled={screen === "edit"}
+                  disabled={screen === 'edit'}
                 />
                 <Mail className="absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]" />
               </div>
@@ -828,7 +879,7 @@ export default function UsersSubtab() {
                       <button
                         className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
                         onClick={() => {
-                          setRole("Admin");
+                          setRole('Admin');
                           setRoleDropdownOpen(false);
                         }}
                       >
@@ -837,7 +888,7 @@ export default function UsersSubtab() {
                       <button
                         className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
                         onClick={() => {
-                          setRole("Manager");
+                          setRole('Manager');
                           setRoleDropdownOpen(false);
                         }}
                       >
@@ -852,23 +903,23 @@ export default function UsersSubtab() {
                 <button
                   type="button"
                   className={`flex items-center w-full border rounded-md px-3 py-2 bg-white text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-200 ${
-                    role === "Admin" ? "opacity-60 cursor-not-allowed" : ""
+                    role === 'Admin' ? 'opacity-60 cursor-not-allowed' : ''
                   }`}
-                  disabled={role === "Admin"}
+                  disabled={role === 'Admin'}
                   onClick={() =>
-                    role === "Manager" && setAdsDropdownOpen((v) => !v)
+                    role === 'Manager' && setAdsDropdownOpen((v) => !v)
                   }
                 >
                   <span className="flex items-center gap-2">
                     <Users className="w-5 h-5 text-[#155dfc]" />
-                    {role === "Admin"
-                      ? "All Ad Accounts"
+                    {role === 'Admin'
+                      ? 'All Ad Accounts'
                       : `${selectedAds.length}/${adsAccounts.length} selected`}
                   </span>
                   <ChevronDown className="ml-auto w-4 h-4 text-[#155dfc]" />
                 </button>
                 {/* Multi-select dropdown (mock) */}
-                {adsDropdownOpen && role === "Manager" && (
+                {adsDropdownOpen && role === 'Manager' && (
                   <div className="absolute z-10 mt-1 w-full bg-white border rounded shadow-lg p-3">
                     <div className="flex items-center gap-2 mb-2">
                       <Input
@@ -922,7 +973,7 @@ export default function UsersSubtab() {
                   </div>
                 )}
               </div>
-              {screen === "edit" && (
+              {screen === 'edit' && (
                 <div className="flex items-center gap-2">
                   <Checkbox
                     className={checkboxClass}
@@ -950,10 +1001,10 @@ export default function UsersSubtab() {
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Saving...
                   </>
-                ) : screen === "add" ? (
-                  "Save"
+                ) : screen === 'add' ? (
+                  'Save'
                 ) : (
-                  "Update"
+                  'Update'
                 )}
               </Button>
             </div>
@@ -961,14 +1012,14 @@ export default function UsersSubtab() {
             <div className="flex-1 flex items-center justify-center">
               <div className="relative w-48 h-48 flex items-center justify-center">
                 <div className="w-full h-full border rounded-xl overflow-hidden bg-gray-50 flex items-center justify-center">
-                  {screen === "edit" &&
+                  {screen === 'edit' &&
                   (avatarPreview || editingUser?.Avatar) ? (
                     <img
                       src={avatarPreview || editingUser.Avatar}
-                      alt={`${editingUser.Name || "User"} avatar`}
+                      alt={`${editingUser.Name || 'User'} avatar`}
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        e.currentTarget.src = "/images/default-avatar.png";
+                        e.currentTarget.src = '/images/default-avatar.png';
                       }}
                     />
                   ) : (
@@ -980,7 +1031,7 @@ export default function UsersSubtab() {
                   )}
                 </div>
                 {/* Camera icon button */}
-                {screen === "edit" && (
+                {screen === 'edit' && (
                   <button
                     type="button"
                     className="absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-1/2 bg-gray-200 hover:bg-gray-300 border-4 border-white rounded-full w-12 h-12 flex items-center justify-center shadow-md z-50"
@@ -1002,6 +1053,89 @@ export default function UsersSubtab() {
                   disabled={isAvatarUploadDisabled}
                 />
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && deletingUser && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            {/* Header */}
+            <div className="flex items-center justify-end">
+              <div className="flex items-center gap-2"></div>
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeletingUser(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XIcon className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="mb-6">
+              <p className="text-gray-700">
+                Are you sure you want to delete the user:{' '}
+                <span className="font-bold">
+                  {deletingUser.Name} ({deletingUser.email})
+                </span>
+                ?
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1 border-blue-200 text-blue-600 hover:bg-blue-50"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeletingUser(null);
+                }}
+                disabled={isDeleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 bg-blue-600 text-white hover:bg-blue-700"
+                onClick={async () => {
+                  try {
+                    setIsDeleting(true);
+                    await deleteUserWithRecords(
+                      deletingUser.id,
+                      deletingUser.email,
+                    );
+                    toast.success('User deleted successfully');
+                    if (userDoc && userDoc['Company Admin']) {
+                      await Promise.all([
+                        refreshUsers(userDoc['Company Admin']),
+                        refreshInvitations(userDoc['Company Admin']),
+                      ]);
+                    }
+                    setShowDeleteModal(false);
+                    setDeletingUser(null);
+                  } catch (error: any) {
+                    console.error('Failed to delete user:', error);
+                    toast.error(error?.message || 'Failed to delete user');
+                  } finally {
+                    setIsDeleting(false);
+                  }
+                }}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete User'
+                )}
+              </Button>
             </div>
           </div>
         </div>

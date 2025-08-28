@@ -1,10 +1,10 @@
-'use client'
+'use client';
 
-import Image from 'next/image'
-import Link from 'next/link'
-import { useAuthStore } from '@/lib/store/auth-store'
-import { useUserAdsAccountsStore } from '@/lib/store/user-ads-accounts-store'
-import { formatAccountNumber } from '@/lib/utils'
+import Image from 'next/image';
+import Link from 'next/link';
+import { useAuthStore } from '@/lib/store/auth-store';
+import { useUserAdsAccountsStore } from '@/lib/store/user-ads-accounts-store';
+import { formatAccountNumber } from '@/lib/utils';
 import {
   ChevronDown,
   Plus,
@@ -14,116 +14,110 @@ import {
   Settings,
   LogOut,
   Calendar1Icon,
-  CreditCardIcon
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import * as React from 'react'
-import { useRouter, usePathname } from 'next/navigation'
-import { useIntercomContext } from '@/components/intercom'
-import { SUBSCRIPTION_STATUS, SUBSCRIPTION_PERIODS } from '@/lib/constants'
-import moment from 'moment'
+  CreditCardIcon,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import * as React from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { useIntercomContext } from '@/components/intercom';
+import { SUBSCRIPTION_STATUS, SUBSCRIPTION_PERIODS } from '@/lib/constants';
+import moment from 'moment';
 
 // Utility to get initial from name or email
-function getInitial (nameOrEmail: string) {
-  if (!nameOrEmail) return ''
-  const trimmed = nameOrEmail.trim()
-  if (trimmed.length === 0) return ''
-  return trimmed[0].toUpperCase()
+function getInitial(nameOrEmail: string) {
+  if (!nameOrEmail) return '';
+  const trimmed = nameOrEmail.trim();
+  if (trimmed.length === 0) return '';
+  return trimmed[0].toUpperCase();
 }
 
-export function Header () {
-  const { user, userDoc, logout } = useAuthStore()
+export function Header() {
+  const { user, userDoc, logout, subscription, isFullAccess } = useAuthStore();
   const { userAdsAccounts, selectedAdsAccount, setSelectedAdsAccount } =
-    useUserAdsAccountsStore()
-  const { subscription } = useAuthStore()
-  const [dropdownOpen, setDropdownOpen] = React.useState(false)
-  const [menuOpen, setMenuOpen] = React.useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
-  const menuRef = React.useRef<HTMLDivElement>(null)
-  const dropdownRef = React.useRef<HTMLDivElement>(null)
-  const router = useRouter()
-  const pathname = usePathname()
-  const { show } = useIntercomContext()
+    useUserAdsAccountsStore();
+  const [dropdownOpen, setDropdownOpen] = React.useState(false);
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const menuRef = React.useRef<HTMLDivElement>(null);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const pathname = usePathname();
+  const { show } = useIntercomContext();
 
   // Subscription data is now automatically fetched by auth store
   // No need to manually fetch here
 
-  // Check if subscription is expired/limited
-  const isSubscriptionExpired = React.useMemo(() => {
-    if (!subscription) return false
-    const status = subscription['User Status']
-    return (
-      status === SUBSCRIPTION_STATUS.TRIAL_ENDED ||
-      status === SUBSCRIPTION_STATUS.CANCELED ||
-      status === SUBSCRIPTION_STATUS.PAYMENT_FAILED
-    )
-  }, [subscription])
+  // Use isFullAccess from auth store instead of calculating locally
+  const isSubscriptionExpired = !isFullAccess;
 
   // Calculate trial days left
   const trialDaysLeft = React.useMemo(() => {
-    if (!subscription) return 0
-    const status = subscription['User Status']
+    if (!subscription) return 0;
+    const status = subscription['User Status'];
     if (
       status !== SUBSCRIPTION_STATUS.TRIAL_NEW &&
       status !== SUBSCRIPTION_STATUS.TRIAL_ENDED
     )
-      return 0
+      return 0;
 
-    const trialStartDate = subscription['Free Trial Start Date']?.toDate?.()
-    if (!trialStartDate) return 0
+    const trialStartDate = subscription['Free Trial Start Date']?.toDate?.();
+    if (!trialStartDate) return 0;
 
     const trialEndDate = moment(trialStartDate).add(
       SUBSCRIPTION_PERIODS.TRIAL_DAYS,
-      'days'
-    )
-    const now = moment()
-    const daysLeft = Math.max(0, trialEndDate.diff(now, 'days'))
+      'days',
+    );
+    const now = moment();
+    const daysLeft = Math.max(
+      0,
+      Math.ceil(trialEndDate.diff(now, 'days', true)),
+    );
 
-    return daysLeft
-  }, [subscription])
+    return daysLeft;
+  }, [subscription]);
 
   // Dropdown handler
   const handleSelectAccount = (account: any) => {
     if (!selectedAdsAccount || selectedAdsAccount.id !== account.id) {
-      setSelectedAdsAccount(account)
-      setDropdownOpen(false)
-      router.push('/dashboard')
+      setSelectedAdsAccount(account);
+      setDropdownOpen(false);
+      router.push('/dashboard');
     } else {
-      setDropdownOpen(false)
+      setDropdownOpen(false);
       if (!pathname || !pathname.startsWith('/dashboard')) {
-        router.push('/dashboard')
+        router.push('/dashboard');
       }
     }
-    setMobileMenuOpen(false)
-  }
+    setMobileMenuOpen(false);
+  };
 
   const getLogoHref = () => {
-    if (!user || userAdsAccounts.length === 0) return '/'
-    if (userAdsAccounts.length === 1) return '/dashboard'
-    return '/summary'
-  }
+    if (!user || userAdsAccounts.length === 0) return '/';
+    if (userAdsAccounts.length === 1) return '/dashboard';
+    return '/summary';
+  };
 
   // Avatar fallback
-  const avatarUrl = userDoc?.Avatar || '/images/default-avatar.png'
-  const userName = userDoc?.Name || userDoc?.Email || 'User'
-  const userInitial = getInitial(userName)
+  const avatarUrl = userDoc?.Avatar || '/images/default-avatar.png';
+  const userName = userDoc?.Name || userDoc?.Email || 'User';
+  const userInitial = getInitial(userName);
 
   const handleSettingsClick = () => {
     if (isSubscriptionExpired) {
-      router.push('/settings/account/billing')
+      router.push('/settings/account/billing');
     } else {
-      router.push('/settings')
+      router.push('/settings');
     }
-    setMenuOpen(false)
-    setMobileMenuOpen(false)
-  }
+    setMenuOpen(false);
+    setMobileMenuOpen(false);
+  };
 
   // Close menus when clicking outside
   React.useEffect(() => {
-    function handleClick (e: MouseEvent) {
-      const target = e.target as Node
+    function handleClick(e: MouseEvent) {
+      const target = e.target as Node;
       if (menuRef.current && !menuRef.current.contains(target)) {
-        setMenuOpen(false)
+        setMenuOpen(false);
       }
       if (
         dropdownRef.current &&
@@ -131,12 +125,12 @@ export function Header () {
         !(target as HTMLElement).closest('li') &&
         !(target as HTMLElement).closest('ul') // Don't close when clicking on the dropdown list
       ) {
-        setDropdownOpen(false)
+        setDropdownOpen(false);
       }
     }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
 
   return (
     <>
@@ -218,7 +212,7 @@ export function Header () {
                       : 'hover:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-200'
                   }`}
                   onClick={() =>
-                    !isSubscriptionExpired && setDropdownOpen(v => !v)
+                    !isSubscriptionExpired && setDropdownOpen((v) => !v)
                   }
                   type='button'
                   disabled={isSubscriptionExpired}
@@ -237,7 +231,7 @@ export function Header () {
                           selectedAdsAccount.name ||
                           'Account'
                         } – ${formatAccountNumber(
-                          selectedAdsAccount.Id || selectedAdsAccount.id || ''
+                          selectedAdsAccount.Id || selectedAdsAccount.id || '',
                         )}`
                       : 'Select an ads account'}
                   </span>
@@ -246,7 +240,7 @@ export function Header () {
 
                 {dropdownOpen && (
                   <ul className='absolute left-0 mt-2 min-w-max bg-white border border-[#E3E8F0] rounded-xl shadow-none z-[80] max-h-60 overflow-y-auto animate-in fade-in'>
-                    {userAdsAccounts.map(account => (
+                    {userAdsAccounts.map((account) => (
                       <li
                         key={account.id}
                         className={`px-4 py-2 cursor-pointer hover:bg-blue-50 text-sm text-[#5e5e5e] flex items-center gap-1 ${
@@ -254,7 +248,7 @@ export function Header () {
                             ? 'bg-blue-50 font-semibold'
                             : ''
                         }`}
-                        onClick={e => handleSelectAccount(account)}
+                        onClick={(e) => handleSelectAccount(account)}
                       >
                         <span className='whitespace-nowrap font-bold'>
                           {account['Account Name Editable'] || account.name}
@@ -275,24 +269,28 @@ export function Header () {
           <div className='hidden md:flex items-center gap-4'>
             {user && userDoc && (
               <div className='flex items-center gap-2'>
-                <Button
-                  variant='ghost'
-                  size='icon'
-                  className={`text-blue-600 ${
-                    isSubscriptionExpired ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                  onClick={() =>
-                    !isSubscriptionExpired && router.push('/add-ads-account')
-                  }
-                  disabled={isSubscriptionExpired}
-                  title={
-                    isSubscriptionExpired
-                      ? 'Subscription expired. Please renew to add ads accounts.'
-                      : 'Add Ads Account'
-                  }
-                >
-                  <Plus className='w-5 h-5' />
-                </Button>
+                {userDoc['User Type'] !== 'Manager' && (
+                  <Button
+                    variant='ghost'
+                    size='icon'
+                    className={`text-blue-600 ${
+                      isSubscriptionExpired
+                        ? 'opacity-50 cursor-not-allowed'
+                        : ''
+                    }`}
+                    onClick={() =>
+                      !isSubscriptionExpired && router.push('/add-ads-account')
+                    }
+                    disabled={isSubscriptionExpired}
+                    title={
+                      isSubscriptionExpired
+                        ? 'Subscription expired. Please renew to add ads accounts.'
+                        : 'Add Ads Account'
+                    }
+                  >
+                    <Plus className='w-5 h-5' />
+                  </Button>
+                )}
                 {userAdsAccounts.length >= 2 && (
                   <Button
                     variant='ghost'
@@ -327,7 +325,7 @@ export function Header () {
                 {/* Avatar */}
                 <div
                   className='flex items-center gap-2 cursor-pointer group px-2 py-1 rounded-xl hover:bg-blue-50 transition-all relative'
-                  onClick={() => setMenuOpen(v => !v)}
+                  onClick={() => setMenuOpen((v) => !v)}
                   ref={menuRef}
                 >
                   <Image
@@ -346,8 +344,8 @@ export function Header () {
                       <button
                         className='w-full text-left px-4 py-2 flex items-center gap-2 text-[16px] text-[#5e5e5e] hover:bg-blue-50'
                         onClick={() => {
-                          router.push('/settings/my-profile')
-                          setMenuOpen(false)
+                          router.push('/settings/my-profile');
+                          setMenuOpen(false);
                         }}
                       >
                         <User className='w-4 h-4' /> My Profile
@@ -361,8 +359,8 @@ export function Header () {
                       <button
                         className='w-full text-left px-4 py-2 flex items-center gap-2 text-[16px] text-[#5e5e5e] hover:bg-blue-50'
                         onClick={() => {
-                          show()
-                          setMenuOpen(false)
+                          show();
+                          setMenuOpen(false);
                         }}
                       >
                         <HelpCircle className='w-4 h-4' /> Help
@@ -371,9 +369,9 @@ export function Header () {
                       <button
                         className='w-full text-left px-4 py-2 flex items-center gap-2 text-[16px] text-[#5e5e5e]  hover:bg-blue-50'
                         onClick={async () => {
-                          await logout()
-                          router.push('/auth')
-                          setMenuOpen(false)
+                          await logout();
+                          router.push('/auth');
+                          setMenuOpen(false);
                         }}
                       >
                         <LogOut className='w-4 h-4' /> Log out
@@ -389,24 +387,28 @@ export function Header () {
           <div className='md:hidden flex items-center gap-2'>
             {user && userDoc && (
               <>
-                <Button
-                  variant='ghost'
-                  size='icon'
-                  className={`text-blue-600 ${
-                    isSubscriptionExpired ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                  onClick={() =>
-                    !isSubscriptionExpired && router.push('/add-ads-account')
-                  }
-                  disabled={isSubscriptionExpired}
-                  title={
-                    isSubscriptionExpired
-                      ? 'Subscription expired. Please renew to add ads accounts.'
-                      : 'Add Ads Account'
-                  }
-                >
-                  <Plus className='w-5 h-5' />
-                </Button>
+                {userDoc['User Type'] !== 'Manager' && (
+                  <Button
+                    variant='ghost'
+                    size='icon'
+                    className={`text-blue-600 ${
+                      isSubscriptionExpired
+                        ? 'opacity-50 cursor-not-allowed'
+                        : ''
+                    }`}
+                    onClick={() =>
+                      !isSubscriptionExpired && router.push('/add-ads-account')
+                    }
+                    disabled={isSubscriptionExpired}
+                    title={
+                      isSubscriptionExpired
+                        ? 'Subscription expired. Please renew to add ads accounts.'
+                        : 'Add Ads Account'
+                    }
+                  >
+                    <Plus className='w-5 h-5' />
+                  </Button>
+                )}
                 {userAdsAccounts.length >= 2 && (
                   <Button
                     variant='ghost'
@@ -431,7 +433,7 @@ export function Header () {
                 )}
                 <button
                   type='button'
-                  onClick={() => setMobileMenuOpen(v => !v)}
+                  onClick={() => setMobileMenuOpen((v) => !v)}
                   className='p-2 rounded-md text-blue-600 hover:bg-blue-50 focus:outline-none'
                 >
                   {mobileMenuOpen ? (
@@ -476,7 +478,7 @@ export function Header () {
           }`}
           style={{
             top:
-              user && userDoc && userAdsAccounts.length > 0 ? '136px' : '64px'
+              user && userDoc && userAdsAccounts.length > 0 ? '136px' : '64px',
           }}
         >
           <div className='flex flex-col p-4 gap-4'>
@@ -485,8 +487,8 @@ export function Header () {
                 <Button
                   variant='ghost'
                   onClick={() => {
-                    router.push('/settings/my-profile')
-                    setMobileMenuOpen(false)
+                    router.push('/settings/my-profile');
+                    setMobileMenuOpen(false);
                   }}
                   className='w-full justify-start text-[#5e5e5e] flex items-center gap-2'
                 >
@@ -502,8 +504,8 @@ export function Header () {
                 <Button
                   variant='ghost'
                   onClick={() => {
-                    show()
-                    setMobileMenuOpen(false)
+                    show();
+                    setMobileMenuOpen(false);
                   }}
                   className='w-full justify-start text-[#5e5e5e] flex items-center gap-2'
                 >
@@ -513,9 +515,9 @@ export function Header () {
                 <Button
                   variant='ghost'
                   onClick={async () => {
-                    await logout()
-                    router.push('/auth')
-                    setMobileMenuOpen(false)
+                    await logout();
+                    router.push('/auth');
+                    setMobileMenuOpen(false);
                   }}
                   className='w-full justify-start text-[#5e5e5e] flex items-center gap-2'
                 >
@@ -537,7 +539,7 @@ export function Header () {
                     : 'hover:border-blue-400'
                 }`}
                 onClick={() =>
-                  !isSubscriptionExpired && setDropdownOpen(v => !v)
+                  !isSubscriptionExpired && setDropdownOpen((v) => !v)
                 }
                 type='button'
                 disabled={isSubscriptionExpired}
@@ -556,7 +558,7 @@ export function Header () {
                         selectedAdsAccount.name ||
                         'Account'
                       } – ${formatAccountNumber(
-                        selectedAdsAccount.Id || selectedAdsAccount.id || ''
+                        selectedAdsAccount.Id || selectedAdsAccount.id || '',
                       )}`
                     : 'Select an ads account'}
                 </span>
@@ -565,7 +567,7 @@ export function Header () {
 
               {dropdownOpen && (
                 <ul className='absolute left-0 mt-2 w-full bg-white border border-[#E3E8F0] rounded-xl shadow-none z-[90] max-h-60 overflow-y-auto animate-in fade-in'>
-                  {userAdsAccounts.map(account => (
+                  {userAdsAccounts.map((account) => (
                     <li
                       key={account.id}
                       className={`px-4 py-3 cursor-pointer hover:bg-blue-50 text-sm text-[#5e5e5e] flex items-center justify-between ${
@@ -590,5 +592,5 @@ export function Header () {
         )}
       </header>
     </>
-  )
+  );
 }
