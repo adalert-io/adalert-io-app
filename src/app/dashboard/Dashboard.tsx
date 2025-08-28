@@ -270,6 +270,7 @@ export default function Dashboard() {
   // Replace selectedRows with selectedAlertIds for better performance and to avoid infinite loops
   const [selectedAlertIds, setSelectedAlertIds] = useState<string[]>([]);
   const [pageSize, setPageSize] = React.useState(25);
+  const [hasFetchedFirstAlerts, setHasFetchedFirstAlerts] = useState(false);
 
   // Auto-refresh alerts every 15 minutes
   const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(
@@ -348,6 +349,8 @@ export default function Dashboard() {
         fetchCurrencySymbol(selectedAdsAccount);
       }
       setLastFetchedAccountId(selectedAdsAccount.id);
+      // Reset the first alerts flag when switching accounts
+      setHasFetchedFirstAlerts(false);
     }
     // If only budget fields change, skip the fetches!
   }, [
@@ -436,11 +439,32 @@ export default function Dashboard() {
 
   // Check if we need to fetch first alerts
   useEffect(() => {
-    if (selectedAdsAccount && selectedAdsAccount.id === lastFetchedAccountId) {
+    if (
+      selectedAdsAccount &&
+      selectedAdsAccount.id === lastFetchedAccountId &&
+      !hasFetchedFirstAlerts &&
+      selectedAdsAccount["Get Alerts From First Load Done"] !== true
+    ) {
       // Only run this after fetchAlerts has completed (when lastFetchedAccountId is set)
+      // and only once per account, and only if the database flag is not already true
+      console.log(
+        "Calling fetchFirstAlerts for account:",
+        selectedAdsAccount.id,
+      );
+      setHasFetchedFirstAlerts(true);
       fetchFirstAlerts(selectedAdsAccount);
+    } else if (
+      selectedAdsAccount &&
+      selectedAdsAccount["Get Alerts From First Load Done"] === true
+    ) {
+      // If the database already shows it's done, set our local flag to true
+      setHasFetchedFirstAlerts(true);
+      console.log(
+        "Account already has first alerts fetched, skipping:",
+        selectedAdsAccount.id,
+      );
     }
-  }, [selectedAdsAccount, lastFetchedAccountId, fetchFirstAlerts]);
+  }, [selectedAdsAccount, lastFetchedAccountId, hasFetchedFirstAlerts]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
