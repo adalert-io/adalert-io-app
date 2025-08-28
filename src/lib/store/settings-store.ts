@@ -292,6 +292,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         "User Access": docSnap.data()["User Access"],
         "Avatar": docSnap.data()["Avatar"],
         "Is Google Sign Up": docSnap.data()["Is Google Sign Up"],
+        "Company Admin": docSnap.data()["Company Admin"],
       }));
       set({ users, usersLoaded: true, loading: false });
 
@@ -975,8 +976,8 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       const snap = await getDocs(q);
       const updatePromises = snap.docs.map((docSnap) =>
         updateDoc(docSnap.ref, {
-          "Monthly Budget": monthly,
-          "Daily Budget": daily,
+          "MonthlyBudget": monthly,
+          "DailyBudget": daily,
         }),
       );
       await Promise.all(updatePromises);

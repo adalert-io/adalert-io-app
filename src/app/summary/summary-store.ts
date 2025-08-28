@@ -35,6 +35,7 @@ export interface SummaryAdsAccount {
   dashboardDailyId: string | null;
   progressBar: {
     percent: number;
+    percentText: number;
     dayPercent: number;
     day: number;
     daysInMonth: number;
@@ -351,6 +352,9 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
             const percent = monthlyBudget
               ? Math.min((spend / monthlyBudget) * 100, 100)
               : 0;
+            const percentText = monthlyBudget
+              ? (spend / monthlyBudget) * 100
+              : 0;
             const dayPercent = (day / daysInMonth) * 100;
 
             console.log("account.id: ", account.id);
@@ -377,9 +381,14 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
               spendMtd,
               spendMtdIndicatorKey,
               monthlyBudget: account["Monthly Budget"] ?? null,
-              currencySymbol: account["Currency Symbol"] || "$",
               dashboardDailyId: dashboardDaily ? dashboardDaily.id : null,
-              progressBar: { percent, dayPercent, day, daysInMonth },
+              progressBar: {
+                percent,
+                percentText,
+                dayPercent,
+                day,
+                daysInMonth,
+              },
             } as SummaryAdsAccount;
           } catch (error) {
             console.error(`Error processing account ${account.id}:`, error);
