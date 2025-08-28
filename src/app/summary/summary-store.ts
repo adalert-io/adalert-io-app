@@ -1,4 +1,4 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 import {
   collection,
   getDocs,
@@ -9,13 +9,13 @@ import {
   Timestamp,
   setDoc,
   updateDoc,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
-import { COLLECTIONS, ALERT_SEVERITIES } from "@/lib/constants";
-import moment from "moment";
-import { getFirebaseFnPath } from "@/lib/utils";
-import { useAlertOptionSetsStore } from "@/lib/store/alert-option-sets-store";
-import type { DashboardDaily } from "@/lib/store/dashboard-store";
+} from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
+import { COLLECTIONS, ALERT_SEVERITIES } from '@/lib/constants';
+import moment from 'moment';
+import { getFirebaseFnPath } from '@/lib/utils';
+import { useAlertOptionSetsStore } from '@/lib/store/alert-option-sets-store';
+import type { DashboardDaily } from '@/lib/store/dashboard-store';
 
 export interface SummaryAdsAccount {
   id: string;
@@ -73,12 +73,12 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
     try {
       // 1. Fetch all selected ads accounts for the company admin
       const adsAccountRef = collection(db, COLLECTIONS.ADS_ACCOUNTS);
-      const companyAdminRef = userDoc["Company Admin"];
+      const companyAdminRef = userDoc['Company Admin'];
 
       const adsAccountQuery = query(
         adsAccountRef,
-        where("User", "==", companyAdminRef),
-        where("Is Selected", "==", true),
+        where('User', '==', companyAdminRef),
+        where('Is Selected', '==', true),
       );
       const adsAccountSnap = await getDocs(adsAccountQuery);
 
@@ -87,7 +87,7 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
         ...docSnap.data(),
       }));
 
-      console.log("adsAccounts: ", adsAccounts);
+      // console.log("adsAccounts: ", adsAccounts);
 
       // 2. For each account, fetch dashboardDaily, spendMtd, kpiData, spendMtdIndicator, showingAdsLabel, and alert counts
       const alertOptionSets =
@@ -97,8 +97,8 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
         adsAccounts.map(async (account: any, index: number) => {
           try {
             // Fetch dashboardDaily for today
-            const today = moment().startOf("day");
-            const tomorrow = moment().endOf("day");
+            const today = moment().startOf('day');
+            const tomorrow = moment().endOf('day');
             const dashboardDailiesRef = collection(
               db,
               COLLECTIONS.DASHBOARD_DAILIES,
@@ -106,14 +106,14 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
             const dashboardDailyQuery = query(
               dashboardDailiesRef,
               where(
-                "Ads Account",
-                "==",
+                'Ads Account',
+                '==',
                 doc(db, COLLECTIONS.ADS_ACCOUNTS, account.id),
               ),
-              where("Created Date", ">=", Timestamp.fromDate(today.toDate())),
+              where('Created Date', '>=', Timestamp.fromDate(today.toDate())),
               where(
-                "Created Date",
-                "<=",
+                'Created Date',
+                '<=',
                 Timestamp.fromDate(tomorrow.toDate()),
               ),
             );
@@ -133,9 +133,9 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
 
               const newDashboardDailyData = {
                 id: newDashboardDailyRef.id,
-                "Ads Account": doc(db, COLLECTIONS.ADS_ACCOUNTS, account.id),
-                "Created Date": now,
-                "Modified Date": now,
+                'Ads Account': doc(db, COLLECTIONS.ADS_ACCOUNTS, account.id),
+                'Created Date': now,
+                'Modified Date': now,
               };
 
               await setDoc(newDashboardDailyRef, newDashboardDailyData);
@@ -145,28 +145,28 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
             // Fetch spend MTD
             let spendMtd: number | null = null;
             let spendMtdIndicatorKey: string | null = null;
-            if (dashboardDaily && dashboardDaily["Spend MTD"] !== undefined) {
-              spendMtd = dashboardDaily["Spend MTD"] ?? null;
+            if (dashboardDaily && dashboardDaily['Spend MTD'] !== undefined) {
+              spendMtd = dashboardDaily['Spend MTD'] ?? null;
             } else {
               // Fetch spend MTD from the API and update dashboardDaily
               try {
-                const path = getFirebaseFnPath("dashboard-spend-mtd-fb");
+                const path = getFirebaseFnPath('dashboard-spend-mtd-fb');
 
                 const response = await fetch(path, {
-                  method: "POST",
+                  method: 'POST',
                   headers: {
-                    "Content-Type": "application/json",
+                    'Content-Type': 'application/json',
                   },
                   body: JSON.stringify({
                     adsAccountId: account.id,
-                    customerId: account["Id"],
-                    loginCustomerId: account["Manager Account Id"],
+                    customerId: account['Id'],
+                    loginCustomerId: account['Manager Account Id'],
                   }),
                 });
 
                 if (response.ok) {
                   const result = await response.json();
-                  console.log("Spend MTD result:", result);
+                  // console.log("Spend MTD result:", result);
 
                   spendMtd = result.spendMtd ?? null;
 
@@ -178,34 +178,34 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
                       dashboardDaily.id,
                     );
                     await updateDoc(dashboardDailyRef, {
-                      "Spend MTD": result.spendMtd,
-                      "Modified Date": Timestamp.now(),
+                      'Spend MTD': result.spendMtd,
+                      'Modified Date': Timestamp.now(),
                     });
 
                     // Update the local dashboardDaily object
                     dashboardDaily = {
                       ...dashboardDaily,
-                      "Spend MTD": result.spendMtd,
+                      'Spend MTD': result.spendMtd,
                     };
                   }
                 } else {
-                  console.error("Failed to fetch spend MTD data");
+                  console.error('Failed to fetch spend MTD data');
                   spendMtd = null;
                 }
               } catch (error) {
-                console.error("Error fetching spend MTD:", error);
+                console.error('Error fetching spend MTD:', error);
                 spendMtd = null;
               }
             }
 
-            console.log("dashboardDaily: ", dashboardDaily);
+            // console.log("dashboardDaily: ", dashboardDaily);
 
-            if (dashboardDaily && dashboardDaily["Spend MTD Indicator Alert"]) {
+            if (dashboardDaily && dashboardDaily['Spend MTD Indicator Alert']) {
               spendMtdIndicatorKey =
-                dashboardDaily["Spend MTD Indicator Alert"]?.["Key"] || null;
+                dashboardDaily['Spend MTD Indicator Alert']?.['Key'] || null;
             } else if (
               dashboardDaily &&
-              !dashboardDaily["Spend MTD Indicator Alert"]
+              !dashboardDaily['Spend MTD Indicator Alert']
             ) {
               // No spend MTD indicator exists, fetch it
               try {
@@ -219,31 +219,31 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
                   useAlertOptionSetsStore.getState().alertOptionSets;
 
                 const path = getFirebaseFnPath(
-                  "dashboard-spendMtd-indicator-fb",
+                  'dashboard-spendMtd-indicator-fb',
                 );
-                const userTokenRef = account["User Token"] as DocumentReference;
+                const userTokenRef = account['User Token'] as DocumentReference;
 
                 const response = await fetch(path, {
-                  method: "POST",
+                  method: 'POST',
                   headers: {
-                    "Content-Type": "application/json",
+                    'Content-Type': 'application/json',
                   },
                   body: JSON.stringify({
                     adsAccountId: account.Id,
-                    adsAccountManagerAccountId: account["Manager Account Id"],
+                    adsAccountManagerAccountId: account['Manager Account Id'],
                     userTokenId: userTokenRef.id,
-                    monthlyBudget: account["Monthly Budget"],
-                    dailyBudget: account["Daily Budget"],
+                    monthlyBudget: account['Monthly Budget'],
+                    dailyBudget: account['Daily Budget'],
                   }),
                 });
 
-                console.log("response: ", response);
+                // console.log("response: ", response);
 
                 if (response.ok) {
                   const result = await response.json();
-                  console.log("result: ", result);
+                  // console.log("result: ", result);
                   const indicatorAlert = freshAlertOptionSets.find(
-                    (item) => item["Key"] === result.alert,
+                    (item) => item['Key'] === result.alert,
                   );
 
                   // Update the dashboardDaily document
@@ -253,15 +253,15 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
                     dashboardDaily.id,
                   );
                   await updateDoc(dashboardDailyRef, {
-                    "Spend MTD Indicator Alert": indicatorAlert || null,
-                    "Last Fetch Spend MTD": Timestamp.now(),
-                    "Modified Date": Timestamp.now(),
+                    'Spend MTD Indicator Alert': indicatorAlert || null,
+                    'Last Fetch Spend MTD': Timestamp.now(),
+                    'Modified Date': Timestamp.now(),
                   });
 
-                  spendMtdIndicatorKey = indicatorAlert?.["Key"] || null;
+                  spendMtdIndicatorKey = indicatorAlert?.['Key'] || null;
                 }
               } catch (error) {
-                console.error("Error fetching spend MTD indicator:", error);
+                console.error('Error fetching spend MTD indicator:', error);
                 spendMtdIndicatorKey = null;
               }
             }
@@ -272,33 +272,33 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
               db,
               COLLECTIONS.DASHBOARD_SHOWING_ADS,
             );
-            const startOfHour = moment().startOf("hour").toDate();
-            const endOfHour = moment().endOf("hour").toDate();
+            const startOfHour = moment().startOf('hour').toDate();
+            const endOfHour = moment().endOf('hour').toDate();
             const showingAdsQuery = query(
               showingAdsRef,
               where(
-                "Ads Account",
-                "==",
+                'Ads Account',
+                '==',
                 doc(db, COLLECTIONS.ADS_ACCOUNTS, account.id),
               ),
-              where("Date", ">=", startOfHour),
-              where("Date", "<=", endOfHour),
+              where('Date', '>=', startOfHour),
+              where('Date', '<=', endOfHour),
             );
             const showingAdsSnap = await getDocs(showingAdsQuery);
 
             if (showingAdsSnap.size === 0) {
               // No record exists for the current hour, trigger label check
-              console.log(
-                "No 'Dashboard Showing Ads' record for the current hour. Triggering label check.",
-              );
+              // console.log(
+              //   "No 'Dashboard Showing Ads' record for the current hour. Triggering label check.",
+              // );
               const path = getFirebaseFnPath(
-                "dashboard-display-showing-ads-label-fb",
+                'dashboard-display-showing-ads-label-fb',
               );
 
               await fetch(path, {
-                method: "POST",
+                method: 'POST',
                 headers: {
-                  "Content-Type": "application/json",
+                  'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                   adsAccountId: account.id,
@@ -309,17 +309,17 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
               const updatedShowingAdsSnap = await getDocs(showingAdsQuery);
               if (!updatedShowingAdsSnap.empty) {
                 showingAds =
-                  updatedShowingAdsSnap.docs[0].data()["Is Showing Ads"] ??
+                  updatedShowingAdsSnap.docs[0].data()['Is Showing Ads'] ??
                   null;
               }
             } else {
-              console.log(
-                "else showingAdsSnap.docs[0].data(): ",
-                showingAdsSnap.docs[0].data(),
-              );
+              // console.log(
+              //   "else showingAdsSnap.docs[0].data(): ",
+              //   showingAdsSnap.docs[0].data(),
+              // );
               // Record already exists, use it
               showingAds =
-                showingAdsSnap.docs[0].data()["Is Showing Ads"] ?? null;
+                showingAdsSnap.docs[0].data()['Is Showing Ads'] ?? null;
             }
 
             // Fetch alert counts by severity
@@ -327,8 +327,8 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
             const alertsQuery = query(
               alertsRef,
               where(
-                "Ads Account",
-                "==",
+                'Ads Account',
+                '==',
                 doc(db, COLLECTIONS.ADS_ACCOUNTS, account.id),
               ),
             );
@@ -345,7 +345,7 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
 
             // Progress bar logic
             const spend = Number(spendMtd ?? 0);
-            const monthlyBudget = Number(account["Monthly Budget"] ?? 1);
+            const monthlyBudget = Number(account['Monthly Budget'] ?? 1);
             const now = moment();
             const day = now.date();
             const daysInMonth = now.daysInMonth();
@@ -357,30 +357,30 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
               : 0;
             const dayPercent = (day / daysInMonth) * 100;
 
-            console.log("account.id: ", account.id);
-            console.log("monthlyBudget: ", monthlyBudget);
-            console.log("spend: ", spend);
-            console.log("monthlyBudget: ", monthlyBudget);
-            console.log("percent: ", percent);
-            console.log("dayPercent: ", dayPercent);
-            console.log("day: ", day);
-            console.log("daysInMonth: ", daysInMonth);
-            console.log("showingAds: ", showingAds);
-            console.log("--------------------------------");
+            // console.log("account.id: ", account.id);
+            // console.log("monthlyBudget: ", monthlyBudget);
+            // console.log("spend: ", spend);
+            // console.log("monthlyBudget: ", monthlyBudget);
+            // console.log("percent: ", percent);
+            // console.log("dayPercent: ", dayPercent);
+            // console.log("day: ", day);
+            // console.log("daysInMonth: ", daysInMonth);
+            // console.log("showingAds: ", showingAds);
+            // console.log("--------------------------------");
 
             return {
               id: account.id,
-              Id: account["Id"],
-              isConnected: !!account["Is Connected"],
+              Id: account['Id'],
+              isConnected: !!account['Is Connected'],
               accountName:
-                account["Account Name Editable"] ||
-                account["Account Name Original"] ||
-                "-",
+                account['Account Name Editable'] ||
+                account['Account Name Original'] ||
+                '-',
               showingAds,
               impact: { critical, medium, low },
               spendMtd,
               spendMtdIndicatorKey,
-              monthlyBudget: account["Monthly Budget"] ?? null,
+              monthlyBudget: account['Monthly Budget'] ?? null,
               dashboardDailyId: dashboardDaily ? dashboardDaily.id : null,
               progressBar: {
                 percent,
