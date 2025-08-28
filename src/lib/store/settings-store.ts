@@ -292,6 +292,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         "User Access": docSnap.data()["User Access"],
         "Avatar": docSnap.data()["Avatar"],
         "Is Google Sign Up": docSnap.data()["Is Google Sign Up"],
+        "Company Admin": docSnap.data()["Company Admin"],
       }));
       set({ users, usersLoaded: true, loading: false });
 

@@ -231,14 +231,36 @@ export default function UsersSubtab() {
               >
                 <Edit2 className="w-5 h-5" />
               </button>
-              <button className="text-red-500 hover:text-red-700 cursor-pointer">
+              <button
+                className={`text-red-500 hover:text-red-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                  row.original.id === userDoc?.uid ||
+                  userDoc?.["User Type"] !== "Admin" ||
+                  row.original.id === userDoc?.["Company Admin"]?.id
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
+                }`}
+                disabled={
+                  row.original.id === userDoc?.uid ||
+                  userDoc?.["User Type"] !== "Admin" ||
+                  row.original.id === userDoc?.["Company Admin"]?.id
+                }
+                title={
+                  row.original.id === userDoc?.uid
+                    ? "You cannot delete your own account"
+                    : userDoc?.["User Type"] !== "Admin"
+                    ? "Only admins can delete users"
+                    : row.original.id === userDoc?.["Company Admin"]?.id
+                    ? "Cannot delete the company admin"
+                    : "Delete user"
+                }
+              >
                 <Trash2 className="w-5 h-5" />
               </button>
             </>
           )}
           {row.original.isInvitation && (
             <button
-              className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer" 
+              className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               onClick={async () => {
                 if (resendingInvitationId) return; // Prevent multiple clicks
 
