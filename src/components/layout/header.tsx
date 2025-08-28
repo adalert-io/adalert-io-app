@@ -68,7 +68,10 @@ export function Header() {
       'days',
     );
     const now = moment();
-    const daysLeft = Math.max(0, trialEndDate.diff(now, 'days'));
+    const daysLeft = Math.max(
+      0,
+      Math.ceil(trialEndDate.diff(now, 'days', true)),
+    );
 
     return daysLeft;
   }, [subscription]);
