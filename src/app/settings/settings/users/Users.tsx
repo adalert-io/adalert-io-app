@@ -47,6 +47,9 @@ const checkboxClass =
 export default function UsersSubtab() {
   const [screen, setScreen] = useState<'list' | 'add' | 'edit'>('list');
   const [editingUser, setEditingUser] = useState<any>(null);
+  const [deletingUser, setDeletingUser] = useState<any>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [role, setRole] = useState<'Admin' | 'Manager'>('Admin');
   const [adsDropdownOpen, setAdsDropdownOpen] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
@@ -256,23 +259,9 @@ export default function UsersSubtab() {
                     ? 'Cannot delete the company admin'
                     : 'Delete user'
                 }
-                onClick={async () => {
-                  try {
-                    await deleteUserWithRecords(
-                      row.original.id,
-                      row.original.email,
-                    );
-                    toast.success('User deleted successfully');
-                    if (userDoc && userDoc['Company Admin']) {
-                      await Promise.all([
-                        refreshUsers(userDoc['Company Admin']),
-                        refreshInvitations(userDoc['Company Admin']),
-                      ]);
-                    }
-                  } catch (error: any) {
-                    console.error('Failed to delete user:', error);
-                    toast.error(error?.message || 'Failed to delete user');
-                  }
+                onClick={() => {
+                  setDeletingUser(row.original);
+                  setShowDeleteModal(true);
                 }}
               >
                 <Trash2 className="w-5 h-5" />
@@ -1023,6 +1012,89 @@ export default function UsersSubtab() {
                   disabled={isAvatarUploadDisabled}
                 />
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && deletingUser && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            {/* Header */}
+            <div className="flex items-center justify-end">
+              <div className="flex items-center gap-2"></div>
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeletingUser(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XIcon className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="mb-6">
+              <p className="text-gray-700">
+                Are you sure you want to delete the user:{' '}
+                <span className="font-bold">
+                  {deletingUser.Name} ({deletingUser.email})
+                </span>
+                ?
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1 border-blue-200 text-blue-600 hover:bg-blue-50"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeletingUser(null);
+                }}
+                disabled={isDeleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 bg-blue-600 text-white hover:bg-blue-700"
+                onClick={async () => {
+                  try {
+                    setIsDeleting(true);
+                    await deleteUserWithRecords(
+                      deletingUser.id,
+                      deletingUser.email,
+                    );
+                    toast.success('User deleted successfully');
+                    if (userDoc && userDoc['Company Admin']) {
+                      await Promise.all([
+                        refreshUsers(userDoc['Company Admin']),
+                        refreshInvitations(userDoc['Company Admin']),
+                      ]);
+                    }
+                    setShowDeleteModal(false);
+                    setDeletingUser(null);
+                  } catch (error: any) {
+                    console.error('Failed to delete user:', error);
+                    toast.error(error?.message || 'Failed to delete user');
+                  } finally {
+                    setIsDeleting(false);
+                  }
+                }}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete User'
+                )}
+              </Button>
             </div>
           </div>
         </div>
