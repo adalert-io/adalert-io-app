@@ -37,7 +37,7 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
-import { COLLECTIONS } from "@/lib/constants";
+import { COLLECTIONS, DEFAULT_ADS_ACCOUNT_VARIABLE } from "@/lib/constants";
 import { useUserAdsAccountsStore } from "@/lib/store/user-ads-accounts-store";
 
 function formatAccountId(id: string) {
@@ -229,6 +229,8 @@ export function AddAdsAccount() {
               User: doc(db, "users", user.uid),
               DailyBudget: acc["Daily Budget"] || 0,
               MonthlyBudget: acc["Monthly Budget"] || 0,
+              "Created Date": new Date(),
+              ...DEFAULT_ADS_ACCOUNT_VARIABLE,
             });
           }
         }
