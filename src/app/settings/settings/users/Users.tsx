@@ -84,6 +84,9 @@ export default function UsersSubtab() {
   const [resendingInvitationId, setResendingInvitationId] = useState<
     string | null
   >(null);
+  const [deletingInvitationId, setDeletingInvitationId] = useState<
+    string | null
+  >(null);
 
   // Clean up object URL when component unmounts or avatarPreview changes
   useEffect(() => {
@@ -228,7 +231,7 @@ export default function UsersSubtab() {
           {!row.original.isInvitation && (
             <>
               <button
-                className="text-blue-600 hover:text-blue-800 cursor-pointer"
+                className="text-blue-600 hover:text-blue-800 cursor-pointer px-1"
                 onClick={() => {
                   setEditingUser(row.original);
                   setRole(row.original['User Type'] || 'Admin');
@@ -269,56 +272,94 @@ export default function UsersSubtab() {
             </>
           )}
           {row.original.isInvitation && (
-            <button
-              className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              onClick={async () => {
-                if (resendingInvitationId) return; // Prevent multiple clicks
+            <>
+              <button
+                className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                onClick={async () => {
+                  if (resendingInvitationId) return; // Prevent multiple clicks
 
-                try {
-                  setResendingInvitationId(row.original.id);
+                  try {
+                    setResendingInvitationId(row.original.id);
 
-                  // Get the invitation data from the original invitations array
-                  const invitation = invitations.find(
-                    (inv) => inv.id === row.original.id,
-                  );
-                  if (!invitation) return;
+                    // Get the invitation data from the original invitations array
+                    const invitation = invitations.find(
+                      (inv) => inv.id === row.original.id,
+                    );
+                    if (!invitation) return;
 
-                  // Resend invitation with the same data
-                  await inviteUser(
-                    invitation.email,
-                    invitation.userType,
-                    invitation.name,
-                    invitation.selectedAds,
-                  );
+                    // Resend invitation with the same data
+                    await inviteUser(
+                      invitation.email,
+                      invitation.userType,
+                      invitation.name,
+                      invitation.selectedAds,
+                    );
 
-                  // Delete the old invitation record
-                  const { deleteInvitation } = useAlertSettingsStore.getState();
-                  await deleteInvitation(invitation.id);
-
-                  // Refresh invitations to update the table
-                  if (userDoc && userDoc['Company Admin']) {
-                    const { refreshInvitations } =
+                    // Delete the old invitation record
+                    const { deleteInvitation } =
                       useAlertSettingsStore.getState();
-                    await refreshInvitations(userDoc['Company Admin']);
-                  }
+                    await deleteInvitation(invitation.id);
 
-                  toast.success('Invitation resent successfully!');
-                } catch (error: any) {
-                  console.error('Error resending invitation:', error);
-                  toast.error(error.message || 'Failed to resend invitation');
-                } finally {
-                  setResendingInvitationId(null);
-                }
-              }}
-              disabled={resendingInvitationId === row.original.id}
-              title="Resend invitation"
-            >
-              {resendingInvitationId === row.original.id ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <RotateCcw className="w-4 h-4" />
-              )}
-            </button>
+                    // Refresh invitations to update the table
+                    if (userDoc && userDoc['Company Admin']) {
+                      const { refreshInvitations } =
+                        useAlertSettingsStore.getState();
+                      await refreshInvitations(userDoc['Company Admin']);
+                    }
+
+                    toast.success('Invitation resent successfully!');
+                  } catch (error: any) {
+                    console.error('Error resending invitation:', error);
+                    toast.error(error.message || 'Failed to resend invitation');
+                  } finally {
+                    setResendingInvitationId(null);
+                  }
+                }}
+                disabled={resendingInvitationId === row.original.id}
+                title="Resend invitation"
+              >
+                {resendingInvitationId === row.original.id ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="w-4 h-4" />
+                )}
+              </button>
+              <button
+                className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                onClick={async () => {
+                  if (deletingInvitationId) return; // Prevent multiple clicks
+
+                  try {
+                    setDeletingInvitationId(row.original.id);
+
+                    // Delete the invitation record
+                    const { deleteInvitation } =
+                      useAlertSettingsStore.getState();
+                    await deleteInvitation(row.original.id);
+
+                    // Refresh invitations to update the table
+                    if (userDoc && userDoc['Company Admin']) {
+                      await refreshInvitations(userDoc['Company Admin']);
+                    }
+
+                    toast.success('Invitation deleted successfully!');
+                  } catch (error: any) {
+                    console.error('Error deleting invitation:', error);
+                    toast.error(error.message || 'Failed to delete invitation');
+                  } finally {
+                    setDeletingInvitationId(null);
+                  }
+                }}
+                disabled={deletingInvitationId === row.original.id}
+                title="Delete invitation"
+              >
+                {deletingInvitationId === row.original.id ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Trash2 className="w-5 h-5" />
+                )}
+              </button>
+            </>
           )}
         </div>
       ),
