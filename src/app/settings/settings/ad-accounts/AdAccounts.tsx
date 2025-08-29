@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { InfoCircledIcon } from "@radix-ui/react-icons";
+import { InfoCircledIcon } from '@radix-ui/react-icons'
 import {
   ChevronLeft,
   Search,
@@ -520,16 +520,33 @@ export default function AdAccountsSubtab () {
               >
                 <MagnifyingGlassIcon className='w-6 h-6 text-[#015AFD]' />
               </Button>
-              <select
-                className='border rounded-md px-2 py-1 text-xs'
-                value={pageSize}
-                onChange={e => setPageSize(Number(e.target.value))}
-              >
-                <option value={15}>15 rows</option>
-                <option value={25}>25 rows</option>
-                <option value={50}>50 rows</option>
-                <option value={100}>100 rows</option>
-              </select>
+              <div className='relative inline-block'>
+                <select
+                  className='appearance-none border border-gray-200 rounded-lg px-4 py-2 pr-8 text-sm bg-white  transition-colors focus:ring-2 focus:ring-blue-200 focus:border-blue-300 cursor-pointer font-medium text-gray-700'
+                  value={pageSize}
+                  onChange={e => setPageSize(Number(e.target.value))}
+                >
+                  <option value={15}>15 rows</option>
+                  <option value={25}>25 rows</option>
+                  <option value={50}>50 rows</option>
+                  <option value={100}>100 rows</option>
+                </select>
+
+                {/* Custom dropdown chevron */}
+                <svg
+                  className='absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M19 9l-7 7-7-7'
+                  />
+                </svg>
+              </div>
             </div>
           </div>
           <AdsAccountsDataTable />
@@ -626,9 +643,7 @@ export default function AdAccountsSubtab () {
               </Button>
 
               <div className='flex items-center gap-1 text-sm text-gray-500'>
-              
-                <InfoCircledIcon className="w-[14px] mr-2 w-4 h-4 text-blue-500" />
-              
+                <InfoCircledIcon className='w-[14px] mr-2 w-4 h-4 text-blue-500' />
                 You can unlink this ad account anytime by clicking the delete
                 button
               </div>
@@ -663,7 +678,6 @@ export default function AdAccountsSubtab () {
                   {deletingAccount.name} -{' '}
                   {formatAccountNumber(deletingAccount['Id'])} ?
                 </div>
-                
               </p>
             </div>
 
