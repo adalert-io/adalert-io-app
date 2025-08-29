@@ -253,7 +253,7 @@ if (subscription) {
 }
 
   return (
-    <div className='bg-white rounded-2xl shadow-md p-8'>
+    <div className='bg-white p-8'>
       {/* Back Button */}
       <button
         className='flex items-center gap-2 text-blue-600 mb-6'
