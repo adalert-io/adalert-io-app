@@ -303,7 +303,7 @@ export function AddAdsAccount() {
             </h1>
             {adsAccounts && adsAccounts.length > 0 && (
               <div className="flex items-center flex-col text-gray-500 text-sm mb-6 md:mb-8 w-full justify-center md:flex-row gap-1">
-                <InfoCircledIcon className="mr-2 w-5 h-5 text-blue-500" />
+                <InfoCircledIcon className="w-[14px] mr-2 w-4 h-4 text-blue-500" />
                 Not the right ads account?{" "}
                 <button
                   className="ml-1 text-blue-600 underline font-medium hover:text-blue-800 hover:cursor-pointer"
@@ -422,7 +422,7 @@ export function AddAdsAccount() {
             )}
 
             <div className="flex items-center justify-center text-gray-500 text-sm mb-2 w-full">
-              <InfoCircledIcon className="mr-2 w-5 h-5 text-blue-500" />
+              <InfoCircledIcon className="w-[14px] mr-2 w-4 h-4 text-blue-500" />
               You can unlink any ad account from settings at any time.
             </div>
 
