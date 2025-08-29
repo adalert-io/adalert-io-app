@@ -626,22 +626,22 @@ export default function AdAccountsSubtab () {
                 />
                 <DollarSign className='absolute left-3 top-2.5 w-5 h-5 text-blue-400' />
               </div>
-
-              <Button
-                className='bg-blue-600 text-white text-lg font-bold px-12 py-3 rounded shadow-md mt-4 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
-                disabled={isSaveDisabled}
-                onClick={handleSave}
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2 className='w-4 h-4 mr-2 animate-spin' />
-                    Saving...
-                  </>
-                ) : (
-                  'Save'
-                )}
-              </Button>
-
+              <div className='flex justify-center w-16 mx-auto'>
+                <Button
+                  className='bg-blue-600 text-white text-lg font-bold px-12 py-3 rounded shadow-md mt-4 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                  disabled={isSaveDisabled}
+                  onClick={handleSave}
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save'
+                  )}
+                </Button>
+              </div>
               <div className='flex items-center gap-1 text-sm text-gray-500'>
                 <InfoCircledIcon className='w-[14px] mr-2 w-4 h-4 text-blue-500' />
                 You can unlink this ad account anytime by clicking the delete
