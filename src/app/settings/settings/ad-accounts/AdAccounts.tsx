@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { InfoCircledIcon } from "@radix-ui/react-icons";
 import {
   ChevronLeft,
   Search,
@@ -286,7 +287,7 @@ export default function AdAccountsSubtab () {
                   {headerGroup.headers.map(header => (
                     <th
                       key={header.id}
-                      className='px-4 py-4 text-left font-semibold text-gray-700 whitespace-nowrap overflow-hidden text-ellipsis max-w-[170px]'
+                      className='px-3 py-4 text-left font-semibold text-gray-700 whitespace-nowrap overflow-hidden text-ellipsis max-w-[160px]'
                     >
                       {flexRender(
                         header.column.columnDef.header,
@@ -624,10 +625,10 @@ export default function AdAccountsSubtab () {
                 )}
               </Button>
 
-              <div className='flex items-center gap-2 text-sm text-gray-500'>
-                <div className='w-4 h-4 rounded-full bg-gray-100 flex items-center justify-center'>
-                  <span className='text-xs font-bold text-gray-500'>i</span>
-                </div>
+              <div className='flex items-center gap-1 text-sm text-gray-500'>
+              
+                <InfoCircledIcon className="w-[14px] mr-2 w-4 h-4 text-blue-500" />
+              
                 You can unlink this ad account anytime by clicking the delete
                 button
               </div>
@@ -658,11 +659,11 @@ export default function AdAccountsSubtab () {
             <div className='mb-6'>
               <p className='text-gray-700'>
                 Are you sure you want to remove your ad account:{' '}
-                <span className='font-bold'>
+                <div className='font-bold'>
                   {deletingAccount.name} -{' '}
-                  {formatAccountNumber(deletingAccount['Id'])}
-                </span>
-                ?
+                  {formatAccountNumber(deletingAccount['Id'])} ?
+                </div>
+                
               </p>
             </div>
 

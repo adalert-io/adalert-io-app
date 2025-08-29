@@ -313,9 +313,9 @@ export default function MyProfileTab() {
               </form>
             </div>
           </div>
-          <div className="flex justify-center mt-8">
+          <div className="mt-8 flex justify-center w-16 mx-auto">
             <Button
-              className="w-full max-w-[150px] flex justify-center bg-blue-600 text-white text-lg font-bold py-3 rounded shadow-md "
+              className="w-full max-w-[150px] flex justify-center bg-blue-600 text-white text-sm font-bold py-3 rounded-l shadow-md "
               onClick={handleSave}
               disabled={!isSaveEnabled || isSaving}
             >

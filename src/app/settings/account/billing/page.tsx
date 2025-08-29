@@ -724,17 +724,17 @@ if (subscription) {
                   )}
 
                   {/* Status and Actions */}
-                  <div className='flex w-full flex-col gap-4 sm:w-[320px]'>
+                  <div className='flex flex-col items-start'>
                     {statusText && (
                       <div
-                        className='flex justify-center gap-2 px-6 py-1 rounded-full text-sm font-medium'
+                        className='flex justify-center gap-2 px-8 py-1 rounded-full text-sm font-medium'
                         style={{ color: statusColor, background: statusBg }}
                       >
                         {statusText}
                       </div>
                     )}
                     <Button
-                      className='bg-blue-600 text-white hover:bg-blue-700'
+                      className='bg-blue-600 text-white hover:bg-blue-700 mt-6'
                       onClick={() => setScreen('payment-form')}
                     >
                       {paymentMethods

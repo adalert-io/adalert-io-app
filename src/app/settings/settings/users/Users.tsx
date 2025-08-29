@@ -835,7 +835,7 @@ export default function UsersSubtab() {
             {screen === 'add' ? 'Add New User' : 'Edit User'}
           </h2>
           <div className="flex flex-col md:flex-row gap-8">
-            <div className="flex-1 flex flex-col gap-4 max-w-md">
+            <div className="flex-1 flex flex-col gap-4 max-w-md rounded-xl border border-[#e5e5e5] p-6">
               {screen === 'edit' && (
                 <div className="relative">
                   <Input
@@ -991,8 +991,9 @@ export default function UsersSubtab() {
                   </label>
                 </div>
               )}
+              <div className='mt-8 flex justify-center w-16 mx-auto'>
               <Button
-                className="bg-blue-600 text-white text-lg font-bold px-6 py-3 rounded shadow-md mt-4 inline-flex items-center justify-center hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full max-w-[150px] flex justify-center bg-blue-600 text-white text-sm font-bold py-3 rounded-l rounded-r shadow-md "
                 disabled={isSaveDisabled}
                 onClick={handleSave}
               >
@@ -1007,11 +1008,12 @@ export default function UsersSubtab() {
                   'Update'
                 )}
               </Button>
+              </div>
             </div>
             {/* Avatar */}
-            <div className="flex-1 flex items-center justify-center">
-              <div className="relative w-48 h-48 flex items-center justify-center">
-                <div className="w-full h-full border rounded-xl overflow-hidden bg-gray-50 flex items-center justify-center">
+            <div className="flex-1 flex items-center justify-center rounded-xl border border-[#e5e5e5]">
+              <div className="relative w-30 h-30 flex items-center justify-center">
+                <div className="w-full h-full border rounded-[50%] overflow-hidden bg-gray-50 flex items-center justify-center">
                   {screen === 'edit' &&
                   (avatarPreview || editingUser?.Avatar) ? (
                     <img
