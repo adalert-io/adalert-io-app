@@ -882,7 +882,7 @@ export default function UsersSubtab () {
               <div className='relative role-dropdown'>
                 <button
                   type='button'
-                  className='flex items-center w-full border rounded-md px-3 py-2 bg-white text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-200'
+                  className='flex items-center w-full border rounded-md px-3 py-2 bg-white text-base font-nprmal focus:outline-none focus:ring-2 focus:ring-blue-200'
                   onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
                 >
                   <span className='flex items-center gap-2'>
@@ -892,9 +892,9 @@ export default function UsersSubtab () {
                 </button>
                 {roleDropdownOpen && (
                   <div className='absolute z-10 mt-1 w-full bg-white border rounded shadow-lg'>
-                    <div className='py-1'>
+                    <div className='py-1 font-normal'>
                       <button
-                        className='w-full text-left px-3 py-2 text-sm hover:bg-gray-100'
+                        className='w-full text-left px-3 py-2 text-sm font-normal hover:bg-gray-100'
                         onClick={() => {
                           setRole('Admin')
                           setRoleDropdownOpen(false)
@@ -919,7 +919,7 @@ export default function UsersSubtab () {
               <div className='relative ads-dropdown'>
                 <button
                   type='button'
-                  className={`flex items-center w-full border rounded-md px-3 py-2 bg-white text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-200 ${
+                  className={`flex items-center w-full border rounded-md px-3 py-2 bg-white text-base font-normal focus:outline-none focus:ring-2 focus:ring-blue-200 ${
                     role === 'Admin' ? 'opacity-60 cursor-not-allowed' : ''
                   }`}
                   disabled={role === 'Admin'}
@@ -937,7 +937,7 @@ export default function UsersSubtab () {
                 </button>
                 {/* Multi-select dropdown (mock) */}
                 {adsDropdownOpen && role === 'Manager' && (
-                  <div className='absolute z-10 mt-1 w-full bg-white border rounded shadow-lg p-3'>
+                  <div className='absolute z-10 mt-1 w-full bg-white border rounded shadow-lg p-3 font-normal'>
                     <div className='flex items-center gap-2 mb-2'>
                       <Input
                         placeholder='Search for ads accounts'
