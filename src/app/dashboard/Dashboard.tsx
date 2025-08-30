@@ -1428,7 +1428,7 @@ export default function Dashboard () {
         <div className='bg-white rounded-2xl border border-[#e5e5e5] p-4 max-[991px]:block whitespace-nowrap overflow-x-auto'>
           <div className='flex flex-col gap-3 mb-2'>
             {/* Parent row: behaves like row on desktop, column on mobile */}
-            <div className='flex justify-between items-start max-[599px]:flex-col max-[599px]:gap-3'>
+            <div className='flex justify-between items-center max-[599px]:flex-col max-[599px]:gap-3'>
               {/* Left Side (Heading, tooltips, settings, selection) */}
               <div className='flex items-center gap-2 flex-wrap'>
                 <h2 className='text-lg font-bold text-gray-900'>Alerts</h2>
