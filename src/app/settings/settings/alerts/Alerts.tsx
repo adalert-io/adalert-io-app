@@ -8,6 +8,7 @@ import { Info } from "lucide-react";
 import { useAlertSettingsStore } from "@/lib/store/settings-store";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { CHECKBOX_CLASS } from "@/lib/constants";
+import { Loader2 } from "lucide-react";
 
 const FIELD_MAP = [
   // Email/SMS
@@ -270,13 +271,20 @@ export default function AlertsSubtab() {
           ))}
         </div>
       </div>
-      <div className="flex justify-center mt-8">
+      <div className='mt-8 flex justify-center'>
         <Button
           onClick={handleSave}
           disabled={saving || loading}
-          className="bg-blue-600 text-white hover:bg-blue-700"
+          className='px-8 py-3 bg-blue-600 text-white text-sm font-normal rounded shadow-md min-w-[180px]'
         >
-          {saving ? "Saving..." : "Save"}
+          {saving ? (
+            <>
+              <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+              Saving...
+            </>
+          ) : (
+            'Save'
+          )}
         </Button>
       </div>
     </div>

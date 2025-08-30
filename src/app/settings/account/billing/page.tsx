@@ -453,7 +453,7 @@ if (subscription) {
           <Button
             onClick={handleSubmit}
             disabled={isSubmitting || !stripe || !isFormValid()}
-            className='bg-blue-600 text-white hover:bg-blue-700'
+            className='px-8 py-3 bg-blue-600 text-white text-sm font-normal rounded shadow-md min-w-[180px]'
           >
             {isSubmitting ? (
               <>
@@ -734,7 +734,7 @@ if (subscription) {
                       </div>
                     )}
                     <Button
-                      className='bg-blue-600 text-white hover:bg-blue-700 mt-6'
+                      className='px-8 py-3 bg-blue-600 text-white text-sm font-normal rounded shadow-md min-w-[180px] mt-6'
                       onClick={() => setScreen('payment-form')}
                     >
                       {paymentMethods

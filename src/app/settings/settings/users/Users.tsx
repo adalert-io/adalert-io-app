@@ -998,15 +998,15 @@ export default function UsersSubtab () {
                   />
                   <label
                     htmlFor='notify-user'
-                    className='text-base font-medium select-none'
+                    className='text-base font-normal select-none'
                   >
                     Notify the user
                   </label>
                 </div>
               )}
-              <div className='mt-8 flex justify-center w-16 mx-auto'>
+              <div className='mt-8 flex justify-center'>
                 <Button
-                  className='w-full max-w-[150px] flex justify-center bg-blue-600 text-white text-sm font-bold py-3 rounded-l rounded-r shadow-md '
+                  className='px-8 py-3 bg-blue-600 text-white text-sm font-normal rounded shadow-md min-w-[180px]'
                   disabled={isSaveDisabled}
                   onClick={handleSave}
                 >

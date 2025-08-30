@@ -313,19 +313,19 @@ export default function MyProfileTab() {
               </form>
             </div>
           </div>
-          <div className="mt-8 flex justify-center w-16 mx-auto">
+          <div className='mt-8 flex justify-center'>
             <Button
-              className="w-full max-w-[150px] flex justify-center bg-blue-600 text-white text-sm font-bold py-3 rounded-l shadow-md "
+              className='px-8 py-3 bg-blue-600 text-white text-sm font-normal rounded shadow-md min-w-[180px]'
               onClick={handleSave}
               disabled={!isSaveEnabled || isSaving}
             >
               {isSaving ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className='w-4 h-4 mr-2 animate-spin' />
                   Saving...
                 </>
               ) : (
-                "Save"
+                'Save'
               )}
             </Button>
           </div>

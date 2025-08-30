@@ -626,9 +626,9 @@ export default function AdAccountsSubtab () {
                 />
                 <DollarSign className='absolute left-3 top-2.5 w-5 h-5 text-blue-400' />
               </div>
-              <div className='flex justify-center w-16 mx-auto'>
+              <div className='mt-8 flex justify-center'>
                 <Button
-                  className='bg-blue-600 text-white text-lg font-bold px-12 py-3 rounded shadow-md mt-4 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                  className='px-8 py-3 bg-blue-600 text-white text-sm font-normal rounded shadow-md min-w-[180px]'
                   disabled={isSaveDisabled}
                   onClick={handleSave}
                 >
