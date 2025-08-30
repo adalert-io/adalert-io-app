@@ -17,6 +17,12 @@ import {
   ChevronsLeft,
   ChevronsRight
 } from 'lucide-react'
+import { InfoCircledIcon } from "@radix-ui/react-icons";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function Summary () {
   const { user, userDoc, loading } = useAuthStore()
@@ -360,7 +366,27 @@ export default function Summary () {
                     Name
                   </th>
                   <th className='px-4 py-4 text-left font-semibold text-gray-700'>
-                    Showing Ads
+                    <div className='flex items-center gap-1'>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            type='button'
+                            className='p-0.5 rounded hover:bg-gray-100 transition-colors'
+                            aria-label='Showing Ads information'
+                          >
+                            <InfoCircledIcon className="w-3 h-3 text-blue-500" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side='top'
+                          align='center'
+                          className='max-w-xs text-xs'
+                        >
+                          If the ad account has not had any impressions in the last two hours, the status will change to 'No Showing Ads'.
+                        </TooltipContent>
+                      </Tooltip>
+                      <span>Showing Ads</span>
+                    </div>
                   </th>
                   <th className='px-4 py-4 text-left font-semibold text-gray-700'>
                     Impact
