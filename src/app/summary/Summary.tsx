@@ -348,7 +348,7 @@ export default function Summary () {
         </div>
 
         {/* Table */}
-        <div className='bg-white rounded-2xl shadow-none border border-[#e5e5e5] overflow-hidden'>
+        <div className='bg-white rounded-2xl shadow-none border border-[#e5e5e5] overflow-hidden mr-4'>
           <div className='max-[991px]:block whitespace-nowrap overflow-x-auto'>
             <table className='min-w-full text-[0.75rem]'>
               <thead className='bg-gray-50 border-b border-gray-200'>
@@ -365,7 +365,7 @@ export default function Summary () {
                   <th className='px-4 py-4 text-left font-semibold text-gray-700'>
                     Impact
                   </th>
-                  <th className='px-4 py-4 text-left font-semibold text-gray-700 pr-8'>
+                  <th className='px-4 py-4 text-left font-semibold text-gray-700 pr-12'>
                     Budget Pacing
                   </th>
                 </tr>
@@ -597,7 +597,7 @@ export default function Summary () {
                         </div>
                       </td>
                       {/* Budget Pacing */}
-                      <td className='px-4 py-6 min-w-[240px] pr-8'>
+                      <td className='px-4 py-6 min-w-[240px] pr-12'>
                         <div className='flex items-center gap-3'>
                           {/* Progress bar */}
                           <div className='relative w-full h-6 flex items-center'>
