@@ -30,25 +30,25 @@ interface IntercomProviderProps {
   };
 }
 
-export const IntercomProvider = ({ 
-  children, 
-  autoInitialize = true, 
-  user 
+export const IntercomProvider = ({
+  children,
+  autoInitialize = true,
+  user,
 }: IntercomProviderProps) => {
   useEffect(() => {
-    console.log('IntercomProvider: useEffect triggered', { autoInitialize, user });
-    
+    // console.log('IntercomProvider: useEffect triggered', { autoInitialize, user });
+
     if (autoInitialize && typeof window !== 'undefined') {
       const config = getIntercomConfig();
-      console.log('IntercomProvider: Config loaded:', config);
-      
+      // console.log('IntercomProvider: Config loaded:', config);
+
       if (config.appId) {
-        console.log('IntercomProvider: Initializing Intercom...');
+        // console.log('IntercomProvider: Initializing Intercom...');
         intercomService.initialize(config);
-        
+
         // Identify user if provided
         if (user) {
-          console.log('IntercomProvider: Identifying user:', user);
+          // console.log('IntercomProvider: Identifying user:', user);
           intercomService.identify(user);
         }
       } else {
@@ -59,7 +59,7 @@ export const IntercomProvider = ({
     // Cleanup on unmount
     return () => {
       if (typeof window !== 'undefined') {
-        console.log('IntercomProvider: Shutting down Intercom');
+        // console.log('IntercomProvider: Shutting down Intercom');
         intercomService.shutdown();
       }
     };
@@ -69,7 +69,8 @@ export const IntercomProvider = ({
     show: () => intercomService.show(),
     hide: () => intercomService.hide(),
     showMessages: () => intercomService.showMessages(),
-    showNewMessage: (content?: string) => intercomService.showNewMessage(content),
+    showNewMessage: (content?: string) =>
+      intercomService.showNewMessage(content),
     track: (eventName: string, metadata?: Record<string, any>) => {
       intercomService.track({ eventName, metadata });
     },
@@ -86,7 +87,9 @@ export const IntercomProvider = ({
 export const useIntercomContext = () => {
   const context = useContext(IntercomContext);
   if (!context) {
-    throw new Error('useIntercomContext must be used within an IntercomProvider');
+    throw new Error(
+      'useIntercomContext must be used within an IntercomProvider',
+    );
   }
   return context;
-}; 
+};

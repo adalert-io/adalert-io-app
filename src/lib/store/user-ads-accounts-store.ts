@@ -55,8 +55,8 @@ export const useUserAdsAccountsStore = create<UserAdsAccountsState>(
         await updateDoc(accountRef, { 'Currency Symbol': symbol });
 
         set((state) => {
-          console.log('accountId: ', accountId);
-          console.log('state.userAdsAccounts: ', state.userAdsAccounts);
+          // console.log('accountId: ', accountId);
+          // console.log('state.userAdsAccounts: ', state.userAdsAccounts);
 
           const updateUserAdsAccounts = state.userAdsAccounts.map((account) => {
             if (account.id === accountId) {
@@ -192,9 +192,9 @@ export const useUserAdsAccountsStore = create<UserAdsAccountsState>(
                   await response.text(),
                 );
               } else {
-                console.log(
-                  `Successfully updated subscription item ${subscriptionItemId} to quantity ${connectedAccountsCount}`,
-                );
+                // console.log(
+                //   `Successfully updated subscription item ${subscriptionItemId} to quantity ${connectedAccountsCount}`,
+                // );
               }
             }
           }

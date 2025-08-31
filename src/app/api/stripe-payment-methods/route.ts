@@ -8,17 +8,15 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { 
-      action,
-      customerId,
-      paymentMethodId,
-      oldPaymentMethodId 
-    } = body;
+    const { action, customerId, paymentMethodId, oldPaymentMethodId } = body;
 
-    console.log('Payment method operation:', { action, customerId, paymentMethodId, oldPaymentMethodId });
+    // console.log('Payment method operation:', { action, customerId, paymentMethodId, oldPaymentMethodId });
 
     if (!action || !customerId || !paymentMethodId) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 },
+      );
     }
 
     switch (action) {
@@ -35,9 +33,9 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        return NextResponse.json({ 
+        return NextResponse.json({
           success: true,
-          message: 'Payment method attached successfully'
+          message: 'Payment method attached successfully',
         });
 
       case 'detach':
@@ -46,9 +44,9 @@ export async function POST(request: NextRequest) {
           await stripe.paymentMethods.detach(oldPaymentMethodId);
         }
 
-        return NextResponse.json({ 
+        return NextResponse.json({
           success: true,
-          message: 'Payment method detached successfully'
+          message: 'Payment method detached successfully',
         });
 
       case 'replace':
@@ -74,9 +72,9 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        return NextResponse.json({ 
+        return NextResponse.json({
           success: true,
-          message: 'Payment method replaced successfully'
+          message: 'Payment method replaced successfully',
         });
 
       default:
@@ -84,8 +82,11 @@ export async function POST(request: NextRequest) {
     }
   } catch (error: any) {
     console.error('Error handling payment method operation:', error);
-    return NextResponse.json({ 
-      error: error.message || 'Internal server error' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: error.message || 'Internal server error',
+      },
+      { status: 500 },
+    );
   }
-} 
+}

@@ -1,13 +1,13 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useMemo } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import Link from 'next/link'
-import dynamic from 'next/dynamic'
-import { countries } from 'countries-list'
-import { useAlertSettingsStore } from '@/lib/store/settings-store'
-import { useAuthStore } from '@/lib/store/auth-store'
+import { useState, useEffect, useMemo } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import Link from 'next/link';
+import dynamic from 'next/dynamic';
+import { countries } from 'countries-list';
+import { useAlertSettingsStore } from '@/lib/store/settings-store';
+import { useAuthStore } from '@/lib/store/auth-store';
 import {
   User,
   Building,
@@ -17,25 +17,25 @@ import {
   Phone,
   Clock,
   Mail,
-  Loader2
-} from 'lucide-react'
+  Loader2,
+} from 'lucide-react';
 
 // Dynamically import react-select to avoid SSR issues
 const Select = dynamic(() => import('react-select'), {
   ssr: false,
-  loading: () => <div className='h-10 bg-gray-100 rounded animate-pulse' />
-})
+  loading: () => <div className='h-10 bg-gray-100 rounded animate-pulse' />,
+});
 
-export default function CompanyDetailsSubtab () {
+export default function CompanyDetailsSubtab() {
   const { stripeCompany, fetchStripeCompany, updateStripeCompany, loading } =
-    useAlertSettingsStore()
-  const { userDoc } = useAuthStore()
-  const [isSaving, setIsSaving] = useState(false)
-  const [isClient, setIsClient] = useState(false)
+    useAlertSettingsStore();
+  const { userDoc } = useAuthStore();
+  const [isSaving, setIsSaving] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setIsClient(true)
-  }, [])
+    setIsClient(true);
+  }, []);
   const [formData, setFormData] = useState({
     companyName: '',
     address: '',
@@ -48,8 +48,8 @@ export default function CompanyDetailsSubtab () {
     telephone: '',
     telephoneCountryCode: '',
     timezone: '',
-    email: ''
-  })
+    email: '',
+  });
 
   // Transform countries data for react-select
   const countryOptions = useMemo(() => {
@@ -57,55 +57,55 @@ export default function CompanyDetailsSubtab () {
       value: code,
       label: country.name,
       dialCode: country.phone,
-      flag: '🌍' // Using a default flag since emoji property might not exist
-    }))
-  }, [])
+      flag: '🌍', // Using a default flag since emoji property might not exist
+    }));
+  }, []);
 
   // Get selected country option
   const selectedCountry = useMemo(() => {
     return (
-      countryOptions.find(option => option.label === formData.country) || null
-    )
-  }, [countryOptions, formData.country])
+      countryOptions.find((option) => option.label === formData.country) || null
+    );
+  }, [countryOptions, formData.country]);
 
   // Get dial code options for telephone
   const dialCodeOptions = useMemo(() => {
-    return countryOptions.map(option => ({
+    return countryOptions.map((option) => ({
       value: option.dialCode,
       label: `+${option.dialCode} ${option.label}`,
       displayLabel: `+${option.dialCode}`,
-      flag: option.flag
-    }))
-  }, [countryOptions])
+      flag: option.flag,
+    }));
+  }, [countryOptions]);
 
   // Get selected dial code option
   const selectedDialCode = useMemo(() => {
-    if (!formData.telephoneCountryCode) return null
+    if (!formData.telephoneCountryCode) return null;
     // Handle both string and array values for backward compatibility
     const currentCode = Array.isArray(formData.telephoneCountryCode)
       ? formData.telephoneCountryCode[0]
-      : formData.telephoneCountryCode
+      : formData.telephoneCountryCode;
     const found =
       dialCodeOptions.find(
-        option => option.value.toString() === currentCode.toString()
-      ) || null
-    console.log('Selected dial code:', found, 'for value:', currentCode)
-    return found
-  }, [dialCodeOptions, formData.telephoneCountryCode])
+        (option) => option.value.toString() === currentCode.toString(),
+      ) || null;
+    // console.log('Selected dial code:', found, 'for value:', currentCode)
+    return found;
+  }, [dialCodeOptions, formData.telephoneCountryCode]);
 
   useEffect(() => {
     if (userDoc?.uid) {
-      fetchStripeCompany(userDoc.uid)
+      fetchStripeCompany(userDoc.uid);
     }
-  }, [userDoc?.uid, fetchStripeCompany])
+  }, [userDoc?.uid, fetchStripeCompany]);
 
   useEffect(() => {
     if (stripeCompany) {
       // Handle telephone country code - ensure it's a string
-      const countryCode = stripeCompany['Telephone Country Code']
+      const countryCode = stripeCompany['Telephone Country Code'];
       const countryCodeString = Array.isArray(countryCode)
         ? countryCode[0]
-        : countryCode
+        : countryCode;
 
       setFormData({
         companyName: stripeCompany['Company Name'] || '',
@@ -119,46 +119,46 @@ export default function CompanyDetailsSubtab () {
         telephone: stripeCompany['Telephone'] || '',
         telephoneCountryCode: countryCodeString?.toString() || '',
         timezone: stripeCompany['Time Zone'] || '',
-        email: stripeCompany['Email'] || ''
-      })
+        email: stripeCompany['Email'] || '',
+      });
     }
-  }, [stripeCompany])
+  }, [stripeCompany]);
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
-    }))
-  }
+      [field]: value,
+    }));
+  };
 
   const handleCountryChange = (selectedOption: any) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      country: selectedOption?.label || ''
-    }))
-  }
+      country: selectedOption?.label || '',
+    }));
+  };
 
   const handleDialCodeChange = (selectedOption: any) => {
-    console.log('Dial code selected:', selectedOption)
+    // console.log('Dial code selected:', selectedOption)
     // Ensure we store just the dial code as a string, not an array
-    const dialCode = selectedOption?.value
-    const dialCodeString = Array.isArray(dialCode) ? dialCode[0] : dialCode
-    setFormData(prev => ({
+    const dialCode = selectedOption?.value;
+    const dialCodeString = Array.isArray(dialCode) ? dialCode[0] : dialCode;
+    setFormData((prev) => ({
       ...prev,
-      telephoneCountryCode: dialCodeString?.toString() || ''
-    }))
-  }
+      telephoneCountryCode: dialCodeString?.toString() || '',
+    }));
+  };
 
   const handlePhoneNumberChange = (value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      telephone: value
-    }))
-  }
+      telephone: value,
+    }));
+  };
 
   const handleSave = async () => {
-    if (!userDoc?.uid) return
-    setIsSaving(true)
+    if (!userDoc?.uid) return;
+    setIsSaving(true);
     try {
       const updates = {
         'Company Name': formData.companyName,
@@ -172,16 +172,16 @@ export default function CompanyDetailsSubtab () {
         Telephone: formData.telephone,
         'Telephone Country Code': formData.telephoneCountryCode,
         'Time Zone': formData.timezone,
-        Email: formData.email
-      }
+        Email: formData.email,
+      };
 
-      await updateStripeCompany(userDoc.uid, updates)
+      await updateStripeCompany(userDoc.uid, updates);
     } catch (error) {
-      console.error('Error saving company details:', error)
+      console.error('Error saving company details:', error);
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   return (
     <div className='bg-white  p-4'>
@@ -205,7 +205,7 @@ export default function CompanyDetailsSubtab () {
             placeholder='Company Name'
             className='pl-10'
             value={formData.companyName}
-            onChange={e => handleInputChange('companyName', e.target.value)}
+            onChange={(e) => handleInputChange('companyName', e.target.value)}
           />
           <User className='absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]' />
         </div>
@@ -220,7 +220,7 @@ export default function CompanyDetailsSubtab () {
               placeholder='Address'
               className='pl-10'
               value={formData.address}
-              onChange={e => handleInputChange('address', e.target.value)}
+              onChange={(e) => handleInputChange('address', e.target.value)}
             />
             <Building className='absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]' />
           </div>
@@ -231,7 +231,7 @@ export default function CompanyDetailsSubtab () {
               placeholder='State/Province'
               className='pl-10'
               value={formData.state}
-              onChange={e => handleInputChange('state', e.target.value)}
+              onChange={(e) => handleInputChange('state', e.target.value)}
             />
             <MapPin className='absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]' />
           </div>
@@ -251,20 +251,20 @@ export default function CompanyDetailsSubtab () {
                 className='react-select-container'
                 classNamePrefix='react-select'
                 styles={{
-                  control: provided => ({
+                  control: (provided) => ({
                     ...provided,
                     paddingLeft: '2.5rem',
                     border: '1px solid #d1d5db',
                     borderRadius: '0.375rem',
                     minHeight: '2.5rem',
                     '&:hover': {
-                      borderColor: '#3b82f6'
-                    }
+                      borderColor: '#3b82f6',
+                    },
                   }),
-                  placeholder: provided => ({
+                  placeholder: (provided) => ({
                     ...provided,
-                    color: '#9ca3af'
-                  })
+                    color: '#9ca3af',
+                  }),
                 }}
               />
             ) : (
@@ -278,7 +278,7 @@ export default function CompanyDetailsSubtab () {
               placeholder='Website'
               className='pl-10'
               value={formData.website}
-              onChange={e => handleInputChange('website', e.target.value)}
+              onChange={(e) => handleInputChange('website', e.target.value)}
             />
             <Globe className='absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]' />
           </div>
@@ -291,7 +291,7 @@ export default function CompanyDetailsSubtab () {
               type='number'
               step='0.01'
               value={formData.vat}
-              onChange={e => handleInputChange('vat', e.target.value)}
+              onChange={(e) => handleInputChange('vat', e.target.value)}
             />
             <FileText className='absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]' />
           </div>
@@ -305,7 +305,7 @@ export default function CompanyDetailsSubtab () {
               placeholder='City'
               className='pl-10'
               value={formData.city}
-              onChange={e => handleInputChange('city', e.target.value)}
+              onChange={(e) => handleInputChange('city', e.target.value)}
             />
             <Building className='absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]' />
           </div>
@@ -316,7 +316,7 @@ export default function CompanyDetailsSubtab () {
               placeholder='Zip/Postal Code'
               className='pl-10'
               value={formData.zipCode}
-              onChange={e => handleInputChange('zipCode', e.target.value)}
+              onChange={(e) => handleInputChange('zipCode', e.target.value)}
             />
             <MapPin className='absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]' />
           </div>
@@ -334,7 +334,7 @@ export default function CompanyDetailsSubtab () {
                     selectedDialCode
                       ? {
                           ...selectedDialCode,
-                          label: selectedDialCode.displayLabel
+                          label: selectedDialCode.displayLabel,
                         }
                       : null
                   }
@@ -343,19 +343,19 @@ export default function CompanyDetailsSubtab () {
                   className='react-select-container'
                   classNamePrefix='react-select'
                   styles={{
-                    control: provided => ({
+                    control: (provided) => ({
                       ...provided,
                       border: '1px solid #d1d5db',
                       borderRadius: '0.375rem',
                       minHeight: '2.5rem',
                       '&:hover': {
-                        borderColor: '#3b82f6'
-                      }
+                        borderColor: '#3b82f6',
+                      },
                     }),
-                    placeholder: provided => ({
+                    placeholder: (provided) => ({
                       ...provided,
-                      color: '#9ca3af'
-                    })
+                      color: '#9ca3af',
+                    }),
                   }}
                 />
               ) : (
@@ -370,7 +370,7 @@ export default function CompanyDetailsSubtab () {
                 step='1'
                 min='0'
                 value={formData.telephone}
-                onChange={e => handlePhoneNumberChange(e.target.value)}
+                onChange={(e) => handlePhoneNumberChange(e.target.value)}
               />
               <Phone className='absolute right-3 top-2.5 w-4 h-4 text-[#155dfc]' />
             </div>
@@ -382,7 +382,7 @@ export default function CompanyDetailsSubtab () {
               placeholder='Timezone'
               className='pl-10'
               value={formData.timezone}
-              onChange={e => handleInputChange('timezone', e.target.value)}
+              onChange={(e) => handleInputChange('timezone', e.target.value)}
             />
             <Clock className='absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]' />
           </div>
@@ -393,7 +393,7 @@ export default function CompanyDetailsSubtab () {
               placeholder='Email'
               className='pl-10'
               value={formData.email}
-              onChange={e => handleInputChange('email', e.target.value)}
+              onChange={(e) => handleInputChange('email', e.target.value)}
             />
             <Mail className='absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]' />
           </div>
@@ -418,5 +418,5 @@ export default function CompanyDetailsSubtab () {
         </Button>
       </div>
     </div>
-  )
+  );
 }

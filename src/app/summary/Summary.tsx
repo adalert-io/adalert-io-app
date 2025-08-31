@@ -1,144 +1,146 @@
-'use client'
+'use client';
 
-import { useAuthStore } from '@/lib/store/auth-store'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState, useMemo } from 'react'
-import { Header } from '@/components/layout/header'
-import { useSummaryStore } from './summary-store'
-import { useUserAdsAccountsStore } from '@/lib/store/user-ads-accounts-store'
-import { formatAccountNumber } from '@/lib/utils'
-import { MagnifyingGlassIcon } from '@radix-ui/react-icons'
-import { Button } from '@/components/ui/button'
-import { ALERT_SEVERITY_COLORS } from '@/lib/constants'
+import { useAuthStore } from '@/lib/store/auth-store';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState, useMemo } from 'react';
+import { Header } from '@/components/layout/header';
+import { useSummaryStore } from './summary-store';
+import { useUserAdsAccountsStore } from '@/lib/store/user-ads-accounts-store';
+import { formatAccountNumber } from '@/lib/utils';
+import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
+import { Button } from '@/components/ui/button';
+import { ALERT_SEVERITY_COLORS } from '@/lib/constants';
 import {
   X,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
-  ChevronsRight
-} from 'lucide-react'
-import { InfoCircledIcon } from "@radix-ui/react-icons";
+  ChevronsRight,
+} from 'lucide-react';
+import { InfoCircledIcon } from '@radix-ui/react-icons';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from '@/components/ui/tooltip';
 
-export default function Summary () {
-  const { user, userDoc, loading } = useAuthStore()
-  const router = useRouter()
+export default function Summary() {
+  const { user, userDoc, loading } = useAuthStore();
+  const router = useRouter();
   const {
     accounts,
     allAdsAccounts,
     loading: summaryLoading,
     isRefreshing,
-    fetchSummaryAccounts
-  } = useSummaryStore()
-  const { setSelectedAdsAccount, userAdsAccounts } = useUserAdsAccountsStore()
+    fetchSummaryAccounts,
+  } = useSummaryStore();
+  const { setSelectedAdsAccount, userAdsAccounts } = useUserAdsAccountsStore();
 
   // Table state
-  const [searchValue, setSearchValue] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [pageSize, setPageSize] = useState(25)
-  const [showSearch, setShowSearch] = useState(false)
+  const [searchValue, setSearchValue] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [pageSize, setPageSize] = useState(25);
+  const [showSearch, setShowSearch] = useState(false);
 
   // Auto-refresh summary accounts every 15 minutes
   const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(
-    null
-  )
+    null,
+  );
 
   // Redirect only if loading is false and user is null
   useEffect(() => {
     if (!loading && !user) {
-      router.push('/auth')
+      router.push('/auth');
     }
-  }, [loading, user, router])
+  }, [loading, user, router]);
 
   // Fetch summary accounts only when both user and userDoc are available
   useEffect(() => {
     if (user && userDoc) {
-      fetchSummaryAccounts(userDoc)
+      fetchSummaryAccounts(userDoc);
     }
-  }, [user, userDoc, fetchSummaryAccounts])
+  }, [user, userDoc, fetchSummaryAccounts]);
 
   // Set up auto-refresh for summary accounts every 15 minutes
   useEffect(() => {
     if (user && userDoc) {
       // Clear any existing interval
       if (refreshInterval) {
-        clearInterval(refreshInterval)
+        clearInterval(refreshInterval);
       }
 
       // Set up new interval to refresh summary accounts every 15 minutes (900000 ms)
       const interval = setInterval(() => {
-        console.log('Auto-refreshing summary accounts...')
-        fetchSummaryAccounts(userDoc)
-      }, 900000)
+        // console.log('Auto-refreshing summary accounts...')
+        fetchSummaryAccounts(userDoc);
+      }, 900000);
 
-      setRefreshInterval(interval)
+      setRefreshInterval(interval);
 
       // Cleanup function
       return () => {
         if (interval) {
-          clearInterval(interval)
+          clearInterval(interval);
         }
-      }
+      };
     }
-  }, [user, userDoc, fetchSummaryAccounts]) // Remove refreshInterval from dependencies
+  }, [user, userDoc, fetchSummaryAccounts]); // Remove refreshInterval from dependencies
 
   // Cleanup interval when component unmounts
   useEffect(() => {
     return () => {
       if (refreshInterval) {
-        clearInterval(refreshInterval)
+        clearInterval(refreshInterval);
       }
-    }
-  }, [refreshInterval])
+    };
+  }, [refreshInterval]);
 
   useEffect(() => {
-    const handler = setTimeout(() => setDebouncedSearch(searchValue), 500)
-    return () => clearTimeout(handler)
-  }, [searchValue])
+    const handler = setTimeout(() => setDebouncedSearch(searchValue), 500);
+    return () => clearTimeout(handler);
+  }, [searchValue]);
 
   // Filtered accounts by search
   const filteredAccounts = useMemo(() => {
-    if (!debouncedSearch) return accounts
-    const lower = debouncedSearch.toLowerCase()
-    return accounts.filter(acc => acc.accountName.toLowerCase().includes(lower))
-  }, [accounts, debouncedSearch])
+    if (!debouncedSearch) return accounts;
+    const lower = debouncedSearch.toLowerCase();
+    return accounts.filter((acc) =>
+      acc.accountName.toLowerCase().includes(lower),
+    );
+  }, [accounts, debouncedSearch]);
 
   // Pagination
-  const [page, setPage] = useState(1)
+  const [page, setPage] = useState(1);
   const pagedAccounts = useMemo(() => {
-    const start = (page - 1) * pageSize
-    return filteredAccounts.slice(start, start + pageSize)
-  }, [filteredAccounts, page, pageSize])
-  const totalPages = Math.ceil(filteredAccounts.length / pageSize) || 1
+    const start = (page - 1) * pageSize;
+    return filteredAccounts.slice(start, start + pageSize);
+  }, [filteredAccounts, page, pageSize]);
+  const totalPages = Math.ceil(filteredAccounts.length / pageSize) || 1;
 
   // Dot color logic (copied from dashboard)
-  function getDotColor (key: string | null) {
+  function getDotColor(key: string | null) {
     if (
       [
         'AccountIsOverPacing33PercentToDate',
-        'AccountIsUnderPacing33PercentToDate'
+        'AccountIsUnderPacing33PercentToDate',
       ].includes(key || '')
     )
-      return '#ede41b'
+      return '#ede41b';
     if (
       [
         'AccountIsOverPacing50PercentToDate',
-        'AccountIsUnderPacing50PercentToDate'
+        'AccountIsUnderPacing50PercentToDate',
       ].includes(key || '')
     )
-      return '#ff7f26'
+      return '#ff7f26';
     if (
       [
         'AccountIsOverPacing75PercentToDate',
-        'AccountIsUnderPacing75PercentToDate'
+        'AccountIsUnderPacing75PercentToDate',
       ].includes(key || '')
     )
-      return '#eb0009'
-    return '#1BC47D'
+      return '#eb0009';
+    return '#1BC47D';
   }
 
   // Handle row click
@@ -146,15 +148,15 @@ export default function Summary () {
     if (acc.isConnected) {
       // Find the ads account from allAdsAccounts where id matches
       const matchingAccount = allAdsAccounts.find(
-        account => account.id === acc.id
-      )
+        (account) => account.id === acc.id,
+      );
       // console.log('matchingAccount: ', matchingAccount);
       if (matchingAccount) {
-        setSelectedAdsAccount(matchingAccount)
-        router.push('/dashboard')
+        setSelectedAdsAccount(matchingAccount);
+        router.push('/dashboard');
       }
     }
-  }
+  };
 
   // Show loading spinner/message if auth is loading or userDoc is loading
   if (loading || (user && !userDoc)) {
@@ -186,7 +188,7 @@ export default function Summary () {
           </span>
         </div>
       </div>
-    )
+    );
   }
 
   // Show loading only if no data exists
@@ -219,7 +221,7 @@ export default function Summary () {
           </span>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -275,7 +277,7 @@ export default function Summary () {
                   className='outline-none border-none bg-transparent text-[0.75rem] text-gray-700 placeholder-gray-400 flex-1'
                   placeholder='Search ads accounts'
                   value={searchValue}
-                  onChange={e => setSearchValue(e.target.value)}
+                  onChange={(e) => setSearchValue(e.target.value)}
                   autoFocus
                 />
                 {searchValue && (
@@ -293,7 +295,7 @@ export default function Summary () {
             <Button
               variant='outline'
               size='icon'
-              onClick={() => setShowSearch(v => !v)}
+              onClick={() => setShowSearch((v) => !v)}
               className={`${
                 showSearch ? 'border-blue-200 shadow-none bg-blue-50' : ''
               } hover:bg-blue-50 shadow-none transition-colors`}
@@ -306,9 +308,9 @@ export default function Summary () {
                 <select
                   className='appearance-none border border-gray-200 rounded-lg px-4 py-2 pr-8 text-sm bg-white transition-colors focus:ring-2 focus:ring-blue-200 focus:border-blue-300 cursor-pointer font-medium text-gray-700'
                   value={pageSize}
-                  onChange={e => {
-                    setPageSize(Number(e.target.value))
-                    setPage(1)
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setPage(1);
                   }}
                   aria-label='Rows per page'
                 >
@@ -374,7 +376,7 @@ export default function Summary () {
                             className='p-0.5 rounded hover:bg-gray-100 transition-colors'
                             aria-label='Showing Ads information'
                           >
-                            <InfoCircledIcon className="w-3 h-3 text-blue-500" />
+                            <InfoCircledIcon className='w-3 h-3 text-blue-500' />
                           </button>
                         </TooltipTrigger>
                         <TooltipContent
@@ -382,7 +384,9 @@ export default function Summary () {
                           align='center'
                           className='max-w-xs text-xs'
                         >
-                          If the ad account has not had any impressions in the last two hours, the status will change to 'No Showing Ads'.
+                          If the ad account has not had any impressions in the
+                          last two hours, the status will change to 'No Showing
+                          Ads'.
                         </TooltipContent>
                       </Tooltip>
                       <span>Showing Ads</span>
@@ -447,7 +451,7 @@ export default function Summary () {
                     </td>
                   </tr>
                 ) : (
-                  pagedAccounts.map(acc => (
+                  pagedAccounts.map((acc) => (
                     <tr
                       key={acc.id}
                       className={`hover:bg-gray-50 transition-colors ${
@@ -593,7 +597,7 @@ export default function Summary () {
                             <span
                               className='inline-block w-3 h-3 rounded-full'
                               style={{
-                                background: ALERT_SEVERITY_COLORS.CRITICAL
+                                background: ALERT_SEVERITY_COLORS.CRITICAL,
                               }}
                             />
                             <span className='text-[0.75rem] font-regular text-gray-900'>
@@ -604,7 +608,7 @@ export default function Summary () {
                             <span
                               className='inline-block w-3 h-3 rounded-full'
                               style={{
-                                background: ALERT_SEVERITY_COLORS.MEDIUM
+                                background: ALERT_SEVERITY_COLORS.MEDIUM,
                               }}
                             />
                             <span className='text-[0.75rem] font-regular text-gray-900'>
@@ -632,7 +636,7 @@ export default function Summary () {
                               className='absolute left-0 top-1/2 -translate-y-1/2 h-6 rounded-full bg-[#156CFF] shadow-sm'
                               style={{
                                 width: `${acc.progressBar.percent}%`,
-                                minWidth: acc.progressBar.percent > 0 ? 10 : 0
+                                minWidth: acc.progressBar.percent > 0 ? 10 : 0,
                               }}
                             />
                             {/* Percentage label */}
@@ -640,7 +644,7 @@ export default function Summary () {
                               <span
                                 className='absolute top-0 left-0 h-6 flex items-center text-gray-900 text-[0.75rem] font-regular select-none'
                                 style={{
-                                  left: `calc(${acc.progressBar.percent}% + 12px)`
+                                  left: `calc(${acc.progressBar.percent}% + 12px)`,
                                 }}
                               >
                                 {acc.progressBar.percentText.toFixed(1)}%
@@ -652,7 +656,7 @@ export default function Summary () {
                                   left: `calc(${
                                     acc.progressBar.percent / 2
                                   }% )`,
-                                  transform: 'translateX(-50%)'
+                                  transform: 'translateX(-50%)',
                                 }}
                               >
                                 {acc.progressBar.percentText.toFixed(1)}%
@@ -662,7 +666,7 @@ export default function Summary () {
                             <div
                               className='absolute top-1 h-4'
                               style={{
-                                left: `calc(${acc.progressBar.dayPercent}% - 1px)`
+                                left: `calc(${acc.progressBar.dayPercent}% - 1px)`,
                               }}
                             >
                               <div className='w-0.5 h-4 bg-[#7A7D9C] rounded shadow-sm' />
@@ -672,7 +676,7 @@ export default function Summary () {
                           <span
                             className='inline-block w-3 h-3 rounded-full border border-white shadow-none'
                             style={{
-                              background: getDotColor(acc.spendMtdIndicatorKey)
+                              background: getDotColor(acc.spendMtdIndicatorKey),
                             }}
                           />
                         </div>
@@ -719,19 +723,19 @@ export default function Summary () {
               {/* Page numbers */}
               <div className='flex items-center gap-1'>
                 {(() => {
-                  const maxVisiblePages = 5
-                  const halfVisible = Math.floor(maxVisiblePages / 2)
-                  let startPage = Math.max(1, page - halfVisible)
+                  const maxVisiblePages = 5;
+                  const halfVisible = Math.floor(maxVisiblePages / 2);
+                  let startPage = Math.max(1, page - halfVisible);
                   const endPage = Math.min(
                     totalPages,
-                    startPage + maxVisiblePages - 1
-                  )
+                    startPage + maxVisiblePages - 1,
+                  );
 
                   if (endPage - startPage + 1 < maxVisiblePages) {
-                    startPage = Math.max(1, endPage - maxVisiblePages + 1)
+                    startPage = Math.max(1, endPage - maxVisiblePages + 1);
                   }
 
-                  const pages = []
+                  const pages = [];
 
                   // Show first page if not in range
                   if (startPage > 1) {
@@ -744,8 +748,8 @@ export default function Summary () {
                         className='h-8 w-8 p-0 text-[0.75rem] font-medium'
                       >
                         1
-                      </Button>
-                    )
+                      </Button>,
+                    );
                     if (startPage > 2) {
                       pages.push(
                         <span
@@ -753,8 +757,8 @@ export default function Summary () {
                           className='px-2 text-gray-400 text-[0.75rem]'
                         >
                           ...
-                        </span>
-                      )
+                        </span>,
+                      );
                     }
                   }
 
@@ -769,8 +773,8 @@ export default function Summary () {
                         className='h-8 w-8 p-0 text-[0.75rem] font-medium'
                       >
                         {i}
-                      </Button>
-                    )
+                      </Button>,
+                    );
                   }
 
                   // Show last page if not in range
@@ -782,8 +786,8 @@ export default function Summary () {
                           className='px-2 text-gray-400 text-[0.75rem]'
                         >
                           ...
-                        </span>
-                      )
+                        </span>,
+                      );
                     }
                     pages.push(
                       <Button
@@ -794,11 +798,11 @@ export default function Summary () {
                         className='h-8 w-8 p-0 text-[0.75rem] font-medium'
                       >
                         {totalPages}
-                      </Button>
-                    )
+                      </Button>,
+                    );
                   }
 
-                  return pages
+                  return pages;
                 })()}
               </div>
 
@@ -830,5 +834,5 @@ export default function Summary () {
         </div>
       </main>
     </div>
-  )
+  );
 }

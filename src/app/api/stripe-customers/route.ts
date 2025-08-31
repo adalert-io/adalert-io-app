@@ -10,22 +10,21 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { 
-      userId, 
-      paymentMethodId,
-      billingDetails 
-    } = body;
+    const { userId, paymentMethodId, billingDetails } = body;
 
-    console.log('Received billing details:', billingDetails);
+    // console.log('Received billing details:', billingDetails);
 
     if (!userId || !paymentMethodId || !billingDetails) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 },
+      );
     }
 
     // Fetch user document from Firestore
     const userRef = doc(db, 'users', userId);
     const userDoc = await getDoc(userRef);
-    
+
     if (!userDoc.exists()) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
@@ -49,26 +48,29 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    console.log('Creating Stripe customer with data:', customerData);
+    // console.log('Creating Stripe customer with data:', customerData);
 
     const customer = await stripe.customers.create(customerData);
 
-    console.log('Created Stripe customer:', customer.id);
+    // console.log('Created Stripe customer:', customer.id);
 
     // Attach payment method to customer
     await stripe.paymentMethods.attach(paymentMethodId, {
       customer: customer.id,
     });
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       customerId: customer.id,
-      customer: customer 
+      customer: customer,
     });
   } catch (error: any) {
     console.error('Error creating Stripe customer:', error);
-    return NextResponse.json({ 
-      error: error.message || 'Internal server error' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: error.message || 'Internal server error',
+      },
+      { status: 500 },
+    );
   }
-} 
+}

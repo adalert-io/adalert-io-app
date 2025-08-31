@@ -1,7 +1,7 @@
-'use client'
-import { useState, useEffect, useMemo, useCallback } from 'react'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
+'use client';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import {
   ChevronLeft,
   Search,
@@ -21,46 +21,46 @@ import {
   Camera,
   UserCircle,
   Loader2,
-  RotateCcw
-} from 'lucide-react'
-import { useAlertSettingsStore } from '@/lib/store/settings-store'
-import { useAuthStore } from '@/lib/store/auth-store'
-import { Checkbox } from '@/components/ui/checkbox'
-import { collection, query, where, getDocs } from 'firebase/firestore'
-import { db } from '@/lib/firebase/config'
+  RotateCcw,
+} from 'lucide-react';
+import { useAlertSettingsStore } from '@/lib/store/settings-store';
+import { useAuthStore } from '@/lib/store/auth-store';
+import { Checkbox } from '@/components/ui/checkbox';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
 import {
   useReactTable,
   getCoreRowModel,
   getPaginationRowModel,
   flexRender,
-  ColumnDef
-} from '@tanstack/react-table'
-import { MagnifyingGlassIcon } from '@radix-ui/react-icons'
-import React, { useRef } from 'react'
-import { toast } from 'sonner'
+  ColumnDef,
+} from '@tanstack/react-table';
+import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
+import React, { useRef } from 'react';
+import { toast } from 'sonner';
 
 // Removed hardcoded ADS_ACCOUNTS - now using fetched data from store
 
 const checkboxClass =
-  'data-[state=checked]:bg-blue-700 data-[state=checked]:border-blue-700'
+  'data-[state=checked]:bg-blue-700 data-[state=checked]:border-blue-700';
 
-export default function UsersSubtab () {
-  const [screen, setScreen] = useState<'list' | 'add' | 'edit'>('list')
-  const [editingUser, setEditingUser] = useState<any>(null)
-  const [deletingUser, setDeletingUser] = useState<any>(null)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [role, setRole] = useState<'Admin' | 'Manager'>('Admin')
-  const [adsDropdownOpen, setAdsDropdownOpen] = useState(false)
-  const [roleDropdownOpen, setRoleDropdownOpen] = useState(false)
-  const [selectedAds, setSelectedAds] = useState<string[]>([])
-  const [pageSize, setPageSize] = useState(25)
-  const [showSearch, setShowSearch] = useState(false)
-  const [searchValue, setSearchValue] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [adsSearchValue, setAdsSearchValue] = useState('')
-  const [debouncedAdsSearch, setDebouncedAdsSearch] = useState('')
-  const { userDoc } = useAuthStore()
+export default function UsersSubtab() {
+  const [screen, setScreen] = useState<'list' | 'add' | 'edit'>('list');
+  const [editingUser, setEditingUser] = useState<any>(null);
+  const [deletingUser, setDeletingUser] = useState<any>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [role, setRole] = useState<'Admin' | 'Manager'>('Admin');
+  const [adsDropdownOpen, setAdsDropdownOpen] = useState(false);
+  const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
+  const [selectedAds, setSelectedAds] = useState<string[]>([]);
+  const [pageSize, setPageSize] = useState(25);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchValue, setSearchValue] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [adsSearchValue, setAdsSearchValue] = useState('');
+  const [debouncedAdsSearch, setDebouncedAdsSearch] = useState('');
+  const { userDoc } = useAuthStore();
   const {
     users,
     fetchUsers,
@@ -72,120 +72,122 @@ export default function UsersSubtab () {
     inviteUser,
     deleteUserWithRecords,
     refreshUsers,
-    refreshInvitations
-  } = useAlertSettingsStore()
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
-  const [email, setEmail] = useState('')
-  const [name, setName] = useState('')
-  const [avatarFile, setAvatarFile] = useState<File | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
-  const [notifyUser, setNotifyUser] = useState(false)
+    refreshInvitations,
+  } = useAlertSettingsStore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [notifyUser, setNotifyUser] = useState(false);
   const [resendingInvitationId, setResendingInvitationId] = useState<
     string | null
-  >(null)
+  >(null);
   const [deletingInvitationId, setDeletingInvitationId] = useState<
     string | null
-  >(null)
+  >(null);
 
   // Clean up object URL when component unmounts or avatarPreview changes
   useEffect(() => {
     return () => {
       if (avatarPreview) {
-        URL.revokeObjectURL(avatarPreview)
+        URL.revokeObjectURL(avatarPreview);
       }
-    }
-  }, [avatarPreview])
+    };
+  }, [avatarPreview]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element
+      const target = event.target as Element;
       if (
         !target.closest('.role-dropdown') &&
         !target.closest('.ads-dropdown')
       ) {
-        setRoleDropdownOpen(false)
-        setAdsDropdownOpen(false)
+        setRoleDropdownOpen(false);
+        setAdsDropdownOpen(false);
       }
-    }
+    };
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Helper function to check if current user has access to an ads account
   const hasUserAccessToAccount = useCallback(
     (account: any) => {
-      if (!userDoc?.uid || !account['Selected Users']) return false
+      if (!userDoc?.uid || !account['Selected Users']) return false;
 
       return account['Selected Users'].some((userRef: any) => {
         // Check if the userRef is a Firestore document reference
         // Firestore references have a path property that includes the document ID
-        return userRef.path?.includes(userDoc.uid) || userRef.id === userDoc.uid
-      })
+        return (
+          userRef.path?.includes(userDoc.uid) || userRef.id === userDoc.uid
+        );
+      });
     },
-    [userDoc]
-  )
+    [userDoc],
+  );
 
   useEffect(() => {
     if (userDoc && userDoc['Company Admin']) {
-      fetchUsers(userDoc['Company Admin'])
-      fetchAdsAccounts(userDoc['Company Admin'])
-      fetchInvitations(userDoc['Company Admin'])
+      fetchUsers(userDoc['Company Admin']);
+      fetchAdsAccounts(userDoc['Company Admin']);
+      fetchInvitations(userDoc['Company Admin']);
     }
-  }, [userDoc, fetchUsers, fetchAdsAccounts, fetchInvitations])
+  }, [userDoc, fetchUsers, fetchAdsAccounts, fetchInvitations]);
 
   // Debounce search value
   useEffect(() => {
     const handler = setTimeout(() => {
-      setDebouncedSearch(searchValue)
-    }, 1500)
-    return () => clearTimeout(handler)
-  }, [searchValue])
+      setDebouncedSearch(searchValue);
+    }, 1500);
+    return () => clearTimeout(handler);
+  }, [searchValue]);
 
   // Debounce ads search value
   useEffect(() => {
     const handler = setTimeout(() => {
-      setDebouncedAdsSearch(adsSearchValue)
-    }, 300)
-    return () => clearTimeout(handler)
-  }, [adsSearchValue])
+      setDebouncedAdsSearch(adsSearchValue);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [adsSearchValue]);
 
   // Populate form data when editing user
   useEffect(() => {
     if (screen === 'edit' && editingUser) {
-      setRole(editingUser['User Type'] || 'Admin')
-      setEmail(editingUser.email || '')
-      setName(editingUser.Name || '')
-      setNotifyUser(editingUser.NotifyUser || false)
+      setRole(editingUser['User Type'] || 'Admin');
+      setEmail(editingUser.email || '');
+      setName(editingUser.Name || '');
+      setNotifyUser(editingUser.NotifyUser || false);
 
       // Check which ads accounts the current user has access to
       if (userDoc && userDoc.uid) {
         const userSelectedAds = adsAccounts
-          .filter(account => hasUserAccessToAccount(account))
-          .map(account => account.id)
+          .filter((account) => hasUserAccessToAccount(account))
+          .map((account) => account.id);
 
-        setSelectedAds(userSelectedAds)
+        setSelectedAds(userSelectedAds);
       }
     } else if (screen === 'add') {
-      setEmail('')
-      setName('')
-      setNotifyUser(false)
+      setEmail('');
+      setName('');
+      setNotifyUser(false);
     }
-  }, [screen, editingUser, userDoc, adsAccounts, hasUserAccessToAccount])
+  }, [screen, editingUser, userDoc, adsAccounts, hasUserAccessToAccount]);
 
   // Users Table Columns
   const columns: ColumnDef<any>[] = [
     {
       accessorKey: 'email',
       header: 'Email',
-      cell: ({ row }) => <span>{row.original.email}</span>
+      cell: ({ row }) => <span>{row.original.email}</span>,
     },
     {
       accessorKey: 'Name',
       header: 'Name',
-      cell: ({ row }) => <span>{row.original.Name}</span>
+      cell: ({ row }) => <span>{row.original.Name}</span>,
     },
     {
       accessorKey: 'User Type',
@@ -200,12 +202,12 @@ export default function UsersSubtab () {
         >
           {row.original['User Type']}
         </span>
-      )
+      ),
     },
     {
       accessorKey: 'User Access',
       header: 'Access',
-      cell: ({ row }) => <span>{row.original['User Access']}</span>
+      cell: ({ row }) => <span>{row.original['User Access']}</span>,
     },
     {
       accessorKey: 'status',
@@ -216,10 +218,10 @@ export default function UsersSubtab () {
             <span className='inline-block px-3 py-1 rounded-md text-[#5a3402] text-xs font-bold bg-[#ff970075]'>
               Pending
             </span>
-          )
+          );
         }
-        return null // Don't show status for existing users
-      }
+        return null; // Don't show status for existing users
+      },
     },
     {
       id: 'actions',
@@ -231,9 +233,9 @@ export default function UsersSubtab () {
               <button
                 className='text-blue-600 hover:text-blue-800 cursor-pointer px-1'
                 onClick={() => {
-                  setEditingUser(row.original)
-                  setRole(row.original['User Type'] || 'Admin')
-                  setScreen('edit')
+                  setEditingUser(row.original);
+                  setRole(row.original['User Type'] || 'Admin');
+                  setScreen('edit');
                 }}
               >
                 <Edit2 className='w-5 h-5' />
@@ -261,8 +263,8 @@ export default function UsersSubtab () {
                     : 'Delete user'
                 }
                 onClick={() => {
-                  setDeletingUser(row.original)
-                  setShowDeleteModal(true)
+                  setDeletingUser(row.original);
+                  setShowDeleteModal(true);
                 }}
               >
                 <Trash2 className='w-5 h-5' />
@@ -274,43 +276,43 @@ export default function UsersSubtab () {
               <button
                 className='text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'
                 onClick={async () => {
-                  if (resendingInvitationId) return // Prevent multiple clicks
+                  if (resendingInvitationId) return; // Prevent multiple clicks
 
                   try {
-                    setResendingInvitationId(row.original.id)
+                    setResendingInvitationId(row.original.id);
 
                     // Get the invitation data from the original invitations array
                     const invitation = invitations.find(
-                      inv => inv.id === row.original.id
-                    )
-                    if (!invitation) return
+                      (inv) => inv.id === row.original.id,
+                    );
+                    if (!invitation) return;
 
                     // Resend invitation with the same data
                     await inviteUser(
                       invitation.email,
                       invitation.userType,
                       invitation.name,
-                      invitation.selectedAds
-                    )
+                      invitation.selectedAds,
+                    );
 
                     // Delete the old invitation record
                     const { deleteInvitation } =
-                      useAlertSettingsStore.getState()
-                    await deleteInvitation(invitation.id)
+                      useAlertSettingsStore.getState();
+                    await deleteInvitation(invitation.id);
 
                     // Refresh invitations to update the table
                     if (userDoc && userDoc['Company Admin']) {
                       const { refreshInvitations } =
-                        useAlertSettingsStore.getState()
-                      await refreshInvitations(userDoc['Company Admin'])
+                        useAlertSettingsStore.getState();
+                      await refreshInvitations(userDoc['Company Admin']);
                     }
 
-                    toast.success('Invitation resent successfully!')
+                    toast.success('Invitation resent successfully!');
                   } catch (error: any) {
-                    console.error('Error resending invitation:', error)
-                    toast.error(error.message || 'Failed to resend invitation')
+                    console.error('Error resending invitation:', error);
+                    toast.error(error.message || 'Failed to resend invitation');
                   } finally {
-                    setResendingInvitationId(null)
+                    setResendingInvitationId(null);
                   }
                 }}
                 disabled={resendingInvitationId === row.original.id}
@@ -325,27 +327,27 @@ export default function UsersSubtab () {
               <button
                 className='text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'
                 onClick={async () => {
-                  if (deletingInvitationId) return // Prevent multiple clicks
+                  if (deletingInvitationId) return; // Prevent multiple clicks
 
                   try {
-                    setDeletingInvitationId(row.original.id)
+                    setDeletingInvitationId(row.original.id);
 
                     // Delete the invitation record
                     const { deleteInvitation } =
-                      useAlertSettingsStore.getState()
-                    await deleteInvitation(row.original.id)
+                      useAlertSettingsStore.getState();
+                    await deleteInvitation(row.original.id);
 
                     // Refresh invitations to update the table
                     if (userDoc && userDoc['Company Admin']) {
-                      await refreshInvitations(userDoc['Company Admin'])
+                      await refreshInvitations(userDoc['Company Admin']);
                     }
 
-                    toast.success('Invitation deleted successfully!')
+                    toast.success('Invitation deleted successfully!');
                   } catch (error: any) {
-                    console.error('Error deleting invitation:', error)
-                    toast.error(error.message || 'Failed to delete invitation')
+                    console.error('Error deleting invitation:', error);
+                    toast.error(error.message || 'Failed to delete invitation');
                   } finally {
-                    setDeletingInvitationId(null)
+                    setDeletingInvitationId(null);
                   }
                 }}
                 disabled={deletingInvitationId === row.original.id}
@@ -362,69 +364,69 @@ export default function UsersSubtab () {
         </div>
       ),
       enableSorting: false,
-      enableHiding: false
-    }
-  ]
+      enableHiding: false,
+    },
+  ];
 
   // Combine users and pending invitations, filtering out accepted invitations
   const combinedData = useMemo(() => {
     // Get all existing user emails to filter out invitations
-    const existingUserEmails = users.map(user => user.email?.toLowerCase())
+    const existingUserEmails = users.map((user) => user.email?.toLowerCase());
 
     const pendingInvitations = invitations
-      .filter(invitation => invitation.status === 'pending')
+      .filter((invitation) => invitation.status === 'pending')
       .filter(
-        invitation =>
-          !existingUserEmails.includes(invitation.email?.toLowerCase())
+        (invitation) =>
+          !existingUserEmails.includes(invitation.email?.toLowerCase()),
       )
-      .map(invitation => ({
+      .map((invitation) => ({
         id: invitation.id,
         email: invitation.email,
         Name: invitation.name,
         'User Type': invitation.userType,
         'User Access': 'Pending',
         status: 'pending' as const,
-        isInvitation: true
-      }))
+        isInvitation: true,
+      }));
 
-    const existingUsers = users.map(user => ({
+    const existingUsers = users.map((user) => ({
       ...user,
       status: 'active' as const,
-      isInvitation: false
-    }))
+      isInvitation: false,
+    }));
 
-    return [...pendingInvitations, ...existingUsers]
-  }, [users, invitations])
+    return [...pendingInvitations, ...existingUsers];
+  }, [users, invitations]);
 
   // Filter combined data based on search
   const filteredData = useMemo(() => {
-    const lower = debouncedSearch.toLowerCase()
+    const lower = debouncedSearch.toLowerCase();
 
-    return combinedData.filter(item => {
+    return combinedData.filter((item) => {
       // Search in email and name
       const searchMatch =
         !debouncedSearch ||
         item.email?.toLowerCase().includes(lower) ||
-        item.Name?.toLowerCase().includes(lower)
+        item.Name?.toLowerCase().includes(lower);
 
-      return searchMatch
-    })
-  }, [combinedData, debouncedSearch])
+      return searchMatch;
+    });
+  }, [combinedData, debouncedSearch]);
 
   // Filter ads accounts based on search
   const filteredAdsAccounts = useMemo(() => {
-    const lower = debouncedAdsSearch.toLowerCase()
+    const lower = debouncedAdsSearch.toLowerCase();
 
-    return adsAccounts.filter(account => {
+    return adsAccounts.filter((account) => {
       const searchMatch =
-        !debouncedAdsSearch || account.name?.toLowerCase().includes(lower)
+        !debouncedAdsSearch || account.name?.toLowerCase().includes(lower);
 
-      return searchMatch
-    })
-  }, [adsAccounts, debouncedAdsSearch])
+      return searchMatch;
+    });
+  }, [adsAccounts, debouncedAdsSearch]);
 
-  function UsersDataTable () {
-    const [pageIndex, setPageIndex] = useState(0)
+  function UsersDataTable() {
+    const [pageIndex, setPageIndex] = useState(0);
 
     const table = useReactTable({
       data: filteredData,
@@ -434,49 +436,49 @@ export default function UsersSubtab () {
       state: {
         pagination: {
           pageIndex,
-          pageSize
-        }
+          pageSize,
+        },
       },
-      onPaginationChange: updater => {
+      onPaginationChange: (updater) => {
         if (typeof updater === 'function') {
-          const next = updater({ pageIndex, pageSize })
-          setPageIndex(next.pageIndex)
-          setPageSize(next.pageSize)
+          const next = updater({ pageIndex, pageSize });
+          setPageIndex(next.pageIndex);
+          setPageSize(next.pageSize);
         } else {
-          if (updater.pageIndex !== undefined) setPageIndex(updater.pageIndex)
-          if (updater.pageSize !== undefined) setPageSize(updater.pageSize)
+          if (updater.pageIndex !== undefined) setPageIndex(updater.pageIndex);
+          if (updater.pageSize !== undefined) setPageSize(updater.pageSize);
         }
       },
       pageCount: Math.ceil(filteredData.length / pageSize),
-      getRowId: row => {
-        if (!row.original) return row.id || Math.random().toString()
-        if (!row.original.id) return row.id || Math.random().toString()
-        return row.original.id
-      }
-    })
+      getRowId: (row) => {
+        if (!row.original) return row.id || Math.random().toString();
+        if (!row.original.id) return row.id || Math.random().toString();
+        return row.original.id;
+      },
+    });
 
-    const total = filteredData.length
-    const start = total ? pageIndex * pageSize + 1 : 0
-    const end = Math.min((pageIndex + 1) * pageSize, total)
-    const totalPages = table.getPageCount()
+    const total = filteredData.length;
+    const start = total ? pageIndex * pageSize + 1 : 0;
+    const end = Math.min((pageIndex + 1) * pageSize, total);
+    const totalPages = table.getPageCount();
 
     // Page numbers (same pattern as reference)
-    const maxVisiblePages = 5
-    const halfVisible = Math.floor(maxVisiblePages / 2)
-    let startPage = Math.max(1, pageIndex + 1 - halfVisible)
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
+    const maxVisiblePages = 5;
+    const halfVisible = Math.floor(maxVisiblePages / 2);
+    let startPage = Math.max(1, pageIndex + 1 - halfVisible);
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
     if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1)
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
-    const pages = []
+    const pages = [];
     if (startPage > 1) {
-      pages.push(1)
-      if (startPage > 2) pages.push('ellipsis-start')
+      pages.push(1);
+      if (startPage > 2) pages.push('ellipsis-start');
     }
-    for (let i = startPage; i <= endPage; i++) pages.push(i)
+    for (let i = startPage; i <= endPage; i++) pages.push(i);
     if (endPage < totalPages) {
-      if (endPage < totalPages - 1) pages.push('ellipsis-end')
-      pages.push(totalPages)
+      if (endPage < totalPages - 1) pages.push('ellipsis-end');
+      pages.push(totalPages);
     }
 
     return (
@@ -484,16 +486,16 @@ export default function UsersSubtab () {
         <div className='overflow-x-auto'>
           <table className='min-w-full text-[0.75rem]'>
             <thead className='bg-gray-50 border-b border-gray-200'>
-              {table.getHeaderGroups().map(headerGroup => (
+              {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
-                  {headerGroup.headers.map(header => (
+                  {headerGroup.headers.map((header) => (
                     <th
                       key={header.id}
                       className='px-4 py-4 text-left font-semibold text-gray-700'
                     >
                       {flexRender(
                         header.column.columnDef.header,
-                        header.getContext()
+                        header.getContext(),
                       )}
                     </th>
                   ))}
@@ -502,16 +504,16 @@ export default function UsersSubtab () {
             </thead>
 
             <tbody className='divide-y divide-gray-100'>
-              {table.getRowModel().rows.map(row => (
+              {table.getRowModel().rows.map((row) => (
                 <tr key={row.id} className='hover:bg-gray-50 transition-colors'>
-                  {row.getVisibleCells().map(cell => (
+                  {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
                       className='px-4 py-6 align-top text-gray-900'
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </td>
                   ))}
@@ -598,7 +600,7 @@ export default function UsersSubtab () {
                   >
                     …
                   </span>
-                )
+                ),
               )}
             </div>
 
@@ -628,124 +630,124 @@ export default function UsersSubtab () {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   // Disable logic for avatar upload
   const isAvatarUploadDisabled =
     screen === 'edit' &&
     editingUser?.['Is Google Sign Up'] === true &&
-    userDoc?.uid !== editingUser?.uid
+    userDoc?.uid !== editingUser?.uid;
 
   // Handler to trigger file input
   const handleAvatarClick = () => {
     if (!isAvatarUploadDisabled && fileInputRef.current) {
-      fileInputRef.current.click()
+      fileInputRef.current.click();
     }
-  }
+  };
 
   // Handler for file change (implement upload logic as needed)
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    const file = e.target.files?.[0];
     if (file) {
       if (avatarPreview) {
-        URL.revokeObjectURL(avatarPreview)
+        URL.revokeObjectURL(avatarPreview);
       }
-      const url = URL.createObjectURL(file)
-      setAvatarPreview(url)
-      setAvatarFile(file)
+      const url = URL.createObjectURL(file);
+      setAvatarPreview(url);
+      setAvatarFile(file);
     }
-  }
+  };
 
   // Handle save button click
   const handleSave = async () => {
-    console.log('handleSave')
-    if (isSaving) return
+    // console.log('handleSave')
+    if (isSaving) return;
 
     try {
-      setIsSaving(true)
+      setIsSaving(true);
       if (screen === 'add') {
         // Check if email already exists in users collection
-        const usersRef = collection(db, 'users')
+        const usersRef = collection(db, 'users');
         const emailQuery = query(
           usersRef,
-          where('email', '==', email.toLowerCase())
-        )
-        const emailSnapshot = await getDocs(emailQuery)
+          where('email', '==', email.toLowerCase()),
+        );
+        const emailSnapshot = await getDocs(emailQuery);
 
         if (!emailSnapshot.empty) {
-          toast.error('A user with this email already exists')
-          return
+          toast.error('A user with this email already exists');
+          return;
         }
 
-        let adsToInvite = selectedAds
+        let adsToInvite = selectedAds;
         if (role === 'Admin') {
-          adsToInvite = adsAccounts.map(acc => acc.id)
+          adsToInvite = adsAccounts.map((acc) => acc.id);
         }
-        console.log({ email, role, name, selectedAds: adsToInvite })
-        await inviteUser(email, role, name, adsToInvite)
-        toast.success('Invitation sent successfully!')
+        // console.log({ email, role, name, selectedAds: adsToInvite })
+        await inviteUser(email, role, name, adsToInvite);
+        toast.success('Invitation sent successfully!');
 
         // Refresh invitations to show the new pending invitation
         if (userDoc && userDoc['Company Admin']) {
-          const { refreshInvitations } = useAlertSettingsStore.getState()
-          await refreshInvitations(userDoc['Company Admin'])
+          const { refreshInvitations } = useAlertSettingsStore.getState();
+          await refreshInvitations(userDoc['Company Admin']);
         }
 
-        setScreen('list')
-        setEditingUser(null)
-        setRole('Admin')
-        setSelectedAds([])
-        setAvatarPreview(null)
-        setAvatarFile(null)
-        setName('')
-        setEmail('')
-        setNotifyUser(false)
-        return
+        setScreen('list');
+        setEditingUser(null);
+        setRole('Admin');
+        setSelectedAds([]);
+        setAvatarPreview(null);
+        setAvatarFile(null);
+        setName('');
+        setEmail('');
+        setNotifyUser(false);
+        return;
       }
-      if (!editingUser) return
+      if (!editingUser) return;
       await updateUser(
         editingUser.id,
         {
           Name: name,
           'User Type': role,
           avatarFile: avatarFile,
-          currentAvatarUrl: editingUser.Avatar
+          currentAvatarUrl: editingUser.Avatar,
         },
         notifyUser,
         editingUser,
-        selectedAds
-      )
-      toast.success('User updated successfully!')
+        selectedAds,
+      );
+      toast.success('User updated successfully!');
 
       // Refresh both users and invitations to ensure data is up to date
       if (userDoc && userDoc['Company Admin']) {
         const { refreshUsers, refreshInvitations } =
-          useAlertSettingsStore.getState()
+          useAlertSettingsStore.getState();
         await Promise.all([
           refreshUsers(userDoc['Company Admin']),
-          refreshInvitations(userDoc['Company Admin'])
-        ])
+          refreshInvitations(userDoc['Company Admin']),
+        ]);
       }
 
-      setScreen('list')
-      setEditingUser(null)
-      setRole('Admin')
-      setSelectedAds([])
-      setAvatarPreview(null)
-      setAvatarFile(null)
-      setName('')
-      setEmail('')
-      setNotifyUser(false)
+      setScreen('list');
+      setEditingUser(null);
+      setRole('Admin');
+      setSelectedAds([]);
+      setAvatarPreview(null);
+      setAvatarFile(null);
+      setName('');
+      setEmail('');
+      setNotifyUser(false);
     } catch (error: any) {
-      console.error('Error saving user:', error)
-      toast.error(error.message || 'Failed to save user')
+      console.error('Error saving user:', error);
+      toast.error(error.message || 'Failed to save user');
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
-  const isSaveDisabled = !email || !role || isSaving
+  const isSaveDisabled = !email || !role || isSaving;
 
   return (
     <div className='bg-white p-4 min-h-[600px]'>
@@ -772,7 +774,7 @@ export default function UsersSubtab () {
                     className='outline-none border-none bg-transparent text-sm text-gray-500 placeholder-gray-400 flex-1 min-w-[180px]'
                     placeholder='Search for users and invitations'
                     value={searchValue}
-                    onChange={e => setSearchValue(e.target.value)}
+                    onChange={(e) => setSearchValue(e.target.value)}
                     autoFocus
                   />
                   {searchValue && (
@@ -790,7 +792,7 @@ export default function UsersSubtab () {
               <Button
                 variant='outline'
                 size='icon'
-                onClick={() => setShowSearch(v => !v)}
+                onClick={() => setShowSearch((v) => !v)}
                 className={showSearch ? 'border-blue-200' : ''}
                 aria-label='Show search'
               >
@@ -801,7 +803,7 @@ export default function UsersSubtab () {
                 <select
                   className='appearance-none border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm bg-white transition-colors focus:ring-2 focus:ring-blue-200 focus:border-blue-300 cursor-pointer font-medium text-gray-700'
                   value={pageSize}
-                  onChange={e => setPageSize(Number(e.target.value))}
+                  onChange={(e) => setPageSize(Number(e.target.value))}
                   aria-label='Rows per page'
                 >
                   <option value={15}>15 items</option>
@@ -835,15 +837,15 @@ export default function UsersSubtab () {
           <button
             className='flex items-center gap-2 text-blue-600 mb-6'
             onClick={() => {
-              setScreen('list')
-              setEditingUser(null)
-              setRole('Admin')
-              setSelectedAds([])
-              setAvatarPreview(null)
-              setAvatarFile(null)
-              setName('')
-              setEmail('')
-              setNotifyUser(false)
+              setScreen('list');
+              setEditingUser(null);
+              setRole('Admin');
+              setSelectedAds([]);
+              setAvatarPreview(null);
+              setAvatarFile(null);
+              setName('');
+              setEmail('');
+              setNotifyUser(false);
             }}
           >
             <ChevronLeft className='w-5 h-5' /> Back to Users
@@ -859,7 +861,7 @@ export default function UsersSubtab () {
                     placeholder='Name'
                     className='pl-10'
                     value={name}
-                    onChange={e => setName(e.target.value)}
+                    onChange={(e) => setName(e.target.value)}
                     disabled={
                       editingUser?.['Is Google Sign Up'] === true &&
                       userDoc?.uid !== editingUser?.uid
@@ -873,7 +875,7 @@ export default function UsersSubtab () {
                   placeholder='Email'
                   className='pl-10'
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value)}
                   disabled={screen === 'edit'}
                 />
                 <Mail className='absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]' />
@@ -896,8 +898,8 @@ export default function UsersSubtab () {
                       <button
                         className='w-full text-left px-3 py-2 text-sm font-normal hover:bg-gray-100'
                         onClick={() => {
-                          setRole('Admin')
-                          setRoleDropdownOpen(false)
+                          setRole('Admin');
+                          setRoleDropdownOpen(false);
                         }}
                       >
                         Admin
@@ -905,8 +907,8 @@ export default function UsersSubtab () {
                       <button
                         className='w-full text-left px-3 py-2 text-sm hover:bg-gray-100'
                         onClick={() => {
-                          setRole('Manager')
-                          setRoleDropdownOpen(false)
+                          setRole('Manager');
+                          setRoleDropdownOpen(false);
                         }}
                       >
                         Manager
@@ -924,7 +926,7 @@ export default function UsersSubtab () {
                   }`}
                   disabled={role === 'Admin'}
                   onClick={() =>
-                    role === 'Manager' && setAdsDropdownOpen(v => !v)
+                    role === 'Manager' && setAdsDropdownOpen((v) => !v)
                   }
                 >
                   <span className='flex items-center gap-2'>
@@ -943,14 +945,16 @@ export default function UsersSubtab () {
                         placeholder='Search for ads accounts'
                         className='h-8'
                         value={adsSearchValue}
-                        onChange={e => setAdsSearchValue(e.target.value)}
+                        onChange={(e) => setAdsSearchValue(e.target.value)}
                       />
                     </div>
                     <div className='flex items-center gap-2 mb-2 text-xs text-blue-600'>
                       <button
                         className='underline'
                         onClick={() =>
-                          setSelectedAds(filteredAdsAccounts.map(acc => acc.id))
+                          setSelectedAds(
+                            filteredAdsAccounts.map((acc) => acc.id),
+                          )
                         }
                       >
                         Select All
@@ -963,7 +967,7 @@ export default function UsersSubtab () {
                       </button>
                     </div>
                     <div className='max-h-32 overflow-y-auto flex flex-col gap-1'>
-                      {filteredAdsAccounts.map(acc => (
+                      {filteredAdsAccounts.map((acc) => (
                         <label
                           key={acc.id}
                           className='flex items-center gap-2 cursor-pointer text-base'
@@ -971,13 +975,13 @@ export default function UsersSubtab () {
                           <Checkbox
                             className={checkboxClass}
                             checked={selectedAds.includes(acc.id)}
-                            onCheckedChange={checked => {
+                            onCheckedChange={(checked) => {
                               if (checked) {
-                                setSelectedAds([...selectedAds, acc.id])
+                                setSelectedAds([...selectedAds, acc.id]);
                               } else {
                                 setSelectedAds(
-                                  selectedAds.filter(a => a !== acc.id)
-                                )
+                                  selectedAds.filter((a) => a !== acc.id),
+                                );
                               }
                             }}
                           />
@@ -994,7 +998,9 @@ export default function UsersSubtab () {
                     className={checkboxClass}
                     id='notify-user'
                     checked={notifyUser}
-                    onCheckedChange={checked => setNotifyUser(checked === true)}
+                    onCheckedChange={(checked) =>
+                      setNotifyUser(checked === true)
+                    }
                   />
                   <label
                     htmlFor='notify-user'
@@ -1033,8 +1039,8 @@ export default function UsersSubtab () {
                       src={avatarPreview || editingUser.Avatar}
                       alt={`${editingUser.Name || 'User'} avatar`}
                       className='w-full h-full object-cover'
-                      onError={e => {
-                        e.currentTarget.src = '/images/default-avatar.png'
+                      onError={(e) => {
+                        e.currentTarget.src = '/images/default-avatar.png';
                       }}
                     />
                   ) : (
@@ -1082,8 +1088,8 @@ export default function UsersSubtab () {
               <div className='flex items-center gap-2'></div>
               <button
                 onClick={() => {
-                  setShowDeleteModal(false)
-                  setDeletingUser(null)
+                  setShowDeleteModal(false);
+                  setDeletingUser(null);
                 }}
                 className='text-gray-400 hover:text-gray-600'
               >
@@ -1108,8 +1114,8 @@ export default function UsersSubtab () {
                 variant='outline'
                 className='flex-1 border-blue-200 text-blue-600 hover:bg-blue-50'
                 onClick={() => {
-                  setShowDeleteModal(false)
-                  setDeletingUser(null)
+                  setShowDeleteModal(false);
+                  setDeletingUser(null);
                 }}
                 disabled={isDeleting}
               >
@@ -1119,25 +1125,25 @@ export default function UsersSubtab () {
                 className='flex-1 bg-blue-600 text-white hover:bg-blue-700'
                 onClick={async () => {
                   try {
-                    setIsDeleting(true)
+                    setIsDeleting(true);
                     await deleteUserWithRecords(
                       deletingUser.id,
-                      deletingUser.email
-                    )
-                    toast.success('User deleted successfully')
+                      deletingUser.email,
+                    );
+                    toast.success('User deleted successfully');
                     if (userDoc && userDoc['Company Admin']) {
                       await Promise.all([
                         refreshUsers(userDoc['Company Admin']),
-                        refreshInvitations(userDoc['Company Admin'])
-                      ])
+                        refreshInvitations(userDoc['Company Admin']),
+                      ]);
                     }
-                    setShowDeleteModal(false)
-                    setDeletingUser(null)
+                    setShowDeleteModal(false);
+                    setDeletingUser(null);
                   } catch (error: any) {
-                    console.error('Failed to delete user:', error)
-                    toast.error(error?.message || 'Failed to delete user')
+                    console.error('Failed to delete user:', error);
+                    toast.error(error?.message || 'Failed to delete user');
                   } finally {
-                    setIsDeleting(false)
+                    setIsDeleting(false);
                   }
                 }}
                 disabled={isDeleting}
@@ -1156,5 +1162,5 @@ export default function UsersSubtab () {
         </div>
       )}
     </div>
-  )
+  );
 }

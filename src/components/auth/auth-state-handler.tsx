@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/lib/store/auth-store";
-import { auth } from "@/lib/firebase/config";
-import { onAuthStateChanged } from "firebase/auth";
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/lib/store/auth-store';
+import { auth } from '@/lib/firebase/config';
+import { onAuthStateChanged } from 'firebase/auth';
 
 export function AuthStateHandler() {
   const router = useRouter();
@@ -21,7 +21,7 @@ export function AuthStateHandler() {
 
     // Listen for auth state changes
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      console.log("firebaseUser", firebaseUser);
+      // console.log("firebaseUser", firebaseUser);
       if (firebaseUser) {
         // Update user in store
         setUser(firebaseUser);

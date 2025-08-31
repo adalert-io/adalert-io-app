@@ -119,7 +119,7 @@ async function checkSubscriptionStatus(userId: string): Promise<boolean> {
   const now = moment();
   const userStatus = subscriptionData['User Status'];
 
-  console.log('subscriptionData', subscriptionData);
+  // console.log('subscriptionData', subscriptionData);
 
   // Store subscription data in auth store
   useAuthStore.getState().setSubscription(subscriptionData);
@@ -324,7 +324,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       // Then check subscription status
       const hasFullAccess = await checkSubscriptionStatus(userId);
-      console.log('hasFullAccess', hasFullAccess);
+      // console.log('hasFullAccess', hasFullAccess);
       set({ isFullAccess: hasFullAccess });
 
       // After fetching user document and checking subscription, fetch user ads accounts
@@ -484,10 +484,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   handlePostAuthNavigation: async () => {
     try {
-      console.log('handlePostAuthNavigation......');
+      // console.log('handlePostAuthNavigation......');
       const { userDoc, isFullAccess, router } = get();
-      console.log('userDoc', userDoc);
-      console.log('isFullAccess', isFullAccess);
+      // console.log('userDoc', userDoc);
+      // console.log('isFullAccess', isFullAccess);
       if (!userDoc || !router) return;
 
       // Build Firestore query for Ads Account collection
@@ -505,37 +505,37 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const adsAccountSnap = await getDocs(adsAccountQuery);
       const adsAccountCount = adsAccountSnap.size;
 
-      console.log('adsAccountCount', adsAccountCount);
+      // console.log('adsAccountCount', adsAccountCount);
 
       // Check inviter
       const inviter = userDoc['Inviter'];
 
       // Navigation logic
       if (!isFullAccess) {
-        console.log('to /settings/account/billing');
+        // console.log('to /settings/account/billing');
         router.push('/settings/account/billing');
         return;
       }
 
       if (adsAccountCount === 0) {
         if (!inviter) {
-          console.log('to /add-ads-account');
+          // console.log('to /add-ads-account');
           router.push('/add-ads-account');
         } else {
-          console.log('to /dashboard');
+          // console.log('to /dashboard');
           router.push('/dashboard');
         }
         return;
       }
 
       if (adsAccountCount === 1) {
-        console.log('to /dashboard');
+        // console.log('to /dashboard');
         router.push('/dashboard');
         return;
       }
 
       if (adsAccountCount > 1) {
-        console.log('to /summary');
+        // console.log('to /summary');
         router.push('/summary');
         return;
       }

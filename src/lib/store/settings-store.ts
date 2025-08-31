@@ -705,7 +705,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       }
 
       const result = await response.json();
-      console.log('Email notification sent successfully:', result);
+      // console.log('Email notification sent successfully:', result);
     } catch (error) {
       console.error('Error sending email notification:', error);
       throw error;
@@ -718,7 +718,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     selectedAds: string[],
   ) => {
     try {
-      console.log('inviteUser.....');
+      // console.log('inviteUser.....');
       const { useAuthStore } = await import('./auth-store');
       const userDoc = useAuthStore.getState().userDoc;
       const invitationRef = doc(collection(db, 'invitations'));
@@ -858,10 +858,10 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             await response.text(),
           );
         } else {
-          console.log(
-            'Successfully removed cronitor monitors for ads account:',
-            accountId,
-          );
+          // console.log(
+          //   'Successfully removed cronitor monitors for ads account:',
+          //   accountId,
+          // );
         }
       } catch (error) {
         console.warn(
@@ -945,9 +945,9 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
                         await response.text(),
                       );
                     } else {
-                      console.log(
-                        `Successfully updated subscription item ${subscriptionItemId} to quantity ${newQuantity}`,
-                      );
+                      // console.log(
+                      //   `Successfully updated subscription item ${subscriptionItemId} to quantity ${newQuantity}`,
+                      // );
                     }
                   } catch (error) {
                     console.warn(
@@ -1233,9 +1233,9 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
                 await response.text(),
               );
             } else {
-              console.log(
-                `Successfully canceled Stripe subscription ${stripeSubscriptionId}`,
-              );
+              // console.log(
+              //   `Successfully canceled Stripe subscription ${stripeSubscriptionId}`,
+              // );
             }
           } catch (error) {
             console.warn(
@@ -1310,10 +1310,10 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
                 await response.text(),
               );
             } else {
-              console.log(
-                'Successfully removed cronitor monitors for admin email:',
-                adminEmail,
-              );
+              // console.log(
+              //   'Successfully removed cronitor monitors for admin email:',
+              //   adminEmail,
+              // );
             }
           }
         }
@@ -1486,7 +1486,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       const snap = await getDocs(q);
       if (!snap.empty) {
         const docSnap = snap.docs[0];
-        console.log('docSnap', docSnap.data());
+        // console.log('docSnap', docSnap.data());
         set({
           paymentMethods: { id: docSnap.id, ...docSnap.data() },
           loading: false,
@@ -1532,7 +1532,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         const match = userDoc['Company Admin'].match(/\/users\/(.+)/);
         userId = match && match[1] ? match[1] : userDoc['Company Admin'];
       }
-      console.log('userId: ', userId);
+      // console.log('userId: ', userId);
       const userRef = doc(db, 'users', userId);
 
       // 2. Fetch user document
@@ -1563,7 +1563,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       );
       const adsAccounts = adsAccountsSnap.docs.map((doc) => doc.data());
       const adsAccountsCount = adsAccounts.length;
-      console.log('adsAccountsCount: ', adsAccountsCount);
+      // console.log('adsAccountsCount: ', adsAccountsCount);
 
       // 5. If paymentMethods is empty:
       if (!get().paymentMethods) {
@@ -1626,7 +1626,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           zip: formData.zip,
         };
 
-        console.log('Sending billing details to API:', billingDetailsPayload);
+        // console.log('Sending billing details to API:', billingDetailsPayload);
 
         const customerResult = await paymentService.createStripeCustomer({
           userId,
@@ -1641,7 +1641,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           return;
         }
         const customerId = customerResult.customerId;
-        console.log('customerId: ', customerId);
+        // console.log('customerId: ', customerId);
 
         // Explicitly set this payment method as the default for the customer
         try {
@@ -1650,10 +1650,10 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
               default_payment_method: paymentMethod.id,
             },
           });
-          console.log(
-            'Payment method set as default for customer:',
-            customerId,
-          );
+          // console.log(
+          //   'Payment method set as default for customer:',
+          //   customerId,
+          // );
         } catch (defaultError) {
           console.warn(
             'Failed to set payment method as default:',
@@ -1739,7 +1739,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         const subSnap = await getDocs(
           query(subscriptionsRef, where('User', '==', userRef)),
         );
-        console.log('subSnap: ', subSnap);
+        // console.log('subSnap: ', subSnap);
         if (!subSnap.empty) {
           await updateDoc(subSnap.docs[0].ref, {
             'Stripe Customer Id': customerId,
@@ -1751,12 +1751,12 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           // Call backend API to create subscription (implement /api/stripe-subscriptions)
           const priceId = process.env.NEXT_PUBLIC_STRIPE_SUBSCRIPTION_PRICE_ID;
           // Log all fields passed into the body for debugging
-          console.log('Creating Stripe subscription with:', {
-            customerId,
-            priceId,
-            quantity: adsAccountsCount,
-            paymentMethodId: paymentMethod.id,
-          });
+          // console.log('Creating Stripe subscription with:', {
+          //   customerId,
+          //   priceId,
+          //   quantity: adsAccountsCount,
+          //   paymentMethodId: paymentMethod.id,
+          // });
           const subRes = await fetch('/api/stripe-subscriptions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1768,7 +1768,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             }),
           });
           const subData = await subRes.json();
-          console.log('subData: ', subData);
+          // console.log('subData: ', subData);
           if (!subRes.ok || subData.error) {
             toast.error(
               (subData.error || 'Stripe subscription error') +
@@ -1884,10 +1884,10 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
               default_payment_method: paymentMethod.id,
             },
           });
-          console.log(
-            'Payment method set as default for customer:',
-            stripeCustomerId,
-          );
+          // console.log(
+          //   'Payment method set as default for customer:',
+          //   stripeCustomerId,
+          // );
         } catch (defaultError) {
           console.warn(
             'Failed to set payment method as default:',
@@ -1977,9 +1977,9 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         const isCanceled = subscriptionStatus === SUBSCRIPTION_STATUS.CANCELED;
 
         if (needsImmediatePayment) {
-          console.log(
-            'Subscription needs immediate payment, attempting to retry...',
-          );
+          // console.log(
+          //   'Subscription needs immediate payment, attempting to retry...',
+          // );
 
           const stripeSubscriptionId =
             subscriptionDoc.data()['Stripe Subscription Id'];
@@ -1990,7 +1990,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             );
 
             if (retryResult.success) {
-              console.log('Payment retry successful:', retryResult.data);
+              // console.log('Payment retry successful:', retryResult.data);
 
               // Update Firebase subscription status to reflect successful payment
               await updateDoc(subscriptionDoc.ref, {
@@ -2016,7 +2016,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             );
           }
         } else if (isCanceled) {
-          console.log('Subscription is canceled, creating new subscription...');
+          // console.log('Subscription is canceled, creating new subscription...');
 
           // Get the count of connected ads accounts for the new subscription
           const adsAccountsRef = collection(db, 'adsAccounts');
@@ -2033,12 +2033,12 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             // Create new Stripe subscription
             const priceId =
               process.env.NEXT_PUBLIC_STRIPE_SUBSCRIPTION_PRICE_ID;
-            console.log('Creating new Stripe subscription with:', {
-              customerId: stripeCustomerId,
-              priceId,
-              quantity: adsAccountsCount,
-              paymentMethodId: paymentMethod.id,
-            });
+            // console.log('Creating new Stripe subscription with:', {
+            //   customerId: stripeCustomerId,
+            //   priceId,
+            //   quantity: adsAccountsCount,
+            //   paymentMethodId: paymentMethod.id,
+            // });
 
             const subRes = await fetch('/api/stripe-subscriptions', {
               method: 'POST',
@@ -2052,7 +2052,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             });
 
             const subData = await subRes.json();
-            console.log('New subscription data:', subData);
+            // console.log('New subscription data:', subData);
 
             if (!subRes.ok || subData.error) {
               toast.error(
@@ -2111,7 +2111,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     customerId: string,
   ) => {
     try {
-      console.log(`Retrying payment for subscription: ${subscriptionId}`);
+      // console.log(`Retrying payment for subscription: ${subscriptionId}`);
 
       const response = await fetch('/api/stripe-subscriptions/retry-payment', {
         method: 'POST',
@@ -2125,7 +2125,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       const data = await response.json();
 
       if (response.ok && data.success) {
-        console.log('Payment retry successful:', data);
+        // console.log('Payment retry successful:', data);
         return { success: true, data };
       } else {
         console.warn('Payment retry failed:', data.error);

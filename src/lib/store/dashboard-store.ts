@@ -158,7 +158,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   setLastFetchedAccountId: (id) => set({ lastFetchedAccountId: id }),
 
   fetchAlerts: async (adsAccountId: string) => {
-    console.log('useDashboardStore - adsAccountId: ', adsAccountId);
+    // console.log('useDashboardStore - adsAccountId: ', adsAccountId);
     set({ alertsLoading: true, error: null });
     try {
       const alertsRef = collection(db, COLLECTIONS.ALERTS);
@@ -180,7 +180,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
           } as Alert),
       );
 
-      console.log('alerts from useDashboardStore: ', alerts);
+      // console.log('alerts from useDashboardStore: ', alerts);
 
       set({ alerts, alertsLoading: false });
     } catch (err: any) {
@@ -190,16 +190,16 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
   fetchFirstAlerts: async (selectedAdsAccount: any) => {
     try {
-      console.log(
-        'fetchFirstAlerts - selectedAdsAccount: ',
-        selectedAdsAccount,
-      );
+      // console.log(
+      //   'fetchFirstAlerts - selectedAdsAccount: ',
+      //   selectedAdsAccount,
+      // );
 
       // Check if Get Alerts From First Load Done is false
       if (selectedAdsAccount['Get Alerts From First Load Done'] !== false) {
-        console.log(
-          'Get Alerts From First Load Done is not false, skipping first alerts fetch',
-        );
+        // console.log(
+        //   'Get Alerts From First Load Done is not false, skipping first alerts fetch',
+        // );
         return;
       }
 
@@ -207,7 +207,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
       // If alerts are empty, make all the API calls
       if (currentAlerts.length === 0 || true) {
-        console.log('Alerts are empty, making first load API calls');
+        // console.log('Alerts are empty, making first load API calls');
 
         const adsAccountId = selectedAdsAccount['_id'];
 
@@ -234,7 +234,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
                 response.statusText,
               );
             } else {
-              console.log(`Successfully fetched alerts for index ${i}`);
+              // console.log(`Successfully fetched alerts for index ${i}`);
             }
           } catch (error) {
             console.error(`Error fetching alerts for index ${i}:`, error);
@@ -262,7 +262,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
               response.statusText,
             );
           } else {
-            console.log('Successfully fetched twice-per-day alerts');
+            // console.log('Successfully fetched twice-per-day alerts');
           }
         } catch (error) {
           console.error('Error fetching twice-per-day alerts:', error);
@@ -289,7 +289,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
               response.statusText,
             );
           } else {
-            console.log('Successfully fetched four-times-per-day alerts');
+            // console.log('Successfully fetched four-times-per-day alerts');
           }
         } catch (error) {
           console.error('Error fetching four-times-per-day alerts:', error);
@@ -316,7 +316,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
               response.statusText,
             );
           } else {
-            console.log('Successfully fetched six-times-per-day alerts');
+            // console.log('Successfully fetched six-times-per-day alerts');
           }
         } catch (error) {
           console.error('Error fetching six-times-per-day alerts:', error);
@@ -325,9 +325,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         // Fetch alerts for this selected account
         await get().fetchAlerts(selectedAdsAccount.id);
       } else {
-        console.log(
-          'Alerts are not empty, skipping API calls but updating flag',
-        );
+        // console.log(
+        //   'Alerts are not empty, skipping API calls but updating flag',
+        // );
       }
 
       // Update 'Get Alerts From First Load Done' to true
@@ -340,7 +340,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         await updateDoc(accountRef, {
           'Get Alerts From First Load Done': true,
         });
-        console.log('Updated Get Alerts From First Load Done to true');
+        // console.log('Updated Get Alerts From First Load Done to true');
       } catch (error) {
         console.error('Error updating Get Alerts From First Load Done:', error);
       }
@@ -352,10 +352,10 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
   fetchOrCreateDashboardDaily: async (adsAccountId: string) => {
     try {
-      console.log(
-        'Fetching or creating dashboardDaily for adsAccountId:',
-        adsAccountId,
-      );
+      // console.log(
+      //   'Fetching or creating dashboardDaily for adsAccountId:',
+      //   adsAccountId,
+      // );
 
       // Get today's date range using moment.js
       const today = moment().startOf('day');
@@ -384,7 +384,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
           ...existingDoc.data(),
         } as DashboardDaily;
 
-        console.log('Found existing dashboardDaily:', dashboardDailyData);
+        // console.log('Found existing dashboardDaily:', dashboardDailyData);
         set({ dashboardDaily: dashboardDailyData });
       } else {
         // Document doesn't exist, create a new one
@@ -402,7 +402,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
         await setDoc(newDashboardDailyRef, newDashboardDailyData);
 
-        console.log('Created new dashboardDaily:', newDashboardDailyData);
+        // console.log('Created new dashboardDaily:', newDashboardDailyData);
         set({ dashboardDaily: newDashboardDailyData });
       }
     } catch (error: any) {
@@ -413,7 +413,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
   fetchSpendMtd: async (adsAccount: any) => {
     try {
-      console.log('Fetching spend MTD for adsAccount:', adsAccount);
+      // console.log('Fetching spend MTD for adsAccount:', adsAccount);
       set({ spendMtdLoading: true, error: null });
 
       const path = getFirebaseFnPath('dashboard-spend-mtd-fb');
@@ -435,7 +435,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       }
 
       const result = await response.json();
-      console.log('Spend MTD result:', result);
+      // console.log('Spend MTD result:', result);
 
       // Update the dashboardDaily state with the spendMtd value
       const currentDashboardDaily = get().dashboardDaily;
@@ -445,10 +445,10 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
           'Spend MTD': result.spendMtd,
         };
 
-        console.log(
-          'Updated dashboardDaily with spend MTD:',
-          updatedDashboardDaily,
-        );
+        // console.log(
+        //   'Updated dashboardDaily with spend MTD:',
+        //   updatedDashboardDaily,
+        // );
 
         // Update the Firestore document
         const dashboardDailyRef = doc(
@@ -514,12 +514,12 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       }
 
       const result = await response.json();
-      console.log('Spend MTD indicator result:', result);
+      // console.log('Spend MTD indicator result:', result);
 
       const indicatorAlert = freshAlertOptionSets.find(
         (item) => item['Key'] === result.alert,
       );
-      console.log('indicatorAlert:', indicatorAlert);
+      // console.log('indicatorAlert:', indicatorAlert);
 
       const currentDashboardDaily = get().dashboardDaily;
       if (currentDashboardDaily) {
@@ -588,7 +588,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       }
 
       const result = await response.json();
-      console.log('KPI data result:', result);
+      // console.log('KPI data result:', result);
 
       const currentDashboardDaily = get().dashboardDaily;
       if (currentDashboardDaily) {
@@ -635,19 +635,19 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   },
 
   fetchCurrencySymbol: async (adsAccount: any) => {
-    console.log('Fetching currency symbol for adsAccount:', adsAccount);
+    // console.log('Fetching currency symbol for adsAccount:', adsAccount);
     set({ currencySymbolLoading: true, error: null });
     try {
       const path = getFirebaseFnPath('dashboard-customer-currency-symbol-fb');
       const userTokenRef = adsAccount['User Token'] as DocumentReference;
 
-      console.log('adsAccount: ', adsAccount);
-      console.log('userTokenRef.id: ', userTokenRef.id);
-      console.log('adsAccount.Id: ', adsAccount.Id);
-      console.log(
-        'adsAccount["Manager Account Id"]: ',
-        adsAccount['Manager Account Id'],
-      );
+      // console.log('adsAccount: ', adsAccount);
+      // console.log('userTokenRef.id: ', userTokenRef.id);
+      // console.log('adsAccount.Id: ', adsAccount.Id);
+      // console.log(
+      //   'adsAccount["Manager Account Id"]: ',
+      //   adsAccount['Manager Account Id'],
+      // );
 
       const response = await fetch(path, {
         method: 'POST',
@@ -666,7 +666,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       }
 
       const result = await response.json();
-      console.log('Currency symbol result:', result);
+      // console.log('Currency symbol result:', result);
 
       // Update the state in the other store
       useUserAdsAccountsStore
@@ -704,9 +704,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.size === 0) {
-        console.log(
-          "No 'Dashboard Showing Ads' record for the current 2-hour range. Triggering label check.",
-        );
+        // console.log(
+        //   "No 'Dashboard Showing Ads' record for the current 2-hour range. Triggering label check.",
+        // );
         const path = getFirebaseFnPath(
           'dashboard-display-showing-ads-label-fb',
         );
@@ -729,13 +729,13 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
             id: firstRecord.id,
             ...firstRecord.data(),
           };
-          console.log('Fetched ads label data after creation:', adsLabelData);
+          // console.log('Fetched ads label data after creation:', adsLabelData);
           set({ adsLabel: adsLabelData });
         }
       } else {
-        console.log(
-          "'Dashboard Showing Ads' record already exists for the current 2-hour range. Skipping label check.",
-        );
+        // console.log(
+        //   "'Dashboard Showing Ads' record already exists for the current 2-hour range. Skipping label check.",
+        // );
 
         // Store the existing record in adsLabel state
         const firstRecord = querySnapshot.docs[0];
@@ -743,7 +743,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
           id: firstRecord.id,
           ...firstRecord.data(),
         };
-        console.log('Fetched existing ads label data:', adsLabelData);
+        // console.log('Fetched existing ads label data:', adsLabelData);
         set({ adsLabel: adsLabelData });
       }
     } catch (error: any) {
@@ -895,9 +895,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   // TODO: Function for testing, need to remove
   addAdAccountsVarProps: async () => {
     try {
-      console.log(
-        'Starting to add missing properties to adsAccountVariables...',
-      );
+      // console.log(
+      //   'Starting to add missing properties to adsAccountVariables...',
+      // );
 
       // Import the DEFAULT_ADS_ACCOUNT_VARIABLE from constants
       const { DEFAULT_ADS_ACCOUNT_VARIABLE } = await import('@/lib/constants');
@@ -906,9 +906,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       const adsAccountVarRef = collection(db, 'adsAccountVariables');
       const adsAccountVarSnap = await getDocs(adsAccountVarRef);
 
-      console.log(
-        `Found ${adsAccountVarSnap.size} documents in adsAccountVariables collection`,
-      );
+      // console.log(
+      //   `Found ${adsAccountVarSnap.size} documents in adsAccountVariables collection`,
+      // );
 
       let updatedCount = 0;
 
@@ -926,9 +926,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
           if (!(key in docData)) {
             updates[key] = defaultValue;
             hasUpdates = true;
-            console.log(
-              `Adding missing property '${key}' with value '${defaultValue}' to document ${docSnap.id}`,
-            );
+            // console.log(
+            //   `Adding missing property '${key}' with value '${defaultValue}' to document ${docSnap.id}`,
+            // );
           }
         }
 
@@ -936,17 +936,17 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         if (hasUpdates) {
           await updateDoc(docSnap.ref, updates);
           updatedCount++;
-          console.log(
-            `Updated document ${docSnap.id} with ${
-              Object.keys(updates).length
-            } new properties`,
-          );
+          // console.log(
+          //   `Updated document ${docSnap.id} with ${
+          //   Object.keys(updates).length
+          // } new properties`,
+          // );
         }
       }
 
-      console.log(
-        `Completed! Updated ${updatedCount} out of ${adsAccountVarSnap.size} documents`,
-      );
+      // console.log(
+      //   `Completed! Updated ${updatedCount} out of ${adsAccountVarSnap.size} documents`,
+      // );
     } catch (error: any) {
       console.error('Error adding ad account variable properties:', error);
       throw error;

@@ -37,7 +37,7 @@ async function findAndUpdateSubscription(
         doc(db, COLLECTIONS.SUBSCRIPTIONS, subscriptionDoc.id),
         updates,
       );
-      console.log(`Updated subscription ${subscriptionDoc.id} with:`, updates);
+      // console.log(`Updated subscription ${subscriptionDoc.id} with:`, updates);
     } else {
       console.warn(
         `No subscription found with Stripe Subscription Id: ${stripeSubscriptionId}`,
@@ -62,14 +62,14 @@ async function getInvoiceForSubscription(
     });
 
     if (invoices.data.length === 0) {
-      console.log(`No open invoice found for subscription ${subscriptionId}`);
+      // console.log(`No open invoice found for subscription ${subscriptionId}`);
       return null;
     }
 
     const invoice = invoices.data[0];
-    console.log(
-      `Found invoice ${invoice.id} for subscription ${subscriptionId}`,
-    );
+    // console.log(
+    //   `Found invoice ${invoice.id} for subscription ${subscriptionId}`,
+    // );
 
     // Try to get the invoice with PDF URL
     if (invoice.id) {
@@ -77,7 +77,7 @@ async function getInvoiceForSubscription(
         const invoiceWithPdf = await stripe.invoices.retrieve(invoice.id, {
           expand: ['invoice_pdf'],
         });
-        console.log(`Invoice PDF URL: ${(invoiceWithPdf as any).invoice_pdf}`);
+        // console.log(`Invoice PDF URL: ${(invoiceWithPdf as any).invoice_pdf}`);
         return invoiceWithPdf;
       } catch (pdfError) {
         console.warn('Could not retrieve invoice PDF:', pdfError);
@@ -155,9 +155,9 @@ async function sendPaymentFailureEmail(
 
     // Send email via SendGrid
     const response = await sgMail.send(email);
-    console.log(
-      `Payment failure email sent successfully to ${userEmail}. Status: ${response[0].statusCode}`,
-    );
+    // console.log(
+    //   `Payment failure email sent successfully to ${userEmail}. Status: ${response[0].statusCode}`,
+    // );
   } catch (error) {
     console.error('Error sending payment failure email:', error);
     // Don't throw error to avoid breaking the webhook processing
@@ -229,7 +229,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function handlePaymentFailure(invoice: Stripe.Invoice) {
-  console.log('handlePaymentFailure: ', invoice);
+  // console.log('handlePaymentFailure: ', invoice);
   const customerId = invoice.customer as string;
   const subscriptionId = (invoice as any).subscription as string;
 
@@ -240,9 +240,9 @@ async function handlePaymentFailure(invoice: Stripe.Invoice) {
     (invoice as any).last_payment_error?.message || 'Payment failed';
   const attemptCount = invoice.attempt_count || 1;
 
-  console.log(
-    `Payment failed for subscription ${subscriptionId}: ${failureReason}`,
-  );
+  // console.log(
+  //   `Payment failed for subscription ${subscriptionId}: ${failureReason}`,
+  // );
 
   // Update subscription status in Firebase
   await findAndUpdateSubscription(subscriptionId, {
@@ -264,11 +264,11 @@ async function handlePaymentFailure(invoice: Stripe.Invoice) {
 }
 
 async function handlePastDueSubscription(subscription: Stripe.Subscription) {
-  console.log('Past due subscription: ', subscription);
+  // console.log('Past due subscription: ', subscription);
   const customerId = subscription.customer as string;
   const subscriptionId = subscription.id;
 
-  console.log(`Subscription ${subscriptionId} is past due`);
+  // console.log(`Subscription ${subscriptionId} is past due`);
 
   // Update subscription status in Firebase
   await findAndUpdateSubscription(subscriptionId, {
@@ -290,10 +290,10 @@ async function handlePastDueSubscription(subscription: Stripe.Subscription) {
 }
 
 async function handleSubscriptionRecovered(subscription: Stripe.Subscription) {
-  console.log('Subscription recovered: ', subscription);
+  // console.log('Subscription recovered: ', subscription);
   const subscriptionId = subscription.id;
 
-  console.log(`Subscription ${subscriptionId} recovered from payment failure`);
+  // console.log(`Subscription ${subscriptionId} recovered from payment failure`);
 
   // Update subscription status in Firebase
   await findAndUpdateSubscription(subscriptionId, {
@@ -303,14 +303,14 @@ async function handleSubscriptionRecovered(subscription: Stripe.Subscription) {
     'Stripe Invoice Failed Subscription Item Id': null,
   });
 
-  console.log('Subscription recovered - recovery email not yet implemented');
+  // console.log('Subscription recovered - recovery email not yet implemented');
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
-  console.log('Subscription deleted: ', subscription);
+  // console.log('Subscription deleted: ', subscription);
   const subscriptionId = subscription.id;
 
-  console.log(`Subscription ${subscriptionId} was deleted`);
+  // console.log(`Subscription ${subscriptionId} was deleted`);
 
   // Update subscription status in Firebase
   await findAndUpdateSubscription(subscriptionId, {
@@ -322,12 +322,12 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 }
 
 async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
-  console.log('Payment succeeded: ', invoice);
+  // console.log('Payment succeeded: ', invoice);
   // Fix: Access subscription from the expanded invoice
   const subscriptionId = (invoice as any).subscription as string;
 
   if (subscriptionId) {
-    console.log(`Payment succeeded for subscription ${subscriptionId}`);
+    // console.log(`Payment succeeded for subscription ${subscriptionId}`);
 
     // Update subscription status in Firebase
     await findAndUpdateSubscription(subscriptionId, {

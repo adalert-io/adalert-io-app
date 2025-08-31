@@ -10,14 +10,14 @@ class IntercomService {
 
   initialize(config?: Partial<IntercomConfig>): void {
     if (typeof window === 'undefined') {
-      console.log('Intercom: Server-side rendering, skipping initialization');
+      // console.log('Intercom: Server-side rendering, skipping initialization');
       return;
     }
 
     this.config = { ...this.config, ...config };
-    
-    console.log('Intercom: Initializing with config:', this.config);
-    
+
+    // console.log('Intercom: Initializing with config:', this.config);
+
     if (!this.config.appId) {
       console.warn('Intercom: App ID is required for initialization');
       return;
@@ -25,7 +25,7 @@ class IntercomService {
 
     // Load Intercom script if not already loaded
     if (!window.Intercom) {
-      console.log('Intercom: Loading Intercom script...');
+      // console.log('Intercom: Loading Intercom script...');
       this.loadIntercomScript();
     }
 
@@ -38,22 +38,22 @@ class IntercomService {
       background_color: this.config.backgroundColor,
     };
 
-    console.log('Intercom: Settings configured:', window.intercomSettings);
+    // console.log('Intercom: Settings configured:', window.intercomSettings);
 
     if (window.Intercom) {
-      console.log('Intercom: Booting Intercom...');
+      // console.log('Intercom: Booting Intercom...');
       window.Intercom('boot', window.intercomSettings);
       this.isInitialized = true;
-      console.log('Intercom: Successfully initialized');
+      // console.log('Intercom: Successfully initialized');
     } else {
-      console.log('Intercom: Waiting for script to load...');
+      // console.log('Intercom: Waiting for script to load...');
       // Wait for script to load and then boot
       setTimeout(() => {
         if (window.Intercom) {
-          console.log('Intercom: Booting after script load...');
+          // console.log('Intercom: Booting after script load...');
           window.Intercom('boot', window.intercomSettings);
           this.isInitialized = true;
-          console.log('Intercom: Successfully initialized after script load');
+          // console.log('Intercom: Successfully initialized after script load');
         }
       }, 1000);
     }
@@ -73,7 +73,7 @@ class IntercomService {
     if (typeof window === 'undefined' || !window.Intercom) return;
 
     const userData: any = {};
-    
+
     if (user.userId) userData.user_id = user.userId;
     if (user.email) userData.email = user.email;
     if (user.name) userData.name = user.name;
@@ -139,4 +139,4 @@ class IntercomService {
 }
 
 // Export singleton instance
-export const intercomService = new IntercomService(); 
+export const intercomService = new IntercomService();

@@ -1,28 +1,28 @@
-'use client'
+'use client';
 
-import { useAuthStore } from '@/lib/store/auth-store'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState, useRef, useMemo } from 'react'
-import { Header } from '@/components/layout/header'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { useAuthStore } from '@/lib/store/auth-store';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState, useRef, useMemo } from 'react';
+import { Header } from '@/components/layout/header';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   FileIcon,
   MagnifyingGlassIcon,
-  Pencil1Icon
-} from '@radix-ui/react-icons'
-import { Filter } from 'lucide-react'
-import { useUserAdsAccountsStore } from '@/lib/store/user-ads-accounts-store'
-import { useDashboardStore } from '@/lib/store/dashboard-store'
-import { useAlertOptionSetsStore } from '@/lib/store/alert-option-sets-store'
-import * as React from 'react'
+  Pencil1Icon,
+} from '@radix-ui/react-icons';
+import { Filter } from 'lucide-react';
+import { useUserAdsAccountsStore } from '@/lib/store/user-ads-accounts-store';
+import { useDashboardStore } from '@/lib/store/dashboard-store';
+import { useAlertOptionSetsStore } from '@/lib/store/alert-option-sets-store';
+import * as React from 'react';
 import {
   useReactTable,
   getCoreRowModel,
   getPaginationRowModel,
   flexRender,
-  ColumnDef
-} from '@tanstack/react-table'
+  ColumnDef,
+} from '@tanstack/react-table';
 import {
   ChevronDown,
   ChevronUp,
@@ -31,31 +31,31 @@ import {
   ChevronLeft,
   ChevronRight,
   XIcon,
-  AlertTriangle
-} from 'lucide-react'
-import { Checkbox } from '@/components/ui/checkbox'
-import { ALERT_SEVERITIES, ALERT_SEVERITY_COLORS } from '@/lib/constants/index'
-import moment from 'moment'
+  AlertTriangle,
+} from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ALERT_SEVERITIES, ALERT_SEVERITY_COLORS } from '@/lib/constants/index';
+import moment from 'moment';
 import {
   Popover,
   PopoverContent,
-  PopoverTrigger
-} from '@/components/ui/popover'
-import { FilterPopover, FilterState } from './FilterPopover'
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { FilterPopover, FilterState } from './FilterPopover';
 import {
   Tooltip,
   TooltipContent,
-  TooltipTrigger
-} from '@/components/ui/tooltip'
-import { saveAs } from 'file-saver'
-import type { Alert } from '@/lib/store/dashboard-store'
-import { formatAccountNumber } from '@/lib/utils'
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { saveAs } from 'file-saver';
+import type { Alert } from '@/lib/store/dashboard-store';
+import { formatAccountNumber } from '@/lib/utils';
 
 const KPI_PERIODS = [
   { label: '7 days vs. prior', key: '7' },
   { label: '30 days vs. prior', key: '30' },
-  { label: '90 days vs. prior', key: '90' }
-]
+  { label: '90 days vs. prior', key: '90' },
+];
 
 const KPI_FIELDS = [
   {
@@ -63,28 +63,28 @@ const KPI_FIELDS = [
     value: (d: Record<string, any>, k: string) => d?.[`cpc${k}`],
     pct: (d: Record<string, any>, k: string) => d?.[`cpcPercentage${k}`],
     pctRedIfPositive: true,
-    isMoney: true
+    isMoney: true,
   },
   {
     label: 'CTR',
     value: (d: Record<string, any>, k: string) => d?.[`ctr${k}`],
     pct: (d: Record<string, any>, k: string) => d?.[`ctrPercentage${k}`],
     pctRedIfPositive: false,
-    isPercent: true
+    isPercent: true,
   },
   {
     label: 'CPA',
     value: (d: Record<string, any>, k: string) => d?.[`cpa${k}`],
     pct: (d: Record<string, any>, k: string) => d?.[`cpaPercentage${k}`],
     pctRedIfPositive: true,
-    isMoney: true
+    isMoney: true,
   },
   {
     label: 'Conv.',
     value: (d: Record<string, any>, k: string) => d?.[`conversions${k}`],
     pct: (d: Record<string, any>, k: string) =>
       d?.[`conversionsPercentage${k}`],
-    pctRedIfPositive: false
+    pctRedIfPositive: false,
   },
   {
     label: 'Search IS',
@@ -93,7 +93,7 @@ const KPI_FIELDS = [
     pct: (d: Record<string, any>, k: string) =>
       d?.[`searchImpressionSharePercentage${k}`],
     pctRedIfPositive: false,
-    isPercent: true
+    isPercent: true,
   },
   {
     label: 'Impr. Top',
@@ -102,51 +102,51 @@ const KPI_FIELDS = [
     pct: (d: Record<string, any>, k: string) =>
       d?.[`topImpressionPercentagePercentage${k}`],
     pctRedIfPositive: false,
-    isPercent: true
+    isPercent: true,
   },
   {
     label: 'Cost',
     value: (d: Record<string, any>, k: string) => d?.[`costMicros${k}`],
     pct: (d: Record<string, any>, k: string) => d?.[`costMicrosPercentage${k}`],
     pctRedIfPositive: true,
-    isMoney: true
+    isMoney: true,
   },
   {
     label: 'Clicks',
     value: (d: Record<string, any>, k: string) => d?.[`interactions${k}`],
     pct: (d: Record<string, any>, k: string) =>
       d?.[`interactionsPercentage${k}`],
-    pctRedIfPositive: false
+    pctRedIfPositive: false,
   },
   {
     label: 'Invalid Clicks',
     value: (d: Record<string, any>, k: string) => d?.[`invalidClicks${k}`],
     pct: (d: Record<string, any>, k: string) =>
       d?.[`invalidClicksPercentage${k}`],
-    pctRedIfPositive: false
+    pctRedIfPositive: false,
   },
   {
     label: 'Impressions',
     value: (d: Record<string, any>, k: string) => d?.[`impressions${k}`],
     pct: (d: Record<string, any>, k: string) =>
       d?.[`impressionsPercentage${k}`],
-    pctRedIfPositive: false
-  }
-]
+    pctRedIfPositive: false,
+  },
+];
 
-function KpiMetricsRow ({
+function KpiMetricsRow({
   dashboardDaily,
-  currencySymbol
+  currencySymbol,
 }: {
-  dashboardDaily: any
-  currencySymbol: string
+  dashboardDaily: any;
+  currencySymbol: string;
 }) {
-  const [activePeriod, setActivePeriod] = React.useState('7')
+  const [activePeriod, setActivePeriod] = React.useState('7');
 
   return (
     <div className='mb-6 -mt-[70px] max-[1211px]:mt-[0px]'>
       <div className='flex gap-2 mb-3'>
-        {KPI_PERIODS.map(p => (
+        {KPI_PERIODS.map((p) => (
           <button
             key={p.key}
             type='button'
@@ -162,13 +162,13 @@ function KpiMetricsRow ({
         ))}
       </div>
       <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-3'>
-        {KPI_FIELDS.map(field => {
-          let value = field.value(dashboardDaily, activePeriod)
-          let pct = field.pct(dashboardDaily, activePeriod)
-          let pctColor = 'text-black'
+        {KPI_FIELDS.map((field) => {
+          let value = field.value(dashboardDaily, activePeriod);
+          let pct = field.pct(dashboardDaily, activePeriod);
+          let pctColor = 'text-black';
           if (value === null || value === undefined || value === 0) {
-            value = 0
-            pct = 0
+            value = 0;
+            pct = 0;
           }
           if (pct !== 0) {
             if (field.pctRedIfPositive) {
@@ -177,37 +177,37 @@ function KpiMetricsRow ({
                   ? 'text-red-600'
                   : pct < 0
                   ? 'text-green-600'
-                  : 'text-black'
+                  : 'text-black';
             } else {
               pctColor =
                 pct > 0
                   ? 'text-green-600'
                   : pct < 0
                   ? 'text-red-600'
-                  : 'text-black'
+                  : 'text-black';
             }
           }
-          let valueDisplay = value
+          let valueDisplay = value;
           if (field.isMoney) {
             valueDisplay = `${currencySymbol}${Number(value).toLocaleString(
               'en-US',
-              { minimumFractionDigits: 2, maximumFractionDigits: 2 }
-            )}`
+              { minimumFractionDigits: 2, maximumFractionDigits: 2 },
+            )}`;
           } else if (field.isPercent) {
             valueDisplay = `${Number(value).toLocaleString('en-US', {
               minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            })}%`
+              maximumFractionDigits: 2,
+            })}%`;
           } else {
-            valueDisplay = Number(value).toLocaleString('en-US')
+            valueDisplay = Number(value).toLocaleString('en-US');
           }
           let pctDisplay =
             pct === 0
               ? '0%'
               : `${pct > 0 ? '+' : ''}${Number(pct).toLocaleString('en-US', {
                   minimumFractionDigits: 2,
-                  maximumFractionDigits: 2
-                })}%`
+                  maximumFractionDigits: 2,
+                })}%`;
 
           return (
             <Card
@@ -226,19 +226,19 @@ function KpiMetricsRow ({
                 </span>
               </CardContent>
             </Card>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }
 
-export default function Dashboard () {
-  const { user, userDoc } = useAuthStore()
-  const router = useRouter()
+export default function Dashboard() {
+  const { user, userDoc } = useAuthStore();
+  const router = useRouter();
   const { selectedAdsAccount, userAdsAccounts, fetchUserAdsAccounts } =
-    useUserAdsAccountsStore()
-  console.log('Selected Ads Account:', selectedAdsAccount)
+    useUserAdsAccountsStore();
+  // console.log('Selected Ads Account:', selectedAdsAccount)
   const {
     fetchAlerts,
     fetchFirstAlerts,
@@ -259,101 +259,101 @@ export default function Dashboard () {
     archiveAlerts,
     generateAlertsPdf,
     lastFetchedAccountId,
-    setLastFetchedAccountId
-  } = useDashboardStore()
-  const { alertOptionSets, fetchAlertOptionSets } = useAlertOptionSetsStore()
+    setLastFetchedAccountId,
+  } = useDashboardStore();
+  const { alertOptionSets, fetchAlertOptionSets } = useAlertOptionSetsStore();
 
   // Replace selectedRows with selectedAlertIds for better performance and to avoid infinite loops
-  const [selectedAlertIds, setSelectedAlertIds] = useState<string[]>([])
-  const [pageSize, setPageSize] = React.useState(25)
-  const [hasFetchedFirstAlerts, setHasFetchedFirstAlerts] = useState(false)
+  const [selectedAlertIds, setSelectedAlertIds] = useState<string[]>([]);
+  const [pageSize, setPageSize] = React.useState(25);
+  const [hasFetchedFirstAlerts, setHasFetchedFirstAlerts] = useState(false);
 
   // Auto-refresh alerts every 15 minutes
   const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(
-    null
-  )
+    null,
+  );
 
   // --- Search State ---
-  const [showSearch, setShowSearch] = useState(false)
-  const [searchValue, setSearchValue] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchValue, setSearchValue] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   // --- Filter State ---
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
     severity: [
       ALERT_SEVERITIES.CRITICAL,
       ALERT_SEVERITIES.MEDIUM,
-      ALERT_SEVERITIES.LOW
+      ALERT_SEVERITIES.LOW,
     ],
     label: 'Unarchive',
-    timeRange: 'All Time'
-  })
+    timeRange: 'All Time',
+  });
 
   const handleFilterChange = (newFilters: Partial<FilterState>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }))
-  }
+    setFilters((prev) => ({ ...prev, ...newFilters }));
+  };
 
   // 1. Add state at the top of the Dashboard component
-  const [isEditingBudget, setIsEditingBudget] = useState(false)
+  const [isEditingBudget, setIsEditingBudget] = useState(false);
   const [budgetInput, setBudgetInput] = useState<string>(
-    selectedAdsAccount?.['Monthly Budget']?.toString() || ''
-  )
-  const [isUpdatingBudget, setIsUpdatingBudget] = useState(false)
+    selectedAdsAccount?.['Monthly Budget']?.toString() || '',
+  );
+  const [isUpdatingBudget, setIsUpdatingBudget] = useState(false);
 
   // 2. Add handler for Pencil1Icon click
   const handleEditBudget = () => {
-    setBudgetInput(selectedAdsAccount?.['Monthly Budget']?.toString() || '')
-    setIsEditingBudget(true)
-  }
+    setBudgetInput(selectedAdsAccount?.['Monthly Budget']?.toString() || '');
+    setIsEditingBudget(true);
+  };
 
   // 3. Add handler for Confirm
   const handleConfirmBudget = async () => {
-    if (!selectedAdsAccount || !budgetInput) return
-    const monthlyBudget = Math.max(0, Number(budgetInput))
-    setIsUpdatingBudget(true)
+    if (!selectedAdsAccount || !budgetInput) return;
+    const monthlyBudget = Math.max(0, Number(budgetInput));
+    setIsUpdatingBudget(true);
     try {
       const updated = await updateMonthlyBudget(
         selectedAdsAccount.id,
         monthlyBudget,
-        Number(selectedAdsAccount['Monthly Budget'])
-      )
+        Number(selectedAdsAccount['Monthly Budget']),
+      );
       // No need to update selectedAdsAccount locally, store will update if needed
-      setIsEditingBudget(false)
+      setIsEditingBudget(false);
     } catch (err) {
-      console.error('Failed to update budget', err)
+      console.error('Failed to update budget', err);
     } finally {
-      setIsUpdatingBudget(false)
+      setIsUpdatingBudget(false);
     }
-  }
+  };
 
   useEffect(() => {
-    console.log(user)
+    // console.log(user)
     if (!user) {
-      router.push('/auth')
-      return
+      router.push('/auth');
+      return;
     }
-    console.log('selectedAdsAccount: ', selectedAdsAccount)
-    console.log('userDoc: ', userDoc)
+    // console.log('selectedAdsAccount: ', selectedAdsAccount)
+    // console.log('userDoc: ', userDoc)
 
     // If selectedAdsAccount is empty and we have userDoc, fetch user ads accounts
     if (!selectedAdsAccount && userDoc) {
-      fetchUserAdsAccounts(userDoc)
+      fetchUserAdsAccounts(userDoc);
     }
-  }, [user, router, selectedAdsAccount, userDoc, fetchUserAdsAccounts])
+  }, [user, router, selectedAdsAccount, userDoc, fetchUserAdsAccounts]);
 
   useEffect(() => {
     if (selectedAdsAccount && selectedAdsAccount.id !== lastFetchedAccountId) {
-      fetchAlerts(selectedAdsAccount.id)
-      fetchOrCreateDashboardDaily(selectedAdsAccount.id)
-      triggerShowingAdsLabel(selectedAdsAccount)
+      fetchAlerts(selectedAdsAccount.id);
+      fetchOrCreateDashboardDaily(selectedAdsAccount.id);
+      triggerShowingAdsLabel(selectedAdsAccount);
       if (!selectedAdsAccount['Currency Symbol']) {
-        fetchCurrencySymbol(selectedAdsAccount)
+        fetchCurrencySymbol(selectedAdsAccount);
       }
 
-      setLastFetchedAccountId(selectedAdsAccount.id)
+      setLastFetchedAccountId(selectedAdsAccount.id);
       // Reset the first alerts flag when switching accounts
-      setHasFetchedFirstAlerts(false)
+      setHasFetchedFirstAlerts(false);
     }
     // If only budget fields change, skip the fetches!
   }, [
@@ -363,43 +363,43 @@ export default function Dashboard () {
     fetchCurrencySymbol,
     triggerShowingAdsLabel,
     lastFetchedAccountId,
-    setLastFetchedAccountId
-  ])
+    setLastFetchedAccountId,
+  ]);
 
   // Set up auto-refresh for alerts and ads label every 15 minutes
   useEffect(() => {
     if (selectedAdsAccount?.id) {
       // Clear any existing interval
       if (refreshInterval) {
-        clearInterval(refreshInterval)
+        clearInterval(refreshInterval);
       }
 
       // Set up new interval to refresh alerts and ads label every 15 minutes (900000 ms)
       const interval = setInterval(() => {
-        console.log('Auto-refreshing alerts and ads label...')
-        fetchAlerts(selectedAdsAccount.id)
-        triggerShowingAdsLabel(selectedAdsAccount)
-      }, 900000)
+        // console.log('Auto-refreshing alerts and ads label...')
+        fetchAlerts(selectedAdsAccount.id);
+        triggerShowingAdsLabel(selectedAdsAccount);
+      }, 900000);
 
-      setRefreshInterval(interval)
+      setRefreshInterval(interval);
 
       // Cleanup function
       return () => {
         if (interval) {
-          clearInterval(interval)
+          clearInterval(interval);
         }
-      }
+      };
     }
-  }, [selectedAdsAccount?.id, fetchAlerts, triggerShowingAdsLabel])
+  }, [selectedAdsAccount?.id, fetchAlerts, triggerShowingAdsLabel]);
 
   // Cleanup interval when component unmounts
   useEffect(() => {
     return () => {
       if (refreshInterval) {
-        clearInterval(refreshInterval)
+        clearInterval(refreshInterval);
       }
-    }
-  }, [refreshInterval])
+    };
+  }, [refreshInterval]);
 
   // Fetch spend MTD after dashboardDaily is set
   useEffect(() => {
@@ -409,9 +409,9 @@ export default function Dashboard () {
       dashboardDaily['Spend MTD'] === undefined &&
       !spendMtdLoading
     ) {
-      fetchSpendMtd(selectedAdsAccount)
+      fetchSpendMtd(selectedAdsAccount);
     }
-  }, [dashboardDaily, selectedAdsAccount, fetchSpendMtd, spendMtdLoading])
+  }, [dashboardDaily, selectedAdsAccount, fetchSpendMtd, spendMtdLoading]);
 
   useEffect(() => {
     if (
@@ -420,14 +420,14 @@ export default function Dashboard () {
       dashboardDaily['Spend MTD Indicator Alert'] === undefined &&
       !spendMtdIndicatorLoading
     ) {
-      fetchSpendMtdIndicator(selectedAdsAccount)
+      fetchSpendMtdIndicator(selectedAdsAccount);
     }
   }, [
     dashboardDaily,
     selectedAdsAccount,
     fetchSpendMtdIndicator,
-    spendMtdIndicatorLoading
-  ])
+    spendMtdIndicatorLoading,
+  ]);
 
   useEffect(() => {
     if (
@@ -436,9 +436,9 @@ export default function Dashboard () {
       !dashboardDaily['Is KPI Fetched'] &&
       !kpiDataLoading
     ) {
-      fetchKpiData(selectedAdsAccount)
+      fetchKpiData(selectedAdsAccount);
     }
-  }, [dashboardDaily, selectedAdsAccount, fetchKpiData, kpiDataLoading])
+  }, [dashboardDaily, selectedAdsAccount, fetchKpiData, kpiDataLoading]);
 
   // Check if we need to fetch first alerts
   useEffect(() => {
@@ -451,44 +451,44 @@ export default function Dashboard () {
       // Only run this after fetchAlerts has completed (when lastFetchedAccountId is set)
 
       // and only once per account, and only if the database flag is not already true
-      console.log(
-        'Calling fetchFirstAlerts for account:',
-        selectedAdsAccount.id
-      )
-      setHasFetchedFirstAlerts(true)
-      fetchFirstAlerts(selectedAdsAccount)
+      // console.log(
+      //   'Calling fetchFirstAlerts for account:',
+      //   selectedAdsAccount.id
+      // )
+      setHasFetchedFirstAlerts(true);
+      fetchFirstAlerts(selectedAdsAccount);
     } else if (
       selectedAdsAccount &&
       selectedAdsAccount['Get Alerts From First Load Done'] === true
     ) {
       // If the database already shows it's done, set our local flag to true
-      setHasFetchedFirstAlerts(true)
-      console.log(
-        'Account already has first alerts fetched, skipping:',
-        selectedAdsAccount.id
-      )
+      setHasFetchedFirstAlerts(true);
+      // console.log(
+      //   'Account already has first alerts fetched, skipping:',
+      //   selectedAdsAccount.id
+      // )
     }
-  }, [selectedAdsAccount, lastFetchedAccountId, hasFetchedFirstAlerts])
+  }, [selectedAdsAccount, lastFetchedAccountId, hasFetchedFirstAlerts]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
-      setDebouncedSearch(searchValue)
-    }, 1500)
-    return () => clearTimeout(handler)
-  }, [searchValue])
+      setDebouncedSearch(searchValue);
+    }, 1500);
+    return () => clearTimeout(handler);
+  }, [searchValue]);
   const checkboxClass =
-    'shadow-none border-[#c5c5c5] text-[#c5c5c5] data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600'
+    'shadow-none border-[#c5c5c5] text-[#c5c5c5] data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600';
   // Alerts Table Columns
   const useAlertColumns = (
     expandedRowIds: string[],
-    setExpandedRowIds: React.Dispatch<React.SetStateAction<string[]>>
+    setExpandedRowIds: React.Dispatch<React.SetStateAction<string[]>>,
   ): ColumnDef<any>[] => [
     {
       id: 'select',
       header: ({ table }) => (
         <Checkbox
           checked={table.getIsAllPageRowsSelected()}
-          onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           aria-label='Select all'
           className={checkboxClass}
         />
@@ -496,39 +496,39 @@ export default function Dashboard () {
       cell: ({ row }) => (
         <Checkbox
           checked={row.getIsSelected()}
-          onCheckedChange={value => row.toggleSelected(!!value)}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
           aria-label='Select row'
           className={checkboxClass}
         />
       ),
       enableSorting: false,
-      enableHiding: false
+      enableHiding: false,
     },
     {
       accessorKey: 'date',
       header: 'Found',
       cell: ({ row }) => {
-        const dateObj = row.original['Date Found']?.toDate?.()
-        const formatted = dateObj ? moment(dateObj).format('DD MMM') : '-'
-        return <span>{formatted}</span>
-      }
+        const dateObj = row.original['Date Found']?.toDate?.();
+        const formatted = dateObj ? moment(dateObj).format('DD MMM') : '-';
+        return <span>{formatted}</span>;
+      },
     },
     {
       accessorKey: 'severity',
       header: 'Severity',
       cell: ({ row }) => {
-        let color = ALERT_SEVERITY_COLORS.LOW // default fallback
+        let color = ALERT_SEVERITY_COLORS.LOW; // default fallback
 
         if (
           row.original.Severity?.toLowerCase() ===
           ALERT_SEVERITIES.CRITICAL.toLowerCase()
         ) {
-          color = ALERT_SEVERITY_COLORS.CRITICAL
+          color = ALERT_SEVERITY_COLORS.CRITICAL;
         } else if (
           row.original.Severity?.toLowerCase() ===
           ALERT_SEVERITIES.MEDIUM.toLowerCase()
         ) {
-          color = ALERT_SEVERITY_COLORS.MEDIUM
+          color = ALERT_SEVERITY_COLORS.MEDIUM;
         }
 
         return (
@@ -536,92 +536,92 @@ export default function Dashboard () {
             className='inline-block w-3 h-3 rounded-full'
             style={{ backgroundColor: color }}
           />
-        )
-      }
+        );
+      },
     },
 
     {
       accessorKey: 'description',
       header: 'Description',
-      cell: ({ row }) => <span>{row.original.Alert}</span>
+      cell: ({ row }) => <span>{row.original.Alert}</span>,
     },
     {
       accessorKey: 'type',
       header: 'Type',
-      cell: ({ row }) => <span>{row.original.Type}</span>
+      cell: ({ row }) => <span>{row.original.Type}</span>,
     },
     {
       accessorKey: 'level',
       header: 'Level',
-      cell: ({ row }) => <span>{row.original.Level}</span>
+      cell: ({ row }) => <span>{row.original.Level}</span>,
     },
     {
       id: 'expand',
       header: '',
       cell: ({ row }) => {
-        const isExpanded = expandedRowIds.includes(row.id)
+        const isExpanded = expandedRowIds.includes(row.id);
         return (
           <Button
             variant='ghost'
             size='icon'
             onClick={() => {
-              setExpandedRowIds(isExpanded ? [] : [row.id]) // ✅ only 1 open at a time
+              setExpandedRowIds(isExpanded ? [] : [row.id]); // ✅ only 1 open at a time
             }}
           >
             {isExpanded ? <ChevronUp /> : <ChevronDown />}
           </Button>
-        )
+        );
       },
       enableSorting: false,
-      enableHiding: false
-    }
-  ]
+      enableHiding: false,
+    },
+  ];
 
-  function AlertsDataTable ({
+  function AlertsDataTable({
     pageSize,
     setPageSize,
     filteredAlerts,
     selectedAlertIds,
-    setSelectedAlertIds
+    setSelectedAlertIds,
   }: {
-    pageSize: number
-    setPageSize: React.Dispatch<React.SetStateAction<number>>
-    filteredAlerts: any[]
-    selectedAlertIds: string[]
-    setSelectedAlertIds: React.Dispatch<React.SetStateAction<string[]>>
+    pageSize: number;
+    setPageSize: React.Dispatch<React.SetStateAction<number>>;
+    filteredAlerts: any[];
+    selectedAlertIds: string[];
+    setSelectedAlertIds: React.Dispatch<React.SetStateAction<string[]>>;
   }) {
-    const [expandedRowIds, setExpandedRowIds] = React.useState<string[]>([])
-    const [pageIndex, setPageIndex] = React.useState(0)
+    const [expandedRowIds, setExpandedRowIds] = React.useState<string[]>([]);
+    const [pageIndex, setPageIndex] = React.useState(0);
 
     const columns = React.useMemo(
       () => useAlertColumns(expandedRowIds, setExpandedRowIds),
-      [expandedRowIds]
-    )
+      [expandedRowIds],
+    );
 
     // Create a stable rowSelection object based on selectedAlertIds
     const rowSelection = useMemo(() => {
-      const selection: Record<string, boolean> = {}
-      selectedAlertIds.forEach(id => {
-        selection[id] = true
-      })
-      return selection
-    }, [selectedAlertIds])
+      const selection: Record<string, boolean> = {};
+      selectedAlertIds.forEach((id) => {
+        selection[id] = true;
+      });
+      return selection;
+    }, [selectedAlertIds]);
 
     // Handle row selection changes from the table
     const handleRowSelectionChange = React.useCallback(
       (updater: any) => {
         const newSelection =
-          typeof updater === 'function' ? updater(rowSelection) : updater
+          typeof updater === 'function' ? updater(rowSelection) : updater;
 
         // Convert the selection object to an array of selected IDs
         const newSelectedIds = Object.keys(newSelection).filter(
-          key => newSelection[key]
-        )
-        console.log('Row selection changed:', { newSelection, newSelectedIds })
-        setSelectedAlertIds(newSelectedIds)
+          (key) => newSelection[key],
+        );
+        // console.log('Row selection changed:', { newSelection, newSelectedIds })
+        setSelectedAlertIds(newSelectedIds);
       },
-      [rowSelection, setSelectedAlertIds]
-    )
+      [rowSelection, setSelectedAlertIds],
+    );
 
     const table = useReactTable({
       data: filteredAlerts,
@@ -631,21 +631,21 @@ export default function Dashboard () {
       state: {
         pagination: {
           pageIndex,
-          pageSize
+          pageSize,
         },
-        rowSelection
+        rowSelection,
       },
-      onPaginationChange: updater => {
+      onPaginationChange: (updater) => {
         if (typeof updater === 'function') {
-          const next = updater({ pageIndex, pageSize })
-          setPageIndex(next.pageIndex)
-          setPageSize(next.pageSize)
+          const next = updater({ pageIndex, pageSize });
+          setPageIndex(next.pageIndex);
+          setPageSize(next.pageSize);
         } else {
           if (updater.pageIndex !== undefined) {
-            setPageIndex(updater.pageIndex)
+            setPageIndex(updater.pageIndex);
           }
           if (updater.pageSize !== undefined) {
-            setPageSize(updater.pageSize)
+            setPageSize(updater.pageSize);
           }
         }
       },
@@ -653,19 +653,19 @@ export default function Dashboard () {
       enableRowSelection: true,
       pageCount: Math.ceil(filteredAlerts.length / pageSize),
       // Use the alert ID as the row ID instead of the table's internal ID
-      getRowId: row => {
+      getRowId: (row) => {
         // Add safety check for row.original and id
         if (!row.original) {
           // console.warn('Row original is undefined:', row);
-          return row.id || Math.random().toString()
+          return row.id || Math.random().toString();
         }
         if (!row.original.id) {
           // console.warn('Row original.id is undefined:', row.original);
-          return row.id || Math.random().toString()
+          return row.id || Math.random().toString();
         }
-        return row.original.id
-      }
-    })
+        return row.original.id;
+      },
+    });
 
     return (
       <div className='bg-white rounded-2xl shadow-none border border-[#e5e5e5] overflow-hidden mt-6'>
@@ -673,16 +673,16 @@ export default function Dashboard () {
           <table className='min-w-full'>
             {/* Header */}
             <thead className='bg-gray-50 border-b border-gray-200 text-[0.85rem]'>
-              {table.getHeaderGroups().map(headerGroup => (
+              {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
-                  {headerGroup.headers.map(header => (
+                  {headerGroup.headers.map((header) => (
                     <th
                       key={header.id}
                       className='px-4 py-4 text-left font-semibold text-gray-700'
                     >
                       {flexRender(
                         header.column.columnDef.header,
-                        header.getContext()
+                        header.getContext(),
                       )}
                     </th>
                   ))}
@@ -692,10 +692,10 @@ export default function Dashboard () {
 
             {/* Body */}
             <tbody className='divide-y divide-gray-100 text-[1rem]'>
-              {table.getRowModel().rows.map(row => (
+              {table.getRowModel().rows.map((row) => (
                 <React.Fragment key={row.id}>
                   <tr className='hover:bg-gray-50 transition-colors'>
-                    {row.getVisibleCells().map(cell => (
+                    {row.getVisibleCells().map((cell) => (
                       <td
                         key={cell.id}
                         className={`px-4 py-3 text-gray-900 text-[.95rem] ${
@@ -706,7 +706,7 @@ export default function Dashboard () {
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </td>
                     ))}
@@ -718,7 +718,7 @@ export default function Dashboard () {
                         <div
                           className='prose max-w-none text-sm'
                           dangerouslySetInnerHTML={{
-                            __html: row.original['Long Description'] || ''
+                            __html: row.original['Long Description'] || '',
                           }}
                         />
                       </td>
@@ -744,7 +744,7 @@ export default function Dashboard () {
             {Math.min(
               (table.getState().pagination.pageIndex + 1) *
                 table.getState().pagination.pageSize,
-              table.getFilteredRowModel().rows.length
+              table.getFilteredRowModel().rows.length,
             )}{' '}
             of {table.getFilteredRowModel().rows.length} results
           </div>
@@ -776,21 +776,21 @@ export default function Dashboard () {
             {/* Page numbers */}
             <div className='flex items-center gap-1'>
               {(() => {
-                const maxVisiblePages = 5
-                const page = table.getState().pagination.pageIndex + 1
-                const totalPages = table.getPageCount()
-                const halfVisible = Math.floor(maxVisiblePages / 2)
-                let startPage = Math.max(1, page - halfVisible)
+                const maxVisiblePages = 5;
+                const page = table.getState().pagination.pageIndex + 1;
+                const totalPages = table.getPageCount();
+                const halfVisible = Math.floor(maxVisiblePages / 2);
+                let startPage = Math.max(1, page - halfVisible);
                 const endPage = Math.min(
                   totalPages,
-                  startPage + maxVisiblePages - 1
-                )
+                  startPage + maxVisiblePages - 1,
+                );
 
                 if (endPage - startPage + 1 < maxVisiblePages) {
-                  startPage = Math.max(1, endPage - maxVisiblePages + 1)
+                  startPage = Math.max(1, endPage - maxVisiblePages + 1);
                 }
 
-                const pages = []
+                const pages = [];
 
                 if (startPage > 1) {
                   pages.push(
@@ -802,8 +802,8 @@ export default function Dashboard () {
                       className='h-8 w-8 p-0 text-[0.75rem] font-medium'
                     >
                       1
-                    </Button>
-                  )
+                    </Button>,
+                  );
                   if (startPage > 2) {
                     pages.push(
                       <span
@@ -811,8 +811,8 @@ export default function Dashboard () {
                         className='px-2 text-gray-400 text-[0.75rem]'
                       >
                         ...
-                      </span>
-                    )
+                      </span>,
+                    );
                   }
                 }
 
@@ -826,8 +826,8 @@ export default function Dashboard () {
                       className='h-8 w-8 p-0 text-[0.75rem] font-medium'
                     >
                       {i}
-                    </Button>
-                  )
+                    </Button>,
+                  );
                 }
 
                 if (endPage < totalPages) {
@@ -838,8 +838,8 @@ export default function Dashboard () {
                         className='px-2 text-gray-400 text-[0.75rem]'
                       >
                         ...
-                      </span>
-                    )
+                      </span>,
+                    );
                   }
                   pages.push(
                     <Button
@@ -850,11 +850,11 @@ export default function Dashboard () {
                       className='h-8 w-8 p-0 text-[0.75rem] font-medium'
                     >
                       {totalPages}
-                    </Button>
-                  )
+                    </Button>,
+                  );
                 }
 
-                return pages
+                return pages;
               })()}
             </div>
 
@@ -882,120 +882,120 @@ export default function Dashboard () {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
-  const alerts = useDashboardStore(state => state.alerts)
+  const alerts = useDashboardStore((state) => state.alerts);
 
   // --- Filtering ---
   const filteredAlerts = React.useMemo(() => {
-    const lower = debouncedSearch.toLowerCase()
+    const lower = debouncedSearch.toLowerCase();
 
-    return alerts.filter(alert => {
+    return alerts.filter((alert) => {
       // Severity
       const severityMatch =
         filters.severity.length === 0
           ? false
-          : filters.severity.includes(alert.Severity)
+          : filters.severity.includes(alert.Severity);
 
       // Label
       const labelMatch =
         filters.label === 'Unarchive'
           ? !alert['Is Archived']
-          : alert['Is Archived'] === true
+          : alert['Is Archived'] === true;
 
       // Time Range
-      let timeRangeMatch = true
+      let timeRangeMatch = true;
       if (filters.timeRange !== 'All Time') {
-        const days = filters.timeRange === 'Last 7 days' ? 7 : 30
-        const cutoffDate = moment().subtract(days, 'days')
-        const dateFound = alert['Date Found']?.toDate?.()
+        const days = filters.timeRange === 'Last 7 days' ? 7 : 30;
+        const cutoffDate = moment().subtract(days, 'days');
+        const dateFound = alert['Date Found']?.toDate?.();
         timeRangeMatch = dateFound
           ? moment(dateFound).isAfter(cutoffDate)
-          : false
+          : false;
       }
 
       // Search
       const searchMatch =
         !debouncedSearch ||
         alert['Alert']?.toLowerCase().includes(lower) ||
-        alert['Long Description']?.toLowerCase().includes(lower)
+        alert['Long Description']?.toLowerCase().includes(lower);
 
-      return severityMatch && labelMatch && timeRangeMatch && searchMatch
-    })
-  }, [alerts, debouncedSearch, filters])
+      return severityMatch && labelMatch && timeRangeMatch && searchMatch;
+    });
+  }, [alerts, debouncedSearch, filters]);
 
   // Derive selected alert objects from selectedAlertIds
   const selectedAlerts = useMemo(() => {
     // Debug: Log the first few alerts to see their structure
     if (filteredAlerts.length > 0) {
-      console.log('First alert structure:', filteredAlerts[0])
+      // console.log('First alert structure:', filteredAlerts[0])
       // console.log('All alert IDs:', filteredAlerts.map(alert => alert.id));
     }
 
     const alerts = selectedAlertIds
-      .map(id => filteredAlerts.find(alert => alert.id === id))
-      .filter(Boolean)
-    console.log('Selected alerts derived:', {
-      selectedAlertIds,
-      filteredAlertsLength: filteredAlerts.length,
-      selectedAlertsLength: alerts.length
-    })
-    return alerts
-  }, [selectedAlertIds, filteredAlerts])
+      .map((id) => filteredAlerts.find((alert) => alert.id === id))
+      .filter(Boolean);
+    // console.log('Selected alerts derived:', {
+    //   selectedAlertIds,
+    //   filteredAlertsLength: filteredAlerts.length,
+    //   selectedAlertsLength: alerts.length
+    // })
+    return alerts;
+  }, [selectedAlertIds, filteredAlerts]);
 
   const criticalCount = filteredAlerts.filter(
-    a => a.Severity === ALERT_SEVERITIES.CRITICAL
-  ).length
+    (a) => a.Severity === ALERT_SEVERITIES.CRITICAL,
+  ).length;
   const mediumCount = filteredAlerts.filter(
-    a => a.Severity === ALERT_SEVERITIES.MEDIUM
-  ).length
+    (a) => a.Severity === ALERT_SEVERITIES.MEDIUM,
+  ).length;
   const lowCount = filteredAlerts.filter(
-    a => a.Severity === ALERT_SEVERITIES.LOW
-  ).length
+    (a) => a.Severity === ALERT_SEVERITIES.LOW,
+  ).length;
 
-  const budgetInputRef = useRef<HTMLInputElement | null>(null)
+  const budgetInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (isEditingBudget && budgetInputRef.current) {
-      budgetInputRef.current.focus()
+      budgetInputRef.current.focus();
     }
-  }, [isEditingBudget])
+  }, [isEditingBudget]);
 
   // Add a helper to format date
-  function formatDate (date: any) {
-    if (!date) return ''
+  function formatDate(date: any) {
+    if (!date) return '';
     if (typeof date.toDate === 'function') {
-      return moment(date.toDate()).format('YYYY-MM-DD')
+      return moment(date.toDate()).format('YYYY-MM-DD');
     }
-    return moment(date).format('YYYY-MM-DD')
+    return moment(date).format('YYYY-MM-DD');
   }
 
   const handleDownloadCsv = () => {
     const alertsToDownload =
-      selectedAlerts.length === 0 ? filteredAlerts : selectedAlerts
-    if (alertsToDownload.length === 0) return
+      selectedAlerts.length === 0 ? filteredAlerts : selectedAlerts;
+    if (alertsToDownload.length === 0) return;
 
     const csvRows = [
       ['Alert', 'Date Found', 'Is Archived', 'Severity'],
-      ...alertsToDownload.map(alert => [
+      ...alertsToDownload.map((alert) => [
         alert?.['Alert'],
         formatDate(alert?.['Date Found']),
         alert?.['Is Archived'] ? 'Yes' : 'No',
-        alert?.['Severity']
-      ])
-    ]
+        alert?.['Severity'],
+      ]),
+    ];
     const csvContent = csvRows
-      .map(row =>
-        row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
+      .map((row) =>
+        row.map((field) => `"${String(field).replace(/"/g, '""')}"`).join(','),
       )
-      .join('\n')
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    saveAs(blob, 'alerts.csv')
-  }
+      .join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    saveAs(blob, 'alerts.csv');
+  };
 
-  const [isArchiving, setIsArchiving] = useState(false)
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
+  const [isArchiving, setIsArchiving] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   return (
     <div className='min-h-screen bg-[#f5f7fb]'>
@@ -1215,44 +1215,46 @@ export default function Dashboard () {
 
                             {
                               minimumFractionDigits: 2,
-                              maximumFractionDigits: 2
-                            }
+                              maximumFractionDigits: 2,
+                            },
                           )}`
                         : '--'}
                     </span>
                     <span className='ml-1 mt-1'>
                       {(() => {
                         const key =
-                          dashboardDaily?.['Spend MTD Indicator Alert']?.['Key']
-                        let color = '#1BC47D' // green default
+                          dashboardDaily?.['Spend MTD Indicator Alert']?.[
+                            'Key'
+                          ];
+                        let color = '#1BC47D'; // green default
 
                         if (
                           [
                             'AccountIsOverPacing33PercentToDate',
-                            'AccountIsUnderPacing33PercentToDate'
+                            'AccountIsUnderPacing33PercentToDate',
                           ].includes(key)
                         )
-                          color = '#EDE41B'
+                          color = '#EDE41B';
                         if (
                           [
                             'AccountIsOverPacing50PercentToDate',
-                            'AccountIsUnderPacing50PercentToDate'
+                            'AccountIsUnderPacing50PercentToDate',
                           ].includes(key)
                         )
-                          color = '#FF7F26'
+                          color = '#FF7F26';
                         if (
                           [
                             'AccountIsOverPacing75PercentToDate',
-                            'AccountIsUnderPacing75PercentToDate'
+                            'AccountIsUnderPacing75PercentToDate',
                           ].includes(key)
                         )
-                          color = '#EE1B23'
+                          color = '#EE1B23';
                         return (
                           <span
                             className='inline-block w-3 h-3 rounded-full'
                             style={{ background: color }}
                           />
-                        )
+                        );
                       })()}
                     </span>
                   </div>
@@ -1281,9 +1283,9 @@ export default function Dashboard () {
                           min={0}
                           className='ml-2 border border-[#E3E8F0] rounded-md px-2 py-1 text-sm font-bold text-right w-28 outline-none focus:border-blue-400 h-7'
                           value={budgetInput}
-                          onChange={e =>
+                          onChange={(e) =>
                             setBudgetInput(
-                              e.target.value.replace(/[^0-9.]/g, '')
+                              e.target.value.replace(/[^0-9.]/g, ''),
                             )
                           }
                           disabled={isUpdatingBudget}
@@ -1304,10 +1306,10 @@ export default function Dashboard () {
                           {selectedAdsAccount?.['Currency Symbol'] || '$'}
                           {selectedAdsAccount?.['Monthly Budget'] != null
                             ? Number(
-                                selectedAdsAccount['Monthly Budget']
+                                selectedAdsAccount['Monthly Budget'],
                               ).toLocaleString('en-US', {
                                 minimumFractionDigits: 0,
-                                maximumFractionDigits: 0
+                                maximumFractionDigits: 0,
                               })
                             : '--'}
                         </span>
@@ -1320,18 +1322,18 @@ export default function Dashboard () {
               {/* ✅ Progress bar section kept */}
               <div className='relative px-6 mt-3' style={{ height: 60 }}>
                 {(() => {
-                  const spend = Number(dashboardDaily?.['Spend MTD'] ?? 0)
+                  const spend = Number(dashboardDaily?.['Spend MTD'] ?? 0);
                   const budget = Number(
-                    selectedAdsAccount?.['Monthly Budget'] ?? 1
-                  )
+                    selectedAdsAccount?.['Monthly Budget'] ?? 1,
+                  );
                   const percent = budget
                     ? Math.min((spend / budget) * 100, 100)
-                    : 0
-                  const percentText = budget ? (spend / budget) * 100 : 0
-                  const now = moment()
-                  const day = now.date()
-                  const daysInMonth = now.daysInMonth()
-                  const dayPercent = (day / daysInMonth) * 100
+                    : 0;
+                  const percentText = budget ? (spend / budget) * 100 : 0;
+                  const now = moment();
+                  const day = now.date();
+                  const daysInMonth = now.daysInMonth();
+                  const dayPercent = (day / daysInMonth) * 100;
                   return (
                     <div className='relative w-full h-6 flex items-center'>
                       {/* Background */}
@@ -1341,7 +1343,7 @@ export default function Dashboard () {
                         className='absolute left-0 top-1/2 -translate-y-1/2 h-6 rounded-full bg-[#156CFF]'
                         style={{
                           width: `${percent}%`,
-                          minWidth: percent > 0 ? 8 : 0
+                          minWidth: percent > 0 ? 8 : 0,
                         }}
                       />
                       {/* Percentage text */}
@@ -1357,7 +1359,7 @@ export default function Dashboard () {
                           className='absolute top-0 h-6 flex items-center text-white text-xs font-semibold select-none'
                           style={{
                             left: `calc(${percent / 2}% )`,
-                            transform: 'translateX(-50%)'
+                            transform: 'translateX(-50%)',
                           }}
                         >
                           {percentText.toFixed(1)}%
@@ -1381,7 +1383,7 @@ export default function Dashboard () {
                             left:
                               dayPercent > 93
                                 ? 'calc(100% - 48px)'
-                                : `calc(${dayPercent}% - 12px)`
+                                : `calc(${dayPercent}% - 12px)`,
                           }}
                         >
                           <span className='text-[13px] text-[#7A7D9C] font-semibold select-none'>
@@ -1393,7 +1395,7 @@ export default function Dashboard () {
                         </div>
                       </div>
                     </div>
-                  )
+                  );
                 })()}
               </div>
 
@@ -1403,14 +1405,14 @@ export default function Dashboard () {
                   Spend Projection:{' '}
                   {selectedAdsAccount?.['Currency Symbol'] || '$'}
                   {(() => {
-                    const spend = Number(dashboardDaily?.['Spend MTD'] ?? 0)
-                    const now = moment()
-                    const day = now.date()
-                    const projection = day ? (spend / day) * 30.4 : 0
+                    const spend = Number(dashboardDaily?.['Spend MTD'] ?? 0);
+                    const now = moment();
+                    const day = now.date();
+                    const projection = day ? (spend / day) * 30.4 : 0;
                     return projection.toLocaleString('en-US', {
                       minimumFractionDigits: 2,
-                      maximumFractionDigits: 2
-                    })
+                      maximumFractionDigits: 2,
+                    });
                   })()}
                 </span>
               </div>
@@ -1534,26 +1536,26 @@ export default function Dashboard () {
                       className='bg-[#156CFF] hover:bg-[#156CFF]/90 text-white font-semibold h-7 px-3 py-1 rounded-md text-xs'
                       disabled={isArchiving}
                       onClick={async () => {
-                        setIsArchiving(true)
+                        setIsArchiving(true);
                         try {
-                          const shouldArchive = filters.label === 'Unarchive'
+                          const shouldArchive = filters.label === 'Unarchive';
                           if (selectedAdsAccount) {
                             await archiveAlerts(
                               selectedAlerts
                                 .filter(
                                   (a): a is Alert =>
-                                    !!a && typeof a.id === 'string'
+                                    !!a && typeof a.id === 'string',
                                 )
-                                .map(a => a.id),
+                                .map((a) => a.id),
                               shouldArchive,
-                              selectedAdsAccount.id
-                            )
+                              selectedAdsAccount.id,
+                            );
                           }
-                          setSelectedAlertIds([])
+                          setSelectedAlertIds([]);
                         } catch (err) {
-                          console.error('Failed to update alerts', err)
+                          console.error('Failed to update alerts', err);
                         } finally {
-                          setIsArchiving(false)
+                          setIsArchiving(false);
                         }
                       }}
                     >
@@ -1571,7 +1573,7 @@ export default function Dashboard () {
                       className='outline-none border-none bg-transparent text-sm text-gray-500 placeholder-gray-400 flex-1'
                       placeholder='Search for alerts'
                       value={searchValue}
-                      onChange={e => setSearchValue(e.target.value)}
+                      onChange={(e) => setSearchValue(e.target.value)}
                       autoFocus
                     />
                     {searchValue && (
@@ -1590,7 +1592,7 @@ export default function Dashboard () {
                 <Button
                   variant='outline'
                   size='icon'
-                  onClick={() => setShowSearch(v => !v)}
+                  onClick={() => setShowSearch((v) => !v)}
                   className={showSearch ? 'border-blue-200' : ''}
                   aria-label='Show search'
                 >
@@ -1623,14 +1625,14 @@ export default function Dashboard () {
                   className='relative'
                   disabled={isGeneratingPdf}
                   onClick={async () => {
-                    if (!selectedAdsAccount) return
-                    setIsGeneratingPdf(true)
+                    if (!selectedAdsAccount) return;
+                    setIsGeneratingPdf(true);
                     try {
-                      await generateAlertsPdf(selectedAdsAccount)
+                      await generateAlertsPdf(selectedAdsAccount);
                     } catch (err) {
-                      console.error('Failed to generate PDF', err)
+                      console.error('Failed to generate PDF', err);
                     } finally {
-                      setIsGeneratingPdf(false)
+                      setIsGeneratingPdf(false);
                     }
                   }}
                   aria-label='Export PDF'
@@ -1659,7 +1661,7 @@ export default function Dashboard () {
                   <select
                     className='appearance-none border border-gray-200 rounded-lg px-4 py-2 pr-8 text-sm bg-white shadow-none hover:border-gray-300 transition-colors focus:ring-2 focus:ring-blue-200 focus:border-blue-300 cursor-pointer font-medium text-gray-700'
                     value={pageSize}
-                    onChange={e => setPageSize(Number(e.target.value))}
+                    onChange={(e) => setPageSize(Number(e.target.value))}
                   >
                     <option value={15}>15 rows</option>
                     <option value={25}>25 rows</option>
@@ -1727,5 +1729,5 @@ export default function Dashboard () {
         </div>
       </main>
     </div>
-  )
+  );
 }

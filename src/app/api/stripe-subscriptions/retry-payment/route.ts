@@ -19,13 +19,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(
-      `Attempting to retry payment for subscription: ${subscriptionId}`,
-    );
+    // console.log(
+    //   `Attempting to retry payment for subscription: ${subscriptionId}`,
+    // );
 
     // Get the subscription to check its status
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-    console.log(`Subscription status: ${subscription.status}`);
+    // console.log(`Subscription status: ${subscription.status}`);
 
     // Get the latest invoice for this subscription
     const invoices = await stripe.invoices.list({
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (invoices.data.length === 0) {
-      console.log(`No open invoice found for subscription: ${subscriptionId}`);
+      // console.log(`No open invoice found for subscription: ${subscriptionId}`);
       return NextResponse.json(
         {
           success: false,
@@ -46,15 +46,15 @@ export async function POST(request: NextRequest) {
     }
 
     const invoice = invoices.data[0];
-    console.log(
-      `Found invoice: ${invoice.id}, amount: ${invoice.amount_due}, status: ${invoice.status}`,
-    );
+    // console.log(
+    //   `Found invoice: ${invoice.id}, amount: ${invoice.amount_due}, status: ${invoice.status}`,
+    // );
 
     // Check if the invoice is actually payable (open status)
     if (invoice.status !== 'open') {
-      console.log(
-        `Invoice ${invoice.id} is not in a payable state. Status: ${invoice.status}`,
-      );
+      // console.log(
+      //   `Invoice ${invoice.id} is not in a payable state. Status: ${invoice.status}`,
+      // );
       return NextResponse.json(
         {
           success: false,
@@ -67,9 +67,9 @@ export async function POST(request: NextRequest) {
     // Get the default payment method from the subscription
     const defaultPaymentMethod = subscription.default_payment_method;
     if (!defaultPaymentMethod) {
-      console.log(
-        `No default payment method found for subscription: ${subscriptionId}`,
-      );
+      // console.log(
+      //   `No default payment method found for subscription: ${subscriptionId}`,
+      // );
       return NextResponse.json(
         {
           success: false,
@@ -90,17 +90,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(
-      `Attempting to pay invoice ${invoice.id} with payment method: ${defaultPaymentMethod}`,
-    );
+    // console.log(
+    //   `Attempting to pay invoice ${invoice.id} with payment method: ${defaultPaymentMethod}`,
+    // );
 
     const paidInvoice = await stripe.invoices.pay(invoice.id, {
       payment_method: defaultPaymentMethod as string,
     });
 
-    console.log(
-      `Successfully paid invoice: ${paidInvoice.id}, new status: ${paidInvoice.status}`,
-    );
+    // console.log(
+    //   `Successfully paid invoice: ${paidInvoice.id}, new status: ${paidInvoice.status}`,
+    // );
 
     return NextResponse.json({
       success: true,
