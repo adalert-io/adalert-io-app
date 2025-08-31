@@ -683,8 +683,11 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   triggerShowingAdsLabel: async (adsAccount: any) => {
     try {
       const adsAccountId = adsAccount.id;
-      const startOfHour = moment().startOf('hour').toDate();
-      const endOfHour = moment().endOf('hour').toDate();
+      const startOfTwoHours = moment()
+        .subtract(1, 'hour')
+        .startOf('hour')
+        .toDate();
+      const endOfTwoHours = moment().add(1, 'hour').endOf('hour').toDate();
 
       const showingAdsRef = collection(db, COLLECTIONS.DASHBOARD_SHOWING_ADS);
       const q = query(
@@ -694,15 +697,15 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
           '==',
           doc(db, COLLECTIONS.ADS_ACCOUNTS, adsAccountId),
         ),
-        where('Date', '>=', startOfHour),
-        where('Date', '<=', endOfHour),
+        where('Date', '>=', startOfTwoHours),
+        where('Date', '<=', endOfTwoHours),
       );
 
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.size === 0) {
         console.log(
-          "No 'Dashboard Showing Ads' record for the current hour. Triggering label check.",
+          "No 'Dashboard Showing Ads' record for the current 2-hour range. Triggering label check.",
         );
         const path = getFirebaseFnPath(
           'dashboard-display-showing-ads-label-fb',
@@ -731,7 +734,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         }
       } else {
         console.log(
-          "'Dashboard Showing Ads' record already exists for the current hour. Skipping label check.",
+          "'Dashboard Showing Ads' record already exists for the current 2-hour range. Skipping label check.",
         );
 
         // Store the existing record in adsLabel state
