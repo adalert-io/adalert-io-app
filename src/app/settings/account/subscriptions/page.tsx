@@ -1,122 +1,122 @@
-'use client'
+'use client';
 
-import { Check, AlertTriangle, XIcon, Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import Link from 'next/link'
-import { useAlertSettingsStore } from '@/lib/store/settings-store'
-import { useAuthStore } from '@/lib/store/auth-store'
-import { useEffect, useState } from 'react'
-import { SUBSCRIPTION_PRICES } from '@/lib/constants'
-import moment from 'moment'
-import { SUBSCRIPTION_STATUS, SUBSCRIPTION_PERIODS } from '@/lib/constants'
+import { Check, AlertTriangle, XIcon, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { useAlertSettingsStore } from '@/lib/store/settings-store';
+import { useAuthStore } from '@/lib/store/auth-store';
+import { useEffect, useState } from 'react';
+import { SUBSCRIPTION_PRICES } from '@/lib/constants';
+import moment from 'moment';
+import { SUBSCRIPTION_STATUS, SUBSCRIPTION_PERIODS } from '@/lib/constants';
 
-export default function SubscriptionsSubtab () {
+export default function SubscriptionsSubtab() {
   const {
     adsAccounts,
     fetchAdsAccounts,
     loading,
     deleteCompanyAccount,
     subscription,
-    fetchSubscription
-  } = useAlertSettingsStore()
-  const { userDoc, logout } = useAuthStore()
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
+    fetchSubscription,
+  } = useAlertSettingsStore();
+  const { userDoc, logout } = useAuthStore();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (userDoc?.['Company Admin'] && !adsAccounts.length) {
-      fetchAdsAccounts(userDoc['Company Admin'])
+      fetchAdsAccounts(userDoc['Company Admin']);
     }
-  }, [userDoc, adsAccounts.length, fetchAdsAccounts])
+  }, [userDoc, adsAccounts.length, fetchAdsAccounts]);
 
   // Fetch subscription when component loads and subscription is empty
   useEffect(() => {
     if (userDoc?.['Company Admin'] && !subscription) {
-      fetchSubscription(userDoc['Company Admin'])
+      fetchSubscription(userDoc['Company Admin']);
     }
-  }, [userDoc, subscription, fetchSubscription])
+  }, [userDoc, subscription, fetchSubscription]);
 
-  const connectedAccountsCount = adsAccounts.length
+  const connectedAccountsCount = adsAccounts.length;
 
   // Calculate subscription price based on number of ads accounts
   const calculateSubscriptionPrice = () => {
     if (connectedAccountsCount === 0) {
-      return 0
+      return 0;
     } else if (connectedAccountsCount === 1) {
-      return SUBSCRIPTION_PRICES.FIRST_ADS_ACCOUNT
+      return SUBSCRIPTION_PRICES.FIRST_ADS_ACCOUNT;
     } else {
       return (
         SUBSCRIPTION_PRICES.FIRST_ADS_ACCOUNT +
         SUBSCRIPTION_PRICES.ADDITIONAL_ADS_ACCOUNT *
           (connectedAccountsCount - 1)
-      )
+      );
     }
-  }
+  };
 
-  const subscriptionPrice = calculateSubscriptionPrice()
+  const subscriptionPrice = calculateSubscriptionPrice();
 
   let statusText = '';
-let statusColor = '';
-let statusBg = '';
+  let statusColor = '';
+  let statusBg = '';
 
-if (subscription) {
-  const status = subscription['User Status'];
-  const trialStart = subscription['Free Trial Start Date']?.toDate
-    ? subscription['Free Trial Start Date'].toDate()
-    : null;
+  if (subscription) {
+    const status = subscription['User Status'];
+    const trialStart = subscription['Free Trial Start Date']?.toDate
+      ? subscription['Free Trial Start Date'].toDate()
+      : null;
 
-  const trialEnd = trialStart
-    ? moment(trialStart).add(SUBSCRIPTION_PERIODS.TRIAL_DAYS, 'days')
-    : null;
+    const trialEnd = trialStart
+      ? moment(trialStart).add(SUBSCRIPTION_PERIODS.TRIAL_DAYS, 'days')
+      : null;
 
-  const now = moment();
+    const now = moment();
 
-  if (status === SUBSCRIPTION_STATUS.PAYING) {
-    statusText = 'Paid Plan Active';
-    statusColor = '#24B04D';
-    statusBg = '#e9ffef';
-  } else if (
-    status === SUBSCRIPTION_STATUS.TRIAL_NEW &&
-    trialEnd &&
-    now.isBefore(trialEnd, 'day')
-  ) {
-    // Active trial (still days left)
-    statusText = 'Free Trial';
-    statusColor = '#24B04D';
-    statusBg = '#e9ffef';
-  } else if (
-    (status === SUBSCRIPTION_STATUS.TRIAL_NEW ||
-      status === SUBSCRIPTION_STATUS.TRIAL_ENDED) &&
-    trialEnd &&
-    now.isSameOrAfter(trialEnd, 'day')
-  ) {
-    // Trial has ended (0 days left or later)
-    statusText = 'Free Trial Ended';
-    statusColor = '#ee1b23';
-    statusBg = '#ffebee';
-  } else if (
-    status === SUBSCRIPTION_STATUS.CANCELED ||
-    status === SUBSCRIPTION_STATUS.PAYMENT_FAILED
-  ) {
-    statusText = 'Subscription Canceled';
-    statusColor = '#ee1b23';
-    statusBg = '#ffebee';
+    if (status === SUBSCRIPTION_STATUS.PAYING) {
+      statusText = 'Paid Plan Active';
+      statusColor = '#24B04D';
+      statusBg = '#e9ffef';
+    } else if (
+      status === SUBSCRIPTION_STATUS.TRIAL_NEW &&
+      trialEnd &&
+      now.isBefore(trialEnd, 'day')
+    ) {
+      // Active trial (still days left)
+      statusText = 'Free Trial';
+      statusColor = '#24B04D';
+      statusBg = '#e9ffef';
+    } else if (
+      (status === SUBSCRIPTION_STATUS.TRIAL_NEW ||
+        status === SUBSCRIPTION_STATUS.TRIAL_ENDED) &&
+      trialEnd &&
+      now.isSameOrAfter(trialEnd, 'day')
+    ) {
+      // Trial has ended (0 days left or later)
+      statusText = 'Free Trial Ended';
+      statusColor = '#ee1b23';
+      statusBg = '#ffebee';
+    } else if (status === SUBSCRIPTION_STATUS.CANCELED) {
+      statusText = 'Subscription Canceled';
+      statusColor = '#ee1b23';
+      statusBg = '#ffebee';
+    } else if (status === SUBSCRIPTION_STATUS.PAYMENT_FAILED) {
+      statusText = 'Payment Failed';
+      statusColor = '#ee1b23';
+      statusBg = '#ffebee';
+    }
   }
-}
-
 
   // TODO: need to test
   const handleDeleteCompanyAccount = async () => {
-    if (!userDoc?.['Company Admin']) return
-    setIsDeleting(true)
+    if (!userDoc?.['Company Admin']) return;
+    setIsDeleting(true);
     try {
-      await deleteCompanyAccount(userDoc['Company Admin'], logout)
+      await deleteCompanyAccount(userDoc['Company Admin'], logout);
     } catch (error) {
-      console.error('Error deleting company account:', error)
+      console.error('Error deleting company account:', error);
     } finally {
-      setIsDeleting(false)
+      setIsDeleting(false);
     }
-  }
+  };
 
   return (
     <div className='space-y-6'>
@@ -126,7 +126,7 @@ if (subscription) {
 
         {/* Current Status */}
         <div className='mb-6'>
-          <div className='flex items-start  gap-4 mb-4 justify-between sm:flex-row flex-col items-center '>  
+          <div className='flex items-start  gap-4 mb-4 justify-between sm:flex-row flex-col items-center '>
             <div className='text-3xl font-bold'>
               <span className='text-blue-600'>${subscriptionPrice}</span>
               <span className='text-gray-600 font-normal text-xl'>
@@ -269,11 +269,11 @@ if (subscription) {
                 className='flex-1 bg-blue-600 text-white hover:bg-blue-700'
                 onClick={async () => {
                   try {
-                    await handleDeleteCompanyAccount()
+                    await handleDeleteCompanyAccount();
                   } catch (error: any) {
-                    console.error('Error deleting account:', error)
+                    console.error('Error deleting account:', error);
                   } finally {
-                    setIsDeleting(false)
+                    setIsDeleting(false);
                   }
                 }}
                 disabled={isDeleting}
@@ -292,5 +292,5 @@ if (subscription) {
         </div>
       )}
     </div>
-  )
+  );
 }
