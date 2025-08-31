@@ -203,54 +203,55 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
       </div>
     );
   }
-let statusText = '';
-let statusColor = '';
-let statusBg = '';
+  let statusText = '';
+  let statusColor = '';
+  let statusBg = '';
 
-if (subscription) {
-  const status = subscription['User Status'];
-  const trialStart = subscription['Free Trial Start Date']?.toDate
-    ? subscription['Free Trial Start Date'].toDate()
-    : null;
+  if (subscription) {
+    const status = subscription['User Status'];
+    const trialStart = subscription['Free Trial Start Date']?.toDate
+      ? subscription['Free Trial Start Date'].toDate()
+      : null;
 
-  const trialEnd = trialStart
-    ? moment(trialStart).add(SUBSCRIPTION_PERIODS.TRIAL_DAYS, 'days')
-    : null;
+    const trialEnd = trialStart
+      ? moment(trialStart).add(SUBSCRIPTION_PERIODS.TRIAL_DAYS, 'days')
+      : null;
 
-  const now = moment();
+    const now = moment();
 
-  if (status === SUBSCRIPTION_STATUS.PAYING) {
-    statusText = 'Paid Plan Active';
-    statusColor = '#24B04D';
-    statusBg = '#e9ffef';
-  } else if (
-    status === SUBSCRIPTION_STATUS.TRIAL_NEW &&
-    trialEnd &&
-    now.isBefore(trialEnd, 'day')
-  ) {
-    // Active trial (still days left)
-    statusText = 'Free Trial';
-    statusColor = '#24B04D';
-    statusBg = '#e9ffef';
-  } else if (
-    (status === SUBSCRIPTION_STATUS.TRIAL_NEW ||
-      status === SUBSCRIPTION_STATUS.TRIAL_ENDED) &&
-    trialEnd &&
-    now.isSameOrAfter(trialEnd, 'day')
-  ) {
-    // Trial has ended (0 days left or later)
-    statusText = 'Free Trial Ended';
-    statusColor = '#ee1b23';
-    statusBg = '#ffebee';
-  } else if (
-    status === SUBSCRIPTION_STATUS.CANCELED ||
-    status === SUBSCRIPTION_STATUS.PAYMENT_FAILED
-  ) {
-    statusText = 'Subscription Canceled';
-    statusColor = '#ee1b23';
-    statusBg = '#ffebee';
+    if (status === SUBSCRIPTION_STATUS.PAYING) {
+      statusText = 'Paid Plan Active';
+      statusColor = '#24B04D';
+      statusBg = '#e9ffef';
+    } else if (
+      status === SUBSCRIPTION_STATUS.TRIAL_NEW &&
+      trialEnd &&
+      now.isBefore(trialEnd, 'day')
+    ) {
+      // Active trial (still days left)
+      statusText = 'Free Trial';
+      statusColor = '#24B04D';
+      statusBg = '#e9ffef';
+    } else if (
+      (status === SUBSCRIPTION_STATUS.TRIAL_NEW ||
+        status === SUBSCRIPTION_STATUS.TRIAL_ENDED) &&
+      trialEnd &&
+      now.isSameOrAfter(trialEnd, 'day')
+    ) {
+      // Trial has ended (0 days left or later)
+      statusText = 'Free Trial Ended';
+      statusColor = '#ee1b23';
+      statusBg = '#ffebee';
+    } else if (status === SUBSCRIPTION_STATUS.CANCELED) {
+      statusText = 'Subscription Canceled';
+      statusColor = '#ee1b23';
+      statusBg = '#ffebee';
+    } else if (status === SUBSCRIPTION_STATUS.PAYMENT_FAILED) {
+      statusText = 'Payment Failed';
+      statusColor = '#ee1b23';
+      statusBg = '#ffebee';
+    }
   }
-}
 
   return (
     <div className='bg-white p-8'>
@@ -586,55 +587,55 @@ export default function BillingSubtab() {
   const subscriptionPrice = calculateSubscriptionPrice();
 
   // Subscription status badge logic
-let statusText = '';
-let statusColor = '';
-let statusBg = '';
+  let statusText = '';
+  let statusColor = '';
+  let statusBg = '';
 
-if (subscription) {
-  const status = subscription['User Status'];
-  const trialStart = subscription['Free Trial Start Date']?.toDate
-    ? subscription['Free Trial Start Date'].toDate()
-    : null;
+  if (subscription) {
+    const status = subscription['User Status'];
+    const trialStart = subscription['Free Trial Start Date']?.toDate
+      ? subscription['Free Trial Start Date'].toDate()
+      : null;
 
-  const trialEnd = trialStart
-    ? moment(trialStart).add(SUBSCRIPTION_PERIODS.TRIAL_DAYS, 'days')
-    : null;
+    const trialEnd = trialStart
+      ? moment(trialStart).add(SUBSCRIPTION_PERIODS.TRIAL_DAYS, 'days')
+      : null;
 
-  const now = moment();
+    const now = moment();
 
-  if (status === SUBSCRIPTION_STATUS.PAYING) {
-    statusText = 'Paid Plan Active';
-    statusColor = '#24B04D';
-    statusBg = '#e9ffef';
-  } else if (
-    status === SUBSCRIPTION_STATUS.TRIAL_NEW &&
-    trialEnd &&
-    now.isBefore(trialEnd, 'day')
-  ) {
-    // Active trial (still days left)
-    statusText = 'Free Trial';
-    statusColor = '#24B04D';
-    statusBg = '#e9ffef';
-  } else if (
-    (status === SUBSCRIPTION_STATUS.TRIAL_NEW ||
-      status === SUBSCRIPTION_STATUS.TRIAL_ENDED) &&
-    trialEnd &&
-    now.isSameOrAfter(trialEnd, 'day')
-  ) {
-    // Trial has ended (0 days left or later)
-    statusText = 'Free Trial Ended';
-    statusColor = '#ee1b23';
-    statusBg = '#ffebee';
-  } else if (
-    status === SUBSCRIPTION_STATUS.CANCELED ||
-    status === SUBSCRIPTION_STATUS.PAYMENT_FAILED
-  ) {
-    statusText = 'Subscription Canceled';
-    statusColor = '#ee1b23';
-    statusBg = '#ffebee';
+    if (status === SUBSCRIPTION_STATUS.PAYING) {
+      statusText = 'Paid Plan Active';
+      statusColor = '#24B04D';
+      statusBg = '#e9ffef';
+    } else if (
+      status === SUBSCRIPTION_STATUS.TRIAL_NEW &&
+      trialEnd &&
+      now.isBefore(trialEnd, 'day')
+    ) {
+      // Active trial (still days left)
+      statusText = 'Free Trial';
+      statusColor = '#24B04D';
+      statusBg = '#e9ffef';
+    } else if (
+      (status === SUBSCRIPTION_STATUS.TRIAL_NEW ||
+        status === SUBSCRIPTION_STATUS.TRIAL_ENDED) &&
+      trialEnd &&
+      now.isSameOrAfter(trialEnd, 'day')
+    ) {
+      // Trial has ended (0 days left or later)
+      statusText = 'Free Trial Ended';
+      statusColor = '#ee1b23';
+      statusBg = '#ffebee';
+    } else if (status === SUBSCRIPTION_STATUS.CANCELED) {
+      statusText = 'Subscription Canceled';
+      statusColor = '#ee1b23';
+      statusBg = '#ffebee';
+    } else if (status === SUBSCRIPTION_STATUS.PAYMENT_FAILED) {
+      statusText = 'Payment Failed';
+      statusColor = '#ee1b23';
+      statusBg = '#ffebee';
+    }
   }
-}
-
 
   if (userDoc && userDoc['User Type'] !== 'Admin') {
     return (
