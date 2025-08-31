@@ -20,7 +20,7 @@ import {
 } from 'firebase/storage';
 import { User } from 'firebase/auth';
 import { formatAccountNumber, getFirebaseFnPath } from '../utils';
-import { APPLICATION_NAME } from '../constants';
+import { APPLICATION_NAME, SUBSCRIPTION_STATUS } from '../constants';
 import { CardElement } from '@stripe/react-stripe-js';
 
 export interface AlertSettings {
@@ -211,6 +211,14 @@ interface AlertSettingsState {
     onBack: () => void;
   }) => Promise<void>;
   deleteUserWithRecords: (userId: string, email: string) => Promise<void>;
+  retrySubscriptionPayment: (
+    subscriptionId: string,
+    customerId: string,
+  ) => Promise<{
+    success: boolean;
+    data?: any;
+    error?: string;
+  }>;
 }
 
 export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
@@ -1635,6 +1643,25 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         const customerId = customerResult.customerId;
         console.log('customerId: ', customerId);
 
+        // Explicitly set this payment method as the default for the customer
+        try {
+          await stripe.customers.update(customerId, {
+            invoice_settings: {
+              default_payment_method: paymentMethod.id,
+            },
+          });
+          console.log(
+            'Payment method set as default for customer:',
+            customerId,
+          );
+        } catch (defaultError) {
+          console.warn(
+            'Failed to set payment method as default:',
+            defaultError,
+          );
+          // Continue anyway as this is not critical
+        }
+
         // Save payment method details to Firestore
         const saveResult = await paymentService.savePaymentMethodDetails({
           userRef: `/users/${userId}`,
@@ -1850,6 +1877,25 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           return;
         }
 
+        // Explicitly set this payment method as the default for the customer
+        try {
+          await stripe.customers.update(stripeCustomerId, {
+            invoice_settings: {
+              default_payment_method: paymentMethod.id,
+            },
+          });
+          console.log(
+            'Payment method set as default for customer:',
+            stripeCustomerId,
+          );
+        } catch (defaultError) {
+          console.warn(
+            'Failed to set payment method as default:',
+            defaultError,
+          );
+          // Continue anyway as this is not critical
+        }
+
         // 5. Update the new payment method details to Firestore
         const userRef = doc(db, 'users', userId);
         const { paymentService } = await import('@/services/payment');
@@ -1924,6 +1970,123 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           );
         }
 
+        // Check if subscription needs immediate payment (past due or payment failed)
+        const subscriptionStatus = subscriptionDoc.data()['User Status'];
+        const needsImmediatePayment =
+          subscriptionStatus === SUBSCRIPTION_STATUS.PAYMENT_FAILED;
+        const isCanceled = subscriptionStatus === SUBSCRIPTION_STATUS.CANCELED;
+
+        if (needsImmediatePayment) {
+          console.log(
+            'Subscription needs immediate payment, attempting to retry...',
+          );
+
+          const stripeSubscriptionId =
+            subscriptionDoc.data()['Stripe Subscription Id'];
+          if (stripeSubscriptionId) {
+            const retryResult = await get().retrySubscriptionPayment(
+              stripeSubscriptionId,
+              stripeCustomerId,
+            );
+
+            if (retryResult.success) {
+              console.log('Payment retry successful:', retryResult.data);
+
+              // Update Firebase subscription status to reflect successful payment
+              await updateDoc(subscriptionDoc.ref, {
+                'User Status': 'Paying',
+                'Stripe Invoice Failed Start Date': null,
+                'Stripe Invoice Failed Subscription Id': null,
+                'Stripe Invoice Failed Subscription Item Id': null,
+              });
+
+              toast.success(
+                'Payment method updated and past-due payment processed successfully!',
+              );
+            } else {
+              console.warn('Payment retry failed:', retryResult.error);
+              toast.warning(
+                'Payment method updated, but failed to process past-due payment. Please contact support.',
+              );
+            }
+          } else {
+            console.warn('No Stripe subscription ID found for payment retry');
+            toast.warning(
+              'Payment method updated, but could not process past-due payment. Please contact support.',
+            );
+          }
+        } else if (isCanceled) {
+          console.log('Subscription is canceled, creating new subscription...');
+
+          // Get the count of connected ads accounts for the new subscription
+          const adsAccountsRef = collection(db, 'adsAccounts');
+          const adsAccountsSnap = await getDocs(
+            query(
+              adsAccountsRef,
+              where('User', '==', userRef),
+              where('Is Connected', '==', true),
+            ),
+          );
+          const adsAccountsCount = adsAccountsSnap.size;
+
+          if (adsAccountsCount > 0) {
+            // Create new Stripe subscription
+            const priceId =
+              process.env.NEXT_PUBLIC_STRIPE_SUBSCRIPTION_PRICE_ID;
+            console.log('Creating new Stripe subscription with:', {
+              customerId: stripeCustomerId,
+              priceId,
+              quantity: adsAccountsCount,
+              paymentMethodId: paymentMethod.id,
+            });
+
+            const subRes = await fetch('/api/stripe-subscriptions', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                customerId: stripeCustomerId,
+                priceId,
+                quantity: adsAccountsCount,
+                paymentMethodId: paymentMethod.id,
+              }),
+            });
+
+            const subData = await subRes.json();
+            console.log('New subscription data:', subData);
+
+            if (!subRes.ok || subData.error) {
+              toast.error(
+                (subData.error || 'Stripe subscription error') +
+                  ' Failed to create new subscription. Please contact support.',
+              );
+              set({ loading: false });
+              return;
+            }
+
+            // Update subscription doc with new subscription id and status
+            await updateDoc(subscriptionDoc.ref, {
+              'Stripe Subscription Id': subData.subscriptionId,
+              'Stripe Subscription Item Id(s)':
+                subData.subscriptionItemIds || [],
+              'User Status': 'Paying',
+              'Cancellation Date': null, // Clear cancellation date
+            });
+
+            toast.success(
+              'Payment method updated and new subscription created successfully!',
+            );
+          } else {
+            console.warn(
+              'No connected ads accounts found for new subscription',
+            );
+            toast.warning(
+              'Payment method updated, but no ads accounts are connected. Please connect ads accounts to create a subscription.',
+            );
+          }
+        } else {
+          toast.success('Payment method updated successfully!');
+        }
+
         // Refresh subscription data in settings store
         set({ subscriptionLoaded: false });
         await get().fetchSubscription(userDoc['Company Admin']);
@@ -1932,7 +2095,6 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         const { useAuthStore } = await import('./auth-store');
         await useAuthStore.getState().checkSubscriptionStatus(userDoc.uid);
 
-        toast.success('Payment method updated successfully!');
         onBack();
       }
     } catch (error: any) {
@@ -1943,6 +2105,38 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       set({ loading: false, error: error.message });
     }
   },
+
+  retrySubscriptionPayment: async (
+    subscriptionId: string,
+    customerId: string,
+  ) => {
+    try {
+      console.log(`Retrying payment for subscription: ${subscriptionId}`);
+
+      const response = await fetch('/api/stripe-subscriptions/retry-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subscriptionId,
+          customerId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        console.log('Payment retry successful:', data);
+        return { success: true, data };
+      } else {
+        console.warn('Payment retry failed:', data.error);
+        return { success: false, error: data.error };
+      }
+    } catch (error: any) {
+      console.error('Failed to retry payment:', error);
+      return { success: false, error: error.message || 'Unknown error' };
+    }
+  },
+
   deleteUserWithRecords: async (userId: string, email: string) => {
     set({ loading: true, error: null });
     try {
