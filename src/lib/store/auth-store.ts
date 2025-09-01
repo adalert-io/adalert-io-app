@@ -253,7 +253,7 @@ export async function createUserDocuments(
       'Level Ads': true,
       'Level Keyword': true,
       'Send Email Alerts': true,
-      'Send SMS Alerts': !!user.phoneNumber,
+      'Send SMS Alerts': true,
       'Send Weekly Summaries': true,
       'Severity Critical': true,
       'Severity Low': true,

@@ -171,7 +171,7 @@ export default function AlertsSubtab() {
         <Card className="flex-1 p-4 flex flex-col gap-2 border-2 shadow-none">
           <div className="flex items-center gap-3">
             <Checkbox
-              checked={!!localSettings["Send SMS Alerts"] && !!userDoc?.Telephone && !!userDoc?.["Telephone Dial Code"]}
+              checked={!!localSettings["Send SMS Alerts"]}
               onCheckedChange={() => handleCheckbox("Send SMS Alerts")}
               className={`mr-3 ${CHECKBOX_CLASS}`}
               id="sms-alerts"
