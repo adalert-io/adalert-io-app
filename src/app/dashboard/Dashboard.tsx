@@ -11,7 +11,7 @@ import {
   MagnifyingGlassIcon,
   Pencil1Icon,
 } from '@radix-ui/react-icons';
-import { Filter, FileChartColumn } from 'lucide-react'; // Add FileChartColumn here
+import { Filter, FileChartColumn, MailCheck } from 'lucide-react';
 import { useUserAdsAccountsStore } from '@/lib/store/user-ads-accounts-store';
 import { useDashboardStore } from '@/lib/store/dashboard-store';
 import { useAlertOptionSetsStore } from '@/lib/store/alert-option-sets-store';
@@ -1001,6 +1001,39 @@ export default function Dashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState<string>('');
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
+  
+  // Cache for AI analysis content
+  const [analysisCache, setAnalysisCache] = useState<Record<string, { content: string; date: string }>>({});
+
+  // Helper function to get cache key for an account (based on date + top 20 alerts)
+  const getCacheKey = (accountId: string) => {
+    const today = new Date().toDateString();
+    const top20Alerts = alerts.slice(0, 20);
+    const alertsHash = top20Alerts.map(alert => alert.id).join(',');
+    return `${accountId}_${today}_${alertsHash}`;
+  };
+
+  // Helper function to check if content is cached for current alerts
+  const getCachedContent = (accountId: string) => {
+    const cacheKey = getCacheKey(accountId);
+    const cached = analysisCache[cacheKey];
+    if (cached && cached.date === new Date().toDateString()) {
+      return cached.content;
+    }
+    return null;
+  };
+
+  // Helper function to cache content
+  const cacheContent = (accountId: string, content: string) => {
+    const cacheKey = getCacheKey(accountId);
+    setAnalysisCache(prev => ({
+      ...prev,
+      [cacheKey]: {
+        content,
+        date: new Date().toDateString()
+      }
+    }));
+  };
 
   return (
     <div className='min-h-screen bg-[#f5f7fb]'>
@@ -1657,7 +1690,17 @@ export default function Dashboard() {
                   onClick={async () => {
                     if (!selectedAdsAccount) return;
                     
-                    // Open modal immediately
+                    // Check if content is cached for today
+                    const cachedContent = getCachedContent(selectedAdsAccount.id);
+                    
+                    if (cachedContent) {
+                      // Use cached content - instant load
+                      setIsModalOpen(true);
+                      setModalContent(cachedContent);
+                      return;
+                    }
+                    
+                    // Open modal immediately for new generation
                     setIsModalOpen(true);
                     setIsGeneratingContent(true);
                     setModalContent(''); // Clear previous content
@@ -1665,6 +1708,8 @@ export default function Dashboard() {
                     try {
                       const content = await generateAnalysisContent(selectedAdsAccount);
                       setModalContent(content);
+                      // Cache the content for future use
+                      cacheContent(selectedAdsAccount.id, content);
                     } catch (err) {
                       console.error('Failed to generate analysis', err);
                       setModalContent('Error generating analysis. Please try again.');
@@ -1783,18 +1828,34 @@ export default function Dashboard() {
                     </span>
                   </div>
                   
-                  {/* Title with account name */}
-                  <div className="flex items-center gap-2 ml-4 pl-4 border-l border-gray-300">
+                  {/* Title with account name and email button */}
+                  <div className="flex items-center gap-4 ml-4 pl-4 border-l border-gray-300">
                     <FileChartColumn className="h-5 w-5 text-[#015AFD]" />
-                    <div>
-                      <h2 className='text-lg font-semibold text-gray-900'>
-                        PPC Action Plan
-                      </h2>
-                      {selectedAdsAccount && (
-                        <p className="text-sm text-gray-600">
-                          {selectedAdsAccount['Account Name Editable']} ({formatAccountNumber(selectedAdsAccount['Id'])})
-                        </p>
-                      )}
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <h2 className='text-lg font-semibold text-gray-900'>
+                          PPC Action Plan
+                        </h2>
+                        {selectedAdsAccount && (
+                          <p className="text-sm text-gray-600">
+                            {selectedAdsAccount['Account Name Editable']} ({formatAccountNumber(selectedAdsAccount['Id'])})
+                          </p>
+                        )}
+                      </div>
+                      
+                      {/* Email Button */}
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        className='h-8 gap-2 text-[#015AFD] border-[#015AFD] hover:bg-[#015AFD] hover:text-white'
+                        onClick={() => {
+                          // TODO: Implement email functionality
+                          console.log('Send email clicked');
+                        }}
+                      >
+                        <MailCheck className="h-4 w-4" />
+                        Send me as email
+                      </Button>
                     </div>
                   </div>
                 </div>
