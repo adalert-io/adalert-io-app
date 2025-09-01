@@ -146,12 +146,12 @@ export function Header() {
           {trialDaysLeft > 0 ? (
             <>You're on a free trial with{' '}</>
           ) : (
-            <>Your free trial has ended - </>
+            <>Your free trial has ended. </>
           )}
         </span>
         {trialDaysLeft > 0 && (
           <span className='text-gray-900 text-[13px] font-bold'>
-            {trialDaysLeft} days left
+            {trialDaysLeft} days left.
           </span>
         )}
         <span className='text-gray-900 text-[13px]'>
