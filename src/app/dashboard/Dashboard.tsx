@@ -1812,7 +1812,7 @@ export default function Dashboard() {
           <div className='fixed inset-0 bg-black/70 flex items-center justify-center z-50'>
             <div className='bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col'>
               {/* Header */}
-              <div className='flex items-center justify-between p-6 border-b border-gray-200'>
+              <div className='flex items-center justify-between p-6 border-b border-gray-200 align-middle'>
                 <div className="flex items-center gap-3">
                   {/* Logo */}
                   <div className="flex items-center gap-2">
@@ -1847,7 +1847,7 @@ export default function Dashboard() {
                       <Button
                         variant='outline'
                         size='sm'
-                        className='h-8 gap-2 text-[#015AFD] border-[#015AFD] hover:bg-[#015AFD] hover:text-white'
+                        className='h-8 gap-2 text-[#fff] border-[#015AFD] bg-[#015AFD] hover:text-015AFD hover:bg-blue-700'
                         onClick={() => {
                           // TODO: Implement email functionality
                           console.log('Send email clicked');
