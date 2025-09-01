@@ -356,7 +356,7 @@ export default function Summary() {
         </div>
 
         {/* Table */}
-        <div className='bg-white rounded-2xl shadow-none border border-[#e5e5e5] overflow-hidden mr-4'>
+        <div className='bg-white rounded-2xl shadow-none border border-[#e5e5e5] overflow-hidden'>
           <div className='max-[991px]:block whitespace-nowrap overflow-x-auto'>
             <table className='min-w-full text-[0.75rem]'>
               <thead className='bg-gray-50 border-b border-gray-200'>
