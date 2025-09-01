@@ -142,11 +142,11 @@ export function AddAdsAccount() {
       adsAccounts.map((acc, i) =>
         i === idx
           ? {
-              ...acc,
-              ["Monthly Budget"]: raw,
-              ["Daily Budget"]: dailyBudget,
-              ["Is Selected"]: Number(raw) >= 0,
-            }
+            ...acc,
+            ["Monthly Budget"]: raw,
+            ["Daily Budget"]: dailyBudget,
+            ["Is Selected"]: Number(raw) >= 0,
+          }
           : acc,
       ),
     );
@@ -302,9 +302,9 @@ export function AddAdsAccount() {
                 : "Let's add your first ads account(s)"}
             </h1>
             {adsAccounts && adsAccounts.length > 0 && (
-              <div className="flex items-center flex-col text-gray-500 text-sm mb-6 md:mb-8 w-full justify-center md:flex-row gap-1">
+              <div className="flex items-center text-gray-500 text-sm mb-6 md:mb-8 w-full justify-center flex-wrap gap-1">
                 <InfoCircledIcon className="w-[14px] mr-2 w-4 h-4 text-blue-500" />
-                Not the right ads account?{" "}
+                Not the right ads account?
                 <button
                   className="ml-1 text-blue-600 font-normal hover:text-blue-800 hover:cursor-pointer"
                   onClick={handleConnectGoogleAds}
@@ -314,6 +314,7 @@ export function AddAdsAccount() {
                 </button>
                 &nbsp;to switch to a different one.
               </div>
+
             )}
             {adsAccounts && adsAccounts.length > 0 && (
               <div className="w-full max-h-112 overflow-y-auto flex flex-col gap-4 mb-6 md:mb-8 border border-gray-200 rounded-[15px] p-2 overflow-x-hidden thin-scrollbar">
@@ -328,16 +329,15 @@ export function AddAdsAccount() {
                   const inputValue = showRaw
                     ? editingValue
                     : acc["Monthly Budget"]
-                    ? Number(acc["Monthly Budget"]).toLocaleString()
-                    : "";
+                      ? Number(acc["Monthly Budget"]).toLocaleString()
+                      : "";
                   return (
                     <div
                       key={acc.id || idx}
-                      className={`flex flex-col border rounded-xl p-4 bg-white border-[#5e5e5e] cursor-pointer transition-all md:flex-row ${
-                        isSelected || isConnected
+                      className={`flex flex-col border rounded-xl p-4 bg-white border-[#5e5e5e] cursor-pointer transition-all md:flex-row ${isSelected || isConnected
                           ? "border-blue-600"
                           : "border-gray-200"
-                      }`}
+                        }`}
                       onClick={() => handleCardClick(idx)}
                     >
                       <div className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 md:w-1/2">
@@ -369,11 +369,10 @@ export function AddAdsAccount() {
                             type="text"
                             inputMode="numeric"
                             min={0}
-                            className={`flex-1 border rounded-lg px-2 py-2 text-base md:text-lg font-semibold outline-none transition-all text-right truncate ${
-                              isInvalid
+                            className={`flex-1 border rounded-lg px-2 py-2 text-base md:text-lg font-semibold outline-none transition-all text-right truncate ${isInvalid
                                 ? "border-red-500 focus:border-red-500"
                                 : "border-gray-200"
-                            }`}
+                              }`}
                             value={inputValue}
                             onFocus={() =>
                               handleBudgetFocus(
