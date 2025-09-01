@@ -1432,7 +1432,7 @@ export default function Dashboard() {
             {/* Parent row: behaves like row on desktop, column on mobile */}
             <div className='flex justify-between items-center max-[599px]:flex-col max-[599px]:gap-3'>
               {/* Left Side (Heading, tooltips, settings, selection) */}
-              <div className='flex items-center gap-2 flex-wrap'>
+              <div className='flex items-center gap-2 flex-wrap pl-[18px]'>
                 <h2 className='text-lg font-bold text-gray-900'>Alerts</h2>
 
                 {alertsLoading && (
