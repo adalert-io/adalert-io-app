@@ -306,7 +306,7 @@ export function AddAdsAccount() {
                 <InfoCircledIcon className="w-[14px] mr-2 w-4 h-4 text-blue-500" />
                 Not the right ads account?{" "}
                 <button
-                  className="ml-1 text-blue-600 underline font-medium hover:text-blue-800 hover:cursor-pointer"
+                  className="ml-1 text-blue-600 font-normal hover:text-blue-800 hover:cursor-pointer"
                   onClick={handleConnectGoogleAds}
                   type="button"
                 >
