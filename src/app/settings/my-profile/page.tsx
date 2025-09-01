@@ -175,7 +175,7 @@ export default function MyProfileTab() {
             email alerts or control the frequency from{' '}
             <Link
               href='/settings/settings/alerts'
-              className='text-blue-600 underline'
+              className='text-blue-600'
             >
               alert settings
             </Link>
