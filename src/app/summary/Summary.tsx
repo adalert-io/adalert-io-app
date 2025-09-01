@@ -385,7 +385,7 @@ export default function Summary() {
                           className='max-w-xs text-xs'
                         >
                           If the ad account has not had any impressions in the
-                          last two hours, the status will change to 'No Showing
+                          last two hours, the status will change to 'Not Showing
                           Ads'.
                         </TooltipContent>
                       </Tooltip>
