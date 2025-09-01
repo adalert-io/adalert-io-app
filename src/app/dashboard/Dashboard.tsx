@@ -11,7 +11,7 @@ import {
   MagnifyingGlassIcon,
   Pencil1Icon,
 } from '@radix-ui/react-icons';
-import { Filter } from 'lucide-react';
+import { Filter, FileChartColumn } from 'lucide-react'; // Add FileChartColumn here
 import { useUserAdsAccountsStore } from '@/lib/store/user-ads-accounts-store';
 import { useDashboardStore } from '@/lib/store/dashboard-store';
 import { useAlertOptionSetsStore } from '@/lib/store/alert-option-sets-store';
@@ -50,6 +50,7 @@ import {
 import { saveAs } from 'file-saver';
 import type { Alert } from '@/lib/store/dashboard-store';
 import { formatAccountNumber } from '@/lib/utils';
+import Image from 'next/image';
 
 const KPI_PERIODS = [
   { label: '7 days vs. prior', key: '7' },
@@ -258,6 +259,7 @@ export default function Dashboard() {
     updateMonthlyBudget,
     archiveAlerts,
     generateAlertsPdf,
+    generateAnalysisContent, // Add this line
     lastFetchedAccountId,
     setLastFetchedAccountId,
   } = useDashboardStore();
@@ -996,6 +998,9 @@ export default function Dashboard() {
 
   const [isArchiving, setIsArchiving] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalContent, setModalContent] = useState<string>('');
+  const [isGeneratingContent, setIsGeneratingContent] = useState(false);
 
   return (
     <div className='min-h-screen bg-[#f5f7fb]'>
@@ -1026,7 +1031,7 @@ export default function Dashboard() {
                     fill='#4CAF50'
                   ></path>
                   <path
-                    d='M3.17847 26.597C3.17825 26.5975 3.17814 26.5979 3.17798 26.5984C3.44956 26.6564 3.73098 26.6875 4.01984 26.6875C6.23993 26.6875 8.0397 24.8844 8.0397 22.6601C8.0397 22.1659 7.95045 21.6928 7.78792 21.2553L5.8196 24.671C5.22739 25.6986 4.25188 26.366 3.17847 26.597Z'
+                    d='M3.17847 26.597C3.17825 26.5975 3.17814 26.5979 3.17798 26.5984C3.44956 26.6564 3.73098 26.6875 4.01984 26.6875C6.23993 26.6875 8.0397 24.8844 8.0397 22.6601C8.0397 22.1659 7.95045 21.6928 7.78792 21.2553L5.81960 24.671C5.22739 25.6986 4.25188 26.366 3.17847 26.597Z'
                     fill='#43A047'
                   ></path>
                   <path
@@ -1643,6 +1648,35 @@ export default function Dashboard() {
                   </span>
                 </Button>
 
+                {/* Analysis button */}
+                <Button
+                  variant='outline'
+                  size='icon'
+                  className='relative'
+                  disabled={isGeneratingContent}
+                  onClick={async () => {
+                    if (!selectedAdsAccount) return;
+                    
+                    // Open modal immediately
+                    setIsModalOpen(true);
+                    setIsGeneratingContent(true);
+                    setModalContent(''); // Clear previous content
+                    
+                    try {
+                      const content = await generateAnalysisContent(selectedAdsAccount);
+                      setModalContent(content);
+                    } catch (err) {
+                      console.error('Failed to generate analysis', err);
+                      setModalContent('Error generating analysis. Please try again.');
+                    } finally {
+                      setIsGeneratingContent(false);
+                    }
+                  }}
+                  aria-label='View Analysis'
+                >
+                  <FileChartColumn className='w-6 h-6 text-[#015AFD]' />
+                </Button>
+
                 {/* CSV button */}
                 <Button
                   variant='outline'
@@ -1727,6 +1761,208 @@ export default function Dashboard() {
             )}
           </div>
         </div>
+
+        {/* Analysis Modal */}
+        {isModalOpen && (
+          <div className='fixed inset-0 bg-black/70 flex items-center justify-center z-50'>
+            <div className='bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col'>
+              {/* Header */}
+              <div className='flex items-center justify-between p-6 border-b border-gray-200'>
+                <div className="flex items-center gap-3">
+                  {/* Logo */}
+                  <div className="flex items-center gap-2">
+                    <Image
+                      src='/images/adalert-logo.avif'
+                      alt='AdAlert Logo'
+                      width={24}
+                      height={24}
+                      priority
+                    />
+                    <span className='text-lg font-bold text-gray-900 tracking-tight'>
+                      adAlert.io
+                    </span>
+                  </div>
+                  
+                  {/* Title with account name */}
+                  <div className="flex items-center gap-2 ml-4 pl-4 border-l border-gray-300">
+                    <FileChartColumn className="h-5 w-5 text-[#015AFD]" />
+                    <div>
+                      <h2 className='text-lg font-semibold text-gray-900'>
+                        PPC Action Plan
+                      </h2>
+                      {selectedAdsAccount && (
+                        <p className="text-sm text-gray-600">
+                          {selectedAdsAccount['Account Name Editable']} ({formatAccountNumber(selectedAdsAccount['Id'])})
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className='text-gray-400 hover:text-gray-600 transition-colors'
+                >
+                  <XIcon className='w-5 h-5' />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className='flex-1 overflow-y-auto p-6'>
+                {isGeneratingContent ? (
+                  <div className='space-y-6'>
+                    {/* Header skeleton */}
+                    <div className='bg-gradient-to-r from-[#015AFD]/5 to-blue-50 p-6 rounded-lg border border-blue-100'>
+                      <div className='flex items-center gap-2 mb-3'>
+                        <div className='w-2 h-2 bg-[#015AFD] rounded-full animate-pulse'></div>
+                        <div className='h-4 bg-gray-200 rounded w-48 animate-pulse'></div>
+                      </div>
+                      <div className='h-4 bg-gray-200 rounded w-full animate-pulse mb-2'></div>
+                      <div className='h-4 bg-gray-200 rounded w-3/4 animate-pulse'></div>
+                    </div>
+                    
+                    {/* Content skeleton */}
+                    <div className='bg-white border border-gray-200 rounded-lg p-8 shadow-sm space-y-6'>
+                      {/* AI generating message */}
+                      <div className='flex items-center justify-center py-8'>
+                        <div className='flex items-center gap-3'>
+                          <svg
+                            className='animate-spin h-6 w-6 text-[#015AFD]'
+                            xmlns='http://www.w3.org/2000/svg'
+                            fill='none'
+                            viewBox='0 0 24 24'
+                          >
+                            <circle
+                              className='opacity-25'
+                              cx='12'
+                              cy='12'
+                              r='10'
+                              stroke='currentColor'
+                              strokeWidth='4'
+                            />
+                            <path
+                              className='opacity-75'
+                              fill='currentColor'
+                              d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
+                            />
+                          </svg>
+                          <span className='text-lg text-gray-600 font-medium'>
+                            AI is analyzing your alerts and generating recommendations...
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Skeleton content blocks */}
+                      <div className='space-y-4'>
+                        {/* Skeleton heading */}
+                        <div className='h-6 bg-gray-200 rounded w-1/3 animate-pulse'></div>
+                        {/* Skeleton paragraphs */}
+                        <div className='space-y-2'>
+                          <div className='h-4 bg-gray-200 rounded w-full animate-pulse'></div>
+                          <div className='h-4 bg-gray-200 rounded w-5/6 animate-pulse'></div>
+                          <div className='h-4 bg-gray-200 rounded w-4/5 animate-pulse'></div>
+                        </div>
+                        
+                        {/* Another skeleton heading */}
+                        <div className='h-6 bg-gray-200 rounded w-1/4 animate-pulse mt-6'></div>
+                        {/* More skeleton paragraphs */}
+                        <div className='space-y-2'>
+                          <div className='h-4 bg-gray-200 rounded w-full animate-pulse'></div>
+                          <div className='h-4 bg-gray-200 rounded w-3/4 animate-pulse'></div>
+                          <div className='h-4 bg-gray-200 rounded w-5/6 animate-pulse'></div>
+                        </div>
+                        
+                        {/* Another skeleton heading */}
+                        <div className='h-6 bg-gray-200 rounded w-1/3 animate-pulse mt-6'></div>
+                        {/* More skeleton paragraphs */}
+                        <div className='space-y-2'>
+                          <div className='h-4 bg-gray-200 rounded w-full animate-pulse'></div>
+                          <div className='h-4 bg-gray-200 rounded w-4/5 animate-pulse'></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Footer skeleton */}
+                    <div className='bg-gray-50 p-4 rounded-lg border border-gray-200'>
+                      <div className='h-3 bg-gray-200 rounded w-1/4 mx-auto animate-pulse'></div>
+                    </div>
+                  </div>
+                ) : modalContent ? (
+                  <div className='space-y-6'>
+                    {/* Professional PDF-style formatting */}
+                    <div className='bg-gradient-to-r from-[#015AFD]/5 to-blue-50 p-6 rounded-lg border border-blue-100'>
+                      {/* Date and Account Info */}
+                      <div className='mb-4'>
+                        <p className='text-sm text-gray-600 mb-1'>
+                          <span className='font-medium'>Date Created:</span> {new Date().toLocaleDateString('en-US', { 
+                            year: 'numeric', 
+                            month: '2-digit', 
+                            day: '2-digit' 
+                          })}
+                        </p>
+                        {selectedAdsAccount && (
+                          <p className='text-sm text-gray-600'>
+                            <span className='font-medium'>Account Name:</span> {selectedAdsAccount['Account Name Editable']} ({formatAccountNumber(selectedAdsAccount['Id'])})
+                          </p>
+                        )}
+                      </div>
+                      
+                      {/* PPC Action Plan Info */}
+                      <div className='flex items-center gap-2 mb-3'>
+                        <div className='w-2 h-2 bg-[#015AFD] rounded-full'></div>
+                        <p className='text-sm font-semibold text-[#015AFD] uppercase tracking-wide'>
+                          PPC Action Plan - {selectedAdsAccount?.['Account Name Editable'] || 'Account'}
+                        </p>
+                      </div>
+                      <p className='text-sm text-gray-600 leading-relaxed'>
+                        Actionable report based on the 20 most recent alerts, prioritized by the importance of KPIs.
+                      </p>
+                    </div>
+                    
+                    {/* Content with PDF-style formatting */}
+                    <div className='bg-white border border-gray-200 rounded-lg p-8 shadow-sm'>
+                      <div 
+                        className='space-y-6 text-gray-800 leading-relaxed'
+                        style={{
+                          fontFamily: 'system-ui, -apple-system, sans-serif',
+                          fontSize: '15px',
+                          lineHeight: '1.7'
+                        }}
+                        dangerouslySetInnerHTML={{
+                          __html: modalContent
+                            .replace(/\*\*(.*?)\*\*/g, '<h3 style="font-size: 16px; font-weight: 600; color: #1f2937; margin: 24px 0 12px 0; border-left: 4px solid #015AFD; padding-left: 16px; background: #f8fafc; padding: 12px 16px; border-radius: 6px;">$1</h3>')
+                            .replace(/\n\n/g, '</p><p style="margin: 16px 0; line-height: 1.7;">')
+                            .replace(/^/, '<p style="margin: 16px 0; line-height: 1.7;">')
+                            .replace(/$/, '</p>')
+                        }}
+                      />
+                    </div>
+
+                    {/* Footer with branding */}
+                    <div className='bg-gray-50 p-4 rounded-lg border border-gray-200 text-center'>
+                      <p className='text-xs text-gray-500'>
+                        Generated by adAlert.io AI • {new Date().toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className='text-center text-gray-500 py-16'>
+                    <FileChartColumn className='h-16 w-16 mx-auto mb-4 text-gray-300' />
+                    <h3 className='text-lg font-medium text-gray-900 mb-2'>
+                      Ready to Generate Your Action Plan
+                    </h3>
+                    <p className='text-gray-600'>
+                      Click the analysis button to get AI-powered recommendations for your ads
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

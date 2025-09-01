@@ -212,7 +212,7 @@ export function Header() {
 
             {user && userAdsAccounts.length > 0 && (
               <div
-                className='relative ml-4 hidden md:inline-block z-[70]'
+                className='relative ml-4 hidden md:inline-block'
                 ref={dropdownRef}
               >
                 <button
