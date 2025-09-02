@@ -1228,10 +1228,10 @@ export default function Dashboard() {
           <div className='flex gap-4 flex-nowrap justify-center max-w-full h-full md:flex-wrap  lg:flex-wrap max-[767px]:pb-0 flex-nowrap max-[1211px]:justify-start flex'>
             <Card className='w-full sm:w-64 md:w-[190px] h-[90px] shadow-none bg-white border-l-4 border-[#ED1A22] max-[767px]:w-[32%] '>
               <CardContent className='h-full flex flex-col items-center justify-center p-2'>
-                <span className='text-2xl font-bold text-[#E53935]'>
+                <span className='text-2xl font-bold text-gray-800'>
                   {criticalCount}
                 </span>
-                <span className='text-sm font-semibold text-gray-700 mt-1'>
+                <span className='text-sm font-semibold text-gray-800 mt-1'>
                   Critical
                 </span>
               </CardContent>
@@ -1239,10 +1239,10 @@ export default function Dashboard() {
 
             <Card className='w-full sm:w-64 md:w-[190px] h-[90px] shadow-none bg-white border-l-4 border-[#FF8028] max-[767px]:w-[32%]'>
               <CardContent className='h-full flex flex-col items-center justify-center p-2'>
-                <span className='text-2xl font-bold text-[#FBC02D]'>
+                <span className='text-2xl font-bold text-gray-800'>
                   {mediumCount}
                 </span>
-                <span className='text-sm font-semibold text-gray-700 mt-1'>
+                <span className='text-sm font-semibold text-gray-800 mt-1'>
                   Medium
                 </span>
               </CardContent>
@@ -1250,10 +1250,10 @@ export default function Dashboard() {
 
             <Card className='w-full sm:w-64 md:w-[190px] h-[90px] shadow-none bg-white border-l-4 border-[#ECE31B] max-[767px]:w-[32%]'>
               <CardContent className='h-full flex flex-col items-center justify-center p-2'>
-                <span className='text-2xl font-bold text-[#FFEB3B]'>
+                <span className='text-2xl font-bold text-gray-800'>
                   {lowCount}
                 </span>
-                <span className='text-sm font-semibold text-gray-700 mt-1'>
+                <span className='text-sm font-semibold text-gray-800 mt-1'>
                   Low
                 </span>
               </CardContent>
