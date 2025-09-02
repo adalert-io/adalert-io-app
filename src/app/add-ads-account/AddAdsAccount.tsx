@@ -304,15 +304,11 @@ export function AddAdsAccount() {
             {adsAccounts && adsAccounts.length > 0 && (
               <div className="flex items-center text-gray-500 text-sm mb-6 md:mb-8 w-full justify-center flex-wrap gap-1">
                 <InfoCircledIcon className="w-[14px] mr-2 w-4 h-4 text-blue-500" />
-                Not the right ads account?
-                <button
-                  className="ml-1 text-blue-600 font-normal hover:text-blue-800 hover:cursor-pointer"
+                Not the right ads account? <button
+                  className="text-blue-600 font-normal hover:text-blue-800 hover:cursor-pointer"
                   onClick={handleConnectGoogleAds}
                   type="button"
-                >
-                  Click here
-                </button>
-                &nbsp;to switch to a different one.
+                >Click here</button>to switch to a different one.
               </div>
 
             )}
