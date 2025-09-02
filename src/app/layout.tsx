@@ -19,6 +19,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "AdAlert.io - Ad Monitoring Platform",
   description: "Monitor your ads and get real-time alerts",
+  icons: {
+    icon: '/images/adalert-logo.avif',
+    shortcut: '/images/adalert-logo.avif',
+  },
 };
 
 export default function RootLayout({
