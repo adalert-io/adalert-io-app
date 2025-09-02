@@ -10,6 +10,7 @@ import {
   FileIcon,
   MagnifyingGlassIcon,
   Pencil1Icon,
+  InfoCircledIcon,
 } from '@radix-ui/react-icons';
 import { Filter, FileChartColumn, MailCheck } from 'lucide-react';
 import { useUserAdsAccountsStore } from '@/lib/store/user-ads-accounts-store';
@@ -1489,8 +1490,28 @@ export default function Dashboard() {
 
               {/* Spend Projection */}
               <div className='flex justify-end items-end px-6 pb-3 pt-1'>
-                <span className='text-xs text-[#7A7D9C] font-medium'>
-                  Spend Projection:{' '}
+                <span className='text-xs text-[#7A7D9C] font-medium flex items-center gap-1'>
+                 
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type='button'
+                        className='p-0.5 rounded hover:bg-gray-100 transition-colors'
+                        aria-label='Spend projection information'
+                      >
+                        <InfoCircledIcon className='w-3 h-3 text-blue-500' />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side='top'
+                      align='center'
+                      className='max-w-xs text-xs'
+                    >
+                      Spend projections improve from the second day of the month onward and get more accurate as the month progresses.
+                    </TooltipContent>
+                  </Tooltip>
+                  Spend Projection
+                  :{' '}
                   {selectedAdsAccount?.['Currency Symbol'] || '$'}
                   {(() => {
                     const spend = Number(dashboardDaily?.['Spend MTD'] ?? 0);
