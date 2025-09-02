@@ -1659,7 +1659,7 @@ export default function Dashboard() {
                   <div className='flex items-center border rounded-lg px-3 py-1 bg-white shadow-none focus-within:ring-2 focus-within:ring-blue-200 transition-all min-w-[200px]'>
                     <input
                       className='outline-none border-none bg-transparent text-sm text-gray-500 placeholder-gray-400 flex-1'
-                      placeholder='Search for alerts'
+                      placeholder='Search for alert(s)'
                       value={searchValue}
                       onChange={(e) => setSearchValue(e.target.value)}
                       autoFocus
