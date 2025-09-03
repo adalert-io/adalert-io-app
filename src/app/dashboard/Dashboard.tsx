@@ -1902,7 +1902,7 @@ export default function Dashboard() {
           <div className='fixed inset-0 bg-black/70 flex items-center justify-center z-50'>
             <div className='bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col'>
               {/* Header */}
-              <div className='flex items-end justify-between p-6 border-b border-gray-200 align-middle'>
+              <div className='relative flex items-end justify-between p-6 border-b border-gray-200 align-middle'>
                 <div className="flex items-center gap-3">
                   {/* Logo */}
                   <div className="flex items-center gap-2">
@@ -1933,25 +1933,18 @@ export default function Dashboard() {
                         )}
                       </div>
                       
-                      {/* Email Button with X on left */}
+                      {/* Email Button first */}
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setIsModalOpen(false)}
-                          className='h-8 w-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md border border-gray-200 transition-colors'
-                        >
-                          <XIcon className='w-4 h-4' />
-                        </button>
                         <Button
-                          variant='outline'
                           size='sm'
-                          className='h-8 gap-2 text-[#015AFD] border-[#015AFD] hover:bg-[#015AFD] hover:text-white disabled:opacity-50 disabled:cursor-not-allowed'
+                          className='h-8 gap-2 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed'
                           onClick={sendEmailReport}
                           disabled={isEmailSending || !modalContent || isGeneratingContent}
                         >
                           {isEmailSending ? (
                             <>
                               <svg
-                                className="animate-spin h-4 w-4"
+                                className="animate-spin h-4 w-4 text-white"
                                 xmlns="http://www.w3.org/2000/svg"
                                 fill="none"
                                 viewBox="0 0 24 24"
@@ -1981,7 +1974,7 @@ export default function Dashboard() {
                             </>
                           ) : (
                             <>
-                              <MailCheck className="h-4 w-4" />
+                              <MailCheck className="h-4 w-4 text-white" />
                               Send
                             </>
                           )}
@@ -1990,6 +1983,14 @@ export default function Dashboard() {
                     </div>
                   </div>
                 </div>
+                
+                {/* X button on far right */}
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className='h-8 w-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md border border-gray-200 transition-colors'
+                >
+                  <XIcon className='w-4 h-4' />
+                </button>
               </div>
 
               {/* Content */}
@@ -2096,7 +2097,7 @@ export default function Dashboard() {
                       <div className='flex items-center gap-2 mb-3'>
                         <div className='w-2 h-2 bg-[#015AFD] rounded-full'></div>
                         <p className='text-sm font-semibold text-[#015AFD] uppercase tracking-wide'>
-                          PPC Action Plan - {selectedAdsAccount?.['Account Name Editable'] || 'Account'}
+                          PPC Action Plan - {selectedAdsAccount && selectedAdsAccount['Account Name Editable'] ? selectedAdsAccount['Account Name Editable'] : 'Account'}
                         </p>
                       </div>
                       <p className='text-sm text-gray-600 leading-relaxed'>
