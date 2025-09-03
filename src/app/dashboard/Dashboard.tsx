@@ -154,11 +154,10 @@ function KpiMetricsRow({
           <button
             key={p.key}
             type='button'
-            className={`px-4 py-2 rounded-lg font-semibold border transition-colors text-base ${
-              activePeriod === p.key
+            className={`px-4 py-2 rounded-lg font-semibold border transition-colors text-base ${activePeriod === p.key
                 ? 'bg-[#015AFD] text-white border-[#015AFD]'
                 : 'bg-white text-[#015AFD] border-[#015AFD] hover:bg-blue-50'
-            }`}
+              }`}
             onClick={() => setActivePeriod(p.key)}
           >
             {p.label}
@@ -180,15 +179,15 @@ function KpiMetricsRow({
                 pct > 0
                   ? 'text-red-600'
                   : pct < 0
-                  ? 'text-green-600'
-                  : 'text-black';
+                    ? 'text-green-600'
+                    : 'text-black';
             } else {
               pctColor =
                 pct > 0
                   ? 'text-green-600'
                   : pct < 0
-                  ? 'text-red-600'
-                  : 'text-black';
+                    ? 'text-red-600'
+                    : 'text-black';
             }
           }
           let valueDisplay = value;
@@ -209,9 +208,9 @@ function KpiMetricsRow({
             pct === 0
               ? '0%'
               : `${pct > 0 ? '+' : ''}${Number(pct).toLocaleString('en-US', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}%`;
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}%`;
 
           return (
             <Card
@@ -488,99 +487,99 @@ export default function Dashboard() {
     expandedRowIds: string[],
     setExpandedRowIds: React.Dispatch<React.SetStateAction<string[]>>,
   ): ColumnDef<any>[] => [
-    {
-      id: 'select',
-      header: ({ table }) => (
-        <Checkbox
-          checked={table.getIsAllPageRowsSelected()}
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label='Select all'
-          className={checkboxClass}
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label='Select row'
-          className={checkboxClass}
-        />
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: 'date',
-      header: 'Found',
-      cell: ({ row }) => {
-        const dateObj = row.original['Date Found']?.toDate?.();
-        const formatted = dateObj ? moment(dateObj).format('DD MMM') : '-';
-        return <span>{formatted}</span>;
-      },
-    },
-    {
-      accessorKey: 'severity',
-      header: 'Severity',
-      cell: ({ row }) => {
-        let color = ALERT_SEVERITY_COLORS.LOW; // default fallback
-
-        if (
-          row.original.Severity?.toLowerCase() ===
-          ALERT_SEVERITIES.CRITICAL.toLowerCase()
-        ) {
-          color = ALERT_SEVERITY_COLORS.CRITICAL;
-        } else if (
-          row.original.Severity?.toLowerCase() ===
-          ALERT_SEVERITIES.MEDIUM.toLowerCase()
-        ) {
-          color = ALERT_SEVERITY_COLORS.MEDIUM;
-        }
-
-        return (
-          <span
-            className='inline-block w-3 h-3 rounded-full'
-            style={{ backgroundColor: color }}
+      {
+        id: 'select',
+        header: ({ table }) => (
+          <Checkbox
+            checked={table.getIsAllPageRowsSelected()}
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            aria-label='Select all'
+            className={checkboxClass}
           />
-        );
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label='Select row'
+            className={checkboxClass}
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
       },
-    },
+      {
+        accessorKey: 'date',
+        header: 'Found',
+        cell: ({ row }) => {
+          const dateObj = row.original['Date Found']?.toDate?.();
+          const formatted = dateObj ? moment(dateObj).format('DD MMM') : '-';
+          return <span>{formatted}</span>;
+        },
+      },
+      {
+        accessorKey: 'severity',
+        header: 'Severity',
+        cell: ({ row }) => {
+          let color = ALERT_SEVERITY_COLORS.LOW; // default fallback
 
-    {
-      accessorKey: 'description',
-      header: 'Description',
-      cell: ({ row }) => <span>{row.original.Alert}</span>,
-    },
-    {
-      accessorKey: 'type',
-      header: 'Type',
-      cell: ({ row }) => <span>{row.original.Type}</span>,
-    },
-    {
-      accessorKey: 'level',
-      header: 'Level',
-      cell: ({ row }) => <span>{row.original.Level}</span>,
-    },
-    {
-      id: 'expand',
-      header: '',
-      cell: ({ row }) => {
-        const isExpanded = expandedRowIds.includes(row.id);
-        return (
-          <Button
-            variant='ghost'
-            size='icon'
-            onClick={() => {
-              setExpandedRowIds(isExpanded ? [] : [row.id]); // ✅ only 1 open at a time
-            }}
-          >
-            {isExpanded ? <ChevronUp /> : <ChevronDown />}
-          </Button>
-        );
+          if (
+            row.original.Severity?.toLowerCase() ===
+            ALERT_SEVERITIES.CRITICAL.toLowerCase()
+          ) {
+            color = ALERT_SEVERITY_COLORS.CRITICAL;
+          } else if (
+            row.original.Severity?.toLowerCase() ===
+            ALERT_SEVERITIES.MEDIUM.toLowerCase()
+          ) {
+            color = ALERT_SEVERITY_COLORS.MEDIUM;
+          }
+
+          return (
+            <span
+              className='inline-block w-3 h-3 rounded-full'
+              style={{ backgroundColor: color }}
+            />
+          );
+        },
       },
-      enableSorting: false,
-      enableHiding: false,
-    },
-  ];
+
+      {
+        accessorKey: 'description',
+        header: 'Description',
+        cell: ({ row }) => <span>{row.original.Alert}</span>,
+      },
+      {
+        accessorKey: 'type',
+        header: 'Type',
+        cell: ({ row }) => <span>{row.original.Type}</span>,
+      },
+      {
+        accessorKey: 'level',
+        header: 'Level',
+        cell: ({ row }) => <span>{row.original.Level}</span>,
+      },
+      {
+        id: 'expand',
+        header: '',
+        cell: ({ row }) => {
+          const isExpanded = expandedRowIds.includes(row.id);
+          return (
+            <Button
+              variant='ghost'
+              size='icon'
+              onClick={() => {
+                setExpandedRowIds(isExpanded ? [] : [row.id]); // ✅ only 1 open at a time
+              }}
+            >
+              {isExpanded ? <ChevronUp /> : <ChevronDown />}
+            </Button>
+          );
+        },
+        enableSorting: false,
+        enableHiding: false,
+      },
+    ];
 
   function AlertsDataTable({
     pageSize,
@@ -703,11 +702,10 @@ export default function Dashboard() {
                     {row.getVisibleCells().map((cell) => (
                       <td
                         key={cell.id}
-                        className={`px-4 py-3 text-gray-900 text-[.95rem] ${
-                          expandedRowIds.includes(row.id)
+                        className={`px-4 py-3 text-gray-900 text-[.95rem] ${expandedRowIds.includes(row.id)
                             ? 'font-medium'
                             : 'font-normal'
-                        }`}
+                          }`}
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
@@ -742,13 +740,13 @@ export default function Dashboard() {
             Showing{' '}
             {table.getRowModel().rows.length > 0
               ? table.getState().pagination.pageIndex *
-                  table.getState().pagination.pageSize +
-                1
+              table.getState().pagination.pageSize +
+              1
               : 0}{' '}
             to{' '}
             {Math.min(
               (table.getState().pagination.pageIndex + 1) *
-                table.getState().pagination.pageSize,
+              table.getState().pagination.pageSize,
               table.getFilteredRowModel().rows.length,
             )}{' '}
             of {table.getFilteredRowModel().rows.length} results
@@ -1006,7 +1004,7 @@ export default function Dashboard() {
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
   const [isEmailSending, setIsEmailSending] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
-  
+
   // Cache for AI analysis content
   const [analysisCache, setAnalysisCache] = useState<Record<string, { content: string; date: string }>>({});
 
@@ -1043,9 +1041,9 @@ export default function Dashboard() {
   // Email function
   const sendEmailReport = async () => {
     if (!modalContent || !selectedAdsAccount || !user || !userDoc) return;
-    
+
     setIsEmailSending(true);
-    
+
     try {
       const response = await fetch('/api/send-email', {
         method: 'POST',
@@ -1060,10 +1058,10 @@ export default function Dashboard() {
             accountName: selectedAdsAccount['Account Name Editable'],
             accountNumber: formatAccountNumber(selectedAdsAccount['Id']),
             reportContent: modalContent,
-            dateGenerated: new Date().toLocaleDateString('en-US', { 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
+            dateGenerated: new Date().toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
             }),
             userName: userDoc.Name || user.displayName || 'User',
             // Clean up the content for email (remove HTML tags)
@@ -1071,7 +1069,7 @@ export default function Dashboard() {
           }
         })
       });
-      
+
       if (response.ok) {
         setEmailSent(true);
         console.log('Email sent successfully!');
@@ -1130,13 +1128,12 @@ export default function Dashboard() {
                 </svg>
               </span>
               <span
-                className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 ${
-                  !adsLabel
+                className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 ${!adsLabel
                     ? 'bg-[#E9F6EA] text-[#7A7D9C]'
                     : adsLabel['Is Showing Ads']
-                    ? 'bg-[#E9F6EA] text-[#34A853]'
-                    : 'bg-[#ffebee] text-[#ee1b23]'
-                }`}
+                      ? 'bg-[#E9F6EA] text-[#34A853]'
+                      : 'bg-[#ffebee] text-[#ee1b23]'
+                  }`}
               >
                 {!adsLabel ? (
                   <svg width='18' height='18' fill='none' viewBox='0 0 18 18'>
@@ -1181,8 +1178,8 @@ export default function Dashboard() {
                 {!adsLabel
                   ? 'Checking'
                   : adsLabel['Is Showing Ads']
-                  ? 'Showing Ads'
-                  : 'Not Showing Ads'}
+                    ? 'Showing Ads'
+                    : 'Not Showing Ads'}
               </span>
               <span className='text-xl text-center md:text-2xl font-bold text-gray-900 md:text-left'>
                 {selectedAdsAccount?.['Account Name Editable'] || '-'}
@@ -1195,30 +1192,30 @@ export default function Dashboard() {
                 spendMtdIndicatorLoading ||
                 kpiDataLoading ||
                 currencySymbolLoading) && (
-                <span className='ml-4 px-3 py-1 rounded-xl bg-blue-100 text-blue-900 flex items-center gap-2 text-base font-semibold animate-fade-in'>
-                  <svg
-                    className='animate-spin h-5 w-5 text-blue-500'
-                    xmlns='http://www.w3.org/2000/svg'
-                    fill='none'
-                    viewBox='0 0 24 24'
-                  >
-                    <circle
-                      className='opacity-25'
-                      cx='12'
-                      cy='12'
-                      r='10'
-                      stroke='currentColor'
-                      strokeWidth='4'
-                    />
-                    <path
-                      className='opacity-75'
-                      fill='currentColor'
-                      d='M4 12a8 8 0 018-8v8z'
-                    />
-                  </svg>
-                  analyzing...
-                </span>
-              )}
+                  <span className='ml-4 px-3 py-1 rounded-xl bg-blue-100 text-blue-900 flex items-center gap-2 text-base font-semibold animate-fade-in'>
+                    <svg
+                      className='animate-spin h-5 w-5 text-blue-500'
+                      xmlns='http://www.w3.org/2000/svg'
+                      fill='none'
+                      viewBox='0 0 24 24'
+                    >
+                      <circle
+                        className='opacity-25'
+                        cx='12'
+                        cy='12'
+                        r='10'
+                        stroke='currentColor'
+                        strokeWidth='4'
+                      />
+                      <path
+                        className='opacity-75'
+                        fill='currentColor'
+                        d='M4 12a8 8 0 018-8v8z'
+                      />
+                    </svg>
+                    analyzing...
+                  </span>
+                )}
             </div>
           </div>
         </div>
@@ -1298,8 +1295,7 @@ export default function Dashboard() {
                       {spendMtdLoading
                         ? '--'
                         : dashboardDaily?.['Spend MTD'] != null
-                        ? `${
-                            selectedAdsAccount?.['Currency Symbol'] || '$'
+                          ? `${selectedAdsAccount?.['Currency Symbol'] || '$'
                           }${Number(dashboardDaily['Spend MTD']).toLocaleString(
                             'en-US',
 
@@ -1308,13 +1304,13 @@ export default function Dashboard() {
                               maximumFractionDigits: 2,
                             },
                           )}`
-                        : '--'}
+                          : '--'}
                     </span>
                     <span className='ml-1 mt-1'>
                       {(() => {
                         const key =
                           dashboardDaily?.['Spend MTD Indicator Alert']?.[
-                            'Key'
+                          'Key'
                           ];
                         let color = '#1BC47D'; // green default
 
@@ -1396,11 +1392,11 @@ export default function Dashboard() {
                           {selectedAdsAccount?.['Currency Symbol'] || '$'}
                           {selectedAdsAccount?.['Monthly Budget'] != null
                             ? Number(
-                                selectedAdsAccount['Monthly Budget'],
-                              ).toLocaleString('en-US', {
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0,
-                              })
+                              selectedAdsAccount['Monthly Budget'],
+                            ).toLocaleString('en-US', {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            })
                             : '--'}
                         </span>
                       </>
@@ -1492,7 +1488,7 @@ export default function Dashboard() {
               {/* Spend Projection */}
               <div className='flex justify-end items-end px-6 pb-3 pt-1'>
                 <span className='text-xs text-[#7A7D9C] font-medium flex items-center gap-1'>
-                 
+
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button
@@ -1763,25 +1759,25 @@ export default function Dashboard() {
                       disabled={isGeneratingContent || filteredAlerts.length < 10}
                       onClick={async () => {
                         if (!selectedAdsAccount) return;
-                        
+
                         // Reset email state when opening modal
                         setEmailSent(false);
-                        
+
                         // Check if content is cached for today
                         const cachedContent = getCachedContent(selectedAdsAccount.id);
-                        
+
                         if (cachedContent) {
                           // Use cached content - instant load
                           setIsModalOpen(true);
                           setModalContent(cachedContent);
                           return;
                         }
-                        
+
                         // Open modal immediately for new generation
                         setIsModalOpen(true);
                         setIsGeneratingContent(true);
                         setModalContent(''); // Clear previous content
-                        
+
                         try {
                           const content = await generateAnalysisContent(selectedAdsAccount);
                           setModalContent(content);
@@ -1796,16 +1792,16 @@ export default function Dashboard() {
                       }}
                       aria-label='View Analysis'
                     >
-                      <FileText  className='w-6 h-6 text-[#015AFD]' />
+                      <FileText className='w-6 h-6 text-[#015AFD]' />
                       <span className='absolute bottom-0 right-0 text-[8px] font-bold text-[#015AFD] pr-[2px] pb-[1px] leading-none pointer-events-none'>
                         AI
                       </span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    {filteredAlerts.length === 0 
+                    {filteredAlerts.length === 0
                       ? 'No alerts available for analysis'
-                      : filteredAlerts.length < 10 
+                      : filteredAlerts.length < 10
                         ? `Need at least 10 alerts for AI analysis (${filteredAlerts.length}/10)`
                         : 'Generate AI-powered action plan from your alerts'
                     }
@@ -1902,96 +1898,95 @@ export default function Dashboard() {
           <div className='fixed inset-0 bg-black/70 flex items-center justify-center z-50'>
             <div className='bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col'>
               {/* Header */}
-              <div className='relative flex items-end justify-between p-6 border-b border-gray-200 align-middle'>
+              <div className='relative flex items-center justify-between p-6 border-b border-gray-200'>
+                {/* Left side: Logo + Title */}
                 <div className="flex items-center gap-3">
                   {/* Logo */}
                   <div className="flex items-center gap-2">
                     <Image
                       src='/images/adalert-logo.avif'
                       alt='AdAlert Logo'
-                      width={24}
-                      height={24}
+                      width={22}   // 👈 24 se 22
+                      height={22}  // 👈 24 se 22
                       priority
                     />
                     <span className='text-lg font-bold text-gray-900 tracking-tight'>
                       adAlert.io
                     </span>
                   </div>
-                  
-                  {/* Title with account name and email button */}
-                  <div className="flex items-center gap-4 ml-4 pl-4 border-l border-gray-300">
+
+                  {/* Title */}
+                  <div className="flex items-center gap-2 ml-4 pl-4 border-l border-gray-300">
                     <FileChartColumn className="h-5 w-5 text-[#015AFD]" />
-                    <div className="flex items-center gap-3">
-                      <div>
-                        <h2 className='text-lg font-semibold text-gray-900'>
-                          PPC Action Plan
-                        </h2>
-                        {selectedAdsAccount && (
-                          <p className="text-sm text-gray-600">
-                           AI-Powered actionable insights for instant results.
-                          </p>
-                        )}
-                      </div>
-                      
-                      {/* Email Button first */}
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size='sm'
-                          className='h-8 gap-2 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed'
-                          onClick={sendEmailReport}
-                          disabled={isEmailSending || !modalContent || isGeneratingContent}
-                        >
-                          {isEmailSending ? (
-                            <>
-                              <svg
-                                className="animate-spin h-4 w-4 text-white"
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                              >
-                                <circle
-                                  className="opacity-25"
-                                  cx="12"
-                                  cy="12"
-                                  r="10"
-                                  stroke="currentColor"
-                                  strokeWidth="4"
-                                />
-                                <path
-                                  className="opacity-75"
-                                  fill="currentColor"
-                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                />
-                              </svg>
-                              Sending...
-                            </>
-                          ) : emailSent ? (
-                            <>
-                              <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                              <span className="text-white">Email Sent!</span>
-                            </>
-                          ) : (
-                            <>
-                              <MailCheck className="h-4 w-4 text-white" />
-                              Send
-                            </>
-                          )}
-                        </Button>
-                      </div>
+                    <div>
+                      <h2 className='text-lg font-semibold text-gray-900'>
+                        PPC Action Plan
+                      </h2>
+                      {selectedAdsAccount && (
+                        <p className="text-sm text-gray-600">
+                          AI-Powered actionable insights for instant results.
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
-                
-                {/* X button on far right */}
-                <button
-                  onClick={() => setIsModalOpen(false)}
-                  className='h-8 w-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md border border-gray-200 transition-colors'
-                >
-                  <XIcon className='w-4 h-4' />
-                </button>
+
+                {/* Right side: Send + Close */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    size='sm'
+                    className='h-8 gap-2 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed'
+                    onClick={sendEmailReport}
+                    disabled={isEmailSending || !modalContent || isGeneratingContent}
+                  >
+                    {isEmailSending ? (
+                      <>
+                        <svg
+                          className="animate-spin h-4 w-4 text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
+                        </svg>
+                        Sending...
+                      </>
+                    ) : emailSent ? (
+                      <>
+                        <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-white">Email Sent!</span>
+                      </>
+                    ) : (
+                      <>
+                        <MailCheck className="h-4 w-4 text-white" />
+                        Send
+                      </>
+                    )}
+                  </Button>
+
+                  <button
+                    onClick={() => setIsModalOpen(false)}
+                    className='h-8 w-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md border border-gray-200 transition-colors'
+                  >
+                    <XIcon className='w-4 h-4' />
+                  </button>
+                </div>
               </div>
+
 
               {/* Content */}
               <div className='flex-1 overflow-y-auto p-6'>
@@ -2006,7 +2001,7 @@ export default function Dashboard() {
                       <div className='h-4 bg-gray-200 rounded w-full animate-pulse mb-2'></div>
                       <div className='h-4 bg-gray-200 rounded w-3/4 animate-pulse'></div>
                     </div>
-                    
+
                     {/* Content skeleton */}
                     <div className='bg-white border border-gray-200 rounded-lg p-8 shadow-sm space-y-6'>
                       {/* AI generating message */}
@@ -2037,7 +2032,7 @@ export default function Dashboard() {
                           </span>
                         </div>
                       </div>
-                      
+
                       {/* Skeleton content blocks */}
                       <div className='space-y-4'>
                         {/* Skeleton heading */}
@@ -2048,7 +2043,7 @@ export default function Dashboard() {
                           <div className='h-4 bg-gray-200 rounded w-5/6 animate-pulse'></div>
                           <div className='h-4 bg-gray-200 rounded w-4/5 animate-pulse'></div>
                         </div>
-                        
+
                         {/* Another skeleton heading */}
                         <div className='h-6 bg-gray-200 rounded w-1/4 animate-pulse mt-6'></div>
                         {/* More skeleton paragraphs */}
@@ -2057,7 +2052,7 @@ export default function Dashboard() {
                           <div className='h-4 bg-gray-200 rounded w-3/4 animate-pulse'></div>
                           <div className='h-4 bg-gray-200 rounded w-5/6 animate-pulse'></div>
                         </div>
-                        
+
                         {/* Another skeleton heading */}
                         <div className='h-6 bg-gray-200 rounded w-1/3 animate-pulse mt-6'></div>
                         {/* More skeleton paragraphs */}
@@ -2080,10 +2075,10 @@ export default function Dashboard() {
                       {/* Date and Account Info */}
                       <div className='mb-4'>
                         <p className='text-sm text-gray-600 mb-1'>
-                          <span className='font-medium'>Date Created:</span> {new Date().toLocaleDateString('en-US', { 
-                            year: 'numeric', 
-                            month: '2-digit', 
-                            day: '2-digit' 
+                          <span className='font-medium'>Date Created:</span> {new Date().toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit'
                           })}
                         </p>
                         {selectedAdsAccount && (
@@ -2092,7 +2087,7 @@ export default function Dashboard() {
                           </p>
                         )}
                       </div>
-                      
+
                       {/* PPC Action Plan Info */}
                       <div className='flex items-center gap-2 mb-3'>
                         <div className='w-2 h-2 bg-[#015AFD] rounded-full'></div>
@@ -2101,13 +2096,13 @@ export default function Dashboard() {
                         </p>
                       </div>
                       <p className='text-sm text-gray-600 leading-relaxed'>
-                        Actionable report based on the 20 most recent alerts, prioritized by the importance of KPIs.
+                        Based on the ~20 most recent alerts, prioritized by KPI importance, impact and alert severity.
                       </p>
                     </div>
-                    
+
                     {/* Content with PDF-style formatting */}
                     <div className='bg-white border border-gray-200 rounded-lg p-8 shadow-sm'>
-                      <div 
+                      <div
                         className='space-y-6 text-gray-800 leading-relaxed'
                         style={{
                           fontFamily: 'system-ui, -apple-system, sans-serif',
@@ -2127,10 +2122,10 @@ export default function Dashboard() {
                     {/* Footer with branding */}
                     <div className='bg-gray-50 p-4 rounded-lg border border-gray-200 text-center'>
                       <p className='text-xs text-gray-500'>
-                        Generated by adAlert.io AI • {new Date().toLocaleDateString('en-US', { 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
+                        Generated by adAlert.io AI • {new Date().toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
                         })}
                       </p>
                     </div>
