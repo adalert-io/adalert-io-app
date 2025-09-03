@@ -33,7 +33,8 @@ import {
   ChevronRight,
   XIcon,
   AlertTriangle,
-  ChartNoAxesCombined
+  ChartNoAxesCombined,
+  FileText
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ALERT_SEVERITIES, ALERT_SEVERITY_COLORS } from '@/lib/constants/index';
@@ -1793,7 +1794,10 @@ export default function Dashboard() {
                   }}
                   aria-label='View Analysis'
                 >
-                  <ChartNoAxesCombined className='w-6 h-6 text-[#015AFD]' />
+                  <FileText  className='w-6 h-6 text-[#015AFD]' />
+                  <span className='absolute bottom-0 right-0 text-[8px] font-bold text-[#015AFD] pr-[2px] pb-[1px] leading-none pointer-events-none'>
+                    AI
+                  </span>
                 </Button>
 
                 {/* CSV button */}
