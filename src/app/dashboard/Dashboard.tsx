@@ -1902,7 +1902,7 @@ export default function Dashboard() {
           <div className='fixed inset-0 bg-black/70 flex items-center justify-center z-50'>
             <div className='bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col'>
               {/* Header */}
-              <div className='flex items-center justify-between p-6 border-b border-gray-200 align-middle'>
+              <div className='flex items-end justify-between p-6 border-b border-gray-200 align-middle'>
                 <div className="flex items-center gap-3">
                   {/* Logo */}
                   <div className="flex items-center gap-2">
@@ -1928,66 +1928,68 @@ export default function Dashboard() {
                         </h2>
                         {selectedAdsAccount && (
                           <p className="text-sm text-gray-600">
-                            {selectedAdsAccount['Account Name Editable']} ({formatAccountNumber(selectedAdsAccount['Id'])})
+                           AI-Powered actionable insights for instant results.
                           </p>
                         )}
                       </div>
                       
-                      {/* Email Button */}
-                      <Button
-                        variant='outline'
-                        size='sm'
-                        className='h-8 gap-2 text-[#015AFD] border-[#015AFD] hover:bg-[#015AFD] hover:text-white disabled:opacity-50 disabled:cursor-not-allowed'
-                        onClick={sendEmailReport}
-                        disabled={isEmailSending || !modalContent || isGeneratingContent}
-                      >
-                        {isEmailSending ? (
-                          <>
-                            <svg
-                              className="animate-spin h-4 w-4"
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                            >
-                              <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                              />
-                              <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                              />
-                            </svg>
-                            Sending...
-                          </>
-                        ) : emailSent ? (
-                          <>
-                            <svg className="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                            <span className="text-green-600">Email Sent!</span>
-                          </>
-                        ) : (
-                          <>
-                            <MailCheck className="h-4 w-4" />
-                            Send me as email
-                          </>
-                        )}
-                      </Button>
+                      {/* Email Button with X on left */}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setIsModalOpen(false)}
+                          className='h-8 w-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md border border-gray-200 transition-colors'
+                        >
+                          <XIcon className='w-4 h-4' />
+                        </button>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          className='h-8 gap-2 text-[#015AFD] border-[#015AFD] hover:bg-[#015AFD] hover:text-white disabled:opacity-50 disabled:cursor-not-allowed'
+                          onClick={sendEmailReport}
+                          disabled={isEmailSending || !modalContent || isGeneratingContent}
+                        >
+                          {isEmailSending ? (
+                            <>
+                              <svg
+                                className="animate-spin h-4 w-4"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                />
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                />
+                              </svg>
+                              Sending...
+                            </>
+                          ) : emailSent ? (
+                            <>
+                              <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              <span className="text-white">Email Sent!</span>
+                            </>
+                          ) : (
+                            <>
+                              <MailCheck className="h-4 w-4" />
+                              Send
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <button
-                  onClick={() => setIsModalOpen(false)}
-                  className='text-gray-400 hover:text-gray-600 transition-colors'
-                >
-                  <XIcon className='w-5 h-5' />
-                </button>
               </div>
 
               {/* Content */}
