@@ -1754,51 +1754,63 @@ export default function Dashboard() {
                 </Button>
 
                 {/* Analysis button */}
-                <Button
-                  variant='outline'
-                  size='icon'
-                  className='relative'
-                  disabled={isGeneratingContent}
-                  onClick={async () => {
-                    if (!selectedAdsAccount) return;
-                    
-                    // Reset email state when opening modal
-                    setEmailSent(false);
-                    
-                    // Check if content is cached for today
-                    const cachedContent = getCachedContent(selectedAdsAccount.id);
-                    
-                    if (cachedContent) {
-                      // Use cached content - instant load
-                      setIsModalOpen(true);
-                      setModalContent(cachedContent);
-                      return;
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant='outline'
+                      size='icon'
+                      className='relative'
+                      disabled={isGeneratingContent || filteredAlerts.length < 10}
+                      onClick={async () => {
+                        if (!selectedAdsAccount) return;
+                        
+                        // Reset email state when opening modal
+                        setEmailSent(false);
+                        
+                        // Check if content is cached for today
+                        const cachedContent = getCachedContent(selectedAdsAccount.id);
+                        
+                        if (cachedContent) {
+                          // Use cached content - instant load
+                          setIsModalOpen(true);
+                          setModalContent(cachedContent);
+                          return;
+                        }
+                        
+                        // Open modal immediately for new generation
+                        setIsModalOpen(true);
+                        setIsGeneratingContent(true);
+                        setModalContent(''); // Clear previous content
+                        
+                        try {
+                          const content = await generateAnalysisContent(selectedAdsAccount);
+                          setModalContent(content);
+                          // Cache the content for future use
+                          cacheContent(selectedAdsAccount.id, content);
+                        } catch (err) {
+                          console.error('Failed to generate analysis', err);
+                          setModalContent('Error generating analysis. Please try again.');
+                        } finally {
+                          setIsGeneratingContent(false);
+                        }
+                      }}
+                      aria-label='View Analysis'
+                    >
+                      <FileText  className='w-6 h-6 text-[#015AFD]' />
+                      <span className='absolute bottom-0 right-0 text-[8px] font-bold text-[#015AFD] pr-[2px] pb-[1px] leading-none pointer-events-none'>
+                        AI
+                      </span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {filteredAlerts.length === 0 
+                      ? 'No alerts available for analysis'
+                      : filteredAlerts.length < 10 
+                        ? `Need at least 10 alerts for AI analysis (${filteredAlerts.length}/10)`
+                        : 'Generate AI-powered action plan from your alerts'
                     }
-                    
-                    // Open modal immediately for new generation
-                    setIsModalOpen(true);
-                    setIsGeneratingContent(true);
-                    setModalContent(''); // Clear previous content
-                    
-                    try {
-                      const content = await generateAnalysisContent(selectedAdsAccount);
-                      setModalContent(content);
-                      // Cache the content for future use
-                      cacheContent(selectedAdsAccount.id, content);
-                    } catch (err) {
-                      console.error('Failed to generate analysis', err);
-                      setModalContent('Error generating analysis. Please try again.');
-                    } finally {
-                      setIsGeneratingContent(false);
-                    }
-                  }}
-                  aria-label='View Analysis'
-                >
-                  <FileText  className='w-6 h-6 text-[#015AFD]' />
-                  <span className='absolute bottom-0 right-0 text-[8px] font-bold text-[#015AFD] pr-[2px] pb-[1px] leading-none pointer-events-none'>
-                    AI
-                  </span>
-                </Button>
+                  </TooltipContent>
+                </Tooltip>
 
                 {/* CSV button */}
                 <Button
