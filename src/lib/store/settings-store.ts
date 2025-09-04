@@ -197,6 +197,10 @@ interface AlertSettingsState {
   fetchPaymentMethod: (companyAdminRef: any) => Promise<void>;
   fetchPaymentMethodByUser: (userRef: any) => Promise<void>;
   invoices: any[] | null;
+  receiptUrl: string | null;
+  lastChargeId: string | null;
+  lastChargeAmount: number | null;
+  lastChargeCurrency: string | null;
   handleSubscriptionPayment: ({
     formData,
     stripe,
@@ -241,6 +245,10 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
   paymentMethods: null,
   paymentMethodsLoaded: false,
   invoices: null,
+  receiptUrl: null,
+  lastChargeId: null,
+  lastChargeAmount: null,
+  lastChargeCurrency: null,
   fetchAlertSettings: async (userId: string) => {
     if (get().loadedUserId === userId && get().alertSettings) return;
     set({ loading: true, error: null });
@@ -1797,13 +1805,25 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
 
           toast.success("You've successfully subscribed to AdAlerts.io");
 
-          // Fetch invoices (implement /api/stripe-invoices)
-          const invRes = await fetch(
-            `/api/stripe-invoices?customerId=${customerId}`,
-          );
-          const invData = await invRes.json();
-          if (invRes.ok && invData.invoices) {
-            set({ invoices: invData.invoices });
+          // Fetch receipt instead of invoices
+          if (subData.subscriptionId) {
+            try {
+              const receiptRes = await fetch(
+                `/api/stripe-receipts?subscriptionId=${subData.subscriptionId}`,
+              );
+              const receiptData = await receiptRes.json();
+              if (receiptRes.ok && receiptData.receiptUrl) {
+                // Store the receipt URL and related information
+                set({
+                  receiptUrl: receiptData.receiptUrl,
+                  lastChargeId: receiptData.chargeId,
+                  lastChargeAmount: receiptData.amount,
+                  lastChargeCurrency: receiptData.currency,
+                });
+              }
+            } catch (error) {
+              console.warn('Failed to fetch receipt:', error);
+            }
           }
           onBack();
         }

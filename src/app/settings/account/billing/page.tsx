@@ -527,45 +527,55 @@ export default function BillingSubtab() {
     fetchPaymentMethodByUser,
   ]);
 
-  // --- Invoice fetching logic ---
-  const [invoices, setInvoices] = useState<any[]>([]);
-  const [invoicesLoading, setInvoicesLoading] = useState(false);
+  // --- Receipt fetching logic ---
+  const [receipts, setReceipts] = useState<any[]>([]);
+  const [receiptsLoading, setReceiptsLoading] = useState(false);
   useEffect(() => {
-    const fetchInvoices = async () => {
+    const fetchReceipts = async () => {
       if (
         subscription &&
-        subscription['Stripe Customer Id'] &&
-        typeof subscription['Stripe Customer Id'] === 'string' &&
-        subscription['Stripe Customer Id'].trim() !== ''
+        subscription['Stripe Subscription Id'] &&
+        typeof subscription['Stripe Subscription Id'] === 'string' &&
+        subscription['Stripe Subscription Id'].trim() !== ''
       ) {
-        setInvoicesLoading(true);
+        setReceiptsLoading(true);
         try {
           const res = await fetch(
-            `/api/stripe-invoices?customerId=${subscription['Stripe Customer Id']}`,
+            `/api/stripe-receipts?subscriptionId=${subscription['Stripe Subscription Id']}`,
           );
           const data = await res.json();
-          if (res.ok && data.invoices) {
-            setInvoices(data.invoices);
+          if (res.ok && data.receiptUrl) {
+            // Convert single receipt to array format for consistency with table display
+            setReceipts([
+              {
+                id: data.chargeId,
+                receiptUrl: data.receiptUrl,
+                amount: data.amount,
+                currency: data.currency,
+                created: data.created,
+                status: data.status,
+              },
+            ]);
           } else {
-            setInvoices([]);
+            setReceipts([]);
           }
         } catch (err) {
-          setInvoices([]);
+          setReceipts([]);
         } finally {
-          setInvoicesLoading(false);
+          setReceiptsLoading(false);
         }
       } else {
-        setInvoices([]);
+        setReceipts([]);
       }
     };
-    fetchInvoices();
+    fetchReceipts();
   }, [subscription]);
-  // --- End invoice fetching logic ---
+  // --- End receipt fetching logic ---
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const totalPages = Math.ceil(invoices.length / pageSize);
+  const totalPages = Math.ceil(receipts.length / pageSize);
 
   const connectedAccountsCount = adsAccounts.length;
 
@@ -656,7 +666,7 @@ export default function BillingSubtab() {
             <div className='bg-white p-4'>
               <h2 className='text-xl font-bold mb-2'>Billing</h2>
               <p className='text-gray-600 mb-6'>
-                Update payment method and view your invoices. You can review
+                Update payment method and view your receipts. You can review
                 your subscription details{' '}
                 <Link
                   href='/settings/account/subscriptions'
@@ -747,23 +757,23 @@ export default function BillingSubtab() {
               </div>
             </div>
 
-            {/* Invoice History Section */}
+            {/* Receipt History Section */}
             <div className='bg-white rounded-2xl  p-4'>
-              <h2 className='text-xl font-bold mb-6'>Invoice History</h2>
+              <h2 className='text-xl font-bold mb-6'>Receipt History</h2>
 
-              {invoicesLoading ? (
+              {receiptsLoading ? (
                 <div className='text-center py-12'>
                   <Loader2 className='w-6 h-6 mx-auto animate-spin mb-2' />
-                  <p className='text-gray-500 text-lg'>Loading invoices...</p>
+                  <p className='text-gray-500 text-lg'>Loading receipts...</p>
                 </div>
-              ) : invoices.length === 0 ? (
+              ) : receipts.length === 0 ? (
                 <div className='text-center py-12'>
                   <FileText className='w-12 h-12 text-gray-400 mx-auto mb-4' />
-                  <p className='text-gray-500 text-lg'>No invoices</p>
+                  <p className='text-gray-500 text-lg'>No receipts</p>
                 </div>
               ) : (
                 <>
-                  {/* Invoice Table */}
+                  {/* Receipt Table */}
                   <div className='overflow-x-auto'>
                     <table className='min-w-full'>
                       <thead>
@@ -786,51 +796,45 @@ export default function BillingSubtab() {
                         </tr>
                       </thead>
                       <tbody>
-                        {invoices.map((invoice, index) => (
+                        {receipts.map((receipt, index) => (
                           <tr
                             key={index}
                             className='border-b border-gray-100 hover:bg-gray-50'
                           >
                             <td className='py-3 px-4'>
-                              {invoice.created
+                              {receipt.created
                                 ? new Date(
-                                    invoice.created * 1000,
+                                    receipt.created * 1000,
                                   ).toLocaleDateString()
                                 : ''}
                             </td>
-                            <td className='py-3 px-4'>
-                              {invoice.number || invoice.id}
-                            </td>
+                            <td className='py-3 px-4'>{receipt.id}</td>
                             <td className='py-3 px-4'>{'Card'}</td>
                             <td className='py-3 px-4'>
                               <span
                                 className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                  invoice.status === 'paid'
+                                  receipt.status === 'succeeded' || 'paid'
                                     ? 'bg-green-100 text-green-800'
-                                    : invoice.status === 'open' ||
-                                      invoice.status === 'pending'
+                                    : receipt.status === 'pending' ||
+                                      receipt.status === 'open'
                                     ? 'bg-yellow-100 text-yellow-800'
                                     : 'bg-red-100 text-red-800'
                                 }`}
                               >
-                                {invoice.status
-                                  ? invoice.status.charAt(0).toUpperCase() +
-                                    invoice.status.slice(1)
+                                {receipt.status
+                                  ? receipt.status.charAt(0).toUpperCase() +
+                                    receipt.status.slice(1)
                                   : 'Unknown'}
                               </span>
                             </td>
                             <td className='py-3 px-4'>
-                              {invoice.invoice_pdf ||
-                              invoice.hosted_invoice_url ? (
+                              {receipt.receiptUrl ? (
                                 <a
-                                  href={
-                                    invoice.invoice_pdf ||
-                                    invoice.hosted_invoice_url
-                                  }
+                                  href={receipt.receiptUrl}
                                   target='_blank'
                                   rel='noopener noreferrer'
                                   download
-                                  aria-label='Download Invoice'
+                                  aria-label='Download Receipt'
                                   className='inline-flex items-center justify-center p-2 rounded hover:bg-gray-200 transition-colors'
                                 >
                                   <Download className='w-5 h-5 text-blue-600' />
@@ -838,7 +842,7 @@ export default function BillingSubtab() {
                               ) : (
                                 <span
                                   className='text-gray-400'
-                                  title='No invoice file available'
+                                  title='No receipt file available'
                                 >
                                   <Download className='w-5 h-5' />
                                 </span>
