@@ -272,14 +272,8 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
               db,
               COLLECTIONS.DASHBOARD_SHOWING_ADS,
             );
-            const startOfTwoHours = moment()
-              .subtract(1, 'hour')
-              .startOf('hour')
-              .toDate();
-            const endOfTwoHours = moment()
-              .add(1, 'hour')
-              .endOf('hour')
-              .toDate();
+            const startOfHour = moment().startOf('hour').toDate();
+            const endOfHour = moment().endOf('hour').toDate();
             const showingAdsQuery = query(
               showingAdsRef,
               where(
@@ -287,8 +281,8 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
                 '==',
                 doc(db, COLLECTIONS.ADS_ACCOUNTS, account.id),
               ),
-              where('Date', '>=', startOfTwoHours),
-              where('Date', '<=', endOfTwoHours),
+              where('Date', '>=', startOfHour),
+              where('Date', '<=', endOfHour),
             );
             const showingAdsSnap = await getDocs(showingAdsQuery);
 
@@ -296,7 +290,7 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
             if (showingAdsSnap.size === 0) {
               // No record exists for the current hour, trigger label check
               // console.log(
-              //   "No 'Dashboard Showing Ads' record for the current 2-hour range. Triggering label check.",
+              //   "No 'Dashboard Showing Ads' record for the current 1-hour range. Triggering label check.",
               // );
               const path = getFirebaseFnPath(
                 'dashboard-display-showing-ads-label-fb',
