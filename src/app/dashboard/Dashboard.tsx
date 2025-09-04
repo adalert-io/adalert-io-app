@@ -1736,7 +1736,7 @@ export default function Dashboard() {
                   variant='outline'
                   size='icon'
                   className='relative hidden'
-                  disabled={isGeneratingPdf}
+                  disabled={isGeneratingPdf || alerts.length < 10}
                   onClick={async () => {
                     if (!selectedAdsAccount) return;
                     setIsGeneratingPdf(true);
