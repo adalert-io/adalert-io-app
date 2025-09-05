@@ -813,11 +813,13 @@ export default function BillingSubtab() {
                             <td className='py-3 px-4'>
                               <span
                                 className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                  receipt.status === 'succeeded' || 'paid'
+                                  receipt.status === 'succeeded' || receipt.status === 'paid'
                                     ? 'bg-green-100 text-green-800'
                                     : receipt.status === 'pending' ||
                                       receipt.status === 'open'
                                     ? 'bg-yellow-100 text-yellow-800'
+                                    : receipt.status?.toLowerCase() === 'void'
+                                    ? 'bg-red-100 text-red-800'
                                     : 'bg-red-100 text-red-800'
                                 }`}
                               >
