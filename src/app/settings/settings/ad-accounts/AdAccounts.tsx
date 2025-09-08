@@ -1,8 +1,8 @@
-'use client'
-import { useState, useEffect, useMemo, useCallback } from 'react'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { InfoCircledIcon } from '@radix-ui/react-icons'
+'use client';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { InfoCircledIcon } from '@radix-ui/react-icons';
 import {
   ChevronLeft,
   Search,
@@ -21,41 +21,41 @@ import {
   CheckCircle,
   Loader2,
   Bell,
-  CheckCheck
-} from 'lucide-react'
-import { useAlertSettingsStore } from '@/lib/store/settings-store'
-import { useAuthStore } from '@/lib/store/auth-store'
-import { Switch } from '@/components/ui/switch'
+  CheckCheck,
+} from 'lucide-react';
+import { useAlertSettingsStore } from '@/lib/store/settings-store';
+import { useAuthStore } from '@/lib/store/auth-store';
+import { Switch } from '@/components/ui/switch';
 import {
   useReactTable,
   getCoreRowModel,
   getPaginationRowModel,
   flexRender,
-  ColumnDef
-} from '@tanstack/react-table'
-import { MagnifyingGlassIcon } from '@radix-ui/react-icons'
-import React from 'react'
-import { toast } from 'sonner'
-import { formatAccountNumber } from '@/lib/utils'
-import { useRouter } from 'next/navigation'
+  ColumnDef,
+} from '@tanstack/react-table';
+import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
+import React from 'react';
+import { toast } from 'sonner';
+import { formatAccountNumber } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
-export default function AdAccountsSubtab () {
-  const router = useRouter()
-  const [screen, setScreen] = useState<'list' | 'edit'>('list')
-  const [editingAccount, setEditingAccount] = useState<any>(null)
-  const [deletingAccount, setDeletingAccount] = useState<any>(null)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [pageSize, setPageSize] = useState(25)
-  const [showSearch, setShowSearch] = useState(false)
-  const [searchValue, setSearchValue] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [adAccountName, setAdAccountName] = useState('')
-  const [monthlyBudgetInput, setMonthlyBudgetInput] = useState('')
-  const [isSaving, setIsSaving] = useState(false)
-  const [sendAlert, setSendAlert] = useState(false)
+export default function AdAccountsSubtab() {
+  const router = useRouter();
+  const [screen, setScreen] = useState<'list' | 'edit'>('list');
+  const [editingAccount, setEditingAccount] = useState<any>(null);
+  const [deletingAccount, setDeletingAccount] = useState<any>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [pageSize, setPageSize] = useState(25);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchValue, setSearchValue] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [adAccountName, setAdAccountName] = useState('');
+  const [monthlyBudgetInput, setMonthlyBudgetInput] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [sendAlert, setSendAlert] = useState(false);
 
-  const { userDoc } = useAuthStore()
+  const { userDoc } = useAuthStore();
   const {
     adsAccountsForTab,
     fetchAdsAccountsForAdsAccountsTab,
@@ -63,22 +63,22 @@ export default function AdAccountsSubtab () {
     toggleAdsAccountAlert,
     refreshAdsAccountsForTab,
     deleteAdsAccount,
-    updateAdsAccountVariablesBudgets // <-- add this
-  } = useAlertSettingsStore()
+    updateAdsAccountVariablesBudgets, // <-- add this
+  } = useAlertSettingsStore();
 
   useEffect(() => {
     if (userDoc && userDoc['Company Admin'] && userDoc.uid) {
-      fetchAdsAccountsForAdsAccountsTab(userDoc['Company Admin'], userDoc.uid)
+      fetchAdsAccountsForAdsAccountsTab(userDoc['Company Admin'], userDoc.uid);
     }
-  }, [userDoc, fetchAdsAccountsForAdsAccountsTab])
+  }, [userDoc, fetchAdsAccountsForAdsAccountsTab]);
 
   // Debounce search value
   useEffect(() => {
     const handler = setTimeout(() => {
-      setDebouncedSearch(searchValue)
-    }, 1500)
-    return () => clearTimeout(handler)
-  }, [searchValue])
+      setDebouncedSearch(searchValue);
+    }, 1500);
+    return () => clearTimeout(handler);
+  }, [searchValue]);
 
   // Populate form data when editing account
   useEffect(() => {
@@ -86,63 +86,65 @@ export default function AdAccountsSubtab () {
       setAdAccountName(
         editingAccount['Account Name Editable'] ||
           editingAccount['Account Name Original'] ||
-          ''
-      )
-      setMonthlyBudgetInput(editingAccount['Monthly Budget']?.toString() || '0')
-      setSendAlert(editingAccount['Send Me Alert'] || false)
+          '',
+      );
+      setMonthlyBudgetInput(
+        editingAccount['Monthly Budget']?.toString() || '0',
+      );
+      setSendAlert(editingAccount['Send Me Alert'] || false);
     }
-  }, [screen, editingAccount])
+  }, [screen, editingAccount]);
 
   // Filter ads accounts based on search
   const filteredAdsAccounts = useMemo(() => {
-    const lower = debouncedSearch.toLowerCase()
+    const lower = debouncedSearch.toLowerCase();
 
-    return adsAccountsForTab.filter(account => {
+    return adsAccountsForTab.filter((account) => {
       const searchMatch =
         !debouncedSearch ||
         account.name?.toLowerCase().includes(lower) ||
-        account['Id']?.toLowerCase().includes(lower)
+        account['Id']?.toLowerCase().includes(lower);
 
-      return searchMatch
-    })
-  }, [adsAccountsForTab, debouncedSearch])
+      return searchMatch;
+    });
+  }, [adsAccountsForTab, debouncedSearch]);
 
   // Ads Accounts Table Columns
   const columns: ColumnDef<any>[] = [
     {
       accessorKey: 'Id',
       header: 'Account ID',
-      cell: ({ row }) => <span>{formatAccountNumber(row.original['Id'])}</span>
+      cell: ({ row }) => <span>{formatAccountNumber(row.original['Id'])}</span>,
     },
     {
       accessorKey: 'name',
       header: 'Ad account name',
-      cell: ({ row }) => <span>{row.original.name}</span>
+      cell: ({ row }) => <span>{row.original.name}</span>,
     },
     {
       accessorKey: 'Platform',
       header: 'Platform',
-      cell: ({ row }) => <span>{row.original['Platform'] || 'Google'}</span>
+      cell: ({ row }) => <span>{row.original['Platform'] || 'Google'}</span>,
     },
     {
       accessorKey: 'Created Date',
       header: 'Date first added',
       cell: ({ row }) => {
-        const date = row.original['Created Date']
+        const date = row.original['Created Date'];
         if (date?.toDate) {
-          const dateObj = date.toDate()
+          const dateObj = date.toDate();
           return (
             <span>
               {dateObj.toLocaleDateString('en-US', {
                 month: '2-digit',
                 day: '2-digit',
-                year: 'numeric'
+                year: 'numeric',
               })}
             </span>
-          )
+          );
         }
-        return <span>N/A</span>
-      }
+        return <span>N/A</span>;
+      },
     },
     {
       accessorKey: 'Is Connected',
@@ -167,7 +169,7 @@ export default function AdAccountsSubtab () {
             </>
           )}
         </span>
-      )
+      ),
     },
     {
       accessorKey: 'Send Me Alert',
@@ -177,19 +179,19 @@ export default function AdAccountsSubtab () {
           checked={row.original['Send Me Alert'] || false}
           onCheckedChange={async (checked: boolean) => {
             try {
-              await toggleAdsAccountAlert(row.original.id, checked)
+              await toggleAdsAccountAlert(row.original.id, checked);
               toast.success(
                 `Alert ${checked ? 'enabled' : 'disabled'} for ${
                   row.original.name
-                }`
-              )
+                }`,
+              );
             } catch (error: any) {
-              toast.error(error.message || 'Failed to update alert setting')
+              toast.error(error.message || 'Failed to update alert setting');
             }
           }}
           className='data-[state=checked]:bg-blue-600'
         />
-      )
+      ),
     },
     {
       id: 'actions',
@@ -199,8 +201,8 @@ export default function AdAccountsSubtab () {
           <button
             className='text-blue-600 hover:text-blue-800 cursor-pointer'
             onClick={() => {
-              setEditingAccount(row.original)
-              setScreen('edit')
+              setEditingAccount(row.original);
+              setScreen('edit');
             }}
           >
             <Edit2 className='w-5 h-5' />
@@ -208,8 +210,8 @@ export default function AdAccountsSubtab () {
           <button
             className='text-red-500 hover:text-red-700 cusror-pointer'
             onClick={() => {
-              setDeletingAccount(row.original)
-              setShowDeleteModal(true)
+              setDeletingAccount(row.original);
+              setShowDeleteModal(true);
             }}
           >
             <Trash2 className='w-5 h-5' />
@@ -217,12 +219,12 @@ export default function AdAccountsSubtab () {
         </div>
       ),
       enableSorting: false,
-      enableHiding: false
-    }
-  ]
+      enableHiding: false,
+    },
+  ];
 
-  function AdsAccountsDataTable () {
-    const [pageIndex, setPageIndex] = useState(0)
+  function AdsAccountsDataTable() {
+    const [pageIndex, setPageIndex] = useState(0);
 
     const table = useReactTable({
       data: filteredAdsAccounts,
@@ -232,49 +234,49 @@ export default function AdAccountsSubtab () {
       state: {
         pagination: {
           pageIndex,
-          pageSize
-        }
+          pageSize,
+        },
       },
-      onPaginationChange: updater => {
+      onPaginationChange: (updater) => {
         if (typeof updater === 'function') {
-          const next = updater({ pageIndex, pageSize })
-          setPageIndex(next.pageIndex)
-          setPageSize(next.pageSize)
+          const next = updater({ pageIndex, pageSize });
+          setPageIndex(next.pageIndex);
+          setPageSize(next.pageSize);
         } else {
-          if (updater.pageIndex !== undefined) setPageIndex(updater.pageIndex)
-          if (updater.pageSize !== undefined) setPageSize(updater.pageSize)
+          if (updater.pageIndex !== undefined) setPageIndex(updater.pageIndex);
+          if (updater.pageSize !== undefined) setPageSize(updater.pageSize);
         }
       },
       pageCount: Math.ceil(filteredAdsAccounts.length / pageSize),
-      getRowId: row => {
-        if (!row.original) return row.id || Math.random().toString()
-        if (!row.original.id) return row.id || Math.random().toString()
-        return row.original.id
-      }
-    })
+      getRowId: (row) => {
+        if (!row.original) return row.id || Math.random().toString();
+        if (!row.original.id) return row.id || Math.random().toString();
+        return row.original.id;
+      },
+    });
 
-    const total = filteredAdsAccounts.length
-    const start = total ? pageIndex * pageSize + 1 : 0
-    const end = Math.min((pageIndex + 1) * pageSize, total)
-    const totalPages = table.getPageCount()
+    const total = filteredAdsAccounts.length;
+    const start = total ? pageIndex * pageSize + 1 : 0;
+    const end = Math.min((pageIndex + 1) * pageSize, total);
+    const totalPages = table.getPageCount();
 
     // Reference-style page numbers
-    const maxVisiblePages = 5
-    const halfVisible = Math.floor(maxVisiblePages / 2)
-    let startPage = Math.max(1, pageIndex + 1 - halfVisible)
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
+    const maxVisiblePages = 5;
+    const halfVisible = Math.floor(maxVisiblePages / 2);
+    let startPage = Math.max(1, pageIndex + 1 - halfVisible);
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
     if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1)
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
-    const pages: (number | string)[] = []
+    const pages: (number | string)[] = [];
     if (startPage > 1) {
-      pages.push(1)
-      if (startPage > 2) pages.push('ellipsis-start')
+      pages.push(1);
+      if (startPage > 2) pages.push('ellipsis-start');
     }
-    for (let i = startPage; i <= endPage; i++) pages.push(i)
+    for (let i = startPage; i <= endPage; i++) pages.push(i);
     if (endPage < totalPages) {
-      if (endPage < totalPages - 1) pages.push('ellipsis-end')
-      pages.push(totalPages)
+      if (endPage < totalPages - 1) pages.push('ellipsis-end');
+      pages.push(totalPages);
     }
 
     return (
@@ -282,16 +284,16 @@ export default function AdAccountsSubtab () {
         <div className='overflow-x-auto'>
           <table className='min-w-full text-[0.75rem]'>
             <thead className='bg-gray-50 border-b border-gray-200'>
-              {table.getHeaderGroups().map(headerGroup => (
+              {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
-                  {headerGroup.headers.map(header => (
+                  {headerGroup.headers.map((header) => (
                     <th
                       key={header.id}
                       className='px-3 py-4 text-left font-semibold text-gray-700 whitespace-nowrap overflow-hidden text-ellipsis max-w-[160px]'
                     >
                       {flexRender(
                         header.column.columnDef.header,
-                        header.getContext()
+                        header.getContext(),
                       )}
                     </th>
                   ))}
@@ -300,16 +302,16 @@ export default function AdAccountsSubtab () {
             </thead>
 
             <tbody className='divide-y divide-gray-100'>
-              {table.getRowModel().rows.map(row => (
+              {table.getRowModel().rows.map((row) => (
                 <tr key={row.id} className='hover:bg-gray-50 transition-colors'>
-                  {row.getVisibleCells().map(cell => (
+                  {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
                       className='px-4 py-6 align-top text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis max-w-[170px]'
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </td>
                   ))}
@@ -396,7 +398,7 @@ export default function AdAccountsSubtab () {
                   >
                     …
                   </span>
-                )
+                ),
               )}
             </div>
 
@@ -426,48 +428,48 @@ export default function AdAccountsSubtab () {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   // Handle save button click
   const handleSave = async () => {
-    if (isSaving || !editingAccount) return
+    if (isSaving || !editingAccount) return;
 
     try {
-      setIsSaving(true)
-      const monthlyBudget = parseFloat(monthlyBudgetInput) || 0
-      const dailyBudget = monthlyBudget / 30.4
+      setIsSaving(true);
+      const monthlyBudget = parseFloat(monthlyBudgetInput) || 0;
+      const dailyBudget = monthlyBudget / 30.4;
       // Update the ads account
       await updateAdsAccount(editingAccount.id, {
         'Account Name Editable': adAccountName,
         'Monthly Budget': monthlyBudget,
-        'Daily Budget': dailyBudget
-      })
+        'Daily Budget': dailyBudget,
+      });
       // Update all adsAccountVariables for this account (store method)
       await updateAdsAccountVariablesBudgets(
         editingAccount.id,
         monthlyBudget,
-        dailyBudget
-      )
-      toast.success('Ad account updated successfully!')
-      setScreen('list')
-      setEditingAccount(null)
-      setAdAccountName('')
-      setMonthlyBudgetInput('')
-      setSendAlert(false)
+        dailyBudget,
+      );
+      toast.success('Ad account updated successfully!');
+      setScreen('list');
+      setEditingAccount(null);
+      setAdAccountName('');
+      setMonthlyBudgetInput('');
+      setSendAlert(false);
       // Refresh the data
       if (userDoc && userDoc['Company Admin'] && userDoc.uid) {
-        refreshAdsAccountsForTab(userDoc['Company Admin'], userDoc.uid)
+        refreshAdsAccountsForTab(userDoc['Company Admin'], userDoc.uid);
       }
     } catch (error: any) {
-      console.error('Error updating ad account:', error)
-      toast.error(error.message || 'Failed to update ad account')
+      console.error('Error updating ad account:', error);
+      toast.error(error.message || 'Failed to update ad account');
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
-  const isSaveDisabled = !adAccountName || isSaving
+  const isSaveDisabled = !adAccountName || isSaving;
 
   return (
     <div className='bg-white p-4 min-h-[600px]'>
@@ -483,7 +485,7 @@ export default function AdAccountsSubtab () {
               variant='outline'
               className='flex items-center gap-2 w-full sm:w-auto justify-center text-blue-600 font-semibold bg-blue-50 border-blue-200'
               onClick={() => {
-                router.push('/add-ads-account')
+                router.push('/add-ads-account');
               }}
             >
               <Plus className='w-5 h-5' /> Add New Ad Account
@@ -496,7 +498,7 @@ export default function AdAccountsSubtab () {
                     className='outline-none border-none bg-transparent text-sm text-gray-500 placeholder-gray-400 flex-1 min-w-[180px]'
                     placeholder='Search for ad accounts'
                     value={searchValue}
-                    onChange={e => setSearchValue(e.target.value)}
+                    onChange={(e) => setSearchValue(e.target.value)}
                     autoFocus
                   />
                   {searchValue && (
@@ -514,7 +516,7 @@ export default function AdAccountsSubtab () {
               <Button
                 variant='outline'
                 size='icon'
-                onClick={() => setShowSearch(v => !v)}
+                onClick={() => setShowSearch((v) => !v)}
                 className={showSearch ? 'border-blue-200' : ''}
                 aria-label='Show search'
               >
@@ -524,7 +526,7 @@ export default function AdAccountsSubtab () {
                 <select
                   className='appearance-none border border-gray-200 rounded-lg px-4 py-2 pr-8 text-sm bg-white  transition-colors focus:ring-2 focus:ring-blue-200 focus:border-blue-300 cursor-pointer font-medium text-gray-700'
                   value={pageSize}
-                  onChange={e => setPageSize(Number(e.target.value))}
+                  onChange={(e) => setPageSize(Number(e.target.value))}
                 >
                   <option value={15}>15 rows</option>
                   <option value={25}>25 rows</option>
@@ -557,11 +559,11 @@ export default function AdAccountsSubtab () {
           <button
             className='flex items-center gap-2 text-blue-600 mb-6'
             onClick={() => {
-              setScreen('list')
-              setEditingAccount(null)
-              setAdAccountName('')
-              setMonthlyBudgetInput('')
-              setSendAlert(false)
+              setScreen('list');
+              setEditingAccount(null);
+              setAdAccountName('');
+              setMonthlyBudgetInput('');
+              setSendAlert(false);
             }}
           >
             <ChevronLeft className='w-5 h-5' /> Back to Accounts
@@ -578,7 +580,7 @@ export default function AdAccountsSubtab () {
                   placeholder='Ad Account Name'
                   className='pl-10'
                   value={adAccountName}
-                  onChange={e => setAdAccountName(e.target.value)}
+                  onChange={(e) => setAdAccountName(e.target.value)}
                 />
                 <Briefcase className='absolute left-3 top-2.5 w-5 h-5 text-blue-400' />
               </div>
@@ -605,8 +607,8 @@ export default function AdAccountsSubtab () {
                     <button
                       className='text-red-500 hover:text-red-700'
                       onClick={() => {
-                        setDeletingAccount(editingAccount)
-                        setShowDeleteModal(true)
+                        setDeletingAccount(editingAccount);
+                        setShowDeleteModal(true);
                       }}
                     >
                       <Trash2 className='w-4 h-4' />
@@ -620,7 +622,7 @@ export default function AdAccountsSubtab () {
                   placeholder='Monthly Budget'
                   className='pl-10'
                   value={monthlyBudgetInput}
-                  onChange={e => setMonthlyBudgetInput(e.target.value)}
+                  onChange={(e) => setMonthlyBudgetInput(e.target.value)}
                   type='number'
                   step='0.01'
                 />
@@ -661,8 +663,8 @@ export default function AdAccountsSubtab () {
               <div className='flex items-center gap-2'></div>
               <button
                 onClick={() => {
-                  setShowDeleteModal(false)
-                  setDeletingAccount(null)
+                  setShowDeleteModal(false);
+                  setDeletingAccount(null);
                 }}
                 className='text-gray-400 hover:text-gray-600'
               >
@@ -687,8 +689,8 @@ export default function AdAccountsSubtab () {
                 variant='outline'
                 className='flex-1 border-blue-200 text-blue-600 hover:bg-blue-50'
                 onClick={() => {
-                  setShowDeleteModal(false)
-                  setDeletingAccount(null)
+                  setShowDeleteModal(false);
+                  setDeletingAccount(null);
                 }}
                 disabled={isDeleting}
               >
@@ -698,15 +700,15 @@ export default function AdAccountsSubtab () {
                 className='flex-1 bg-blue-600 text-white hover:bg-blue-700'
                 onClick={async () => {
                   try {
-                    setIsDeleting(true)
-                    await deleteAdsAccount(deletingAccount.id)
-                    toast.success('Ad account removed successfully!')
-                    setShowDeleteModal(false)
-                    setDeletingAccount(null)
+                    setIsDeleting(true);
+                    await deleteAdsAccount(deletingAccount.id);
+                    toast.success('Ad account removed successfully!');
+                    setShowDeleteModal(false);
+                    setDeletingAccount(null);
                   } catch (error: any) {
-                    toast.error(error.message || 'Failed to remove ad account')
+                    toast.error(error.message || 'Failed to remove ad account');
                   } finally {
-                    setIsDeleting(false)
+                    setIsDeleting(false);
                   }
                 }}
                 disabled={isDeleting}
@@ -725,5 +727,5 @@ export default function AdAccountsSubtab () {
         </div>
       )}
     </div>
-  )
+  );
 }

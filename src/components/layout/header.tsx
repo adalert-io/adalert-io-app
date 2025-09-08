@@ -135,40 +135,40 @@ export function Header() {
   return (
     <>
       {/* Trial Banner */}
-     {/* Trial Banner */}
-{subscription &&
-  (subscription['User Status'] === SUBSCRIPTION_STATUS.TRIAL_NEW ||
-    subscription['User Status'] === SUBSCRIPTION_STATUS.TRIAL_ENDED) && (
-    <div className='w-full bg-[#FFEBEE] px-4 md:px-6 lg:px-20 py-2'>
-      <div className='max-w-[1440px] mx-auto text-center'>
-        <span className='text-gray-900 text-[13px]'>
-          <Calendar1Icon className='inline w-4 h-4 mb-1 mr-1' />
-          {trialDaysLeft > 0 ? (
-            <>You're on a free trial with{' '}</>
-          ) : (
-            <>Your free trial has ended. </>
-          )}
-        </span>
-        {trialDaysLeft > 0 && (
-          <span className='text-gray-900 text-[13px] font-bold'>
-            {trialDaysLeft} days left.
-          </span>
+      {/* Trial Banner */}
+      {subscription &&
+        (subscription['User Status'] === SUBSCRIPTION_STATUS.TRIAL_NEW ||
+          subscription['User Status'] === SUBSCRIPTION_STATUS.TRIAL_ENDED) && (
+          <div className='w-full bg-[#FFEBEE] px-4 md:px-6 lg:px-20 py-2'>
+            <div className='max-w-[1440px] mx-auto text-center'>
+              <span className='text-gray-900 text-[13px]'>
+                <Calendar1Icon className='inline w-4 h-4 mb-1 mr-1' />
+                {trialDaysLeft > 0 ? (
+                  <>You're on a free trial with </>
+                ) : (
+                  <>Your free trial has ended. </>
+                )}
+              </span>
+              {trialDaysLeft > 0 && (
+                <span className='text-gray-900 text-[13px] font-bold'>
+                  {trialDaysLeft} days left.
+                </span>
+              )}
+              <span className='text-gray-900 text-[13px]'>
+                {' '}
+                Upgrade for 24/7 monitoring and peace of mind!
+              </span>
+              <button
+                onClick={() =>
+                  router.push('/settings/account/billing?show=payment-form')
+                }
+                className='text-white rounded rounded-[5px] border px-3 py-1 bg-[#da486b] font-medium hover:bg-[#000] transition-colors text-[12px] ml-3 cursor-pointer'
+              >
+                Upgrade Now
+              </button>
+            </div>
+          </div>
         )}
-        <span className='text-gray-900 text-[13px]'>
-          {' '}
-          Upgrade for 24/7 monitoring and peace of mind!
-        </span>
-        <button
-          onClick={() =>
-            router.push('/settings/account/billing?show=payment-form')
-          }
-          className='text-white rounded rounded-[5px] border px-3 py-1 bg-[#da486b] font-medium hover:bg-[#000] transition-colors text-[12px] ml-3 cursor-pointer'
-        >
-          Upgrade Now
-        </button>
-      </div>
-    </div>
-  )}
 
       {/* Payment Failed Banner */}
       {subscription &&
