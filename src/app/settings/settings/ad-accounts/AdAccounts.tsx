@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useAlertSettingsStore } from '@/lib/store/settings-store';
 import { useAuthStore } from '@/lib/store/auth-store';
+import { useUserAdsAccountsStore } from '@/lib/store/user-ads-accounts-store';
 import { Switch } from '@/components/ui/switch';
 import {
   useReactTable,
@@ -56,6 +57,7 @@ export default function AdAccountsSubtab() {
   const [sendAlert, setSendAlert] = useState(false);
 
   const { userDoc } = useAuthStore();
+  const { fetchUserAdsAccounts } = useUserAdsAccountsStore();
   const {
     adsAccountsForTab,
     fetchAdsAccountsForAdsAccountsTab,
@@ -451,6 +453,12 @@ export default function AdAccountsSubtab() {
         monthlyBudget,
         dailyBudget,
       );
+
+      // Refresh the header dropdown with updated account names
+      if (userDoc) {
+        await fetchUserAdsAccounts(userDoc);
+      }
+
       toast.success('Ad account updated successfully!');
       setScreen('list');
       setEditingAccount(null);
@@ -702,6 +710,12 @@ export default function AdAccountsSubtab() {
                   try {
                     setIsDeleting(true);
                     await deleteAdsAccount(deletingAccount.id);
+
+                    // Refresh the header dropdown after deleting account
+                    if (userDoc) {
+                      await fetchUserAdsAccounts(userDoc);
+                    }
+
                     toast.success('Ad account removed successfully!');
                     setShowDeleteModal(false);
                     setDeletingAccount(null);
