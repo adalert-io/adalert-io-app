@@ -371,7 +371,7 @@ export default function Dashboard() {
     setLastFetchedAccountId,
   ]);
 
-  // Set up auto-refresh for alerts and ads label every 15 minutes
+  // Set up auto-refresh for alerts, ads label, spend MTD, and spend MTD indicator every 15 minutes
   useEffect(() => {
     if (selectedAdsAccount?.id) {
       // Clear any existing interval
@@ -379,12 +379,20 @@ export default function Dashboard() {
         clearInterval(refreshInterval);
       }
 
-      // Set up new interval to refresh alerts and ads label every 15 minutes (900000 ms)
+      // Set up new interval to refresh data every 15 minutes (900000 ms)
       const interval = setInterval(() => {
-        // console.log('Auto-refreshing alerts and ads label...')
+        // console.log(
+        //   'Auto-refreshing alerts, ads label, spend MTD, and spend MTD indicator...',
+        // );
         fetchAlerts(selectedAdsAccount.id);
         triggerShowingAdsLabel(selectedAdsAccount);
-      }, 900000);
+
+        // Also refresh spend MTD and spend MTD indicator every 15 minutes
+        if (dashboardDaily && selectedAdsAccount) {
+          fetchSpendMtd(selectedAdsAccount);
+          fetchSpendMtdIndicator(selectedAdsAccount);
+        }
+      }, 60000);
 
       setRefreshInterval(interval);
 
@@ -395,7 +403,14 @@ export default function Dashboard() {
         }
       };
     }
-  }, [selectedAdsAccount?.id, fetchAlerts, triggerShowingAdsLabel]);
+  }, [
+    selectedAdsAccount?.id,
+    fetchAlerts,
+    triggerShowingAdsLabel,
+    dashboardDaily,
+    fetchSpendMtd,
+    fetchSpendMtdIndicator,
+  ]);
 
   // Cleanup interval when component unmounts
   useEffect(() => {
@@ -406,25 +421,40 @@ export default function Dashboard() {
     };
   }, [refreshInterval]);
 
-  // Fetch spend MTD after dashboardDaily is set
+  // Track if we've already fetched for this visibility session
+  const hasFetchedSpendMtdRef = useRef(false);
+  const hasFetchedSpendMtdIndicatorRef = useRef(false);
+
+  // Reset fetch flags when account changes
+  useEffect(() => {
+    hasFetchedSpendMtdRef.current = false;
+    hasFetchedSpendMtdIndicatorRef.current = false;
+  }, [selectedAdsAccount?.id]);
+
+  // Fetch spend MTD when dashboard becomes visible
   useEffect(() => {
     if (
       dashboardDaily &&
       selectedAdsAccount &&
-      dashboardDaily['Spend MTD'] === undefined &&
-      !spendMtdLoading
+      !spendMtdLoading &&
+      !hasFetchedSpendMtdRef.current
     ) {
+      // console.log('fetchSpendMtd...');
+      hasFetchedSpendMtdRef.current = true;
       fetchSpendMtd(selectedAdsAccount);
     }
   }, [dashboardDaily, selectedAdsAccount, fetchSpendMtd, spendMtdLoading]);
 
+  // Fetch spend MTD indicator when dashboard becomes visible
   useEffect(() => {
     if (
       dashboardDaily &&
       selectedAdsAccount &&
-      dashboardDaily['Spend MTD Indicator Alert'] === undefined &&
-      !spendMtdIndicatorLoading
+      !spendMtdIndicatorLoading &&
+      !hasFetchedSpendMtdIndicatorRef.current
     ) {
+      // console.log('fetchSpendMtdIndicator...');
+      hasFetchedSpendMtdIndicatorRef.current = true;
       fetchSpendMtdIndicator(selectedAdsAccount);
     }
   }, [
