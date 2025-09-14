@@ -2,14 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirebaseFnPath } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
+  console.log('=== Cronitor Webhook Received ===');
+  console.log('Timestamp:', new Date().toISOString());
+  console.log('Headers:', Object.fromEntries(request.headers.entries()));
+
   try {
-    // Get the webhook payload from Cronitor
     const webhookData = await request.json();
+    console.log('Webhook payload:', JSON.stringify(webhookData, null, 2));
 
-    // console.log("Received Cronitor webhook:", webhookData);
-
-    // Validate the webhook data
     if (!webhookData.id || !webhookData.type) {
+      console.error(
+        'Invalid webhook payload - missing id or type:',
+        webhookData,
+      );
       return NextResponse.json(
         { error: 'Invalid webhook payload' },
         { status: 400 },
@@ -18,6 +23,7 @@ export async function POST(request: NextRequest) {
 
     // Forward the webhook data to your Firebase function
     const firebaseFunctionPath = getFirebaseFnPath('handle-cronitor-alert-fb');
+    console.log('firebaseFunctionPath: ', firebaseFunctionPath);
 
     const response = await fetch(firebaseFunctionPath, {
       method: 'POST',
@@ -44,7 +50,9 @@ export async function POST(request: NextRequest) {
       message: 'Webhook processed successfully',
     });
   } catch (error: any) {
-    console.error('Error processing Cronitor webhook:', error);
+    console.error('=== Webhook Error ===');
+    console.error('Error details:', error);
+    console.error('Stack trace:', error.stack);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 },
