@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -473,7 +473,7 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
 }
 
 // Main Billing Component
-export default function BillingSubtab() {
+function BillingSubtabContent() {
   const { user, userDoc, fetchUserDocument } = useAuthStore();
   const {
     subscription,
@@ -933,5 +933,13 @@ export default function BillingSubtab() {
         )}
       </div>
     </Elements>
+  );
+}
+
+export default function BillingSubtab() {
+  return (
+    <Suspense fallback={<div className='p-4'>Loading…</div>}>
+      <BillingSubtabContent />
+    </Suspense>
   );
 }
