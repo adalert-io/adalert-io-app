@@ -18,79 +18,106 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Retrieve the subscription
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    // Retrieve all invoices for the subscription with manual pagination
+    const receipts: Array<{
+      created: number | null;
+      chargeId: string | null;
+      status: string | null;
+      receiptUrl: string | null;
+    }> = [];
 
-    // Retrieve the latest invoice associated with the subscription
-    const invoice = await stripe.invoices.retrieve(
-      subscription.latest_invoice as string,
-    );
-
-    // Get the charge from the invoice
-    let charge;
-    let receiptUrl: string | null = null;
-    let chargeId: string | null = null;
-    let amount = invoice.amount_paid;
-    let currency = invoice.currency;
-    let created = invoice.created;
-    let status: string | null = invoice.status;
-
-    // Check if invoice has a charge (older API) or payment_intent (newer API)
-    if ((invoice as any).charge) {
-      console.log('invoice.charge: ', (invoice as any).charge);
-      // Direct charge reference
-      charge = await stripe.charges.retrieve((invoice as any).charge as string);
-      receiptUrl = charge.receipt_url;
-      chargeId = invoice.number || invoice.receipt_number; // charge.id;
-      amount = charge.amount;
-      currency = charge.currency;
-      created = charge.created;
-      status = charge.status;
-    } else if ((invoice as any).payment_intent) {
-      console.log('invoice.payment_intent: ', (invoice as any).payment_intent);
-      // Payment intent reference - get the charge from payment intent
-      const paymentIntent = await stripe.paymentIntents.retrieve(
-        (invoice as any).payment_intent as string,
-      );
-      if (paymentIntent.latest_charge) {
-        charge = await stripe.charges.retrieve(
-          paymentIntent.latest_charge as string,
-        );
-        receiptUrl = charge.receipt_url;
-        chargeId = invoice.number || invoice.receipt_number; // charge.id;
-        amount = charge.amount;
-        currency = charge.currency;
-        created = charge.created;
-        status = charge.status;
-      }
-    }
-
-    // If no receipt URL found, return invoice information as fallback
-    if (!receiptUrl) {
-      console.warn(
-        'No receipt URL found, using invoice information as fallback',
-      );
-      console.log('invoice.receipt_number: ', invoice.receipt_number);
-      console.log('invoice.number: ', invoice.number);
-      return NextResponse.json({
-        receiptUrl: invoice.hosted_invoice_url || invoice.invoice_pdf,
-        chargeId: invoice.number || invoice.receipt_number, // invoice.id,
-        amount,
-        currency,
-        created,
-        status,
-        isInvoiceFallback: true,
+    let startingAfter: string | undefined = undefined;
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const page: Stripe.ApiList<Stripe.Invoice> = await stripe.invoices.list({
+        subscription: subscriptionId,
+        limit: 100,
+        starting_after: startingAfter,
       });
+
+      for (const invoice of page.data) {
+        let receiptUrl: string | null = null;
+
+        // If the invoice has a direct charge id, use that to fetch the receipt
+        const invoiceAny = invoice as Stripe.Invoice & {
+          charge?: string | Stripe.Charge | null;
+          payment_intent?: string | Stripe.PaymentIntent | null;
+        };
+
+        if (invoiceAny.charge && typeof invoiceAny.charge === 'string') {
+          try {
+            const charge = await stripe.charges.retrieve(invoiceAny.charge);
+            receiptUrl = charge.receipt_url || null;
+          } catch {
+            // ignore and fall back below
+          }
+        }
+
+        // If no charge yet, try via payment_intent -> latest_charge
+        if (!receiptUrl && invoiceAny.payment_intent) {
+          if (typeof invoiceAny.payment_intent === 'string') {
+            try {
+              const pi = await stripe.paymentIntents.retrieve(
+                invoiceAny.payment_intent,
+              );
+              const latestChargeId =
+                typeof pi.latest_charge === 'string' ? pi.latest_charge : null;
+              if (latestChargeId) {
+                const latestCharge = await stripe.charges.retrieve(
+                  latestChargeId,
+                );
+                receiptUrl = latestCharge.receipt_url || null;
+              } else {
+                // As a fallback, list charges for this payment intent
+                const chargesList = await stripe.charges.list({
+                  payment_intent: pi.id,
+                  limit: 1,
+                });
+                const first = chargesList.data[0];
+                receiptUrl = first?.receipt_url || null;
+              }
+            } catch {
+              // ignore and fall back below
+            }
+          }
+        }
+
+        // Final fallback to hosted invoice URL or PDF
+        if (!receiptUrl) {
+          receiptUrl =
+            invoice.hosted_invoice_url || invoice.invoice_pdf || null;
+        }
+
+        receipts.push({
+          created: invoice.created ?? null,
+          chargeId: invoice.number || invoice.receipt_number || null,
+          status: invoice.status || null,
+          receiptUrl,
+        });
+      }
+
+      if (!page.has_more) break;
+      startingAfter = page.data[page.data.length - 1]?.id;
     }
 
-    // Return the receipt URL and related information
+    // Sort by created desc for convenience
+    receipts.sort((a, b) => (b.created || 0) - (a.created || 0));
+
+    // Backward compatibility: also include latest invoice-like fields
+    const latest = receipts[0] || null;
+
+    console.log('receipts now: ', receipts);
+
     return NextResponse.json({
-      receiptUrl,
-      chargeId,
-      amount,
-      currency,
-      created,
-      status,
+      receipts,
+      ...(latest
+        ? {
+            receiptUrl: latest.receiptUrl,
+            chargeId: latest.chargeId,
+            created: latest.created,
+            status: latest.status,
+          }
+        : {}),
     });
   } catch (error: any) {
     console.error('Error fetching Stripe receipt:', error);
