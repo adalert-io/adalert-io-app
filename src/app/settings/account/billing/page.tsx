@@ -44,6 +44,7 @@ import {
 } from '@/lib/constants';
 import { doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 // Dynamically import react-select to avoid SSR issues
 const Select = dynamic(() => import('react-select'), {
@@ -439,7 +440,7 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
                 <Input
                   id='zip'
                   type='text'
-                  placeholder='10001'
+                  placeholder='Zip code'
                   value={formData.zip}
                   onChange={(e) => handleInputChange('zip', e.target.value)}
                   className='pl-10'
@@ -484,15 +485,14 @@ export default function BillingSubtab() {
     fetchAdsAccounts,
   } = useAlertSettingsStore();
   const [screen, setScreen] = useState<'list' | 'payment-form'>('list');
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  // Read search params on client side after mount
+  // React to search param changes
   useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
     const showPaymentForm = searchParams.get('show') === 'payment-form';
-    if (showPaymentForm) {
-      setScreen('payment-form');
-    }
-  }, []);
+    setScreen(showPaymentForm ? 'payment-form' : 'list');
+  }, [searchParams]);
   // Refetch userDoc on mount to ensure latest user type
   useEffect(() => {
     if (user?.uid) {
@@ -813,7 +813,8 @@ export default function BillingSubtab() {
                             <td className='py-3 px-4'>
                               <span
                                 className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                  receipt.status === 'succeeded' || receipt.status === 'paid'
+                                  receipt.status === 'succeeded' ||
+                                  receipt.status === 'paid'
                                     ? 'bg-green-100 text-green-800'
                                     : receipt.status === 'pending' ||
                                       receipt.status === 'open'
@@ -923,7 +924,12 @@ export default function BillingSubtab() {
         )}
 
         {screen === 'payment-form' && (
-          <PaymentForm onBack={() => setScreen('list')} />
+          <PaymentForm
+            onBack={() => {
+              router.replace('/settings/account/billing');
+              setScreen('list');
+            }}
+          />
         )}
       </div>
     </Elements>
