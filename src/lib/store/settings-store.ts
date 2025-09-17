@@ -2186,7 +2186,21 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
       }
 
-      // 4) Delete 'userTokens' where User == userRef
+      // 4) Delete 'authenticationPageTrackers' where User == userRef
+      {
+        const authenticationPageTrackersRef = collection(
+          db,
+          'authenticationPageTrackers',
+        );
+        const q = query(
+          authenticationPageTrackersRef,
+          where('User', '==', userRef),
+        );
+        const snap = await getDocs(q);
+        await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
+      }
+
+      // 5) Delete 'userTokens' where User == userRef
       {
         const userTokensRef = collection(db, 'userTokens');
         const q = query(userTokensRef, where('User', '==', userRef));
@@ -2194,7 +2208,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
       }
 
-      // 5) Delete 'invitations' where email matches
+      // 6) Delete 'invitations' where email matches
       {
         const invitationsRef = collection(db, 'invitations');
         const q = query(invitationsRef, where('email', '==', email));
@@ -2202,7 +2216,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
       }
 
-      // 6) Delete the user document
+      // 7) Delete the user document
       await deleteDoc(userRef);
 
       set({ loading: false });
