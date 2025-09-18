@@ -20,8 +20,13 @@ export const metadata: Metadata = {
   title: "AdAlert.io - Ad Monitoring Platform",
   description: "Monitor your ads and get real-time alerts",
   icons: {
-    icon: '/images/adalert-logo.avif',
+    icon: [
+      { url: '/images/adalert-logo.avif', type: 'image/avif' },
+      { url: '/images/adalert-logo.avif', sizes: '32x32', type: 'image/avif' },
+      { url: '/images/adalert-logo.avif', sizes: '16x16', type: 'image/avif' },
+    ],
     shortcut: '/images/adalert-logo.avif',
+    apple: '/images/adalert-logo.avif',
   },
 };
 
