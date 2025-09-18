@@ -1102,6 +1102,10 @@ export default function Dashboard() {
             reportContentPlain: modalContent
               .replace(/<[^>]*>/g, '')
               .replace(/\n+/g, '\n\n'),
+            // Convert markdown to HTML for email
+            reportContentHtml: modalContent
+              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+              .replace(/\*(.*?)\*/g, '<em>$1</em>'),
           },
         }),
       });
