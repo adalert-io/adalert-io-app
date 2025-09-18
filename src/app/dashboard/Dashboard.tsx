@@ -1946,7 +1946,7 @@ export default function Dashboard() {
                 {/* Left side: Logo + Title */}
                 <div className='flex items-center gap-3'>
                   {/* Logo */}
-                  <div className='flex items-center gap-2'>
+                  <div className='flex items-center gap-1'>
                     <Image
                       src='/images/adalert-logo.avif'
                       alt='AdAlert Logo'
@@ -1954,13 +1954,11 @@ export default function Dashboard() {
                       height={22} // 👈 24 se 22
                       priority
                     />
-                    <span className='text-lg font-bold text-gray-900 tracking-tight'>
-                      adAlert.io
-                    </span>
+                  
                   </div>
 
                   {/* Title */}
-                  <div className='flex items-center gap-2 ml-4 pl-4 border-l border-gray-300'>
+                  <div className='flex items-center gap-2 ml-2 pl-4 border-l border-gray-300'>
                     <FileChartColumn className='h-5 w-5 text-[#015AFD]' />
                     <div>
                       <h2 className='text-lg font-semibold text-gray-900'>
