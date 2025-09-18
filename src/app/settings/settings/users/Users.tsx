@@ -88,6 +88,16 @@ export default function UsersSubtab() {
     string | null
   >(null);
 
+  // Derived role-permission flags
+  const isCurrentUserSuperAdmin =
+    !!userDoc && userDoc['Company Admin']?.id === userDoc.uid;
+  const isEditingTargetSuperAdmin =
+    !!editingUser && userDoc?.['Company Admin']?.id === editingUser.id;
+  // Disable role dropdown if invited admin edits themselves OR attempts to edit super admin
+  const isRoleDropdownDisabled =
+    (!isCurrentUserSuperAdmin && editingUser?.id === userDoc?.uid) ||
+    (!isCurrentUserSuperAdmin && isEditingTargetSuperAdmin);
+
   // Clean up object URL when component unmounts or avatarPreview changes
   useEffect(() => {
     return () => {
@@ -665,6 +675,18 @@ export default function UsersSubtab() {
     if (isSaving) return;
 
     try {
+      // Prevent changing the super admin's role to Manager (including self)
+      if (
+        screen === 'edit' &&
+        editingUser &&
+        userDoc?.['Company Admin']?.id &&
+        editingUser.id === userDoc['Company Admin'].id &&
+        role !== 'Admin'
+      ) {
+        toast.error('The super admin cannot be demoted.');
+        return;
+      }
+
       setIsSaving(true);
       if (screen === 'add') {
         // Check if email already exists in users collection
@@ -881,18 +903,25 @@ export default function UsersSubtab() {
                 <Mail className='absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]' />
               </div>
               {/* Role dropdown */}
-              <div className='relative role-dropdown'>
+              <div className={`relative role-dropdown ${
+                isRoleDropdownDisabled ? 'opacity-60 cursor-not-allowed' : ''
+              }`}>
                 <button
                   type='button'
-                  className='flex items-center w-full border rounded-md px-3 py-2 bg-white text-base font-nprmal focus:outline-none focus:ring-2 focus:ring-blue-200'
-                  onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
+                  className={`flex items-center w-full border rounded-md px-3 py-2 bg-white text-base font-nprmal focus:outline-none focus:ring-2 focus:ring-blue-200 ${
+                    isRoleDropdownDisabled ? 'pointer-events-none' : ''
+                  }`}
+                  onClick={() => {
+                    if (isRoleDropdownDisabled) return;
+                    setRoleDropdownOpen(!roleDropdownOpen);
+                  }}
                 >
                   <span className='flex items-center gap-2'>
                     <User className='w-5 h-5 text-[#155dfc]' /> {role}
                   </span>
                   <ChevronDown className='ml-auto w-4 h-4 text-[#155dfc]' />
                 </button>
-                {roleDropdownOpen && (
+                {roleDropdownOpen && !isRoleDropdownDisabled && (
                   <div className='absolute z-10 mt-1 w-full bg-white border rounded shadow-lg'>
                     <div className='py-1 font-normal'>
                       <button
@@ -905,8 +934,22 @@ export default function UsersSubtab() {
                         Admin
                       </button>
                       <button
-                        className='w-full text-left px-3 py-2 text-sm hover:bg-gray-100'
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 ${
+                          editingUser &&
+                          userDoc?.['Company Admin']?.id &&
+                          editingUser.id === userDoc['Company Admin'].id
+                            ? 'opacity-50 cursor-not-allowed'
+                            : ''
+                        }`}
                         onClick={() => {
+                          // Disallow changing super admin to Manager
+                          if (
+                            editingUser &&
+                            userDoc?.['Company Admin']?.id &&
+                            editingUser.id === userDoc['Company Admin'].id
+                          ) {
+                            return;
+                          }
                           setRole('Manager');
                           setRoleDropdownOpen(false);
                         }}
@@ -917,6 +960,14 @@ export default function UsersSubtab() {
                   </div>
                 )}
               </div>
+              {screen === 'edit' &&
+                editingUser &&
+                userDoc?.['Company Admin']?.id &&
+                editingUser.id === userDoc['Company Admin'].id && (
+                  <p className='text-xs text-gray-500'>
+                    The super admin role cannot be changed.
+                  </p>
+                )}
               {/* Ads accounts dropdown */}
               <div className='relative ads-dropdown'>
                 <button
