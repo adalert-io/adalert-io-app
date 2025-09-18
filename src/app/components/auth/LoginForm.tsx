@@ -64,7 +64,17 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
       await signIn(data.email, data.password);
       toast.success("Logged in successfully!");
     } catch (error: any) {
-      toast.error(error.message || "Failed to log in");
+      const code = error?.code || "";
+      let message = error?.message || "Failed to log in";
+
+      if (
+        code === "auth/invalid-credential" ||
+        (typeof message === "string" && message.includes("auth/invalid-credential"))
+      ) {
+        message = "Username and/or password are incorrect.";
+      }
+
+      toast.error(message);
     }
   }
 
