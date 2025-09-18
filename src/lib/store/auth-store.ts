@@ -436,6 +436,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ loading: true, error: null });
       await signOut(auth);
       set({ user: null, userDoc: null, subscription: null }); // Clear subscription on logout
+
+      // Navigate to auth page after logout
+      const { router } = get();
+      if (router) {
+        router.push('/auth');
+      }
     } catch (err: any) {
       set({ error: err.message });
       throw err;
