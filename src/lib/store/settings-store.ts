@@ -618,7 +618,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             }
           } catch (error) {
             // Ignore errors when deleting old avatar (file might not exist)
-            console.warn('Could not delete old avatar:', error);
+            // console.warn('Could not delete old avatar:', error);
           }
         }
       }
@@ -861,10 +861,10 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         });
 
         if (!response.ok) {
-          console.warn(
-            'Failed to remove cronitor monitors for ads account:',
-            await response.text(),
-          );
+          // console.warn(
+          //   'Failed to remove cronitor monitors for ads account:',
+          //   await response.text(),
+          // );
         } else {
           // console.log(
           //   'Successfully removed cronitor monitors for ads account:',
@@ -872,10 +872,10 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           // );
         }
       } catch (error) {
-        console.warn(
-          'Error removing cronitor monitors for ads account:',
-          error,
-        );
+        // console.warn(
+        //   'Error removing cronitor monitors for ads account:',
+        //   error,
+        // );
       }
 
       // 3. Delete 'adsAccounts' document where id = accountId
@@ -948,27 +948,27 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
                     });
 
                     if (!response.ok) {
-                      console.warn(
-                        `Failed to update subscription item ${subscriptionItemId}:`,
-                        await response.text(),
-                      );
+                      // console.warn(
+                      //   `Failed to update subscription item ${subscriptionItemId}:`,
+                      //   await response.text(),
+                      // );
                     } else {
                       // console.log(
                       //   `Successfully updated subscription item ${subscriptionItemId} to quantity ${newQuantity}`,
                       // );
                     }
                   } catch (error) {
-                    console.warn(
-                      `Error updating subscription item ${subscriptionItemId}:`,
-                      error,
-                    );
+                    // console.warn(
+                    //   `Error updating subscription item ${subscriptionItemId}:`,
+                    //   error,
+                    // );
                   }
                 }
               }
             }
           }
         } catch (error) {
-          console.warn('Error updating subscription item:', error);
+          // console.warn('Error updating subscription item:', error);
         }
       }
 
@@ -1047,7 +1047,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             }
           } catch (error) {
             // Ignore errors when deleting old avatar
-            console.warn('Could not delete old avatar:', error);
+            // console.warn('Could not delete old avatar:', error);
           }
         }
       }
@@ -1236,20 +1236,20 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             });
 
             if (!response.ok) {
-              console.warn(
-                `Failed to cancel Stripe subscription ${stripeSubscriptionId}:`,
-                await response.text(),
-              );
+              // console.warn(
+              //   `Failed to cancel Stripe subscription ${stripeSubscriptionId}:`,
+              //   await response.text(),
+              // );
             } else {
               // console.log(
               //   `Successfully canceled Stripe subscription ${stripeSubscriptionId}`,
               // );
             }
           } catch (error) {
-            console.warn(
-              `Error cancelling Stripe subscription ${stripeSubscriptionId}:`,
-              error,
-            );
+            // console.warn(
+            //   `Error cancelling Stripe subscription ${stripeSubscriptionId}:`,
+            //   error,
+            // );
           }
         }
 
@@ -1277,10 +1277,10 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           await deleteObject(avatarFolderRef);
         } catch (error) {
           // Ignore errors if folder doesn't exist or is already empty
-          console.warn(
-            `Could not delete avatar folder for user ${userId}:`,
-            error,
-          );
+          // console.warn(
+          //   `Could not delete avatar folder for user ${userId}:`,
+          //   error,
+          // );
         }
       }
 
@@ -1313,10 +1313,10 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
             });
 
             if (!response.ok) {
-              console.warn(
-                'Failed to remove cronitor monitors:',
-                await response.text(),
-              );
+              // console.warn(
+              //   'Failed to remove cronitor monitors:',
+              //   await response.text(),
+              // );
             } else {
               // console.log(
               //   'Successfully removed cronitor monitors for admin email:',
@@ -1326,7 +1326,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           }
         }
       } catch (error) {
-        console.warn('Error removing cronitor monitors:', error);
+        // console.warn('Error removing cronitor monitors:', error);
       }
 
       // 15. Remove all users where id in userIds
@@ -1359,14 +1359,14 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
                   const removalResult = await response.json();
 
                   if (removalResult.result.errors.length > 0) {
-                    console.warn(
-                      `Contact removal errors for user ${userId}:`,
-                      removalResult.result.errors,
-                    );
+                    // console.warn(
+                    //   `Contact removal errors for user ${userId}:`,
+                    //   removalResult.result.errors,
+                    // );
                   }
                 }
               } catch (error) {
-                console.warn('Failed to remove contacts:', error);
+                // console.warn('Failed to remove contacts:', error);
               }
             }
           }
@@ -1663,10 +1663,10 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           //   customerId,
           // );
         } catch (defaultError) {
-          console.warn(
-            'Failed to set payment method as default:',
-            defaultError,
-          );
+          // console.warn(
+          //   'Failed to set payment method as default:',
+          //   defaultError,
+          // );
           // Continue anyway as this is not critical
         }
 
@@ -1822,7 +1822,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
                 });
               }
             } catch (error) {
-              console.warn('Failed to fetch receipt:', error);
+              // console.warn('Failed to fetch receipt:', error);
             }
           }
           onBack();
@@ -1909,10 +1909,10 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           //   stripeCustomerId,
           // );
         } catch (defaultError) {
-          console.warn(
-            'Failed to set payment method as default:',
-            defaultError,
-          );
+          // console.warn(
+          //   'Failed to set payment method as default:',
+          //   defaultError,
+          // );
           // Continue anyway as this is not critical
         }
 
@@ -2024,13 +2024,13 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
                 'Payment method updated and past-due payment processed successfully!',
               );
             } else {
-              console.warn('Payment retry failed:', retryResult.error);
+              // console.warn('Payment retry failed:', retryResult.error);
               toast.warning(
                 'Payment method updated, but failed to process past-due payment. Please contact support.',
               );
             }
           } else {
-            console.warn('No Stripe subscription ID found for payment retry');
+            // console.warn('No Stripe subscription ID found for payment retry');
             toast.warning(
               'Payment method updated, but could not process past-due payment. Please contact support.',
             );
@@ -2096,9 +2096,9 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
               'Payment method updated and new subscription created successfully!',
             );
           } else {
-            console.warn(
-              'No connected ads accounts found for new subscription',
-            );
+            // console.warn(
+            //   'No connected ads accounts found for new subscription',
+            // );
             toast.warning(
               'Payment method updated, but no ads accounts are connected. Please connect ads accounts to create a subscription.',
             );
@@ -2148,7 +2148,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         // console.log('Payment retry successful:', data);
         return { success: true, data };
       } else {
-        console.warn('Payment retry failed:', data.error);
+        // console.warn('Payment retry failed:', data.error);
         return { success: false, error: data.error };
       }
     } catch (error: any) {
