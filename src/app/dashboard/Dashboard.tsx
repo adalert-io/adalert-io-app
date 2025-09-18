@@ -154,7 +154,7 @@ function KpiMetricsRow({
           <button
             key={p.key}
             type='button'
-            className={`px-4 py-2 rounded-lg font-semibold border transition-colors text-base ${
+            className={`px-4 py-2 rounded-lg font-semibold border transition-colors text-base cursor-pointer ${
               activePeriod === p.key
                 ? 'bg-[#015AFD] text-white border-[#015AFD]'
                 : 'bg-white text-[#015AFD] border-[#015AFD] hover:bg-blue-50'
