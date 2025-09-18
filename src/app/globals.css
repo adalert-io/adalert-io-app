@@ -126,3 +126,8 @@
     grid-template-columns: 1fr;
 }
 }
+.prose{
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  white-space: normal !important;
+}
