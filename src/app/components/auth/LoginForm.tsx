@@ -80,26 +80,24 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
   return (
     <div className="w-full h-screen grid grid-cols-1 md:grid-cols-2 mobile-uses">
       <div className="flex items-center justify-center p-5">
-
         <div className="w-full max-w-md mx-auto flex flex-col items-center justify-center flex-1">
           <Card className="px-2 w-full bg-white shadow-none border-none rounded-none p-0">
             <CardContent className="text-center px-0">
-                                      <Link href="https://adalert.io/" className="flex items-center justify-center gap-2 min-w-0 py-2">
-
-              
-            <h1 className="flex items-center justify-center gap-2 text-[25px] font-bold mb-4">
-  <Image
-    src="/images/adalert-logo.avif"
-    alt="logo"
-    width={40}
-    height={40}
-  />
-  <span className="text-[#223b53]">adAlert.io</span>
-</h1>
-</Link>
-              <h3 className="text-[24px] mb-6 font-bold">
-                Welcome Back!
-              </h3>
+              <Link
+                href="https://adalert.io/"
+                className="flex items-center justify-center gap-2 min-w-0 py-2"
+              >
+                <h1 className="flex items-center justify-center gap-2 text-[25px] font-bold mb-4">
+                  <Image
+                    src="/images/adalert-logo.avif"
+                    alt="logo"
+                    width={40}
+                    height={40}
+                  />
+                  <span className="text-[#223b53]">adAlert.io</span>
+                </h1>
+              </Link>
+              <h3 className="text-[24px] mb-6 font-bold">Welcome Back!</h3>
               <Button
                 type="button"
                 variant="secondary"
@@ -167,8 +165,7 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
                               type="email"
                               placeholder="Email"
                               className="pl-10"
-                                autoComplete="off" // 🚀 This disables autofill
-
+                              autoComplete="off" // 🚀 This disables autofill
                               {...field}
                             />
                           </div>
@@ -190,8 +187,7 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
                               type={showPassword ? "text" : "password"}
                               placeholder="Password"
                               className="pl-10"
-                                autoComplete="off" // 🚀 This disables autofill
-
+                              autoComplete="off" // 🚀 This disables autofill
                               {...field}
                             />
                             <button
@@ -232,8 +228,10 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
                     />
 
                     <Button
+                      type="button"
                       variant="link"
                       className="px-0 font-normal text-sm text-gray-500 hover:text-blue-600 hover:no-underline focus:no-underline"
+                      onClick={() => router.push("/auth/forgot-password")}
                     >
                       Forgot Password?
                     </Button>
@@ -241,10 +239,11 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
 
                   <Button
                     type="submit"
-                    className={`w-full mt-2 py-6 text-base font-semibold transition-colors duration-200 ${isFormValid
+                    className={`w-full mt-2 py-6 text-base font-semibold transition-colors duration-200 ${
+                      isFormValid
                         ? "bg-blue-600 text-white hover:bg-blue-700"
                         : "bg-gray-400 text-white cursor-not-allowed"
-                      }`}
+                    }`}
                     disabled={!isFormValid || loading}
                   >
                     {loading ? "Logging in..." : "Log in"}
@@ -269,10 +268,8 @@ export default function LoginForm({ onSwitchToSignup }: LoginFormProps) {
           </Card>
         </div>
       </div>
-             {/* Right Column */}
-       <Reviews />
-
-
+      {/* Right Column */}
+      <Reviews />
     </div>
   );
 }
