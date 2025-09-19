@@ -96,6 +96,7 @@ interface AlertSettingsState {
   adsAccountsForTab: AdsAccount[];
   adsAccountsForTabLoaded: boolean;
   fetchAlertSettings: (userId: string) => Promise<void>;
+  refreshAlertSettings: (userId: string) => Promise<void>;
   updateAlertSettings: (
     userId: string,
     updates: Partial<AlertSettings>,
@@ -251,6 +252,28 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
   lastChargeCurrency: null,
   fetchAlertSettings: async (userId: string) => {
     if (get().loadedUserId === userId && get().alertSettings) return;
+    set({ loading: true, error: null });
+    try {
+      const alertSettingsRef = collection(db, 'alertSettings');
+      const userRef = doc(db, 'users', userId);
+      const q = query(alertSettingsRef, where('User', '==', userRef));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        const docSnap = snap.docs[0];
+        set({
+          alertSettings: { id: docSnap.id, ...docSnap.data() } as AlertSettings,
+          loading: false,
+          loadedUserId: userId,
+        });
+      } else {
+        set({ alertSettings: null, loading: false, loadedUserId: userId });
+      }
+    } catch (error: any) {
+      set({ error: error.message, loading: false });
+    }
+  },
+  // Force re-fetch regardless of cache
+  refreshAlertSettings: async (userId: string) => {
     set({ loading: true, error: null });
     try {
       const alertSettingsRef = collection(db, 'alertSettings');

@@ -99,6 +99,7 @@ export default function AlertsSubtab() {
     loading,
     error,
     fetchAlertSettings,
+    refreshAlertSettings,
     updateAlertSettings,
     loadedUserId,
   } = useAlertSettingsStore();
@@ -110,6 +111,14 @@ export default function AlertsSubtab() {
   useEffect(() => {
     if (user?.uid && loadedUserId !== user.uid) fetchAlertSettings(user.uid);
   }, [user?.uid, loadedUserId, fetchAlertSettings]);
+
+  // On mount or when tab becomes active again, force refresh to avoid stale state
+  useEffect(() => {
+    if (!user?.uid) return;
+    const onFocus = () => refreshAlertSettings(user.uid);
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [user?.uid, refreshAlertSettings]);
 
   useEffect(() => {
     if (alertSettings) {
@@ -132,7 +141,7 @@ export default function AlertsSubtab() {
     if (!user?.uid || !alertSettings) return;
     setSaving(true);
     await updateAlertSettings(user.uid, localSettings);
-    await fetchAlertSettings(user.uid);
+    await refreshAlertSettings(user.uid);
     setSaving(false);
   };
 
@@ -199,7 +208,9 @@ export default function AlertsSubtab() {
           </div>
         </Card>
       </div>
+      {/* Hide groups if Email alerts are disabled */}
       {/* Severity */}
+      {localSettings["Send Email Alerts"] && (
       <div className="mb-8">
         <div className="font-semibold text-lg mb-2">Severity</div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -223,7 +234,9 @@ export default function AlertsSubtab() {
           ))}
         </div>
       </div>
+      )}
       {/* Level */}
+      {localSettings["Send Email Alerts"] && (
       <div className="mb-8">
         <div className="font-semibold text-lg mb-2">Level</div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -247,7 +260,9 @@ export default function AlertsSubtab() {
           ))}
         </div>
       </div>
+      )}
       {/* Type */}
+      {localSettings["Send Email Alerts"] && (
       <div className="mb-8">
         <div className="font-semibold text-lg mb-2">Type</div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -271,6 +286,7 @@ export default function AlertsSubtab() {
           ))}
         </div>
       </div>
+      )}
       <div className='mt-8 flex justify-center'>
         <Button
           onClick={handleSave}
