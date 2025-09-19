@@ -590,6 +590,36 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
   ) => {
     set({ loading: true, error: null });
     try {
+      // Guard: prevent super admin from being demoted by anyone
+      if (updates['User Type'] && updates['User Type'] !== 'Admin') {
+        const { useAuthStore } = await import('./auth-store');
+        const authUserDoc = useAuthStore.getState().userDoc;
+        const superAdminId = authUserDoc?.['Company Admin']?.id;
+        if (superAdminId && userId === superAdminId) {
+          throw new Error('The super admin cannot be demoted.');
+        }
+      }
+
+      // Guard: who can change roles
+      // - Super admin can change any user's role (except cannot demote self handled above)
+      // - Invited admins can change other invited admins/managers, but not themselves and not the super admin
+      if (updates['User Type'] !== undefined) {
+        const { useAuthStore } = await import('./auth-store');
+        const authUserDoc = useAuthStore.getState().userDoc;
+        const superAdminId = authUserDoc?.['Company Admin']?.id;
+        const isSuperAdmin = !!authUserDoc && authUserDoc.uid === superAdminId;
+
+        if (!isSuperAdmin) {
+          // Invited admin limitations
+          if (userId === superAdminId) {
+            throw new Error('Only the main admin can change the super admin\'s role.');
+          }
+          if (userId === authUserDoc?.uid) {
+            throw new Error('You cannot change your own role.');
+          }
+        }
+      }
+
       let avatarUrl = updates.currentAvatarUrl;
 
       // Handle avatar upload if a new file is provided

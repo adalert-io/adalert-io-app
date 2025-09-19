@@ -154,7 +154,7 @@ function KpiMetricsRow({
           <button
             key={p.key}
             type='button'
-            className={`px-4 py-2 rounded-lg font-semibold border transition-colors text-base ${
+            className={`px-4 py-2 rounded-lg font-semibold border transition-colors text-base cursor-pointer ${
               activePeriod === p.key
                 ? 'bg-[#015AFD] text-white border-[#015AFD]'
                 : 'bg-white text-[#015AFD] border-[#015AFD] hover:bg-blue-50'
@@ -1102,6 +1102,10 @@ export default function Dashboard() {
             reportContentPlain: modalContent
               .replace(/<[^>]*>/g, '')
               .replace(/\n+/g, '\n\n'),
+            // Convert markdown to HTML for email
+            reportContentHtml: modalContent
+              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+              .replace(/\*(.*?)\*/g, '<em>$1</em>'),
           },
         }),
       });
@@ -1946,7 +1950,7 @@ export default function Dashboard() {
                 {/* Left side: Logo + Title */}
                 <div className='flex items-center gap-3'>
                   {/* Logo */}
-                  <div className='flex items-center gap-2'>
+                  <div className='flex items-center gap-1'>
                     <Image
                       src='/images/adalert-logo.avif'
                       alt='AdAlert Logo'
@@ -1954,13 +1958,11 @@ export default function Dashboard() {
                       height={22} // 👈 24 se 22
                       priority
                     />
-                    <span className='text-lg font-bold text-gray-900 tracking-tight'>
-                      adAlert.io
-                    </span>
+                  
                   </div>
 
                   {/* Title */}
-                  <div className='flex items-center gap-2 ml-4 pl-4 border-l border-gray-300'>
+                  <div className='flex items-center gap-2 ml-2 pl-4 border-l border-gray-300'>
                     <FileChartColumn className='h-5 w-5 text-[#015AFD]' />
                     <div>
                       <h2 className='text-lg font-semibold text-gray-900'>
