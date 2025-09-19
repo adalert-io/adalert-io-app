@@ -71,15 +71,25 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
     }
 
     try {
-      // 1. Fetch all selected ads accounts for the company admin
+      // 1. Fetch selected ads accounts for the company admin
       const adsAccountRef = collection(db, COLLECTIONS.ADS_ACCOUNTS);
       const companyAdminRef = userDoc['Company Admin'];
+      const userRef = doc(db, COLLECTIONS.USERS, userDoc.uid);
 
-      const adsAccountQuery = query(
-        adsAccountRef,
-        where('User', '==', companyAdminRef),
-        where('Is Selected', '==', true),
-      );
+      // Admins see all selected accounts; Managers see only accounts where they are in Selected Users
+      const isAdmin = userDoc['User Type'] === 'Admin';
+      const adsAccountQuery = isAdmin
+        ? query(
+            adsAccountRef,
+            where('User', '==', companyAdminRef),
+            where('Is Selected', '==', true),
+          )
+        : query(
+            adsAccountRef,
+            where('User', '==', companyAdminRef),
+            where('Is Selected', '==', true),
+            where('Selected Users', 'array-contains', userRef),
+          );
       const adsAccountSnap = await getDocs(adsAccountQuery);
 
       const adsAccounts = adsAccountSnap.docs.map((docSnap) => ({

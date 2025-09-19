@@ -124,20 +124,15 @@ export default function UsersSubtab() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Helper function to check if current user has access to an ads account
-  const hasUserAccessToAccount = useCallback(
-    (account: any) => {
-      if (!userDoc?.uid || !account['Selected Users']) return false;
-
-      return account['Selected Users'].some((userRef: any) => {
-        // Check if the userRef is a Firestore document reference
-        // Firestore references have a path property that includes the document ID
-        return (
-          userRef.path?.includes(userDoc.uid) || userRef.id === userDoc.uid
-        );
-      });
+  // Helper: does a specific user (by id) have access to an ads account?
+  const doesUserHaveAccessToAccount = useCallback(
+    (account: any, userId: string | undefined) => {
+      if (!userId || !account['Selected Users']) return false;
+      return account['Selected Users'].some(
+        (userRef: any) => userRef.path?.includes(userId) || userRef.id === userId,
+      );
     },
-    [userDoc],
+    [],
   );
 
   useEffect(() => {
@@ -172,20 +167,19 @@ export default function UsersSubtab() {
       setName(editingUser.Name || '');
       setNotifyUser(editingUser.NotifyUser || false);
 
-      // Check which ads accounts the current user has access to
-      if (userDoc && userDoc.uid) {
-        const userSelectedAds = adsAccounts
-          .filter((account) => hasUserAccessToAccount(account))
+      // Preselect ads based on the EDITING user's current access, not the current user
+      if (editingUser?.id) {
+        const editingUserSelectedAds = adsAccounts
+          .filter((account) => doesUserHaveAccessToAccount(account, editingUser.id))
           .map((account) => account.id);
-
-        setSelectedAds(userSelectedAds);
+        setSelectedAds(editingUserSelectedAds);
       }
     } else if (screen === 'add') {
       setEmail('');
       setName('');
       setNotifyUser(false);
     }
-  }, [screen, editingUser, userDoc, adsAccounts, hasUserAccessToAccount]);
+  }, [screen, editingUser, adsAccounts, doesUserHaveAccessToAccount]);
 
   // Users Table Columns
   const columns: ColumnDef<any>[] = [
@@ -217,7 +211,37 @@ export default function UsersSubtab() {
     {
       accessorKey: 'User Access',
       header: 'Access',
-      cell: ({ row }) => <span>{row.original['User Access']}</span>,
+      cell: ({ row }) => {
+        // Invitations keep showing Pending
+        if (row.original.isInvitation) {
+          return <span>Pending</span>;
+        }
+
+        const userId: string | undefined = row.original.id;
+        const isSuperAdminRow =
+          row.original?.['Company Admin']?.id === row.original?.id;
+        const totalAccounts = adsAccounts.length;
+
+        if (totalAccounts === 0) {
+          return <span>0 of 0 ad accounts</span>;
+        }
+
+        if (isSuperAdminRow) {
+          return <span>{`All ad accounts (${totalAccounts})`}</span>;
+        }
+
+        const accessibleCount = adsAccounts.filter((account) =>
+          doesUserHaveAccessToAccount(account, userId),
+        ).length;
+
+        if (accessibleCount === totalAccounts) {
+          return <span>{`All ad accounts (${totalAccounts})`}</span>;
+        }
+
+        return (
+          <span>{`${accessibleCount} of ${totalAccounts} ad accounts`}</span>
+        );
+      },
     },
     {
       accessorKey: 'status',

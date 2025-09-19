@@ -142,6 +142,14 @@ export default function AcceptInvitation({
       const updateData: any = {
         "Company Admin": invitation.companyAdmin,
         Name: formData.name,
+        // Set role and access from invitation
+        "User Type": invitation.userType || "User",
+        "User Access":
+          invitation.userType === "Admin"
+            ? "All ad accounts"
+            : "Selected ad accounts",
+        // Track inviter for post-auth navigation logic
+        Inviter: invitation.invitedBy || null,
       };
 
       // Add contact IDs if they were created successfully
