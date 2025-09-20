@@ -28,8 +28,10 @@ function RedirectPageContent() {
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const { setUser, setUserDoc, setGoogleOAuthRedirect } = useAuthStore();
-  const { fetchUserDocument, checkSubscriptionStatus } = useAuthStore();
+  
+  // Destructure auth store functions
+  const authStore = useAuthStore();
+  const { setUser, setUserDoc, setGoogleOAuthRedirect, fetchUserDocument, checkSubscriptionStatus } = authStore;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -52,6 +54,8 @@ function RedirectPageContent() {
 
   useEffect(() => {
     // Parse query params
+    if (!searchParams) return;
+    
     const code = searchParams.get('code');
     const state = searchParams.get('state');
     const errorParam = searchParams.get('error');
@@ -67,7 +71,7 @@ function RedirectPageContent() {
       (async () => {
         try {
           setIsProcessing(true);
-          setGoogleOAuthRedirect(true); 
+          authStore.setGoogleOAuthRedirect(true); 
           const redirect_uri = !page
             ? `${window.location.origin}/redirect`
             : `${window.location.origin}/redirect?page=${page}`;
@@ -180,7 +184,7 @@ function RedirectPageContent() {
           await batch.commit();
 
           // Step 5: Handle navigation directly without waiting for auth state change
-          const { checkSubscriptionStatus, handlePostAuthNavigation, setUser, setGoogleOAuthRedirect } = useAuthStore.getState();
+          const { checkSubscriptionStatus, handlePostAuthNavigation, setUser, setGoogleOAuthRedirect } = authStore;
           
           try {
             // Ensure user is set in store before proceeding
@@ -199,7 +203,7 @@ function RedirectPageContent() {
             await checkSubscriptionStatus(userId);
             
             // Get the target path before navigation
-            const { userDoc, isFullAccess } = useAuthStore.getState();
+            const { userDoc, isFullAccess } = authStore;
             let targetPath = '/dashboard';
             
             if (userDoc) {
@@ -252,7 +256,7 @@ function RedirectPageContent() {
         } catch (err) {
           setError('An error occurred during Google authentication.');
           setIsProcessing(false);
-          setGoogleOAuthRedirect(false); // Reset flag on error
+          authStore.setGoogleOAuthRedirect(false); // Reset flag on error
         }
       })();
     }
@@ -268,7 +272,7 @@ function RedirectPageContent() {
         <button
           className='mt-6 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition'
           onClick={() => {
-            const page = searchParams.get('page');
+            const page = searchParams?.get('page');
             if (page) {
               router.replace(`/${page}`);
             } else {
