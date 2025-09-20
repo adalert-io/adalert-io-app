@@ -62,12 +62,16 @@ interface AuthState {
   isFullAccess: boolean;
   router: AppRouterInstance | null;
   subscription: any | null; // Add subscription to auth state
+  isInitializing: boolean; // Add loading state for auth initialization
+  isGoogleOAuthRedirect: boolean; // Add flag for Google OAuth redirect
   setUser: (user: User | null) => void;
   setUserDoc: (userDoc: UserDocument | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setRouter: (router: AppRouterInstance) => void;
   setSubscription: (subscription: any) => void; // Add setter for subscription
+  setInitializing: (isInitializing: boolean) => void; // Add setter for initializing state
+  setGoogleOAuthRedirect: (isGoogleOAuthRedirect: boolean) => void; // Add setter for Google OAuth redirect
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
@@ -300,12 +304,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isFullAccess: false,
   router: null,
   subscription: null, // Initialize subscription
+  isInitializing: false, // Initialize initializing state
+  isGoogleOAuthRedirect: false, // Initialize Google OAuth redirect flag
   setUser: (user) => set({ user }),
   setUserDoc: (userDoc) => set({ userDoc }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
   setRouter: (router) => set({ router }),
   setSubscription: (subscription) => set({ subscription }), // Setter for subscription
+  setInitializing: (isInitializing) => set({ isInitializing }), // Setter for initializing state
+  setGoogleOAuthRedirect: (isGoogleOAuthRedirect) => set({ isGoogleOAuthRedirect }), // Setter for Google OAuth redirect
 
   fetchUserDocument: async (userId: string) => {
     try {
@@ -319,27 +327,32 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   checkSubscriptionStatus: async (userId: string) => {
     try {
-      // First fetch the user document
-      await useAuthStore.getState().fetchUserDocument(userId);
-
-      // Then check subscription status
-      const hasFullAccess = await checkSubscriptionStatus(userId);
-      // console.log('hasFullAccess', hasFullAccess);
-      set({ isFullAccess: hasFullAccess });
+      set({ isInitializing: true });
+      
+      // Fetch user document and check subscription status in parallel
+      const [userDoc, hasFullAccess] = await Promise.all([
+        fetchUserDocument(userId),
+        checkSubscriptionStatus(userId)
+      ]);
+      
+      set({ userDoc, isFullAccess: hasFullAccess });
 
       // After fetching user document and checking subscription, fetch user ads accounts
-      const currentUserDoc = get().userDoc;
-      if (currentUserDoc) {
+      if (userDoc) {
         const { useUserAdsAccountsStore } = await import(
           './user-ads-accounts-store'
         );
-        await useUserAdsAccountsStore
+        // Don't await this to avoid blocking navigation
+        useUserAdsAccountsStore
           .getState()
-          .fetchUserAdsAccounts(currentUserDoc);
+          .fetchUserAdsAccounts(userDoc)
+          .catch(err => console.warn('Failed to fetch user ads accounts:', err));
       }
     } catch (err: any) {
       console.error('Error checking subscription status:', err);
       set({ isFullAccess: false });
+    } finally {
+      set({ isInitializing: false });
     }
   },
 

@@ -62,6 +62,8 @@ export default function Home() {
     handlePostAuthNavigation,
     userDoc,
     loading,
+    isInitializing,
+    isGoogleOAuthRedirect,
   } = useAuthStore();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
@@ -99,8 +101,9 @@ export default function Home() {
     handlePostAuthNavigation,
   ]);
 
-  // Show loading spinner while checking auth state
-  if (isCheckingAuth || loading || (user && !userDoc)) {
+  // Show loading spinner while checking auth state, initializing, or when user exists but no userDoc
+  // Don't show loading during Google OAuth redirect to prevent overriding redirect page
+  if (isCheckingAuth || loading || isInitializing || (user && !userDoc)) {
     return <LoadingFallback />;
   }
 

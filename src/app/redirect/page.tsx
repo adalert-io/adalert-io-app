@@ -11,6 +11,7 @@ import {
   setDoc,
   doc,
   Timestamp,
+  writeBatch,
 } from 'firebase/firestore';
 import { jwtDecode } from 'jwt-decode';
 import { useAuthStore } from '@/lib/store/auth-store';
@@ -26,7 +27,8 @@ function RedirectPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
-  const { setUser, setUserDoc } = useAuthStore();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { setUser, setUserDoc, setGoogleOAuthRedirect } = useAuthStore();
   const { fetchUserDocument, checkSubscriptionStatus } = useAuthStore();
 
   useEffect(() => {
@@ -34,25 +36,19 @@ function RedirectPageContent() {
       // console.log("firebaseUser", firebaseUser);
       if (firebaseUser) {
         setUser(firebaseUser);
-        try {
-          // Use the proper authentication flow that includes checking subscription status
-          // and fetching user ads accounts
-          const { checkSubscriptionStatus, handlePostAuthNavigation } =
-            useAuthStore.getState();
-          await checkSubscriptionStatus(firebaseUser.uid);
-          await handlePostAuthNavigation();
-        } catch (error) {
-          console.error('Error in authentication flow:', error);
-          router.push('/auth');
-        }
+        // Don't handle navigation here - let the redirect page handle it
+        // This prevents the login screen from showing
       } else {
         // console.log("No authenticated user found.");
-        router.push('/auth');
+        // Only redirect to auth if we're not in the middle of processing
+        if (!isProcessing) {
+          router.push('/auth');
+        }
       }
     });
 
     return () => unsubscribe();
-  }, [router, setUser, setUserDoc]);
+  }, [router, setUser, isProcessing]);
 
   useEffect(() => {
     // Parse query params
@@ -70,6 +66,8 @@ function RedirectPageContent() {
     if (code) {
       (async () => {
         try {
+          setIsProcessing(true);
+          setGoogleOAuthRedirect(true); // Set flag to indicate Google OAuth redirect
           const redirect_uri = !page
             ? `${window.location.origin}/redirect`
             : `${window.location.origin}/redirect?page=${page}`;
@@ -89,6 +87,7 @@ function RedirectPageContent() {
 
           if (!response.ok) {
             setError(tokenData.error || 'Failed to get Google token');
+            setIsProcessing(false);
             return;
           }
 
@@ -102,28 +101,24 @@ function RedirectPageContent() {
           if (!user) {
             // console.log("No authenticated user found.");
             setError('No authenticated user found.');
+            setIsProcessing(false);
             return;
           }
           const userId = user.uid;
           const userRef = doc(db, 'users', userId);
           // console.log("userId: ", userId);
 
-          // Step 1: Set 'Is Current Token To Fetch Ads Account' to false for all userTokens of this user
+          // Optimized: Combine all database operations into a single batch
+          const batch = writeBatch(db);
+          const now = Timestamp.now();
+
+          // Step 1: Get all userTokens for this user
           const userTokensRef = collection(db, 'userTokens');
           const allTokensQuery = query(
             userTokensRef,
             where('User', '==', userRef),
           );
           const allTokensSnap = await getDocs(allTokensQuery);
-          await Promise.all(
-            allTokensSnap.docs.map((d) =>
-              updateDoc(d.ref, {
-                'Is Current Token To Fetch Ads Account': false,
-              }),
-            ),
-          );
-
-          // console.log("finshed step 1");
 
           // Step 2: Get userTokens where Google Email matches decoded.email
           const tokensWithEmailQuery = query(
@@ -133,29 +128,30 @@ function RedirectPageContent() {
           );
           const tokensWithEmailSnap = await getDocs(tokensWithEmailQuery);
 
-          // console.log("finshed step 2");
+          // Step 3: Update all existing tokens to set 'Is Current Token To Fetch Ads Account' to false
+          allTokensSnap.docs.forEach((d) => {
+            batch.update(d.ref, {
+              'Is Current Token To Fetch Ads Account': false,
+            });
+          });
 
-          // Step 3: Update or create userToken
-          const now = Timestamp.now();
+          // Step 4: Update or create userToken
           if (!tokensWithEmailSnap.empty) {
-            // Update all matching tokens
-            await Promise.all(
-              tokensWithEmailSnap.docs.map((d) =>
-                updateDoc(d.ref, {
-                  'Access Token': tokenData.access_token,
-                  'Refresh Token': tokenData.refresh_token,
-                  'Access Token Creation Date': now,
-                  'Access Token Expires In Second': tokenData.expires_in,
-                  'Is Current Token To Fetch Ads Account': true,
-                  'Google Email': decoded.email,
-                  'modified_at': new Date(),
-                }),
-              ),
-            );
+            // Update the first matching token
+            const tokenDoc = tokensWithEmailSnap.docs[0];
+            batch.update(tokenDoc.ref, {
+              'Access Token': tokenData.access_token,
+              'Refresh Token': tokenData.refresh_token,
+              'Access Token Creation Date': now,
+              'Access Token Expires In Second': tokenData.expires_in,
+              'Is Current Token To Fetch Ads Account': true,
+              'Google Email': decoded.email,
+              'modified_at': new Date(),
+            });
           } else {
             // Create a new userToken document
             const newTokenRef = doc(collection(db, 'userTokens'));
-            await setDoc(newTokenRef, {
+            batch.set(newTokenRef, {
               'User': userRef,
               'Access Token': tokenData.access_token,
               'Refresh Token': tokenData.refresh_token,
@@ -168,27 +164,95 @@ function RedirectPageContent() {
             });
           }
 
-          // console.log("finshed step 3");
-
-          // Step 4: Set 'Is Ads Account Authenticating' to true in authenticationPageTrackers
+          // Step 5: Set 'Is Ads Account Authenticating' to true in authenticationPageTrackers
           const trackersRef = collection(db, 'authenticationPageTrackers');
           const trackerQuery = query(trackersRef, where('User', '==', userRef));
           const trackerSnap = await getDocs(trackerQuery);
 
           if (!trackerSnap.empty) {
             const trackerDoc = trackerSnap.docs[0];
-            await updateDoc(trackerDoc.ref, {
+            batch.update(trackerDoc.ref, {
               'Is Ads Account Authenticating': true,
             });
           }
 
-          // console.log("finshed step 4");
+          // Execute all operations in a single batch
+          await batch.commit();
 
-          // Step 5: Navigate to the page
-          const path = page ? `/${page}` : '/dashboard';
-          router.replace(path);
+          // Step 5: Handle navigation directly without waiting for auth state change
+          const { checkSubscriptionStatus, handlePostAuthNavigation, setUser, setGoogleOAuthRedirect } = useAuthStore.getState();
+          
+          try {
+            // Ensure user is set in store before proceeding
+            const currentUser = useAuthStore.getState().user;
+            if (!currentUser) {
+              // Get current user from Firebase auth
+              const { getAuth } = await import('firebase/auth');
+              const { auth } = await import('@/lib/firebase/config');
+              const firebaseUser = auth.currentUser;
+              if (firebaseUser) {
+                setUser(firebaseUser);
+              }
+            }
+            
+            // Check subscription status and handle navigation
+            await checkSubscriptionStatus(userId);
+            
+            // Get the target path before navigation
+            const { userDoc, isFullAccess } = useAuthStore.getState();
+            let targetPath = '/dashboard';
+            
+            if (userDoc) {
+              // Build Firestore query for Ads Account collection
+              const { collection, query, where, getDocs } = await import('firebase/firestore');
+              const { db } = await import('@/lib/firebase/config');
+              const { COLLECTIONS } = await import('@/lib/constants');
+              
+              const adsAccountRef = collection(db, COLLECTIONS.ADS_ACCOUNTS);
+              const companyAdminRef = userDoc['Company Admin'];
+              const userRef = doc(db, COLLECTIONS.USERS, userDoc.uid);
+
+              const adsAccountQuery = query(
+                adsAccountRef,
+                where('User', '==', companyAdminRef),
+                where('Is Connected', '==', true),
+                where('Selected Users', 'array-contains', userRef),
+              );
+
+              const adsAccountSnap = await getDocs(adsAccountQuery);
+              const adsAccountCount = adsAccountSnap.size;
+
+              // Navigation logic
+              if (!isFullAccess) {
+                targetPath = '/settings/account/billing';
+              } else if (adsAccountCount === 0) {
+                const inviter = userDoc['Inviter'];
+                targetPath = inviter ? '/dashboard' : '/add-ads-account';
+              } else if (adsAccountCount === 1) {
+                targetPath = '/dashboard';
+              } else if (adsAccountCount > 1) {
+                targetPath = '/summary';
+              }
+            }
+            
+            // Navigate directly to the target path
+            router.replace(targetPath);
+            
+            // Reset the Google OAuth redirect flag after navigation
+            setGoogleOAuthRedirect(false);
+            setIsProcessing(false);
+          } catch (error) {
+            console.error('Error in post-auth navigation:', error);
+            // Reset the flag even on error
+            setGoogleOAuthRedirect(false);
+            // Fallback navigation
+            const path = page ? `/${page}` : '/dashboard';
+            router.replace(path);
+          }
         } catch (err) {
           setError('An error occurred during Google authentication.');
+          setIsProcessing(false);
+          setGoogleOAuthRedirect(false); // Reset flag on error
         }
       })();
     }
@@ -236,8 +300,18 @@ function RedirectPageContent() {
         </div>
         <Loader2 className='animate-spin w-10 h-10 text-blue-600 mb-6' />
         <p className='text-lg text-gray-500 text-center'>
-          You're being redirected to adAlert.io
+          {isProcessing ? 'Processing Google authentication...' : "You're being redirected to adAlert.io"}
         </p>
+        {isProcessing && (
+          <div className='mt-4 text-sm text-gray-400 text-center'>
+            Please wait while we set up your account
+          </div>
+        )}
+        {!isProcessing && (
+          <div className='mt-4 text-sm text-gray-400 text-center'>
+            Redirecting to your dashboard...
+          </div>
+        )}
       </div>
     </div>
   );
