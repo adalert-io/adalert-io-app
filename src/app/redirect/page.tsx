@@ -206,7 +206,10 @@ function RedirectPageContent() {
             const { userDoc, isFullAccess } = authStore;
             let targetPath = '/dashboard';
             
-            if (userDoc) {
+            // Check if user came from add-ads-account page - if so, redirect back there
+            if (page === 'add-ads-account' || page === 'add-ads-account-from-settings') {
+              targetPath = '/add-ads-account';
+            } else if (userDoc) {
               // Build Firestore query for Ads Account collection
               const { collection, query, where, getDocs } = await import('firebase/firestore');
               const { db } = await import('@/lib/firebase/config');
