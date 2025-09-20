@@ -72,6 +72,10 @@ function RedirectPageContent() {
         try {
           setIsProcessing(true);
           authStore.setGoogleOAuthRedirect(true); 
+          
+          // Wait a bit for auth state to be properly set
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
           const redirect_uri = !page
             ? `${window.location.origin}/redirect`
             : `${window.location.origin}/redirect?page=${page}`;
@@ -98,12 +102,8 @@ function RedirectPageContent() {
           const decoded: any = jwtDecode(tokenData.id_token);
 
           // Get authenticated user id (assume from Zustand store)
-          // console.log("useAuthStore.getState(): ");
-          // console.log(useAuthStore.getState());
           const { user } = useAuthStore.getState();
-          // console.log("user: ", user);
           if (!user) {
-            // console.log("No authenticated user found.");
             setError('No authenticated user found.');
             setIsProcessing(false);
             return;
