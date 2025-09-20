@@ -67,7 +67,7 @@ function RedirectPageContent() {
       (async () => {
         try {
           setIsProcessing(true);
-          setGoogleOAuthRedirect(true); // Set flag to indicate Google OAuth redirect
+          setGoogleOAuthRedirect(true); 
           const redirect_uri = !page
             ? `${window.location.origin}/redirect`
             : `${window.location.origin}/redirect?page=${page}`;
