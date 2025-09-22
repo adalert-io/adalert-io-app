@@ -222,25 +222,23 @@ export default function UsersSubtab() {
           row.original?.['Company Admin']?.id === row.original?.id;
         const totalAccounts = adsAccounts.length;
 
+        // When there are no accounts, show consistent empty state
         if (totalAccounts === 0) {
-          return <span>0 of 0 ad accounts</span>;
+          return <span>All ad accounts (0)</span>;
         }
 
-        if (isSuperAdminRow) {
-          return <span>{`All ad accounts (${totalAccounts})`}</span>;
-        }
-
+        // Count how many accounts this user can access
         const accessibleCount = adsAccounts.filter((account) =>
           doesUserHaveAccessToAccount(account, userId),
         ).length;
 
-        if (accessibleCount === totalAccounts) {
-          return <span>{`All ad accounts (${totalAccounts})`}</span>;
+        // Admins (including super admin) → no count
+        if (row.original['User Type'] === 'Admin' || isSuperAdminRow) {
+          return <span>All ad accounts</span>;
         }
 
-        return (
-          <span>{`${accessibleCount} of ${totalAccounts} ad accounts`}</span>
-        );
+        // Managers → show assigned count only (no total)
+        return <span>{`All ad accounts (${accessibleCount})`}</span>;
       },
     },
     {
