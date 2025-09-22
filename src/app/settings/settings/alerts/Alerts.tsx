@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import Link from "next/link";
 import { Info } from "lucide-react";
 import { useAlertSettingsStore } from "@/lib/store/settings-store";
@@ -140,9 +141,16 @@ export default function AlertsSubtab() {
   const handleSave = async () => {
     if (!user?.uid || !alertSettings) return;
     setSaving(true);
-    await updateAlertSettings(user.uid, localSettings);
-    await refreshAlertSettings(user.uid);
-    setSaving(false);
+    try {
+      await updateAlertSettings(user.uid, localSettings);
+      await refreshAlertSettings(user.uid);
+      toast.success("Alert settings saved successfully!");
+    } catch (error: any) {
+      console.error("Failed to save alert settings:", error);
+      toast.error(error?.message || "Failed to save alert settings");
+    } finally {
+      setSaving(false);
+    }
   };
 
   // Group fields for rendering
