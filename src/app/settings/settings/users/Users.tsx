@@ -239,7 +239,7 @@ export default function UsersSubtab() {
         }
 
         // Managers → show assigned count only (no total)
-        return <span>{`All ad accounts (${accessibleCount})`}</span>;
+        return <span>{`ad accounts (${accessibleCount})`}</span>;
       },
     },
     {
