@@ -199,7 +199,8 @@ export default function UsersSubtab() {
       cell: ({ row }) => (
         <span
           className={`inline-block px-3 py-1 rounded-md text-blue-700 text-xs font-bold ${
-            row.original['User Type'] === 'Admin'
+            row.original['User Type'] === 'Admin' ||
+            row.original['User Type'] === 'Manager'
               ? 'bg-blue-200'
               : 'bg-blue-100'
           }`}
