@@ -161,7 +161,6 @@ export default function AlertsSubtab() {
     <div className="bg-white p-4">
       <div className="flex items-center gap-3 mb-1">
         <h2 className="text-2xl font-bold">Alerts</h2>
-        {loading && <span className="text-blue-600 text-base">Loading...</span>}
       </div>
       <p className="text-gray-500 text-base mb-8">
         Control alerts frequency, add SMS, add or remove notification categories
