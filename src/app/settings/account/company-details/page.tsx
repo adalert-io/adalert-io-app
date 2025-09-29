@@ -68,30 +68,7 @@ export default function CompanyDetailsSubtab() {
     );
   }, [countryOptions, formData.country]);
 
-  // Get dial code options for telephone
-  const dialCodeOptions = useMemo(() => {
-    return countryOptions.map((option) => ({
-      value: option.dialCode,
-      label: `+${option.dialCode} ${option.label}`,
-      displayLabel: `+${option.dialCode}`,
-      flag: option.flag,
-    }));
-  }, [countryOptions]);
-
-  // Get selected dial code option
-  const selectedDialCode = useMemo(() => {
-    if (!formData.telephoneCountryCode) return null;
-    // Handle both string and array values for backward compatibility
-    const currentCode = Array.isArray(formData.telephoneCountryCode)
-      ? formData.telephoneCountryCode[0]
-      : formData.telephoneCountryCode;
-    const found =
-      dialCodeOptions.find(
-        (option) => option.value.toString() === currentCode.toString(),
-      ) || null;
-    // console.log('Selected dial code:', found, 'for value:', currentCode)
-    return found;
-  }, [dialCodeOptions, formData.telephoneCountryCode]);
+  
 
   useEffect(() => {
     if (userDoc?.uid) {
@@ -138,16 +115,7 @@ export default function CompanyDetailsSubtab() {
     }));
   };
 
-  const handleDialCodeChange = (selectedOption: any) => {
-    // console.log('Dial code selected:', selectedOption)
-    // Ensure we store just the dial code as a string, not an array
-    const dialCode = selectedOption?.value;
-    const dialCodeString = Array.isArray(dialCode) ? dialCode[0] : dialCode;
-    setFormData((prev) => ({
-      ...prev,
-      telephoneCountryCode: dialCodeString?.toString() || '',
-    }));
-  };
+  
 
   const handlePhoneNumberChange = (value: string) => {
     setFormData((prev) => ({
@@ -322,58 +290,16 @@ export default function CompanyDetailsSubtab() {
           </div>
 
           {/* Telephone */}
-          <div className='flex gap-2'>
-            {/* Dial Code Dropdown */}
-            <div className='w-32'>
-              {isClient ? (
-                <Select
-                  key={`dial-code-${formData.telephoneCountryCode}`}
-                  placeholder='+1'
-                  options={dialCodeOptions}
-                  value={
-                    selectedDialCode
-                      ? {
-                          ...selectedDialCode,
-                          label: selectedDialCode.displayLabel,
-                        }
-                      : null
-                  }
-                  onChange={handleDialCodeChange}
-                  isSearchable
-                  className='react-select-container'
-                  classNamePrefix='react-select'
-                  styles={{
-                    control: (provided) => ({
-                      ...provided,
-                      border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem',
-                      minHeight: '2.5rem',
-                      '&:hover': {
-                        borderColor: '#3b82f6',
-                      },
-                    }),
-                    placeholder: (provided) => ({
-                      ...provided,
-                      color: '#9ca3af',
-                    }),
-                  }}
-                />
-              ) : (
-                <div className='h-10 bg-gray-100 rounded animate-pulse' />
-              )}
-            </div>
-            {/* Phone Number Input */}
-            <div className='flex-1 relative'>
-              <Input
-                placeholder='Phone Number'
-                type='number'
-                step='1'
-                min='0'
-                value={formData.telephone}
-                onChange={(e) => handlePhoneNumberChange(e.target.value)}
-              />
-              <Phone className='absolute right-3 top-2.5 w-4 h-4 text-[#155dfc]' />
-            </div>
+          <div className='relative'>
+            <Input
+              placeholder='Phone Number'
+              type='number'
+              step='1'
+              min='0'
+              value={formData.telephone}
+              onChange={(e) => handlePhoneNumberChange(e.target.value)}
+            />
+            <Phone className='absolute right-3 top-2.5 w-4 h-4 text-[#155dfc]' />
           </div>
 
           {/* Timezone */}
