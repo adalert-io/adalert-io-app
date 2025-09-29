@@ -293,13 +293,14 @@ export default function CompanyDetailsSubtab() {
           <div className='relative'>
             <Input
               placeholder='Phone Number'
+              className='pl-10'
               type='number'
               step='1'
               min='0'
               value={formData.telephone}
               onChange={(e) => handlePhoneNumberChange(e.target.value)}
             />
-            <Phone className='absolute right-3 top-2.5 w-4 h-4 text-[#155dfc]' />
+            <Phone className='absolute left-3 top-2.5 w-4 h-4 text-[#155dfc]' />
           </div>
 
           {/* Timezone */}
