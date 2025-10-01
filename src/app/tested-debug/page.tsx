@@ -25,6 +25,9 @@ type AdsAccount = {
 };
 
 export default function TestedDebugPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [password, setPassword] = useState<string>('');
+  const [authError, setAuthError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [users, setUsers] = useState<UserRow[]>([]);
   const [userToAccounts, setUserToAccounts] = useState<Record<string, AdsAccount[]>>({});
@@ -38,7 +41,22 @@ export default function TestedDebugPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserRow | null>(null);
 
+  const CORRECT_PASSWORD = 'Adalertdebughash#99';
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === CORRECT_PASSWORD) {
+      setIsAuthenticated(true);
+      setAuthError('');
+    } else {
+      setAuthError('Invalid password');
+      setPassword('');
+    }
+  };
+
   useEffect(() => {
+    // Only load data if authenticated
+    if (!isAuthenticated) return;
     const buildConnections = async (list: UserRow[]) => {
       // For each user, find connected ads accounts
       const results: Record<string, AdsAccount[]> = {};
@@ -185,7 +203,7 @@ export default function TestedDebugPage() {
       } catch (_) {}
     };
     fetchAdminData();
-  }, []);
+  }, [isAuthenticated]);
 
   const deleteUserCompletely = async (userId: string, email: string, userRow: UserRow) => {
     if (deletingUserId) return; // Prevent multiple deletions
@@ -327,9 +345,68 @@ export default function TestedDebugPage() {
     }));
   }, [users, userToAccounts]);
 
+  // Show password form if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full space-y-8">
+          <div>
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+              🔒 Debug Access
+            </h2>
+            <p className="mt-2 text-center text-sm text-gray-600">
+              Enter password to access debug panel
+            </p>
+          </div>
+          <form className="mt-8 space-y-6" onSubmit={handlePasswordSubmit}>
+            <div>
+              <label htmlFor="password" className="sr-only">
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Enter debug password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            
+            {authError && (
+              <div className="text-red-600 text-sm text-center">
+                {authError}
+              </div>
+            )}
+
+            <div>
+              <button
+                type="submit"
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Access Debug Panel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Tested Debug - Users & Connections</h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Tested Debug - Users & Connections</h1>
+        <button
+          onClick={() => setIsAuthenticated(false)}
+          className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
+        >
+          Logout
+        </button>
+      </div>
       <div className="mb-4 text-sm text-gray-600">
         <span>Firebase project: </span>
         <span className="font-mono">{projectId || 'Unknown'}</span>
