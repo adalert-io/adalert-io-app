@@ -53,6 +53,7 @@ export function AddAdsAccount() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [adsAccounts, setAdsAccounts] = useState<AdsAccount[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [editingValue, setEditingValue] = useState<string>("");
 
@@ -67,6 +68,9 @@ export function AddAdsAccount() {
     const initializeData = async () => {
       if (!user) return;
       setIsLoading(true);
+
+      // Reset ads accounts state when user changes
+      setAdsAccounts(null);
 
       try {
         if (!userDoc) {
@@ -107,21 +111,28 @@ export function AddAdsAccount() {
   }, [user, userDoc]);
 
   const handleConnectGoogleAds = async () => {
-    if (!user) return;
-    await setAdsAccountAuthenticating(user.uid, true);
+    if (!user || isConnecting) return;
+    
+    try {
+      setIsConnecting(true);
+      await setAdsAccountAuthenticating(user.uid, true);
 
-    const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-    const from = searchParams?.get("from") || "";
-    const redirectUri =
-      from === "settings"
-        ? `${window.location.origin}/redirect?page=add-ads-account-from-settings`
-        : `${window.location.origin}/redirect?page=add-ads-account`;
+      const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+      const from = searchParams?.get("from") || "";
+      const redirectUri =
+        from === "settings"
+          ? `${window.location.origin}/redirect?page=add-ads-account-from-settings`
+          : `${window.location.origin}/redirect?page=add-ads-account`;
 
-    const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?scope=https://www.googleapis.com/auth/adwords%20openid%20https://www.googleapis.com/auth/userinfo.email%20https://www.googleapis.com/auth/userinfo.profile&access_type=offline&include_granted_scopes=true&response_type=code&state=state_parameter_passthrough_value&redirect_uri=${encodeURIComponent(
-      redirectUri,
-    )}&client_id=${GOOGLE_CLIENT_ID}&prompt=consent`;
+      const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?scope=https://www.googleapis.com/auth/adwords%20openid%20https://www.googleapis.com/auth/userinfo.email%20https://www.googleapis.com/auth/userinfo.profile&access_type=offline&include_granted_scopes=true&response_type=code&state=state_parameter_passthrough_value&redirect_uri=${encodeURIComponent(
+        redirectUri,
+      )}&client_id=${GOOGLE_CLIENT_ID}&prompt=consent`;
 
-    window.location.href = oauthUrl;
+      window.location.href = oauthUrl;
+    } catch (error) {
+      console.error("Error initiating Google OAuth:", error);
+      setIsConnecting(false);
+    }
   };
 
   const handleCardClick = (idx: number) => {
@@ -301,18 +312,31 @@ export function AddAdsAccount() {
                 ? "Add new ads account(s)"
                 : "Let's add your first ads account(s)"}
             </h1>
-            {adsAccounts && adsAccounts.length > 0 && (
+            {adsAccounts && adsAccounts.length > 0 && !isLoading && (
               <div className="flex items-center text-gray-500 text-sm mb-6 md:mb-8 w-full justify-center flex-wrap gap-1">
                 <InfoCircledIcon className="w-[14px] mr-2 w-4 h-4 text-blue-500" />
                 Not the right ads account? <button
-                  className="text-blue-600 font-normal hover:text-blue-800 hover:cursor-pointer"
+                  className="text-blue-600 font-normal hover:text-blue-800 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                   onClick={handleConnectGoogleAds}
+                  disabled={isConnecting}
                   type="button"
-                >Click here</button>to switch to a different one.
+                >
+                  {isConnecting && <Loader2 className="h-3 w-3 animate-spin" />}
+                  Click here
+                </button>to switch to a different one.
               </div>
 
             )}
-            {adsAccounts && adsAccounts.length > 0 && (
+            {isLoading && (
+              <div className="w-full flex items-center justify-center py-8">
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                  <p className="text-gray-500 text-sm">Loading ads accounts...</p>
+                </div>
+              </div>
+            )}
+
+            {adsAccounts && adsAccounts.length > 0 && !isLoading && (
               <div className="w-full max-h-112 overflow-y-auto flex flex-col gap-4 mb-6 md:mb-8 border border-gray-200 rounded-[15px] p-2 overflow-x-hidden thin-scrollbar">
                 {adsAccounts.map((acc, idx) => {
                   const isSelected = acc["Is Selected"];
@@ -390,21 +414,19 @@ export function AddAdsAccount() {
               </div>
             )}
 
-            {(!adsAccounts || adsAccounts.length === 0) && (
+            {(!adsAccounts || adsAccounts.length === 0) && !isLoading && (
               <Button
                 size="lg"
                 className="w-full max-w-xs bg-blue-600 hover:bg-blue-700 text-white text-base md:text-lg font-semibold py-4 md:py-6 mb-4"
                 onClick={handleConnectGoogleAds}
-                disabled={!user || isLoading}
+                disabled={!user || isConnecting}
               >
-                {isLoading && <Loader2 className="h-5 w-5 animate-spin" />}
-                {userAdsAccounts && userAdsAccounts.length > 0
-                  ? "Connect"
-                  : "Connect"}
+                {isConnecting && <Loader2 className="h-5 w-5 animate-spin mr-2" />}
+                {isConnecting ? "Connecting..." : "Connect"}
               </Button>
             )}
 
-            {adsAccounts && adsAccounts.length > 0 && (
+            {adsAccounts && adsAccounts.length > 0 && !isLoading && (
               <Button
                 size="lg"
                 className="w-full max-w-xs bg-blue-600 hover:bg-blue-700 text-white text-base md:text-lg font-semibold py-4 md:py-6 mb-4"
