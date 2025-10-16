@@ -28,13 +28,20 @@ interface DebugData {
 }
 
 export default function DebugPage() {
-  const { user, userDoc } = useAuthStore();
+  const { user, userDoc, loading: authLoading } = useAuthStore();
   const { accounts: summaryAccounts, fetchSummaryAccounts } = useSummaryStore();
   const { dashboardDaily, adsLabel } = useDashboardStore();
   
   const [debugData, setDebugData] = useState<DebugData[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<string>('');
+  const [debugInfo, setDebugInfo] = useState<string>('');
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Debug page - Auth state:', { user: !!user, userDoc: !!userDoc, authLoading });
+    setDebugInfo(`User: ${!!user}, UserDoc: ${!!userDoc}, AuthLoading: ${authLoading}, SummaryAccounts: ${summaryAccounts.length}`);
+  }, [user, userDoc, authLoading, summaryAccounts.length]);
 
   const fetchDebugData = async () => {
     if (!userDoc || !summaryAccounts.length) return;
@@ -196,7 +203,18 @@ export default function DebugPage() {
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">AdAlert Debug Page</h1>
         
-        {!user && (
+        {/* Debug Info */}
+        <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded mb-4">
+          <strong>Debug Info:</strong> {debugInfo}
+        </div>
+        
+        {authLoading && (
+          <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
+            Loading authentication...
+          </div>
+        )}
+        
+        {!user && !authLoading && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             Please log in to access debug information.
           </div>
@@ -205,6 +223,14 @@ export default function DebugPage() {
         {user && summaryAccounts.length === 0 && (
           <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
             No ad accounts found. Please add some ad accounts first.
+            <div className="mt-2">
+              <button
+                onClick={() => userDoc && fetchSummaryAccounts(userDoc)}
+                className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+              >
+                Force Fetch Summary Accounts
+              </button>
+            </div>
           </div>
         )}
 
