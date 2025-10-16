@@ -15,13 +15,11 @@ function AuthPageContent() {
 
   useEffect(() => {
     // Check for mode parameter in URL
-    if (searchParams) {
-      const mode = searchParams.get("mode");
-      if (mode === "login") {
-        setIsLogin(true);
-      } else if (mode === "signup") {
-        setIsLogin(false);
-      }
+    const mode = searchParams.get("mode");
+    if (mode === "login") {
+      setIsLogin(true);
+    } else if (mode === "signup") {
+      setIsLogin(false);
     }
   }, [searchParams]);
 
