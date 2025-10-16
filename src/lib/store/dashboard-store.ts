@@ -19,6 +19,7 @@ import moment from 'moment';
 import { getFirebaseFnPath, formatAccountNumber } from '@/lib/utils';
 import { useAlertOptionSetsStore } from './alert-option-sets-store';
 import { useUserAdsAccountsStore } from './user-ads-accounts-store';
+import { validateAccountData, logApiCallDetails, createDebugReport } from '@/lib/debug-utils';
 
 export interface Alert {
   id: string;
@@ -414,29 +415,43 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
   fetchSpendMtd: async (adsAccount: any) => {
     try {
-      // console.log('Fetching spend MTD for adsAccount:', adsAccount);
       set({ spendMtdLoading: true, error: null });
 
+      // Validate account data using debug utility
+      const validation = validateAccountData(adsAccount);
+      if (!validation.isValid) {
+        const errorMessage = `Account validation failed: ${validation.errors.join(', ')}`;
+        console.error('Account validation failed:', validation);
+        throw new Error(errorMessage);
+      }
+
       const path = getFirebaseFnPath('dashboard-spend-mtd-fb');
+      const requestBody = {
+        adsAccountId: adsAccount.id,
+        customerId: adsAccount['Id'],
+        loginCustomerId: adsAccount['Manager Account Id'],
+      };
+
+      // Log API call details
+      logApiCallDetails(path, requestBody);
 
       const response = await fetch(path, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          adsAccountId: adsAccount.id,
-          customerId: adsAccount['Id'],
-          loginCustomerId: adsAccount['Manager Account Id'],
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch spend MTD data');
+        const errorText = await response.text();
+        logApiCallDetails(path, requestBody, response);
+        throw new Error(`Failed to fetch spend MTD data: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
       const result = await response.json();
-      // console.log('Spend MTD result:', result);
+      logApiCallDetails(path, requestBody, response);
+      console.log('Spend MTD result:', result);
 
       // Update the dashboardDaily state with the spendMtd value
       const currentDashboardDaily = get().dashboardDaily;
@@ -468,6 +483,10 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       }
     } catch (error: any) {
       console.error('Error fetching spend MTD:', error);
+      
+      // Create debug report for troubleshooting
+      createDebugReport(adsAccount, null, error);
+      
       const currentDashboardDaily = get().dashboardDaily;
       if (currentDashboardDaily) {
         set({

@@ -490,7 +490,7 @@ function BillingSubtabContent() {
 
   // React to search param changes
   useEffect(() => {
-    const showPaymentForm = searchParams.get('show') === 'payment-form';
+    const showPaymentForm = searchParams?.get('show') === 'payment-form';
     setScreen(showPaymentForm ? 'payment-form' : 'list');
   }, [searchParams]);
   // Refetch userDoc on mount to ensure latest user type

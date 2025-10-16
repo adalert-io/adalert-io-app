@@ -44,7 +44,7 @@ function getPasswordStrength(password: string) {
 function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const oobCode = searchParams.get("oobCode");
+  const oobCode = searchParams?.get("oobCode");
   const [initializing, setInitializing] = useState(true);
   const [email, setEmail] = useState<string | null>(null);
   const [password, setPassword] = useState("");
@@ -331,7 +331,7 @@ function ResetPasswordContent() {
 function VerifyEmailPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const mode = searchParams.get("mode");
+  const mode = searchParams?.get("mode");
   const [verifying, setVerifying] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -343,7 +343,7 @@ function VerifyEmailPageContent() {
     const verifyEmail = async () => {
       try {
         // Get the oobCode from the URL
-        const oobCode = searchParams.get("oobCode");
+        const oobCode = searchParams?.get("oobCode");
 
         if (!oobCode) {
           throw new Error("Invalid verification link");

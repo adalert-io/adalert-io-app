@@ -160,25 +160,46 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
             } else {
               // Fetch spend MTD from the API and update dashboardDaily
               try {
-                const path = getFirebaseFnPath('dashboard-spend-mtd-fb');
+                // Enhanced logging for debugging
+                console.log('Summary: Fetching spend MTD for account:', {
+                  id: account.id,
+                  customerId: account['Id'],
+                  managerAccountId: account['Manager Account Id'],
+                  accountName: account['Account Name Editable']
+                });
 
-                const response = await fetch(path, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
+                // Validate required fields
+                if (!account.id || !account['Id'] || !account['Manager Account Id']) {
+                  console.error('Summary: Missing required fields for account:', {
+                    id: account.id,
+                    customerId: account['Id'],
+                    managerAccountId: account['Manager Account Id']
+                  });
+                  spendMtd = null;
+                } else {
+                  const path = getFirebaseFnPath('dashboard-spend-mtd-fb');
+                  const requestBody = {
                     adsAccountId: account.id,
                     customerId: account['Id'],
                     loginCustomerId: account['Manager Account Id'],
-                  }),
-                });
+                  };
 
-                if (response.ok) {
-                  const result = await response.json();
-                  // console.log("Spend MTD result:", result);
+                  console.log('Summary: Making API call to:', path);
+                  console.log('Summary: Request body:', requestBody);
 
-                  spendMtd = result.spendMtd ?? null;
+                  const response = await fetch(path, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody),
+                  });
+
+                  if (response.ok) {
+                    const result = await response.json();
+                    console.log("Summary: Spend MTD result:", result);
+
+                    spendMtd = result.spendMtd ?? null;
 
                   // Update the dashboardDaily document with the spendMtd value
                   if (dashboardDaily) {
@@ -198,12 +219,19 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
                       'Spend MTD': result.spendMtd,
                     };
                   }
-                } else {
-                  console.error('Failed to fetch spend MTD data');
-                  spendMtd = null;
+                  } else {
+                    const errorText = await response.text();
+                    console.error('Summary: Failed to fetch spend MTD data:', {
+                      status: response.status,
+                      statusText: response.statusText,
+                      errorText: errorText,
+                      requestBody: requestBody
+                    });
+                    spendMtd = null;
+                  }
                 }
               } catch (error) {
-                console.error('Error fetching spend MTD:', error);
+                console.error('Summary: Error fetching spend MTD:', error);
                 spendMtd = null;
               }
             }
