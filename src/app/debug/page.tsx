@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/store/auth-store';
-import { useUserAdsAccountsStore } from '@/lib/store/user-ads-accounts-store';
 import { useSummaryStore } from '@/app/summary/summary-store';
 import { useDashboardStore } from '@/lib/store/dashboard-store';
 import { getFirebaseFnPath } from '@/lib/utils';
@@ -30,8 +29,7 @@ interface DebugData {
 
 export default function DebugPage() {
   const { user, userDoc } = useAuthStore();
-  const { userAdsAccounts } = useUserAdsAccountsStore();
-  const { accounts: summaryAccounts } = useSummaryStore();
+  const { accounts: summaryAccounts, fetchSummaryAccounts } = useSummaryStore();
   const { dashboardDaily, adsLabel } = useDashboardStore();
   
   const [debugData, setDebugData] = useState<DebugData[]>([]);
@@ -39,17 +37,19 @@ export default function DebugPage() {
   const [selectedAccount, setSelectedAccount] = useState<string>('');
 
   const fetchDebugData = async () => {
-    if (!userDoc || !userAdsAccounts.length) return;
+    if (!userDoc || !summaryAccounts.length) return;
     
     setLoading(true);
     const debugResults: DebugData[] = [];
 
-    for (const account of userAdsAccounts) {
+    for (const account of summaryAccounts) {
       try {
         console.log(`Fetching debug data for account: ${account.id}`);
         
-        // 1. Get raw account data
-        const rawAccountData = account;
+        // 1. Get raw account data from Firestore
+        const adsAccountRef = doc(db, COLLECTIONS.ADS_ACCOUNTS, account.id);
+        const adsAccountSnap = await getDocs(query(collection(db, COLLECTIONS.ADS_ACCOUNTS), where('__name__', '==', account.id)));
+        const rawAccountData = adsAccountSnap.docs[0]?.data() || account;
 
         // 2. Get showing ads data
         const showingAdsRef = collection(db, COLLECTIONS.DASHBOARD_SHOWING_ADS);
@@ -83,11 +83,11 @@ export default function DebugPage() {
           const response = await fetch(path, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              adsAccountId: account.id,
-              customerId: account['Id'],
-              loginCustomerId: account['Manager Account Id'],
-            }),
+                body: JSON.stringify({
+                  adsAccountId: account.id,
+                  customerId: account.Id,
+                  loginCustomerId: rawAccountData['Manager Account Id'],
+                }),
           });
           
           if (response.ok) {
@@ -135,11 +135,11 @@ export default function DebugPage() {
 
         debugResults.push({
           accountId: account.id,
-          accountName: account['Account Name Editable'] || account['Account Name Original'] || 'Unknown',
-          customerId: account['Id'] || 'N/A',
-          managerAccountId: account['Manager Account Id'] || 'N/A',
-          isConnected: account['Is Connected'] || false,
-          selectedUsers: account['Selected Users'] || [],
+          accountName: account.accountName || 'Unknown',
+          customerId: account.Id || 'N/A',
+          managerAccountId: rawAccountData['Manager Account Id'] || 'N/A',
+          isConnected: account.isConnected || false,
+          selectedUsers: rawAccountData['Selected Users'] || [],
           rawAccountData,
           showingAdsData,
           dashboardDailyData,
@@ -155,11 +155,11 @@ export default function DebugPage() {
         console.error(`Error fetching debug data for account ${account.id}:`, error);
         debugResults.push({
           accountId: account.id,
-          accountName: account['Account Name Editable'] || account['Account Name Original'] || 'Unknown',
-          customerId: account['Id'] || 'N/A',
-          managerAccountId: account['Manager Account Id'] || 'N/A',
-          isConnected: account['Is Connected'] || false,
-          selectedUsers: account['Selected Users'] || [],
+          accountName: account.accountName || 'Unknown',
+          customerId: account.Id || 'N/A',
+          managerAccountId: 'N/A',
+          isConnected: account.isConnected || false,
+          selectedUsers: [],
           rawAccountData: account,
           showingAdsData: [],
           dashboardDailyData: [],
@@ -178,10 +178,16 @@ export default function DebugPage() {
   };
 
   useEffect(() => {
-    if (userDoc && userAdsAccounts.length > 0) {
+    if (userDoc) {
+      fetchSummaryAccounts(userDoc);
+    }
+  }, [userDoc, fetchSummaryAccounts]);
+
+  useEffect(() => {
+    if (userDoc && summaryAccounts.length > 0) {
       fetchDebugData();
     }
-  }, [userDoc, userAdsAccounts]);
+  }, [userDoc, summaryAccounts]);
 
   const selectedDebugData = debugData.find(d => d.accountId === selectedAccount) || debugData[0];
 
@@ -196,13 +202,13 @@ export default function DebugPage() {
           </div>
         )}
 
-        {user && userAdsAccounts.length === 0 && (
+        {user && summaryAccounts.length === 0 && (
           <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
             No ad accounts found. Please add some ad accounts first.
           </div>
         )}
 
-        {user && userAdsAccounts.length > 0 && (
+        {user && summaryAccounts.length > 0 && (
           <>
             <div className="mb-6">
               <button
