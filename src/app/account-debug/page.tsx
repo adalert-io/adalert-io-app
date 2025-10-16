@@ -105,7 +105,7 @@ export default function AccountDebugPage() {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 adsAccountId: account.id,
-                customerId: account['Id'],
+                customerId: account['Id'] || account.id,
                 loginCustomerId: account['Manager Account Id'],
               }),
             });
@@ -156,7 +156,7 @@ export default function AccountDebugPage() {
           debugResults.push({
             accountId: account.id,
             accountName: account['Account Name Editable'] || account['Account Name Original'] || 'Unknown',
-            customerId: account['Id'] || 'N/A',
+            customerId: account['Id'] || account.id || 'N/A',
             managerAccountId: account['Manager Account Id'] || 'N/A',
             isConnected: account['Is Connected'] || false,
             rawAccountData: account,
@@ -175,7 +175,7 @@ export default function AccountDebugPage() {
           debugResults.push({
             accountId: account.id,
             accountName: account['Account Name Editable'] || account['Account Name Original'] || 'Unknown',
-            customerId: account['Id'] || 'N/A',
+            customerId: account['Id'] || account.id || 'N/A',
             managerAccountId: account['Manager Account Id'] || 'N/A',
             isConnected: account['Is Connected'] || false,
             rawAccountData: account,
