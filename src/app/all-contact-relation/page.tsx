@@ -99,8 +99,16 @@ export default function AllContactRelationPage() {
           try {
             const usersSnap = await getDocs(collection(db, 'users'));
             firestoreUsers = usersSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-          } catch (_) {
-            // ignore; we will show empty
+            if (firestoreUsers.length > 0) {
+              setAdminWarning('Loaded users from client-side Firestore (admin endpoint unavailable).');
+            }
+          } catch (fallbackError: any) {
+            // Set a clear error message
+            const errorMsg = fallbackError?.message || 'Unknown error';
+            setAdminWarning(
+              `Admin endpoint failed AND client-side Firestore failed: ${errorMsg}. ` +
+              `Check that Firebase Admin credentials are set in production and Firestore rules allow reading users.`
+            );
           }
         }
 
@@ -321,90 +329,110 @@ export default function AllContactRelationPage() {
       {error && <div className="text-red-600">{error}</div>}
 
       {!loading && !error && (
-        <div className="overflow-x-auto border rounded-lg">
-          <table className="min-w-full text-sm">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="text-left px-4 py-3">User ID</th>
-                <th className="text-left px-4 py-3">Name</th>
-                <th className="text-left px-4 py-3">Email</th>
-                <th className="text-left px-4 py-3">Presence</th>
-                <th className="text-left px-4 py-3">Stripe</th>
-                <th className="text-left px-4 py-3">Contacts</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => (
-                <tr key={r.uid} className="border-b hover:bg-gray-50">
-                  <td className="px-4 py-3 font-mono text-xs">{r.uid}</td>
-                  <td className="px-4 py-3">{r.name || '-'}</td>
-                  <td className="px-4 py-3">{r.email || '-'}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2 items-center text-xs">
-                      <span className={`px-2 py-1 rounded ${r.presence.isInAuth ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'}`}>
-                        Auth
-                      </span>
-                      <span className={`px-2 py-1 rounded ${r.presence.isInFirestore ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
-                        Firestore
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    {r.stripe ? (
-                      <div className="space-y-1">
-                        <div>
-                          <span className="text-gray-500">Customer:</span>{' '}
-                          <span className="font-mono">{r.stripe.customerId || '-'}</span>
+        <>
+          {filtered.length === 0 && rows.length === 0 && (
+            <div className="p-8 text-center border rounded-lg bg-gray-50">
+              <p className="text-lg text-gray-600 mb-2">No users found</p>
+              <p className="text-sm text-gray-500">
+                This usually means Firebase Admin credentials are not configured in production.
+              </p>
+              <p className="text-sm text-gray-500 mt-1">
+                Required environment variables: FIREBASE_ADMIN_CLIENT_EMAIL, FIREBASE_ADMIN_PRIVATE_KEY
+              </p>
+            </div>
+          )}
+          {filtered.length === 0 && rows.length > 0 && (
+            <div className="p-8 text-center border rounded-lg bg-gray-50">
+              <p className="text-gray-600">No users match your search</p>
+            </div>
+          )}
+          {filtered.length > 0 && (
+            <div className="overflow-x-auto border rounded-lg">
+              <table className="min-w-full text-sm">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <th className="text-left px-4 py-3">User ID</th>
+                    <th className="text-left px-4 py-3">Name</th>
+                    <th className="text-left px-4 py-3">Email</th>
+                    <th className="text-left px-4 py-3">Presence</th>
+                    <th className="text-left px-4 py-3">Stripe</th>
+                    <th className="text-left px-4 py-3">Contacts</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((r) => (
+                    <tr key={r.uid} className="border-b hover:bg-gray-50">
+                      <td className="px-4 py-3 font-mono text-xs">{r.uid}</td>
+                      <td className="px-4 py-3">{r.name || '-'}</td>
+                      <td className="px-4 py-3">{r.email || '-'}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-2 items-center text-xs">
+                          <span className={`px-2 py-1 rounded ${r.presence.isInAuth ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'}`}>
+                            Auth
+                          </span>
+                          <span className={`px-2 py-1 rounded ${r.presence.isInFirestore ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                            Firestore
+                          </span>
                         </div>
-                        <div>
-                          <span className="text-gray-500">Sub:</span>{' '}
-                          <span className="font-mono">{r.stripe.subscriptionId || '-'}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Status:</span>{' '}
-                          <span>{r.stripe.subscriptionStatus || '-'}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Last4:</span>{' '}
-                          <span>{r.stripe.paymentLast4 || '-'}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Invoices:</span>{' '}
-                          <span>{typeof r.stripe.invoicesCount === 'number' ? r.stripe.invoicesCount : '-'}</span>
-                        </div>
-                        {r.stripe.stripeError && (
-                          <div className="text-red-600 text-xs">{r.stripe.stripeError}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        {r.stripe ? (
+                          <div className="space-y-1">
+                            <div>
+                              <span className="text-gray-500">Customer:</span>{' '}
+                              <span className="font-mono">{r.stripe.customerId || '-'}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Sub:</span>{' '}
+                              <span className="font-mono">{r.stripe.subscriptionId || '-'}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Status:</span>{' '}
+                              <span>{r.stripe.subscriptionStatus || '-'}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Last4:</span>{' '}
+                              <span>{r.stripe.paymentLast4 || '-'}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Invoices:</span>{' '}
+                              <span>{typeof r.stripe.invoicesCount === 'number' ? r.stripe.invoicesCount : '-'}</span>
+                            </div>
+                            {r.stripe.stripeError && (
+                              <div className="text-red-600 text-xs">{r.stripe.stripeError}</div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-gray-500">No Stripe data</span>
                         )}
-                      </div>
-                    ) : (
-                      <span className="text-gray-500">No Stripe data</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    {r.contacts ? (
-                      <div className="space-y-1 text-xs">
-                        <div>
-                          <span className="text-gray-500">Pipedrive:</span>{' '}
-                          <span className="font-mono">{r.contacts.pipedriveId || '-'}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Mailchimp:</span>{' '}
-                          <span className="font-mono">{r.contacts.mailchimpId || '-'}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">SendGrid:</span>{' '}
-                          <span className="font-mono">{r.contacts.sendgridId || '-'}</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <span className="text-gray-500">No contact IDs</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        {r.contacts ? (
+                          <div className="space-y-1 text-xs">
+                            <div>
+                              <span className="text-gray-500">Pipedrive:</span>{' '}
+                              <span className="font-mono">{r.contacts.pipedriveId || '-'}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Mailchimp:</span>{' '}
+                              <span className="font-mono">{r.contacts.mailchimpId || '-'}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">SendGrid:</span>{' '}
+                              <span className="font-mono">{r.contacts.sendgridId || '-'}</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-gray-500">No contact IDs</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
