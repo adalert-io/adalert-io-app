@@ -290,11 +290,51 @@ export default function AllContactRelationPage() {
             window.location.reload();
           }, 2000);
         }
+      } else if (data.warning) {
+        // No live customer found - need to create one
+        setMigrationResult(data.warning);
       } else if (data.error) {
         setMigrationResult(`Error: ${data.error}`);
       }
     } catch (e: any) {
       setMigrationResult(`Failed to migrate: ${e?.message || 'Unknown error'}`);
+    } finally {
+      setMigrating(null);
+    }
+  };
+
+  // Handle creating a live customer
+  const handleCreateLiveCustomer = async (userId: string, email?: string, dryRun: boolean = false) => {
+    if (!email) {
+      alert('Email is required to create customer');
+      return;
+    }
+
+    setMigrating(userId);
+    setMigrationResult(null);
+
+    try {
+      const res = await fetch('/api/admin/create-live-customer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, email, dryRun }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setMigrationResult(data.message);
+        if (!dryRun) {
+          // Refresh the data
+          setTimeout(() => {
+            window.location.reload();
+          }, 3000);
+        }
+      } else if (data.error) {
+        setMigrationResult(`Error: ${data.error}${data.message ? '\n\n' + data.message : ''}`);
+      }
+    } catch (e: any) {
+      setMigrationResult(`Failed to create customer: ${e?.message || 'Unknown error'}`);
     } finally {
       setMigrating(null);
     }
@@ -491,7 +531,7 @@ export default function AllContactRelationPage() {
                             </button>
                             <button
                               onClick={() => {
-                                if (confirm(`Migrate ${r.email} from test to live mode?\n\nThis will update:\n- Stripe Customer ID\n- Subscription ID\n- Payment Method ID`)) {
+                                if (confirm(`Migrate ${r.email} from test to live mode?\n\nThis will update:\n- Stripe Customer ID\n- Subscription ID\n- Payment Method ID\n\nNOTE: User must have a live mode customer in Stripe first.`)) {
                                   handleMigrate(r.uid, r.email, false);
                                 }
                               }}
@@ -500,6 +540,27 @@ export default function AllContactRelationPage() {
                             >
                               {migrating === r.uid ? 'Migrating...' : 'Migrate to Live'}
                             </button>
+                            <div className="border-t pt-2">
+                              <div className="text-xs text-gray-600 mb-1">No live customer?</div>
+                              <button
+                                onClick={() => handleCreateLiveCustomer(r.uid, r.email, true)}
+                                disabled={migrating === r.uid}
+                                className="px-3 py-1 text-xs bg-purple-100 text-purple-700 hover:bg-purple-200 rounded disabled:opacity-50 disabled:cursor-not-allowed w-full mb-1"
+                              >
+                                {migrating === r.uid ? 'Checking...' : 'Preview Create'}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (confirm(`Create a LIVE MODE Stripe customer for ${r.email}?\n\nThis will:\n1. Create a new customer in Stripe (live mode)\n2. Update database with new customer ID\n3. Mark as needing payment method\n\n⚠️ User will need to add payment method after this!`)) {
+                                    handleCreateLiveCustomer(r.uid, r.email, false);
+                                  }
+                                }}
+                                disabled={migrating === r.uid}
+                                className="px-3 py-1 text-xs bg-orange-100 text-orange-700 hover:bg-orange-200 rounded disabled:opacity-50 disabled:cursor-not-allowed w-full"
+                              >
+                                {migrating === r.uid ? 'Creating...' : 'Create Live Customer'}
+                              </button>
+                            </div>
                           </div>
                         )}
                       </td>
