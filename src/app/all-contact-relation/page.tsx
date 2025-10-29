@@ -54,6 +54,8 @@ export default function AllContactRelationPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState<string>('');
   const [adminWarning, setAdminWarning] = useState<string | null>(null);
+  const [migrating, setMigrating] = useState<string | null>(null); // userId being migrated
+  const [migrationResult, setMigrationResult] = useState<string | null>(null);
 
   const projectId = (app?.options as any)?.projectId as string | undefined;
 
@@ -254,6 +256,50 @@ export default function AllContactRelationPage() {
     );
   }, [rows, search]);
 
+  // Check if a customer ID is in test mode
+  const isTestModeId = (customerId?: string): boolean => {
+    if (!customerId) return false;
+    // Test mode IDs start with cus_T (or similar pattern)
+    return customerId.includes('test mode') || customerId.includes('cus_T');
+  };
+
+  // Handle migration
+  const handleMigrate = async (userId: string, email?: string, dryRun: boolean = false) => {
+    if (!email) {
+      alert('Email is required for migration');
+      return;
+    }
+
+    setMigrating(userId);
+    setMigrationResult(null);
+
+    try {
+      const res = await fetch('/api/admin/migrate-stripe-ids', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, email, dryRun }),
+      });
+
+      const data = await res.json();
+
+      if (data.result) {
+        setMigrationResult(data.result.message);
+        if (data.result.success && !dryRun) {
+          // Refresh the data
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        }
+      } else if (data.error) {
+        setMigrationResult(`Error: ${data.error}`);
+      }
+    } catch (e: any) {
+      setMigrationResult(`Failed to migrate: ${e?.message || 'Unknown error'}`);
+    } finally {
+      setMigrating(null);
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -325,6 +371,12 @@ export default function AllContactRelationPage() {
         </div>
       )}
 
+      {migrationResult && (
+        <div className="p-3 rounded-md bg-blue-50 border border-blue-200 text-blue-800 text-sm whitespace-pre-wrap">
+          {migrationResult}
+        </div>
+      )}
+
       {loading && <div className="text-gray-600">Loading relations…</div>}
       {error && <div className="text-red-600">{error}</div>}
 
@@ -357,6 +409,7 @@ export default function AllContactRelationPage() {
                     <th className="text-left px-4 py-3">Presence</th>
                     <th className="text-left px-4 py-3">Stripe</th>
                     <th className="text-left px-4 py-3">Contacts</th>
+                    <th className="text-left px-4 py-3">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -424,6 +477,30 @@ export default function AllContactRelationPage() {
                           </div>
                         ) : (
                           <span className="text-gray-500">No contact IDs</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {(isTestModeId(r.stripe?.customerId) || r.stripe?.stripeError?.includes('test mode')) && (
+                          <div className="space-y-2">
+                            <button
+                              onClick={() => handleMigrate(r.uid, r.email, true)}
+                              disabled={migrating === r.uid}
+                              className="px-3 py-1 text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 rounded disabled:opacity-50 disabled:cursor-not-allowed w-full"
+                            >
+                              {migrating === r.uid ? 'Checking...' : 'Check Migration'}
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (confirm(`Migrate ${r.email} from test to live mode?\n\nThis will update:\n- Stripe Customer ID\n- Subscription ID\n- Payment Method ID`)) {
+                                  handleMigrate(r.uid, r.email, false);
+                                }
+                              }}
+                              disabled={migrating === r.uid}
+                              className="px-3 py-1 text-xs bg-green-100 text-green-700 hover:bg-green-200 rounded disabled:opacity-50 disabled:cursor-not-allowed w-full"
+                            >
+                              {migrating === r.uid ? 'Migrating...' : 'Migrate to Live'}
+                            </button>
+                          </div>
                         )}
                       </td>
                     </tr>
