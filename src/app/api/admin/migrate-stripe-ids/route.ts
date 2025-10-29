@@ -150,8 +150,12 @@ export async function POST(req: NextRequest) {
       oldCustomerId = subscriptionData?.['Stripe Customer Id'];
       oldSubscriptionId = subscriptionData?.['Stripe Subscription Id'];
       
-      result.oldCustomerId = oldCustomerId || undefined;
-      result.oldSubscriptionId = oldSubscriptionId || undefined;
+      if (oldCustomerId) {
+        result.oldCustomerId = oldCustomerId;
+      }
+      if (oldSubscriptionId) {
+        result.oldSubscriptionId = oldSubscriptionId;
+      }
     }
 
     // Step 3: Search for live mode customer in Stripe by email
@@ -205,13 +209,23 @@ export async function POST(req: NextRequest) {
 
     if (subscriptionDoc && subscriptionDocId) {
       // Update existing subscription document
-      batch.update(db.collection('subscriptions').doc(subscriptionDocId), {
+      const updateData: any = {
         'Stripe Customer Id': liveCustomer.id,
-        ...(liveSubscriptionId && { 'Stripe Subscription Id': liveSubscriptionId }),
         'Migration Date': admin.firestore.FieldValue.serverTimestamp(),
-        'Old Customer Id': oldCustomerId,
-        'Old Subscription Id': oldSubscriptionId,
-      });
+      };
+      
+      // Only add fields if they have values (Firestore doesn't accept undefined)
+      if (liveSubscriptionId) {
+        updateData['Stripe Subscription Id'] = liveSubscriptionId;
+      }
+      if (oldCustomerId) {
+        updateData['Old Customer Id'] = oldCustomerId;
+      }
+      if (oldSubscriptionId) {
+        updateData['Old Subscription Id'] = oldSubscriptionId;
+      }
+      
+      batch.update(db.collection('subscriptions').doc(subscriptionDocId), updateData);
     } else if (liveSubscriptionId) {
       // Create new subscription document
       batch.set(db.collection('subscriptions').doc(), {
@@ -242,12 +256,18 @@ export async function POST(req: NextRequest) {
 
         if (paymentMethods.data.length > 0) {
           const livePm = paymentMethods.data[0];
-          batch.update(db.collection('paymentMethods').doc(pmDoc.id), {
+          const pmUpdateData: any = {
             'Stripe Customer Id': liveCustomer.id,
             'Stripe Payment Method Id': livePm.id,
-            'Stripe Last 4 Digits': livePm.card?.last4,
             'Migration Date': admin.firestore.FieldValue.serverTimestamp(),
-          });
+          };
+          
+          // Only add last4 if it exists (Firestore doesn't accept undefined)
+          if (livePm.card?.last4) {
+            pmUpdateData['Stripe Last 4 Digits'] = livePm.card.last4;
+          }
+          
+          batch.update(db.collection('paymentMethods').doc(pmDoc.id), pmUpdateData);
         }
       }
     }

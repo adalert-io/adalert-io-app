@@ -182,15 +182,23 @@ export async function POST(req: NextRequest) {
     if (!subscriptionsQuery.empty) {
       // Update existing subscription document
       const subscriptionDocId = subscriptionsQuery.docs[0].id;
-      batch.update(db.collection('subscriptions').doc(subscriptionDocId), {
+      const updateData: any = {
         'Stripe Customer Id': liveCustomer.id,
         'Stripe Subscription Id': admin.firestore.FieldValue.delete(), // Remove test subscription ID
         'Status': 'inactive', // No active subscription yet
         'Migration Date': admin.firestore.FieldValue.serverTimestamp(),
-        'Old Customer Id': oldCustomerId,
-        'Old Subscription Id': oldSubscriptionId,
         'Needs Payment Method': true,
-      });
+      };
+      
+      // Only add old IDs if they exist (Firestore doesn't accept undefined)
+      if (oldCustomerId) {
+        updateData['Old Customer Id'] = oldCustomerId;
+      }
+      if (oldSubscriptionId) {
+        updateData['Old Subscription Id'] = oldSubscriptionId;
+      }
+      
+      batch.update(db.collection('subscriptions').doc(subscriptionDocId), updateData);
     } else {
       // Create new subscription document
       batch.set(db.collection('subscriptions').doc(), {
