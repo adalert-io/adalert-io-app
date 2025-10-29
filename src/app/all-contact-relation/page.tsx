@@ -53,6 +53,7 @@ export default function AllContactRelationPage() {
   const [rows, setRows] = useState<RelationRow[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState<string>('');
+  const [adminWarning, setAdminWarning] = useState<string | null>(null);
 
   const projectId = (app?.options as any)?.projectId as string | undefined;
 
@@ -78,8 +79,30 @@ export default function AllContactRelationPage() {
       try {
         // 1) Get Auth + Firestore users from existing admin endpoint
         const res = await fetch('/api/admin/list-users', { cache: 'no-store' });
-        if (!res.ok) throw new Error('Failed to list users');
-        const { authUsers = [], firestoreUsers = [] } = await res.json();
+        let authUsers: any[] = [];
+        let firestoreUsers: any[] = [];
+        if (res.ok) {
+          const data = await res.json();
+          authUsers = Array.isArray(data.authUsers) ? data.authUsers : [];
+          firestoreUsers = Array.isArray(data.firestoreUsers) ? data.firestoreUsers : [];
+          if (data?.error) {
+            setAdminWarning(String(data.error));
+          } else if (firestoreUsers.length === 0 && authUsers.length === 0) {
+            setAdminWarning('Admin endpoint returned no users. Falling back to client Firestore.');
+          }
+        } else {
+          setAdminWarning('Admin endpoint failed. Falling back to client Firestore.');
+        }
+
+        // Fallback: if no Firestore users came back, query Firestore directly from client
+        if (firestoreUsers.length === 0) {
+          try {
+            const usersSnap = await getDocs(collection(db, 'users'));
+            firestoreUsers = usersSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+          } catch (_) {
+            // ignore; we will show empty
+          }
+        }
 
         // 2) Merge by uid/email
         const tmpByKey = new Map<string, RelationRow>();
@@ -287,6 +310,12 @@ export default function AllContactRelationPage() {
           />
         </div>
       </div>
+
+      {adminWarning && (
+        <div className="p-3 rounded-md bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm">
+          {adminWarning}
+        </div>
+      )}
 
       {loading && <div className="text-gray-600">Loading relations…</div>}
       {error && <div className="text-red-600">{error}</div>}
