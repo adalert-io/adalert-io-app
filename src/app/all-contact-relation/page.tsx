@@ -6,6 +6,7 @@ import {
   doc,
   getDocs,
   getDoc,
+  updateDoc,
   query,
   where,
   Timestamp,
@@ -79,6 +80,7 @@ export default function AllContactRelationPage() {
   const [migrating, setMigrating] = useState<string | null>(null); // userId being migrated
   const [migrationResult, setMigrationResult] = useState<string | null>(null);
   const [runStatus, setRunStatus] = useState<string | null>(null);
+  const [managerEdits, setManagerEdits] = useState<Record<string, string>>({});
 
   const projectId = (app?.options as any)?.projectId as string | undefined;
 
@@ -547,6 +549,23 @@ export default function AllContactRelationPage() {
     }
   };
 
+  const saveManagerAccountId = async (adsAccountId: string, newManagerId: string) => {
+    try {
+      if (!newManagerId || newManagerId.replace(/\D/g, '').length !== 10) {
+        setRunStatus('Manager Account Id must be a 10-digit number');
+        return;
+      }
+      setRunStatus('Saving Manager Account Id…');
+      console.log('[DIAG] Save Manager Id', { adsAccountId, newManagerId });
+      const ref = doc(db, 'adsAccounts', adsAccountId);
+      await updateDoc(ref, { 'Manager Account Id': newManagerId });
+      setRunStatus('Saved Manager Account Id. Re-run KPI/Spend to test.');
+    } catch (e: any) {
+      console.error('[DIAG] Save Manager Id error', e);
+      setRunStatus(`Failed to save Manager Account Id: ${e?.message || 'Unknown error'}`);
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -835,6 +854,25 @@ export default function AllContactRelationPage() {
                                   onClick={() => runIndicatorNow(a.id, a.managerAccountId, a.userTokenId, a.monthlyBudget, a.dailyBudget, a.accountName)}
                                   className="px-2 py-1 text-xs bg-amber-100 text-amber-700 rounded hover:bg-amber-200"
                                 >Run Indicator</button>
+                              </div>
+                              <div className="mt-2 grid grid-cols-3 gap-2 items-center">
+                                <input
+                                  className="px-2 py-1 border rounded text-xs"
+                                  placeholder="Manager Account Id"
+                                  value={managerEdits[a.id] ?? (a.managerAccountId || '')}
+                                  onChange={(e) => setManagerEdits((m) => ({ ...m, [a.id]: e.target.value }))}
+                                />
+                                <button
+                                  onClick={() => setManagerEdits((m) => ({ ...m, [a.id]: a.googleCustomerId || '' }))}
+                                  className="px-2 py-1 text-xs bg-slate-100 text-slate-700 rounded hover:bg-slate-200"
+                                >Use Self ID</button>
+                                <button
+                                  onClick={() => {
+                                    const val = managerEdits[a.id] ?? (a.managerAccountId || '');
+                                    saveManagerAccountId(a.id, String(val));
+                                  }}
+                                  className="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
+                                >Save Manager ID</button>
                               </div>
                                 {a.issues.length > 0 && (
                                   <div className="mt-2">
