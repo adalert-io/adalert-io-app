@@ -10,6 +10,7 @@ import {
   where,
   Timestamp,
 } from 'firebase/firestore';
+import { getFirebaseFnPath } from '@/lib/utils';
 import { db, app } from '@/lib/firebase/config';
 
 interface PresenceFlags {
@@ -51,6 +52,8 @@ interface AdsAccountDiag {
   userTokenFlags?: { isCurrent?: boolean; hasRefreshToken?: boolean };
   spendMtd?: number | null;
   dashboardDailyId?: string | null;
+  monthlyBudget?: number | null;
+  dailyBudget?: number | null;
   issues: string[];
 }
 
@@ -74,6 +77,7 @@ export default function AllContactRelationPage() {
   const [adminWarning, setAdminWarning] = useState<string | null>(null);
   const [migrating, setMigrating] = useState<string | null>(null); // userId being migrated
   const [migrationResult, setMigrationResult] = useState<string | null>(null);
+  const [runStatus, setRunStatus] = useState<string | null>(null);
 
   const projectId = (app?.options as any)?.projectId as string | undefined;
 
@@ -278,6 +282,8 @@ export default function AllContactRelationPage() {
               const googleCustomerId = adData?.['Id'];
               const managerAccountId = adData?.['Manager Account Id'];
               const userTokenRef = adData?.['User Token'];
+              const monthlyBudget = typeof adData?.['Monthly Budget'] === 'number' ? adData['Monthly Budget'] : null;
+              const dailyBudget = typeof adData?.['Daily Budget'] === 'number' ? adData['Daily Budget'] : null;
               let userTokenId: string | undefined;
               let userTokenFlags: { isCurrent?: boolean; hasRefreshToken?: boolean } | undefined;
 
@@ -338,6 +344,8 @@ export default function AllContactRelationPage() {
                 userTokenFlags,
                 spendMtd: spendMtd ?? null,
                 dashboardDailyId,
+                monthlyBudget,
+                dailyBudget,
                 issues,
               });
             }
@@ -453,6 +461,79 @@ export default function AllContactRelationPage() {
     }
   };
 
+  // Run Cloud Functions for diagnostics (does not change production code other than invoking functions)
+  const runSpendNow = async (adsAccountId: string, customerId?: string, loginCustomerId?: string) => {
+    if (!customerId || !loginCustomerId) {
+      setRunStatus('Missing customerId or loginCustomerId');
+      return;
+    }
+    try {
+      setRunStatus('Running spend MTD…');
+      const path = getFirebaseFnPath('dashboard-spend-mtd-fb');
+      const res = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adsAccountId, customerId, loginCustomerId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      setRunStatus(res.ok ? `Spend MTD OK: ${JSON.stringify(data).slice(0, 200)}` : `Spend MTD Error: ${res.status} ${JSON.stringify(data).slice(0, 200)}`);
+    } catch (e: any) {
+      setRunStatus(`Spend MTD failed: ${e?.message || 'Unknown error'}`);
+    }
+  };
+
+  const runKpiNow = async (adsAccountId: string, customerId?: string, loginCustomerId?: string) => {
+    if (!customerId || !loginCustomerId) {
+      setRunStatus('Missing customerId or loginCustomerId');
+      return;
+    }
+    try {
+      setRunStatus('Running KPI…');
+      const path = getFirebaseFnPath('dashboard-kpi-fb');
+      const res = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adsAccountId, customerId, loginCustomerId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      setRunStatus(res.ok ? `KPI OK: ${JSON.stringify(data).slice(0, 200)}` : `KPI Error: ${res.status} ${JSON.stringify(data).slice(0, 200)}`);
+    } catch (e: any) {
+      setRunStatus(`KPI failed: ${e?.message || 'Unknown error'}`);
+    }
+  };
+
+  const runIndicatorNow = async (
+    adsAccountId: string,
+    managerAccountId?: string,
+    userTokenId?: string,
+    monthlyBudget?: number | null,
+    dailyBudget?: number | null,
+  ) => {
+    if (!managerAccountId || !userTokenId) {
+      setRunStatus('Missing managerAccountId or userTokenId');
+      return;
+    }
+    try {
+      setRunStatus('Running Spend MTD Indicator…');
+      const path = getFirebaseFnPath('dashboard-spendMtd-indicator-fb');
+      const res = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adsAccountId,
+          adsAccountManagerAccountId: managerAccountId,
+          userTokenId,
+          monthlyBudget: monthlyBudget ?? undefined,
+          dailyBudget: dailyBudget ?? undefined,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      setRunStatus(res.ok ? `Indicator OK: ${JSON.stringify(data).slice(0, 200)}` : `Indicator Error: ${res.status} ${JSON.stringify(data).slice(0, 200)}`);
+    } catch (e: any) {
+      setRunStatus(`Indicator failed: ${e?.message || 'Unknown error'}`);
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -527,6 +608,12 @@ export default function AllContactRelationPage() {
       {migrationResult && (
         <div className="p-3 rounded-md bg-blue-50 border border-blue-200 text-blue-800 text-sm whitespace-pre-wrap">
           {migrationResult}
+        </div>
+      )}
+
+      {runStatus && (
+        <div className="p-3 rounded-md bg-purple-50 border border-purple-200 text-purple-800 text-sm whitespace-pre-wrap">
+          {runStatus}
         </div>
       )}
 
@@ -721,6 +808,20 @@ export default function AllContactRelationPage() {
                                     <div className="font-mono text-[11px]">{a.dashboardDailyId || '-'}</div>
                                   </div>
                                 </div>
+                              <div className="mt-2 grid grid-cols-3 gap-2">
+                                <button
+                                  onClick={() => runSpendNow(a.id, a.googleCustomerId, a.managerAccountId)}
+                                  className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                                >Run Spend</button>
+                                <button
+                                  onClick={() => runKpiNow(a.id, a.googleCustomerId, a.managerAccountId)}
+                                  className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200"
+                                >Run KPI</button>
+                                <button
+                                  onClick={() => runIndicatorNow(a.id, a.managerAccountId, a.userTokenId, a.monthlyBudget, a.dailyBudget)}
+                                  className="px-2 py-1 text-xs bg-amber-100 text-amber-700 rounded hover:bg-amber-200"
+                                >Run Indicator</button>
+                              </div>
                                 {a.issues.length > 0 && (
                                   <div className="mt-2">
                                     <div className="text-red-700">Issues</div>
