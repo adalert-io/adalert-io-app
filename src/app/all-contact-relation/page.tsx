@@ -5,8 +5,10 @@ import {
   collection,
   doc,
   getDocs,
+  getDoc,
   query,
   where,
+  Timestamp,
 } from 'firebase/firestore';
 import { db, app } from '@/lib/firebase/config';
 
@@ -38,6 +40,22 @@ interface RelationRow {
   companyAdminId?: string | null;
   stripe?: StripeSummary;
   contacts?: ContactIds;
+  diagnostics?: UserDiagnostics;
+}
+
+interface AdsAccountDiag {
+  id: string;
+  googleCustomerId?: string;
+  managerAccountId?: string;
+  userTokenId?: string;
+  userTokenFlags?: { isCurrent?: boolean; hasRefreshToken?: boolean };
+  spendMtd?: number | null;
+  dashboardDailyId?: string | null;
+  issues: string[];
+}
+
+interface UserDiagnostics {
+  adsAccounts: AdsAccountDiag[];
 }
 
 function normalizeEmail(email?: string | null): string {
@@ -232,6 +250,101 @@ export default function AllContactRelationPage() {
                 stripeError: e?.message || 'Failed to fetch invoices',
               };
             }
+          }
+
+          // Diagnostics: adsAccounts + Spend MTD + required fields presence
+          try {
+            const adsAccountsRef = collection(db, 'adsAccounts');
+            // Try match by direct User ref
+            const byUserSnap = await getDocs(query(adsAccountsRef, where('User', '==', userRef)));
+            let adsDocs = byUserSnap.docs;
+            // Fallback: sometimes the relation is via Company Admin
+            if (adsDocs.length === 0) {
+              const byCompanySnap = await getDocs(query(adsAccountsRef, where('Company Admin', '==', userRef)));
+              adsDocs = byCompanySnap.docs;
+            }
+
+            const todayStart = new Date();
+            todayStart.setHours(0, 0, 0, 0);
+            const todayEnd = new Date();
+            todayEnd.setHours(23, 59, 59, 999);
+
+            const dashboardDailiesRef = collection(db, 'dashboardDailies');
+
+            const accountDiags: AdsAccountDiag[] = [];
+            for (const ad of adsDocs) {
+              const adData: any = ad.data();
+              const issues: string[] = [];
+              const googleCustomerId = adData?.['Id'];
+              const managerAccountId = adData?.['Manager Account Id'];
+              const userTokenRef = adData?.['User Token'];
+              let userTokenId: string | undefined;
+              let userTokenFlags: { isCurrent?: boolean; hasRefreshToken?: boolean } | undefined;
+
+              if (!googleCustomerId) issues.push('Missing adsAccount.Id (Google Customer ID)');
+              if (!managerAccountId) issues.push('Missing adsAccount["Manager Account Id"]');
+              if (!userTokenRef) issues.push('Missing adsAccount["User Token"]');
+
+              if (userTokenRef) {
+                try {
+                  userTokenId = userTokenRef.id;
+                  const utSnap = await getDoc(userTokenRef);
+                  if (utSnap.exists()) {
+                    const ut = utSnap.data() as any;
+                    userTokenFlags = {
+                      isCurrent: ut?.['Is Current Token To Fetch Ads Account'] === true,
+                      hasRefreshToken: Boolean(ut?.['Refresh Token']),
+                    };
+                    if (userTokenFlags.isCurrent !== true) issues.push('User Token is not marked current');
+                    if (!userTokenFlags.hasRefreshToken) issues.push('User Token missing Refresh Token');
+                  } else {
+                    issues.push('User Token reference not found');
+                  }
+                } catch (_) {
+                  issues.push('Failed to read User Token doc');
+                }
+              }
+
+              // Find today's dashboardDaily for this ads account
+              let spendMtd: number | null | undefined = undefined;
+              let dashboardDailyId: string | null = null;
+              try {
+                const adsAccountRef = doc(db, 'adsAccounts', ad.id);
+                const ddSnap = await getDocs(
+                  query(
+                    dashboardDailiesRef,
+                    where('Ads Account', '==', adsAccountRef),
+                    where('Created Date', '>=', Timestamp.fromDate(todayStart)),
+                    where('Created Date', '<=', Timestamp.fromDate(todayEnd)),
+                  ),
+                );
+                if (!ddSnap.empty) {
+                  const first = ddSnap.docs[0];
+                  const ddData: any = first.data();
+                  dashboardDailyId = first.id;
+                  spendMtd = typeof ddData?.['Spend MTD'] === 'number' ? ddData['Spend MTD'] : (ddData?.['Spend MTD'] ?? null);
+                } else {
+                  issues.push('No dashboardDaily for today');
+                }
+              } catch (_) {
+                issues.push('Failed to query dashboardDaily');
+              }
+
+              accountDiags.push({
+                id: ad.id,
+                googleCustomerId,
+                managerAccountId,
+                userTokenId,
+                userTokenFlags,
+                spendMtd: spendMtd ?? null,
+                dashboardDailyId,
+                issues,
+              });
+            }
+
+            row.diagnostics = { adsAccounts: accountDiags };
+          } catch (_) {
+            // ignore diagnostics failures for now
           }
         }
 
@@ -450,6 +563,7 @@ export default function AllContactRelationPage() {
                     <th className="text-left px-4 py-3">Stripe</th>
                     <th className="text-left px-4 py-3">Contacts</th>
                     <th className="text-left px-4 py-3">Actions</th>
+                    <th className="text-left px-4 py-3">Diagnostics</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -562,6 +676,66 @@ export default function AllContactRelationPage() {
                               </button>
                             </div>
                           </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        {r.diagnostics ? (
+                          <div className="space-y-2 text-xs">
+                            {r.diagnostics.adsAccounts.length === 0 && (
+                              <div className="text-gray-500">No ads accounts linked</div>
+                            )}
+                            {r.diagnostics.adsAccounts.map((a) => (
+                              <div key={a.id} className="border rounded p-2">
+                                <div className="font-mono text-[11px]">adsAccountId: {a.id}</div>
+                                <div className="grid grid-cols-2 gap-2 mt-1">
+                                  <div>
+                                    <div className="text-gray-500">Google ID</div>
+                                    <div className="font-mono">{a.googleCustomerId || '-'}</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-gray-500">Manager ID</div>
+                                    <div className="font-mono">{a.managerAccountId || '-'}</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-gray-500">UserToken</div>
+                                    <div className="font-mono">{a.userTokenId || '-'}</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-gray-500">Token Flags</div>
+                                    <div>
+                                      {a.userTokenFlags ? (
+                                        <span className="font-mono">{`current:${a.userTokenFlags.isCurrent ? 'yes' : 'no'}, refresh:${a.userTokenFlags.hasRefreshToken ? 'yes' : 'no'}`}</span>
+                                      ) : (
+                                        <span className="text-gray-500">-</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="mt-2 grid grid-cols-2 gap-2">
+                                  <div>
+                                    <div className="text-gray-500">Spend MTD</div>
+                                    <div>{typeof a.spendMtd === 'number' ? a.spendMtd : (a.spendMtd === null ? 'null' : '-')}</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-gray-500">dashboardDailyId</div>
+                                    <div className="font-mono text-[11px]">{a.dashboardDailyId || '-'}</div>
+                                  </div>
+                                </div>
+                                {a.issues.length > 0 && (
+                                  <div className="mt-2">
+                                    <div className="text-red-700">Issues</div>
+                                    <ul className="list-disc pl-5 text-red-700">
+                                      {a.issues.map((iss, i) => (
+                                        <li key={i}>{iss}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-xs">No diagnostics</span>
                         )}
                       </td>
                     </tr>
