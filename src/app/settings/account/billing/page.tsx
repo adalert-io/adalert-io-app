@@ -476,7 +476,7 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
 function BillingSubtabContent() {
   const { user, userDoc, fetchUserDocument } = useAuthStore();
   const {
-    subscription,
+    subscription, 
     fetchSubscription,
     paymentMethods,
     fetchPaymentMethod,
@@ -488,9 +488,18 @@ function BillingSubtabContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Live Stripe payment method (brand, last4, exp) fetched from API
+  const [livePm, setLivePm] = useState<{
+    brand?: string | null;
+    last4?: string | null;
+    exp_month?: number | null;
+    exp_year?: number | null;
+  } | null>(null);
+  const [livePmLoading, setLivePmLoading] = useState(false);
+
   // React to search param changes
   useEffect(() => {
-    const showPaymentForm = searchParams.get('show') === 'payment-form';
+    const showPaymentForm = searchParams?.get('show') === 'payment-form';
     setScreen(showPaymentForm ? 'payment-form' : 'list');
   }, [searchParams]);
   // Refetch userDoc on mount to ensure latest user type
@@ -526,6 +535,33 @@ function BillingSubtabContent() {
     fetchAdsAccounts,
     fetchPaymentMethodByUser,
   ]);
+
+  // Fetch live payment method from Stripe using customerId when available
+  useEffect(() => {
+    const fetchLivePm = async () => {
+      try {
+        setLivePmLoading(true);
+        const customerId = subscription?.['Stripe Customer Id'];
+        if (!customerId) {
+          setLivePm(null);
+          setLivePmLoading(false);
+          return;
+        }
+        const res = await fetch(`/api/stripe-payment-methods?customerId=${customerId}`);
+        const data = await res.json();
+        if (res.ok && data?.paymentMethod) {
+          setLivePm(data.paymentMethod);
+        } else {
+          setLivePm(null);
+        }
+      } catch (_) {
+        setLivePm(null);
+      } finally {
+        setLivePmLoading(false);
+      }
+    };
+    fetchLivePm();
+  }, [subscription?.['Stripe Customer Id']]);
 
   // --- Receipt fetching logic ---
   const [receipts, setReceipts] = useState<any[]>([]);
@@ -687,32 +723,25 @@ function BillingSubtabContent() {
                       <div className='flex justify-between items-start mb-4'>
                         <div>
                           <div className='text-sm opacity-80 mb-1'>
-                            {paymentMethods['Stripe Card Brand'] || 'Card'}
+                            {(livePm?.brand || paymentMethods['Stripe Card Brand'] || 'Card')}
                           </div>
                           <div className='text-lg font-bold'>
-                            {paymentMethods[
-                              'Stripe Card Brand'
-                            ]?.toUpperCase() || 'CARD'}
+                            {(livePm?.brand || paymentMethods['Stripe Card Brand'] || 'CARD').toString().toUpperCase()}
                           </div>
                         </div>
                         <div className='text-right'>
                           <div className='text-sm opacity-80 mb-1'>
-                            {paymentMethods['Stripe Expired Month'] &&
-                            paymentMethods['Stripe Expired Year']
-                              ? ''
-                              : 'Test'}
+                            {''}
                           </div>
                           <div className='text-sm'>
-                            {String(
-                              paymentMethods['Stripe Expired Month'],
-                            ).padStart(2, '0')}{' '}
-                            / {paymentMethods['Stripe Expired Year']}
+                            {String(livePm?.exp_month ?? paymentMethods['Stripe Expired Month'] ?? '').toString().padStart(2, '0')}{' '}
+                            / {livePm?.exp_year ?? paymentMethods['Stripe Expired Year'] ?? ''}
                           </div>
                         </div>
                       </div>
                       <div className='text-lg font-mono'>
                         XXXX - XXXX - XXXX -{' '}
-                        {paymentMethods['Stripe Last 4 Digits']}
+                        {livePm?.last4 ?? paymentMethods['Stripe Last 4 Digits']}
                       </div>
                       <div className='mt-4 text-sm'>
                         <div>Name: {paymentMethods['Stripe Name']}</div>
