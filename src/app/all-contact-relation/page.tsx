@@ -843,15 +843,24 @@ export default function AllContactRelationPage() {
                                 </div>
                               <div className="mt-2 grid grid-cols-3 gap-2">
                                 <button
-                                  onClick={() => runSpendNow(a.id, a.googleCustomerId, a.managerAccountId, a.accountName)}
+                                  onClick={() => {
+                                    const mgr = managerEdits[a.id] ?? a.managerAccountId;
+                                    runSpendNow(a.id, a.googleCustomerId, mgr, a.accountName);
+                                  }}
                                   className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
                                 >Run Spend</button>
                                 <button
-                                  onClick={() => runKpiNow(a.id, a.googleCustomerId, a.managerAccountId, a.accountName)}
+                                  onClick={() => {
+                                    const mgr = managerEdits[a.id] ?? a.managerAccountId;
+                                    runKpiNow(a.id, a.googleCustomerId, mgr, a.accountName);
+                                  }}
                                   className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200"
                                 >Run KPI</button>
                                 <button
-                                  onClick={() => runIndicatorNow(a.id, a.managerAccountId, a.userTokenId, a.monthlyBudget, a.dailyBudget, a.accountName)}
+                                  onClick={() => {
+                                    const mgr = managerEdits[a.id] ?? a.managerAccountId;
+                                    runIndicatorNow(a.id, mgr, a.userTokenId, a.monthlyBudget, a.dailyBudget, a.accountName);
+                                  }}
                                   className="px-2 py-1 text-xs bg-amber-100 text-amber-700 rounded hover:bg-amber-200"
                                 >Run Indicator</button>
                               </div>
