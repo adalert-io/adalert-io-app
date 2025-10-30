@@ -609,6 +609,62 @@ export default function AllContactRelationPage() {
     }
   };
 
+  // Create today's dashboardDaily if missing
+  const createTodayDashboardDaily = async (adsAccountId: string) => {
+    try {
+      setRunStatus('Creating today\'s dashboardDaily…');
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const todayEnd = new Date();
+      todayEnd.setHours(23, 59, 59, 999);
+
+      const dashboardDailiesRef = collection(db, 'dashboardDailies');
+      const adsAccountRef = doc(db, 'adsAccounts', adsAccountId);
+
+      const existing = await getDocs(
+        query(
+          dashboardDailiesRef,
+          where('Ads Account', '==', adsAccountRef),
+          where('Created Date', '>=', Timestamp.fromDate(todayStart)),
+          where('Created Date', '<=', Timestamp.fromDate(todayEnd)),
+        ),
+      );
+      if (!existing.empty) {
+        const id = existing.docs[0].id;
+        setRows((prev) => prev.map((row) => {
+          if (!row.diagnostics) return row;
+          const updatedAds = row.diagnostics.adsAccounts.map((a) => (
+            a.id === adsAccountId ? { ...a, dashboardDailyId: id } : a
+          ));
+          return { ...row, diagnostics: { adsAccounts: updatedAds } };
+        }));
+        setRunStatus('dashboardDaily already exists for today.');
+        return;
+      }
+
+      // Create new daily
+      const newRef = doc(dashboardDailiesRef);
+      const now = Timestamp.now();
+      await (await import('firebase/firestore')).setDoc(newRef, {
+        'Ads Account': adsAccountRef,
+        'Created Date': now,
+        'Modified Date': now,
+      } as any);
+
+      setRows((prev) => prev.map((row) => {
+        if (!row.diagnostics) return row;
+        const updatedAds = row.diagnostics.adsAccounts.map((a) => (
+          a.id === adsAccountId ? { ...a, dashboardDailyId: newRef.id } : a
+        ));
+        return { ...row, diagnostics: { adsAccounts: updatedAds } };
+      }));
+      setRunStatus('Created today\'s dashboardDaily. Now click Run Spend and Refresh.');
+    } catch (e: any) {
+      console.error('[DIAG] Create daily error', e);
+      setRunStatus(`Failed to create dashboardDaily: ${e?.message || 'Unknown error'}`);
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -884,7 +940,7 @@ export default function AllContactRelationPage() {
                                     <div className="font-mono text-[11px]">{a.dashboardDailyId || '-'}</div>
                                   </div>
                                 </div>
-                              <div className="mt-2 grid grid-cols-3 gap-2">
+                              <div className="mt-2 grid grid-cols-4 gap-2">
                                 <button
                                   onClick={() => {
                                     const mgr = managerEdits[a.id] ?? a.managerAccountId;
@@ -929,6 +985,10 @@ export default function AllContactRelationPage() {
                                   }}
                                   className="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
                                 >Save Manager ID</button>
+                                <button
+                                  onClick={() => createTodayDashboardDaily(a.id)}
+                                  className="px-2 py-1 text-xs bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200"
+                                >Create Today Daily</button>
                               </div>
                                 {a.issues.length > 0 && (
                                   <div className="mt-2">
