@@ -24,6 +24,9 @@ interface StripeSummary {
   subscriptionId?: string;
   subscriptionStatus?: string;
   paymentLast4?: string;
+  paymentBrand?: string;
+  paymentExpMonth?: number | null;
+  paymentExpYear?: number | null;
   invoicesCount?: number;
   stripeError?: string;
 }
@@ -257,6 +260,21 @@ export default function AllContactRelationPage() {
                 stripeError: e?.message || 'Failed to fetch invoices',
               };
             }
+
+            // Fetch default payment method details (brand, exp)
+            try {
+              const pmRes = await fetch(`/api/stripe-payment-methods?customerId=${row.stripe.customerId}`, { cache: 'no-store' });
+              if (pmRes.ok) {
+                const data = await pmRes.json();
+                const pm = data?.paymentMethod;
+                if (pm) {
+                  row.stripe.paymentBrand = pm.brand || undefined;
+                  row.stripe.paymentLast4 = pm.last4 || row.stripe.paymentLast4;
+                  row.stripe.paymentExpMonth = pm.exp_month ?? null;
+                  row.stripe.paymentExpYear = pm.exp_year ?? null;
+                }
+              }
+            } catch (_) {}
           }
 
           // Diagnostics: adsAccounts + Spend MTD + required fields presence
@@ -816,9 +834,15 @@ export default function AllContactRelationPage() {
                               <span>{r.stripe.subscriptionStatus || '-'}</span>
                             </div>
                             <div>
-                              <span className="text-gray-500">Last4:</span>{' '}
-                              <span>{r.stripe.paymentLast4 || '-'}</span>
+                              <span className="text-gray-500">Card:</span>{' '}
+                              <span>{r.stripe.paymentBrand ? `${r.stripe.paymentBrand.toUpperCase()} •••• ${r.stripe.paymentLast4 || '----'}` : (r.stripe.paymentLast4 || '-')}</span>
                             </div>
+                            {(typeof r.stripe.paymentExpMonth === 'number' || typeof r.stripe.paymentExpYear === 'number') && (
+                              <div>
+                                <span className="text-gray-500">Expiry:</span>{' '}
+                                <span>{r.stripe.paymentExpMonth?.toString().padStart(2, '0') || '--'}/{r.stripe.paymentExpYear || '----'}</span>
+                              </div>
+                            )}
                             <div>
                               <span className="text-gray-500">Invoices:</span>{' '}
                               <span>{typeof r.stripe.invoicesCount === 'number' ? r.stripe.invoicesCount : '-'}</span>

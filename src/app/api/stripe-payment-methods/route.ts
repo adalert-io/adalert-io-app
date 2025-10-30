@@ -5,6 +5,51 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-06-30.basil',
 });
 
+// GET /api/stripe-payment-methods?customerId=xxx
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const customerId = searchParams.get('customerId');
+    if (!customerId) {
+      return NextResponse.json({ error: 'Missing customerId' }, { status: 400 });
+    }
+
+    // Get customer's default payment method
+    const customer = await stripe.customers.retrieve(customerId, {
+      expand: ['invoice_settings.default_payment_method'],
+    });
+
+    let pm: Stripe.PaymentMethod | null = null;
+    // @ts-ignore - runtime check
+    const defaultPm = (customer as any)?.invoice_settings?.default_payment_method as Stripe.PaymentMethod | undefined;
+    if (defaultPm && defaultPm.type === 'card') {
+      pm = defaultPm;
+    } else {
+      // fallback: list first attached card
+      const list = await stripe.paymentMethods.list({ customer: customerId, type: 'card', limit: 1 });
+      pm = list.data[0] || null;
+    }
+
+    if (!pm) {
+      return NextResponse.json({ paymentMethod: null });
+    }
+
+    const card = pm.card;
+    return NextResponse.json({
+      paymentMethod: {
+        id: pm.id,
+        brand: card?.brand || null,
+        last4: card?.last4 || null,
+        exp_month: card?.exp_month || null,
+        exp_year: card?.exp_year || null,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error fetching payment method:', error);
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
