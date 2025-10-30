@@ -566,6 +566,49 @@ export default function AllContactRelationPage() {
     }
   };
 
+  // Refresh diagnostics for a single ads account (re-reads today's dashboardDaily)
+  const refreshAccountDiag = async (adsAccountId: string) => {
+    try {
+      setRunStatus('Refreshing diagnostics…');
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const todayEnd = new Date();
+      todayEnd.setHours(23, 59, 59, 999);
+
+      const dashboardDailiesRef = collection(db, 'dashboardDailies');
+      const adsAccountRef = doc(db, 'adsAccounts', adsAccountId);
+      const ddSnap = await getDocs(
+        query(
+          dashboardDailiesRef,
+          where('Ads Account', '==', adsAccountRef),
+          where('Created Date', '>=', Timestamp.fromDate(todayStart)),
+          where('Created Date', '<=', Timestamp.fromDate(todayEnd)),
+        ),
+      );
+
+      let newSpend: number | null = null;
+      let newDdId: string | null = null;
+      if (!ddSnap.empty) {
+        const first = ddSnap.docs[0];
+        const ddData: any = first.data();
+        newDdId = first.id;
+        newSpend = typeof ddData?.['Spend MTD'] === 'number' ? ddData['Spend MTD'] : (ddData?.['Spend MTD'] ?? null);
+      }
+
+      setRows((prev) => prev.map((row) => {
+        if (!row.diagnostics) return row;
+        const updatedAds = row.diagnostics.adsAccounts.map((a) => (
+          a.id === adsAccountId ? { ...a, spendMtd: newSpend, dashboardDailyId: newDdId } : a
+        ));
+        return { ...row, diagnostics: { adsAccounts: updatedAds } };
+      }));
+      setRunStatus('Diagnostics refreshed.');
+    } catch (e: any) {
+      console.error('[DIAG] Refresh error', e);
+      setRunStatus(`Failed to refresh diagnostics: ${e?.message || 'Unknown error'}`);
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -863,6 +906,10 @@ export default function AllContactRelationPage() {
                                   }}
                                   className="px-2 py-1 text-xs bg-amber-100 text-amber-700 rounded hover:bg-amber-200"
                                 >Run Indicator</button>
+                                <button
+                                  onClick={() => refreshAccountDiag(a.id)}
+                                  className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                                >Refresh</button>
                               </div>
                               <div className="mt-2 grid grid-cols-3 gap-2 items-center">
                                 <input
