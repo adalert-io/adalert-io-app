@@ -11,6 +11,7 @@ import {
   setDoc,
   serverTimestamp,
   deleteDoc,
+  onSnapshot,
 } from 'firebase/firestore';
 import {
   ref,
@@ -95,6 +96,7 @@ interface AlertSettingsState {
   adsAccountsLoaded: boolean;
   adsAccountsForTab: AdsAccount[];
   adsAccountsForTabLoaded: boolean;
+  adsAccountsForTabUnsub: (() => void) | null;
   fetchAlertSettings: (userId: string) => Promise<void>;
   refreshAlertSettings: (userId: string) => Promise<void>;
   updateAlertSettings: (
@@ -239,6 +241,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
   adsAccountsLoaded: false,
   adsAccountsForTab: [],
   adsAccountsForTabLoaded: false,
+  adsAccountsForTabUnsub: null,
   stripeCompany: null,
   stripeCompanyLoaded: false,
   subscription: null,
@@ -461,8 +464,12 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     companyAdminRef: any,
     currentUserId: string,
   ) => {
-    if (get().adsAccountsForTabLoaded) return;
-    set({ loading: true, error: null });
+    // Always establish a real-time listener; cleanup previous one if present
+    if (get().adsAccountsForTabUnsub) {
+      try { get().adsAccountsForTabUnsub?.(); } catch {}
+      set({ adsAccountsForTabUnsub: null });
+    }
+    set({ loading: true, error: null, adsAccountsForTabLoaded: false });
     try {
       const adsAccountsRef = collection(db, 'adsAccounts');
       // Determine role of current user (Admin vs Manager) without changing callers
@@ -470,7 +477,10 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       try {
         const { useAuthStore } = await import('./auth-store');
         const authUserDoc = useAuthStore.getState().userDoc as any;
-        isAdmin = authUserDoc?.['User Type'] === 'Admin';
+        const isRoleAdmin = authUserDoc?.['User Type'] === 'Admin';
+        const isSuperAdmin =
+          !!authUserDoc && authUserDoc?.['Company Admin']?.id === authUserDoc?.uid;
+        isAdmin = isRoleAdmin || isSuperAdmin;
       } catch (e) {
         isAdmin = false;
       }
@@ -481,45 +491,45 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         where('User', '==', companyAdminRef),
         where('Is Selected', '==', true),
       );
-      const snap = await getDocs(q);
+      const unsub = onSnapshot(q, (snap) => {
+        const adsAccounts: AdsAccount[] = snap.docs
+          .map((docSnap) => {
+            const data = docSnap.data();
+            const selectedUsers = data['Selected Users'] || [];
+            const hasUserAccess = selectedUsers.some(
+              (userRef: any) =>
+                userRef.id === currentUserId ||
+                userRef.path?.includes(currentUserId),
+            );
+            if (!isAdmin && !hasUserAccess) return null;
+            return {
+              id: docSnap.id,
+              name:
+                data['Account Name Editable'] ||
+                data['Account Name Original'] ||
+                formatAccountNumber(data['Id']),
+              'Account Name Editable': data['Account Name Editable'],
+              'Account Name Original': data['Account Name Original'],
+              'Id': data['Id'],
+              'Is Connected': data['Is Connected'],
+              'Is Selected': data['Is Selected'],
+              'Created Date': data['Created Date'],
+              'Platform': data['Platform'] || 'Google',
+              'Monthly Budget': data['Monthly Budget'] || 0,
+              'Selected Users': selectedUsers,
+              'Send Me Alert': data['Send Me Alert'] || false,
+            } as AdsAccount;
+          })
+          .filter(Boolean) as AdsAccount[];
 
-      const adsAccounts: AdsAccount[] = snap.docs
-        .map((docSnap) => {
-          const data = docSnap.data();
-          const selectedUsers = data['Selected Users'] || [];
-          const hasUserAccess = selectedUsers.some(
-            (userRef: any) =>
-              userRef.id === currentUserId ||
-              userRef.path?.includes(currentUserId),
-          );
-          // Admins see all selected accounts; Managers only see accounts they are selected on
-          if (!isAdmin && !hasUserAccess) return null;
-
-          return {
-            id: docSnap.id,
-            name:
-              data['Account Name Editable'] ||
-              data['Account Name Original'] ||
-              formatAccountNumber(data['Id']),
-            'Account Name Editable': data['Account Name Editable'],
-            'Account Name Original': data['Account Name Original'],
-            'Id': data['Id'],
-            'Is Connected': data['Is Connected'],
-            'Is Selected': data['Is Selected'],
-            'Created Date': data['Created Date'],
-            'Platform': data['Platform'] || 'Google',
-            'Monthly Budget': data['Monthly Budget'] || 0,
-            'Selected Users': selectedUsers,
-            'Send Me Alert': data['Send Me Alert'] || false,
-          };
-        })
-        .filter(Boolean) as AdsAccount[];
-
-      set({
-        adsAccountsForTab: adsAccounts,
-        adsAccountsForTabLoaded: true,
-        loading: false,
+        set({
+          adsAccountsForTab: adsAccounts,
+          adsAccountsForTabLoaded: true,
+          loading: false,
+        });
       });
+
+      set({ adsAccountsForTabUnsub: unsub });
     } catch (error: any) {
       set({ error: error.message, loading: false });
     }
@@ -885,6 +895,11 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     companyAdminRef: any,
     currentUserId: string,
   ) => {
+    // Force rebind listener
+    if (get().adsAccountsForTabUnsub) {
+      try { get().adsAccountsForTabUnsub?.(); } catch {}
+      set({ adsAccountsForTabUnsub: null });
+    }
     set({ adsAccountsForTabLoaded: false });
     await get().fetchAdsAccountsForAdsAccountsTab(
       companyAdminRef,
