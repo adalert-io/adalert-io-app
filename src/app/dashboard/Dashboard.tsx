@@ -127,7 +127,7 @@ const KPI_FIELDS = [
     value: (d: Record<string, any>, k: string) => d?.[`invalidClicks${k}`],
     pct: (d: Record<string, any>, k: string) =>
       d?.[`invalidClicksPercentage${k}`],
-    pctRedIfPositive: false,
+    pctRedIfPositive: true,
   },
   {
     label: 'Impressions',
