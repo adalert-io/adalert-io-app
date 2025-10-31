@@ -33,8 +33,12 @@ function getInitial(nameOrEmail: string) {
 
 export function Header() {
   const { user, userDoc, logout, subscription, isFullAccess } = useAuthStore();
-  const { userAdsAccounts, selectedAdsAccount, setSelectedAdsAccount } =
-    useUserAdsAccountsStore();
+  const {
+    userAdsAccounts,
+    selectedAdsAccount,
+    setSelectedAdsAccount,
+    fetchUserAdsAccounts,
+  } = useUserAdsAccountsStore();
   const [dropdownOpen, setDropdownOpen] = React.useState(false);
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
@@ -111,6 +115,13 @@ export function Header() {
     setMenuOpen(false);
     setMobileMenuOpen(false);
   };
+
+  // Ensure dropdown data is populated: fetch accounts when userDoc is ready
+  React.useEffect(() => {
+    if (userDoc) {
+      fetchUserAdsAccounts(userDoc);
+    }
+  }, [userDoc, fetchUserAdsAccounts]);
 
   // Close menus when clicking outside
   React.useEffect(() => {
