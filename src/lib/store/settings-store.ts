@@ -465,6 +465,15 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const adsAccountsRef = collection(db, 'adsAccounts');
+      // Determine role of current user (Admin vs Manager) without changing callers
+      let isAdmin = false;
+      try {
+        const { useAuthStore } = await import('./auth-store');
+        const authUserDoc = useAuthStore.getState().userDoc as any;
+        isAdmin = authUserDoc?.['User Type'] === 'Admin';
+      } catch (e) {
+        isAdmin = false;
+      }
       // const currentUserRef = doc(db, "users", currentUserId);
 
       const q = query(
@@ -483,8 +492,8 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
               userRef.id === currentUserId ||
               userRef.path?.includes(currentUserId),
           );
-
-          if (!hasUserAccess) return null;
+          // Admins see all selected accounts; Managers only see accounts they are selected on
+          if (!isAdmin && !hasUserAccess) return null;
 
           return {
             id: docSnap.id,
