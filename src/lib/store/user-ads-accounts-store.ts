@@ -110,19 +110,21 @@ export const useUserAdsAccountsStore = create<UserAdsAccountsState>(
           ...doc.data(),
         }));
 
-        if (accounts.length === 1) {
-          set({
-            userAdsAccounts: accounts,
-            selectedAdsAccount: accounts[0],
-            loading: false,
-          });
-        } else {
-          set({
-            userAdsAccounts: accounts,
-            selectedAdsAccount: null,
-            loading: false,
-          });
+        // Preserve any previously selected account if it still exists
+        const existingSelected = get().selectedAdsAccount;
+        let nextSelected: AdsAccount | null = null;
+
+        if (existingSelected && accounts.some((a) => a.id === existingSelected.id)) {
+          nextSelected = existingSelected;
+        } else if (accounts.length === 1) {
+          nextSelected = accounts[0];
         }
+
+        set({
+          userAdsAccounts: accounts,
+          selectedAdsAccount: nextSelected,
+          loading: false,
+        });
       } catch (err: any) {
         set({ error: err.message, loading: false });
       }
