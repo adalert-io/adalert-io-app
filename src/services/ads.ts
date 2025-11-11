@@ -121,19 +121,39 @@ export async function fetchAdsAccounts(userTokenId: string, userId: string) {
 
   if (!response.ok) {
     let errorMessage = "Failed to fetch ads accounts";
+    let errorDetails: any = null;
+    
+    // Clone the response so we can read it multiple times if needed
+    const clonedResponse = response.clone();
+    
     try {
-      const errorData = await response.json();
-      errorMessage = errorData?.error || errorData?.message || errorMessage;
-      console.error("[fetchAdsAccounts] Error response data:", errorData);
+      // Try to parse as JSON first
+      errorDetails = await clonedResponse.json();
+      errorMessage = errorDetails?.error || errorDetails?.message || errorMessage;
+      console.error("[fetchAdsAccounts] Error response data:", errorDetails);
     } catch (e) {
-      const errorText = await response.text();
-      console.error("[fetchAdsAccounts] Error response text:", errorText);
-      errorMessage = errorText || errorMessage;
+      // If JSON parsing fails, try to read as text
+      try {
+        const errorText = await response.text();
+        console.error("[fetchAdsAccounts] Error response text:", errorText);
+        errorMessage = errorText || errorMessage;
+      } catch (textError) {
+        console.error("[fetchAdsAccounts] Could not read error response:", textError);
+        // Use status text as fallback
+        errorMessage = `${response.status} ${response.statusText}`;
+      }
     }
     
     const error = new Error(errorMessage);
     (error as any).status = response.status;
     (error as any).statusText = response.statusText;
+    (error as any).details = errorDetails;
+    console.error("[fetchAdsAccounts] Throwing error:", {
+      message: errorMessage,
+      status: response.status,
+      statusText: response.statusText,
+      details: errorDetails,
+    });
     throw error;
   }
 

@@ -155,12 +155,19 @@ export function AddAdsAccount() {
               data: data,
             });
             
-            if (Array.isArray(data) && data.length > 0) {
-              setAdsAccounts(data.map((acc: any) => ({ ...acc })));
-              console.log("[AddAdsAccount] Set adsAccounts:", data.length, "accounts");
+            if (Array.isArray(data)) {
+              if (data.length > 0) {
+                setAdsAccounts(data.map((acc: any) => ({ ...acc })));
+                console.log("[AddAdsAccount] Set adsAccounts:", data.length, "accounts");
+              } else {
+                console.warn("[AddAdsAccount] Empty array returned - no accounts found for this email");
+                setAdsAccounts([]);
+                toast.warning("No ads accounts found for this Google account. Please check if you have any Google Ads accounts associated with this email.");
+              }
             } else {
-              console.warn("[AddAdsAccount] No accounts returned or data is not an array");
+              console.error("[AddAdsAccount] Invalid response format - expected array, got:", typeof data, data);
               setAdsAccounts([]);
+              toast.error("Invalid response from server. Please try again.");
             }
             
             await setAdsAccountAuthenticating(user.uid, false);
@@ -170,9 +177,32 @@ export function AddAdsAccount() {
               error: fetchError,
               message: fetchError?.message,
               stack: fetchError?.stack,
+              status: fetchError?.status,
+              statusText: fetchError?.statusText,
+              details: fetchError?.details,
               tokenId: token.id,
+              googleEmail: token["Google Email"],
               companyAdminId: currentUserDoc["Company Admin"].id,
             });
+            
+            // Provide user-friendly error messages based on error type
+            if (fetchError?.status === 500) {
+              toast.error(
+                `Server error: Unable to fetch ads accounts for ${token["Google Email"]}. ` +
+                `This might be a temporary issue. Please try again or contact support if the problem persists.`
+              );
+            } else if (fetchError?.status === 401 || fetchError?.status === 403) {
+              toast.error(
+                `Authentication error: Please reconnect your Google account. ` +
+                `The access token may have expired or been revoked.`
+              );
+            } else {
+              toast.error(
+                `Failed to fetch ads accounts: ${fetchError?.message || "Unknown error"}. ` +
+                `Please try again.`
+              );
+            }
+            
             throw fetchError; // Re-throw to be caught by outer catch
           }
         } else {
