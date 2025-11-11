@@ -69,9 +69,6 @@ export function AddAdsAccount() {
       if (!user) return;
       setIsLoading(true);
 
-      // Reset ads accounts state when user changes
-      setAdsAccounts(null);
-
       try {
         // Fetch userDoc if not available, and get the updated value from store
         let currentUserDoc = userDoc;
@@ -82,11 +79,25 @@ export function AddAdsAccount() {
           currentUserDoc = useAuthStore.getState().userDoc;
         }
 
+        // Get fresh tracker to check authentication state
+        const currentTracker = await getAuthTracker(user.uid);
+        setAuthTracker(currentTracker);
+
+        // Reset ads accounts state when user changes or when starting fresh
+        // Only reset if we're not in the middle of OAuth (to prevent clearing during redirect)
+        if (!currentTracker || !currentTracker["Is Ads Account Authenticating"]) {
+          setAdsAccounts(null);
+        }
+
+        // If we're in authentication flow, add a small delay to ensure Firestore has updated the token after OAuth
+        if (currentTracker && currentTracker["Is Ads Account Authenticating"]) {
+          // Small delay to ensure Firestore has updated the token after OAuth
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
+
+        // Fetch the current token (will be the new one after OAuth)
         const token = await getCurrentUserToken(user.uid);
         setUserToken(token);
-
-        const tracker = await getAuthTracker(user.uid);
-        setAuthTracker(tracker);
 
         const sub = await getSubscription(user.uid);
         setSubscription(sub);
@@ -94,8 +105,8 @@ export function AddAdsAccount() {
         // Use currentUserDoc instead of userDoc prop to ensure we have the latest value
         if (
           token &&
-          tracker &&
-          tracker["Is Ads Account Authenticating"] &&
+          currentTracker &&
+          currentTracker["Is Ads Account Authenticating"] &&
           currentUserDoc
         ) {
           const data = await fetchAdsAccounts(
@@ -120,6 +131,9 @@ export function AddAdsAccount() {
     
     try {
       setIsConnecting(true);
+      // Clear existing accounts when starting a new OAuth flow
+      setAdsAccounts(null);
+      setUserToken(null);
       await setAdsAccountAuthenticating(user.uid, true);
 
       const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
