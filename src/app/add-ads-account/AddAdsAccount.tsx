@@ -97,28 +97,7 @@ export function AddAdsAccount() {
             token.id,
             userDoc["Company Admin"].id,
           );
-          // Filter accounts to only show those belonging to the current token
-          // New accounts won't have a User Token yet, so we include them
-          // Existing accounts must match the current token
-          const filteredData = data.filter((acc: any) => {
-            // If account doesn't have a User Token yet, it's a new account from this fetch
-            if (!acc["User Token"]) return true;
-            // If it has a User Token, it must match the current token
-            const accTokenRef = acc["User Token"];
-            // Handle Firestore DocumentReference - check if id matches
-            if (accTokenRef && typeof accTokenRef === 'object' && 'id' in accTokenRef) {
-              return accTokenRef.id === token.id;
-            }
-            // If it's a string path, extract the ID from the path
-            if (typeof accTokenRef === 'string') {
-              const pathParts = accTokenRef.split('/');
-              const tokenId = pathParts[pathParts.length - 1];
-              return tokenId === token.id;
-            }
-            // Default: exclude if we can't determine the token
-            return false;
-          });
-          setAdsAccounts(filteredData.map((acc: any) => ({ ...acc })));
+          setAdsAccounts(data.map((acc: any) => ({ ...acc })));
           await setAdsAccountAuthenticating(user.uid, false);
         }
       } catch (error) {
