@@ -544,6 +544,11 @@ export function AddAdsAccount() {
                           <div className="text-sm text-gray-500">
                             {acc["Account Name Editable"]}
                           </div>
+                          {userToken && userToken["Google Email"] && (
+                            <div className="text-xs text-gray-400 mt-1">
+                              Authenticated as: {userToken["Google Email"]}
+                            </div>
+                          )}
                         </div>
                       </div>
 
