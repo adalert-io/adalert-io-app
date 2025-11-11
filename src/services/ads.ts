@@ -43,14 +43,48 @@ export async function getCurrentUserToken(
     where("Is Current Token To Fetch Ads Account", "==", true)
   );
   const userTokenSnap = await getDocs(userTokenQuery);
+  
+  // Check if multiple tokens are marked as current (shouldn't happen, but handle it)
+  if (userTokenSnap.docs.length > 1) {
+    console.warn("[getCurrentUserToken] Multiple tokens marked as current! Using the most recently modified one.");
+    // Sort by modified_at descending and use the most recent one
+    const sortedDocs = userTokenSnap.docs.sort((a, b) => {
+      const aModified = a.data()["modified_at"]?.toMillis() || 0;
+      const bModified = b.data()["modified_at"]?.toMillis() || 0;
+      return bModified - aModified;
+    });
+    const userTokenDoc = sortedDocs[0];
+    
+    console.log("[getCurrentUserToken] Selected token:", {
+      tokenId: userTokenDoc.id,
+      googleEmail: userTokenDoc.data()["Google Email"],
+      modifiedAt: userTokenDoc.data()["modified_at"],
+    });
+    
+    return {
+      id: userTokenDoc.id,
+      ...userTokenDoc.data(),
+    } as UserToken;
+  }
+  
   const userTokenDoc = userTokenSnap.docs[0];
 
-  if (!userTokenDoc) return null;
+  if (!userTokenDoc) {
+    console.log("[getCurrentUserToken] No current token found for user:", userId);
+    return null;
+  }
 
-  return {
+  const token = {
     id: userTokenDoc.id,
     ...userTokenDoc.data(),
   } as UserToken;
+  
+  console.log("[getCurrentUserToken] Found token:", {
+    tokenId: token.id,
+    googleEmail: token["Google Email"],
+  });
+
+  return token;
 }
 
 export async function getAuthTracker(

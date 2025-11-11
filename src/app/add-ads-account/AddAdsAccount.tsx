@@ -103,15 +103,41 @@ export function AddAdsAccount() {
           setAdsAccounts(null);
         }
 
-        // If we're in authentication flow, add a small delay to ensure Firestore has updated the token after OAuth
+        // If we're in authentication flow, add a delay and retry logic to ensure Firestore has updated the token after OAuth
+        let token = null;
         if (currentTracker && currentTracker["Is Ads Account Authenticating"]) {
-          console.log("[AddAdsAccount] In OAuth flow, waiting 300ms for Firestore update...");
-          // Small delay to ensure Firestore has updated the token after OAuth
-          await new Promise(resolve => setTimeout(resolve, 300));
+          console.log("[AddAdsAccount] In OAuth flow, waiting for Firestore to update token...");
+          
+          // Retry logic to get the correct token after OAuth
+          // Sometimes Firestore takes time to update, so we retry a few times
+          let retries = 0;
+          const maxRetries = 5;
+          const retryDelay = 500; // 500ms between retries
+          
+          while (retries < maxRetries && !token) {
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+            token = await getCurrentUserToken(user.uid);
+            
+            if (token) {
+              console.log(`[AddAdsAccount] Token found after ${retries + 1} attempt(s):`, {
+                tokenId: token.id,
+                googleEmail: token["Google Email"],
+              });
+              break;
+            }
+            
+            retries++;
+            console.log(`[AddAdsAccount] Token not found, retry ${retries}/${maxRetries}...`);
+          }
+          
+          if (!token) {
+            console.error("[AddAdsAccount] Could not find token after OAuth, even after retries");
+          }
+        } else {
+          // Not in OAuth flow, just get the current token
+          token = await getCurrentUserToken(user.uid);
         }
-
-        // Fetch the current token (will be the new one after OAuth)
-        const token = await getCurrentUserToken(user.uid);
+        
         setUserToken(token);
         console.log("[AddAdsAccount] Token:", {
           exists: !!token,
@@ -139,9 +165,10 @@ export function AddAdsAccount() {
           shouldFetchAccounts,
         });
 
-        if (shouldFetchAccounts && currentUserDoc) {
+        if (shouldFetchAccounts && currentUserDoc && token) {
           console.log("[AddAdsAccount] Fetching ads accounts with:", {
             tokenId: token.id,
+            googleEmail: token["Google Email"],
             companyAdminId: currentUserDoc["Company Admin"].id,
           });
           
@@ -206,7 +233,11 @@ export function AddAdsAccount() {
             throw fetchError; // Re-throw to be caught by outer catch
           }
         } else {
-          console.log("[AddAdsAccount] Skipping fetch - conditions not met");
+          console.log("[AddAdsAccount] Skipping fetch - conditions not met:", {
+            shouldFetchAccounts,
+            hasUserDoc: !!currentUserDoc,
+            hasToken: !!token,
+          });
         }
       } catch (error: any) {
         console.error("[AddAdsAccount] Error initializing data:", {
