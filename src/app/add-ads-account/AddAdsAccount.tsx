@@ -66,31 +66,46 @@ export function AddAdsAccount() {
 
   useEffect(() => {
     const initializeData = async () => {
-      if (!user) return;
+      if (!user) {
+        console.log("[AddAdsAccount] No user found, skipping initialization");
+        return;
+      }
+      
+      console.log("[AddAdsAccount] Starting initialization for user:", user.uid);
       setIsLoading(true);
 
       try {
         // Fetch userDoc if not available, and get the updated value from store
         let currentUserDoc = userDoc;
         if (!currentUserDoc) {
+          console.log("[AddAdsAccount] userDoc not available, fetching...");
           await useAuthStore.getState().fetchUserDocument(user.uid);
           await useAuthStore.getState().checkSubscriptionStatus(user.uid);
           // Get the updated userDoc from store after fetching
           currentUserDoc = useAuthStore.getState().userDoc;
+          console.log("[AddAdsAccount] userDoc fetched:", currentUserDoc ? "exists" : "null");
+        } else {
+          console.log("[AddAdsAccount] userDoc already available");
         }
 
         // Get fresh tracker to check authentication state
         const currentTracker = await getAuthTracker(user.uid);
         setAuthTracker(currentTracker);
+        console.log("[AddAdsAccount] Tracker:", {
+          exists: !!currentTracker,
+          isAuthenticating: currentTracker?.["Is Ads Account Authenticating"],
+        });
 
         // Reset ads accounts state when user changes or when starting fresh
         // Only reset if we're not in the middle of OAuth (to prevent clearing during redirect)
         if (!currentTracker || !currentTracker["Is Ads Account Authenticating"]) {
+          console.log("[AddAdsAccount] Resetting adsAccounts (not in OAuth flow)");
           setAdsAccounts(null);
         }
 
         // If we're in authentication flow, add a small delay to ensure Firestore has updated the token after OAuth
         if (currentTracker && currentTracker["Is Ads Account Authenticating"]) {
+          console.log("[AddAdsAccount] In OAuth flow, waiting 300ms for Firestore update...");
           // Small delay to ensure Firestore has updated the token after OAuth
           await new Promise(resolve => setTimeout(resolve, 300));
         }
@@ -98,28 +113,82 @@ export function AddAdsAccount() {
         // Fetch the current token (will be the new one after OAuth)
         const token = await getCurrentUserToken(user.uid);
         setUserToken(token);
+        console.log("[AddAdsAccount] Token:", {
+          exists: !!token,
+          tokenId: token?.id,
+          googleEmail: token?.["Google Email"],
+        });
 
         const sub = await getSubscription(user.uid);
         setSubscription(sub);
 
         // Use currentUserDoc instead of userDoc prop to ensure we have the latest value
-        if (
+        const shouldFetchAccounts = !!(
           token &&
           currentTracker &&
           currentTracker["Is Ads Account Authenticating"] &&
           currentUserDoc
-        ) {
-          const data = await fetchAdsAccounts(
-            token.id,
-            currentUserDoc["Company Admin"].id,
-          );
-          setAdsAccounts(data.map((acc: any) => ({ ...acc })));
-          await setAdsAccountAuthenticating(user.uid, false);
+        );
+
+        console.log("[AddAdsAccount] Condition check:", {
+          hasToken: !!token,
+          hasTracker: !!currentTracker,
+          isAuthenticating: currentTracker?.["Is Ads Account Authenticating"],
+          hasUserDoc: !!currentUserDoc,
+          companyAdminId: currentUserDoc?.["Company Admin"]?.id,
+          shouldFetchAccounts,
+        });
+
+        if (shouldFetchAccounts && currentUserDoc) {
+          console.log("[AddAdsAccount] Fetching ads accounts with:", {
+            tokenId: token.id,
+            companyAdminId: currentUserDoc["Company Admin"].id,
+          });
+          
+          try {
+            const data = await fetchAdsAccounts(
+              token.id,
+              currentUserDoc["Company Admin"].id,
+            );
+            console.log("[AddAdsAccount] Fetched ads accounts:", {
+              count: Array.isArray(data) ? data.length : "not an array",
+              data: data,
+            });
+            
+            if (Array.isArray(data) && data.length > 0) {
+              setAdsAccounts(data.map((acc: any) => ({ ...acc })));
+              console.log("[AddAdsAccount] Set adsAccounts:", data.length, "accounts");
+            } else {
+              console.warn("[AddAdsAccount] No accounts returned or data is not an array");
+              setAdsAccounts([]);
+            }
+            
+            await setAdsAccountAuthenticating(user.uid, false);
+            console.log("[AddAdsAccount] Set Is Ads Account Authenticating to false");
+          } catch (fetchError: any) {
+            console.error("[AddAdsAccount] Error fetching ads accounts:", {
+              error: fetchError,
+              message: fetchError?.message,
+              stack: fetchError?.stack,
+              tokenId: token.id,
+              companyAdminId: currentUserDoc["Company Admin"].id,
+            });
+            throw fetchError; // Re-throw to be caught by outer catch
+          }
+        } else {
+          console.log("[AddAdsAccount] Skipping fetch - conditions not met");
         }
-      } catch (error) {
-        console.error("Error initializing data:", error);
+      } catch (error: any) {
+        console.error("[AddAdsAccount] Error initializing data:", {
+          error,
+          message: error?.message,
+          stack: error?.stack,
+          userId: user.uid,
+        });
+        toast.error(`Failed to load ads accounts: ${error?.message || "Unknown error"}`);
       } finally {
         setIsLoading(false);
+        console.log("[AddAdsAccount] Initialization complete");
       }
     };
 
@@ -127,13 +196,24 @@ export function AddAdsAccount() {
   }, [user, userDoc]);
 
   const handleConnectGoogleAds = async () => {
-    if (!user || isConnecting) return;
+    if (!user || isConnecting) {
+      console.log("[AddAdsAccount] handleConnectGoogleAds skipped:", {
+        hasUser: !!user,
+        isConnecting,
+      });
+      return;
+    }
+    
+    console.log("[AddAdsAccount] Starting Google OAuth flow for user:", user.uid);
     
     try {
       setIsConnecting(true);
       // Clear existing accounts when starting a new OAuth flow
+      console.log("[AddAdsAccount] Clearing existing accounts and token");
       setAdsAccounts(null);
       setUserToken(null);
+      
+      console.log("[AddAdsAccount] Setting Is Ads Account Authenticating to true");
       await setAdsAccountAuthenticating(user.uid, true);
 
       const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -147,9 +227,19 @@ export function AddAdsAccount() {
         redirectUri,
       )}&client_id=${GOOGLE_CLIENT_ID}&prompt=consent`;
 
+      console.log("[AddAdsAccount] Redirecting to OAuth URL:", {
+        redirectUri,
+        from,
+        hasClientId: !!GOOGLE_CLIENT_ID,
+      });
+
       window.location.href = oauthUrl;
-    } catch (error) {
-      console.error("Error initiating Google OAuth:", error);
+    } catch (error: any) {
+      console.error("[AddAdsAccount] Error initiating Google OAuth:", {
+        error,
+        message: error?.message,
+        stack: error?.stack,
+      });
       setIsConnecting(false);
     }
   };

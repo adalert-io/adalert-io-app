@@ -100,6 +100,12 @@ export async function getSubscription(
 export async function fetchAdsAccounts(userTokenId: string, userId: string) {
   const path = getFirebaseFnPath("ads-accounts-fb");
 
+  console.log("[fetchAdsAccounts] Calling API with:", {
+    path,
+    userTokenId,
+    userId,
+  });
+
   const response = await fetch(path, {
     method: "POST",
     headers: {
@@ -111,9 +117,32 @@ export async function fetchAdsAccounts(userTokenId: string, userId: string) {
     }),
   });
 
+  console.log("[fetchAdsAccounts] Response status:", response.status, response.statusText);
+
   if (!response.ok) {
-    throw new Error("Failed to fetch ads accounts");
+    let errorMessage = "Failed to fetch ads accounts";
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData?.error || errorData?.message || errorMessage;
+      console.error("[fetchAdsAccounts] Error response data:", errorData);
+    } catch (e) {
+      const errorText = await response.text();
+      console.error("[fetchAdsAccounts] Error response text:", errorText);
+      errorMessage = errorText || errorMessage;
+    }
+    
+    const error = new Error(errorMessage);
+    (error as any).status = response.status;
+    (error as any).statusText = response.statusText;
+    throw error;
   }
 
-  return response.json();
+  const data = await response.json();
+  console.log("[fetchAdsAccounts] Success, received data:", {
+    isArray: Array.isArray(data),
+    count: Array.isArray(data) ? data.length : "N/A",
+    data,
+  });
+
+  return data;
 }
