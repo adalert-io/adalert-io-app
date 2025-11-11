@@ -73,9 +73,13 @@ export function AddAdsAccount() {
       setAdsAccounts(null);
 
       try {
-        if (!userDoc) {
+        // Fetch userDoc if not available, and get the updated value from store
+        let currentUserDoc = userDoc;
+        if (!currentUserDoc) {
           await useAuthStore.getState().fetchUserDocument(user.uid);
           await useAuthStore.getState().checkSubscriptionStatus(user.uid);
+          // Get the updated userDoc from store after fetching
+          currentUserDoc = useAuthStore.getState().userDoc;
         }
 
         const token = await getCurrentUserToken(user.uid);
@@ -87,15 +91,16 @@ export function AddAdsAccount() {
         const sub = await getSubscription(user.uid);
         setSubscription(sub);
 
+        // Use currentUserDoc instead of userDoc prop to ensure we have the latest value
         if (
           token &&
           tracker &&
           tracker["Is Ads Account Authenticating"] &&
-          userDoc
+          currentUserDoc
         ) {
           const data = await fetchAdsAccounts(
             token.id,
-            userDoc["Company Admin"].id,
+            currentUserDoc["Company Admin"].id,
           );
           setAdsAccounts(data.map((acc: any) => ({ ...acc })));
           await setAdsAccountAuthenticating(user.uid, false);
