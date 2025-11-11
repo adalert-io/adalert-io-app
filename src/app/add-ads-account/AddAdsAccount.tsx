@@ -66,224 +66,44 @@ export function AddAdsAccount() {
 
   useEffect(() => {
     const initializeData = async () => {
-      if (!user) {
-        console.log("[AddAdsAccount] No user found, skipping initialization");
-        return;
-      }
-      
-      console.log("[AddAdsAccount] Starting initialization for user:", user.uid);
+      if (!user) return;
       setIsLoading(true);
 
+      // Reset ads accounts state when user changes
+      setAdsAccounts(null);
+
       try {
-        // Fetch userDoc if not available, and get the updated value from store
-        let currentUserDoc = userDoc;
-        if (!currentUserDoc) {
-          console.log("[AddAdsAccount] userDoc not available, fetching...");
+        if (!userDoc) {
           await useAuthStore.getState().fetchUserDocument(user.uid);
           await useAuthStore.getState().checkSubscriptionStatus(user.uid);
-          // Get the updated userDoc from store after fetching
-          currentUserDoc = useAuthStore.getState().userDoc;
-          console.log("[AddAdsAccount] userDoc fetched:", currentUserDoc ? "exists" : "null");
-        } else {
-          console.log("[AddAdsAccount] userDoc already available");
         }
 
-        // Get fresh tracker to check authentication state
-        const currentTracker = await getAuthTracker(user.uid);
-        setAuthTracker(currentTracker);
-        console.log("[AddAdsAccount] Tracker:", {
-          exists: !!currentTracker,
-          isAuthenticating: currentTracker?.["Is Ads Account Authenticating"],
-        });
-
-        // Reset ads accounts state when user changes or when starting fresh
-        // Only reset if we're not in the middle of OAuth (to prevent clearing during redirect)
-        if (!currentTracker || !currentTracker["Is Ads Account Authenticating"]) {
-          console.log("[AddAdsAccount] Resetting adsAccounts (not in OAuth flow)");
-          setAdsAccounts(null);
-        }
-
-        // If we're in authentication flow, add a delay and retry logic to ensure Firestore has updated the token after OAuth
-        let token = null;
-        if (currentTracker && currentTracker["Is Ads Account Authenticating"]) {
-          console.log("[AddAdsAccount] In OAuth flow, waiting for Firestore to update token...");
-          
-          // Retry logic to get the correct token after OAuth
-          // Sometimes Firestore takes time to update, so we retry a few times
-          let retries = 0;
-          const maxRetries = 5;
-          const retryDelay = 500; // 500ms between retries
-          
-          while (retries < maxRetries && !token) {
-            await new Promise(resolve => setTimeout(resolve, retryDelay));
-            token = await getCurrentUserToken(user.uid);
-            
-            if (token) {
-              console.log(`[AddAdsAccount] Token found after ${retries + 1} attempt(s):`, {
-                tokenId: token.id,
-                googleEmail: token["Google Email"],
-              });
-              break;
-            }
-            
-            retries++;
-            console.log(`[AddAdsAccount] Token not found, retry ${retries}/${maxRetries}...`);
-          }
-          
-          if (!token) {
-            console.error("[AddAdsAccount] Could not find token after OAuth, even after retries");
-          }
-        } else {
-          // Not in OAuth flow, just get the current token
-          token = await getCurrentUserToken(user.uid);
-        }
-        
+        const token = await getCurrentUserToken(user.uid);
         setUserToken(token);
-        console.log("[AddAdsAccount] Token:", {
-          exists: !!token,
-          tokenId: token?.id,
-          googleEmail: token?.["Google Email"],
-        });
+
+        const tracker = await getAuthTracker(user.uid);
+        setAuthTracker(tracker);
 
         const sub = await getSubscription(user.uid);
         setSubscription(sub);
 
-        // Use currentUserDoc instead of userDoc prop to ensure we have the latest value
-        const shouldFetchAccounts = !!(
+        if (
           token &&
-          currentTracker &&
-          currentTracker["Is Ads Account Authenticating"] &&
-          currentUserDoc
-        );
-
-        console.log("[AddAdsAccount] Condition check:", {
-          hasToken: !!token,
-          hasTracker: !!currentTracker,
-          isAuthenticating: currentTracker?.["Is Ads Account Authenticating"],
-          hasUserDoc: !!currentUserDoc,
-          companyAdminId: currentUserDoc?.["Company Admin"]?.id,
-          shouldFetchAccounts,
-        });
-
-        if (shouldFetchAccounts && currentUserDoc && token) {
-          console.log("[AddAdsAccount] Fetching ads accounts with:", {
-            tokenId: token.id,
-            googleEmail: token["Google Email"],
-            companyAdminId: currentUserDoc["Company Admin"].id,
-          });
-          
-          try {
-            const data = await fetchAdsAccounts(
-              token.id,
-              currentUserDoc["Company Admin"].id,
-            );
-            console.log("[AddAdsAccount] Fetched ads accounts:", {
-              count: Array.isArray(data) ? data.length : "not an array",
-              data: data,
-            });
-            
-            if (Array.isArray(data)) {
-              if (data.length > 0) {
-                // Log the authenticated email and accounts received for debugging
-                console.log("[AddAdsAccount] Accounts received for authenticated email:", {
-                  authenticatedEmail: token["Google Email"],
-                  accountsCount: data.length,
-                  accountIds: data.map((acc: any) => acc.Id || acc.id),
-                });
-                
-                // IMPORTANT: Backend should only return accounts for the authenticated email
-                // If accounts from different email are returned, this is a backend issue
-                // We'll still show them but log a warning
-                const accountsWithEmail = data.map((acc: any) => {
-                  // Store the authenticated email with each account for display
-                  return {
-                    ...acc,
-                    _authenticatedEmail: token["Google Email"], // Store for reference
-                  };
-                });
-                
-                setAdsAccounts(accountsWithEmail);
-                console.log("[AddAdsAccount] Set adsAccounts:", data.length, "accounts for email:", token["Google Email"]);
-                
-                // Show a warning if too many accounts (might indicate MCC accounts instead of individual)
-                if (data.length > 10) {
-                  console.warn(
-                    "[AddAdsAccount] WARNING: Received", data.length, 
-                    "accounts. This might indicate MCC/manager accounts instead of individual account accounts.",
-                    "Expected accounts for:", token["Google Email"]
-                  );
-                  toast.warning(
-                    `Received ${data.length} accounts. Please verify these belong to ${token["Google Email"]}. ` +
-                    `If these are from a different email, this is a backend issue.`
-                  );
-                }
-              } else {
-                console.warn("[AddAdsAccount] Empty array returned - no accounts found for this email:", token["Google Email"]);
-                setAdsAccounts([]);
-                toast.warning(
-                  `No ads accounts found for ${token["Google Email"]}. ` +
-                  `Please check if you have any Google Ads accounts associated with this email.`
-                );
-              }
-            } else {
-              console.error("[AddAdsAccount] Invalid response format - expected array, got:", typeof data, data);
-              setAdsAccounts([]);
-              toast.error("Invalid response from server. Please try again.");
-            }
-            
-            await setAdsAccountAuthenticating(user.uid, false);
-            console.log("[AddAdsAccount] Set Is Ads Account Authenticating to false");
-          } catch (fetchError: any) {
-            console.error("[AddAdsAccount] Error fetching ads accounts:", {
-              error: fetchError,
-              message: fetchError?.message,
-              stack: fetchError?.stack,
-              status: fetchError?.status,
-              statusText: fetchError?.statusText,
-              details: fetchError?.details,
-              tokenId: token.id,
-              googleEmail: token["Google Email"],
-              companyAdminId: currentUserDoc["Company Admin"].id,
-            });
-            
-            // Provide user-friendly error messages based on error type
-            if (fetchError?.status === 500) {
-              toast.error(
-                `Server error: Unable to fetch ads accounts for ${token["Google Email"]}. ` +
-                `This might be a temporary issue. Please try again or contact support if the problem persists.`
-              );
-            } else if (fetchError?.status === 401 || fetchError?.status === 403) {
-              toast.error(
-                `Authentication error: Please reconnect your Google account. ` +
-                `The access token may have expired or been revoked.`
-              );
-            } else {
-              toast.error(
-                `Failed to fetch ads accounts: ${fetchError?.message || "Unknown error"}. ` +
-                `Please try again.`
-              );
-            }
-            
-            throw fetchError; // Re-throw to be caught by outer catch
-          }
-        } else {
-          console.log("[AddAdsAccount] Skipping fetch - conditions not met:", {
-            shouldFetchAccounts,
-            hasUserDoc: !!currentUserDoc,
-            hasToken: !!token,
-          });
+          tracker &&
+          tracker["Is Ads Account Authenticating"] &&
+          userDoc
+        ) {
+          const data = await fetchAdsAccounts(
+            token.id,
+            userDoc["Company Admin"].id,
+          );
+          setAdsAccounts(data.map((acc: any) => ({ ...acc })));
+          await setAdsAccountAuthenticating(user.uid, false);
         }
-      } catch (error: any) {
-        console.error("[AddAdsAccount] Error initializing data:", {
-          error,
-          message: error?.message,
-          stack: error?.stack,
-          userId: user.uid,
-        });
-        toast.error(`Failed to load ads accounts: ${error?.message || "Unknown error"}`);
+      } catch (error) {
+        console.error("Error initializing data:", error);
       } finally {
         setIsLoading(false);
-        console.log("[AddAdsAccount] Initialization complete");
       }
     };
 
@@ -291,24 +111,10 @@ export function AddAdsAccount() {
   }, [user, userDoc]);
 
   const handleConnectGoogleAds = async () => {
-    if (!user || isConnecting) {
-      console.log("[AddAdsAccount] handleConnectGoogleAds skipped:", {
-        hasUser: !!user,
-        isConnecting,
-      });
-      return;
-    }
-    
-    console.log("[AddAdsAccount] Starting Google OAuth flow for user:", user.uid);
+    if (!user || isConnecting) return;
     
     try {
       setIsConnecting(true);
-      // Clear existing accounts when starting a new OAuth flow
-      console.log("[AddAdsAccount] Clearing existing accounts and token");
-      setAdsAccounts(null);
-      setUserToken(null);
-      
-      console.log("[AddAdsAccount] Setting Is Ads Account Authenticating to true");
       await setAdsAccountAuthenticating(user.uid, true);
 
       const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -322,19 +128,9 @@ export function AddAdsAccount() {
         redirectUri,
       )}&client_id=${GOOGLE_CLIENT_ID}&prompt=consent`;
 
-      console.log("[AddAdsAccount] Redirecting to OAuth URL:", {
-        redirectUri,
-        from,
-        hasClientId: !!GOOGLE_CLIENT_ID,
-      });
-
       window.location.href = oauthUrl;
-    } catch (error: any) {
-      console.error("[AddAdsAccount] Error initiating Google OAuth:", {
-        error,
-        message: error?.message,
-        stack: error?.stack,
-      });
+    } catch (error) {
+      console.error("Error initiating Google OAuth:", error);
       setIsConnecting(false);
     }
   };
@@ -578,11 +374,6 @@ export function AddAdsAccount() {
                           <div className="text-sm text-gray-500">
                             {acc["Account Name Editable"]}
                           </div>
-                          {userToken && userToken["Google Email"] && (
-                            <div className="text-xs text-gray-400 mt-1">
-                              Authenticated as: {userToken["Google Email"]}
-                            </div>
-                          )}
                         </div>
                       </div>
 

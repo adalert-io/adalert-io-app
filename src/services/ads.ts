@@ -43,48 +43,14 @@ export async function getCurrentUserToken(
     where("Is Current Token To Fetch Ads Account", "==", true)
   );
   const userTokenSnap = await getDocs(userTokenQuery);
-  
-  // Check if multiple tokens are marked as current (shouldn't happen, but handle it)
-  if (userTokenSnap.docs.length > 1) {
-    console.warn("[getCurrentUserToken] Multiple tokens marked as current! Using the most recently modified one.");
-    // Sort by modified_at descending and use the most recent one
-    const sortedDocs = userTokenSnap.docs.sort((a, b) => {
-      const aModified = a.data()["modified_at"]?.toMillis() || 0;
-      const bModified = b.data()["modified_at"]?.toMillis() || 0;
-      return bModified - aModified;
-    });
-    const userTokenDoc = sortedDocs[0];
-    
-    console.log("[getCurrentUserToken] Selected token:", {
-      tokenId: userTokenDoc.id,
-      googleEmail: userTokenDoc.data()["Google Email"],
-      modifiedAt: userTokenDoc.data()["modified_at"],
-    });
-    
-    return {
-      id: userTokenDoc.id,
-      ...userTokenDoc.data(),
-    } as UserToken;
-  }
-  
   const userTokenDoc = userTokenSnap.docs[0];
 
-  if (!userTokenDoc) {
-    console.log("[getCurrentUserToken] No current token found for user:", userId);
-    return null;
-  }
+  if (!userTokenDoc) return null;
 
-  const token = {
+  return {
     id: userTokenDoc.id,
     ...userTokenDoc.data(),
   } as UserToken;
-  
-  console.log("[getCurrentUserToken] Found token:", {
-    tokenId: token.id,
-    googleEmail: token["Google Email"],
-  });
-
-  return token;
 }
 
 export async function getAuthTracker(
@@ -134,12 +100,6 @@ export async function getSubscription(
 export async function fetchAdsAccounts(userTokenId: string, userId: string) {
   const path = getFirebaseFnPath("ads-accounts-fb");
 
-  console.log("[fetchAdsAccounts] Calling API with:", {
-    path,
-    userTokenId,
-    userId,
-  });
-
   const response = await fetch(path, {
     method: "POST",
     headers: {
@@ -151,52 +111,9 @@ export async function fetchAdsAccounts(userTokenId: string, userId: string) {
     }),
   });
 
-  console.log("[fetchAdsAccounts] Response status:", response.status, response.statusText);
-
   if (!response.ok) {
-    let errorMessage = "Failed to fetch ads accounts";
-    let errorDetails: any = null;
-    
-    // Clone the response so we can read it multiple times if needed
-    const clonedResponse = response.clone();
-    
-    try {
-      // Try to parse as JSON first
-      errorDetails = await clonedResponse.json();
-      errorMessage = errorDetails?.error || errorDetails?.message || errorMessage;
-      console.error("[fetchAdsAccounts] Error response data:", errorDetails);
-    } catch (e) {
-      // If JSON parsing fails, try to read as text
-      try {
-        const errorText = await response.text();
-        console.error("[fetchAdsAccounts] Error response text:", errorText);
-        errorMessage = errorText || errorMessage;
-      } catch (textError) {
-        console.error("[fetchAdsAccounts] Could not read error response:", textError);
-        // Use status text as fallback
-        errorMessage = `${response.status} ${response.statusText}`;
-      }
-    }
-    
-    const error = new Error(errorMessage);
-    (error as any).status = response.status;
-    (error as any).statusText = response.statusText;
-    (error as any).details = errorDetails;
-    console.error("[fetchAdsAccounts] Throwing error:", {
-      message: errorMessage,
-      status: response.status,
-      statusText: response.statusText,
-      details: errorDetails,
-    });
-    throw error;
+    throw new Error("Failed to fetch ads accounts");
   }
 
-  const data = await response.json();
-  console.log("[fetchAdsAccounts] Success, received data:", {
-    isArray: Array.isArray(data),
-    count: Array.isArray(data) ? data.length : "N/A",
-    data,
-  });
-
-  return data;
+  return response.json();
 }
