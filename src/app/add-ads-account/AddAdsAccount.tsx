@@ -184,12 +184,46 @@ export function AddAdsAccount() {
             
             if (Array.isArray(data)) {
               if (data.length > 0) {
-                setAdsAccounts(data.map((acc: any) => ({ ...acc })));
-                console.log("[AddAdsAccount] Set adsAccounts:", data.length, "accounts");
+                // Log the authenticated email and accounts received for debugging
+                console.log("[AddAdsAccount] Accounts received for authenticated email:", {
+                  authenticatedEmail: token["Google Email"],
+                  accountsCount: data.length,
+                  accountIds: data.map((acc: any) => acc.Id || acc.id),
+                });
+                
+                // IMPORTANT: Backend should only return accounts for the authenticated email
+                // If accounts from different email are returned, this is a backend issue
+                // We'll still show them but log a warning
+                const accountsWithEmail = data.map((acc: any) => {
+                  // Store the authenticated email with each account for display
+                  return {
+                    ...acc,
+                    _authenticatedEmail: token["Google Email"], // Store for reference
+                  };
+                });
+                
+                setAdsAccounts(accountsWithEmail);
+                console.log("[AddAdsAccount] Set adsAccounts:", data.length, "accounts for email:", token["Google Email"]);
+                
+                // Show a warning if too many accounts (might indicate MCC accounts instead of individual)
+                if (data.length > 10) {
+                  console.warn(
+                    "[AddAdsAccount] WARNING: Received", data.length, 
+                    "accounts. This might indicate MCC/manager accounts instead of individual account accounts.",
+                    "Expected accounts for:", token["Google Email"]
+                  );
+                  toast.warning(
+                    `Received ${data.length} accounts. Please verify these belong to ${token["Google Email"]}. ` +
+                    `If these are from a different email, this is a backend issue.`
+                  );
+                }
               } else {
-                console.warn("[AddAdsAccount] Empty array returned - no accounts found for this email");
+                console.warn("[AddAdsAccount] Empty array returned - no accounts found for this email:", token["Google Email"]);
                 setAdsAccounts([]);
-                toast.warning("No ads accounts found for this Google account. Please check if you have any Google Ads accounts associated with this email.");
+                toast.warning(
+                  `No ads accounts found for ${token["Google Email"]}. ` +
+                  `Please check if you have any Google Ads accounts associated with this email.`
+                );
               }
             } else {
               console.error("[AddAdsAccount] Invalid response format - expected array, got:", typeof data, data);
