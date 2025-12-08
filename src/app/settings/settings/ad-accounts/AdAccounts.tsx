@@ -257,7 +257,10 @@ export default function AdAccountsSubtab() {
       },
     });
 
-    const total = filteredAdsAccounts.length;
+    const connectedAccounts = filteredAdsAccounts.filter(
+      (account) => account['Is Connected'],
+    );
+    const total = connectedAccounts.length;
     const start = total ? pageIndex * pageSize + 1 : 0;
     const end = Math.min((pageIndex + 1) * pageSize, total);
     const totalPages = table.getPageCount();
