@@ -109,6 +109,11 @@ export default function Summary() {
     );
   }, [accounts, debouncedSearch]);
 
+  // Filter out disconnected accounts for count
+  const connectedAccounts = useMemo(() => {
+    return filteredAccounts.filter((acc) => acc.isConnected);
+  }, [filteredAccounts]);
+
   // Pagination
   const [page, setPage] = useState(1);
   const pagedAccounts = useMemo(() => {
@@ -690,9 +695,9 @@ export default function Summary() {
 
           <div className='flex flex-col sm:flex-row items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200 gap-4'>
             <div className='text-[0.75rem] text-gray-600 font-medium'>
-              Showing {pagedAccounts.length > 0 ? (page - 1) * pageSize + 1 : 0}{' '}
-              to {Math.min(page * pageSize, filteredAccounts.length)} of{' '}
-              {filteredAccounts.length} accounts
+              Showing {connectedAccounts.length > 0 ? (page - 1) * pageSize + 1 : 0}{' '}
+              to {Math.min(page * pageSize, connectedAccounts.length)} of{' '}
+              {connectedAccounts.length} accounts
             </div>
 
             <div className='flex items-center gap-3'>
