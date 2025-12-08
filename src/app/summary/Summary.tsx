@@ -400,7 +400,7 @@ export default function Summary() {
                   </th>
                 </tr>
               </thead>
-              <tbody className='divide-y divide-gray-100'>
+              <tbody className='divide-y divide-gray-100 adalert-custom-hide-parent'>
                 {summaryLoading && accounts.length === 0 ? (
                   <tr>
                     <td colSpan={5} className='text-center py-12 text-gray-500'>
@@ -457,7 +457,7 @@ export default function Summary() {
                       className={`hover:bg-gray-50 transition-colors ${
                         acc.isConnected
                           ? 'cursor-pointer'
-                          : 'cursor-not-allowed opacity-75'
+                          : 'cursor-not-allowed opacity-75 hidden'
                       }`}
                       onClick={() => handleRowClick(acc)}
                     >
