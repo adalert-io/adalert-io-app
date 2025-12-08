@@ -100,11 +100,15 @@ export default function Summary() {
     return () => clearTimeout(handler);
   }, [searchValue]);
 
-  // Filtered accounts by search
+  // Filtered accounts - exclude disabled accounts (showingAds === false) and apply search
   const filteredAccounts = useMemo(() => {
-    if (!debouncedSearch) return accounts;
+    // First, filter out disabled accounts (showingAds === false)
+    const activeAccounts = accounts.filter((acc) => acc.showingAds !== false);
+    
+    // Then apply search filter if there's a search term
+    if (!debouncedSearch) return activeAccounts;
     const lower = debouncedSearch.toLowerCase();
-    return accounts.filter((acc) =>
+    return activeAccounts.filter((acc) =>
       acc.accountName.toLowerCase().includes(lower),
     );
   }, [accounts, debouncedSearch]);
