@@ -305,7 +305,12 @@ export default function AdAccountsSubtab() {
 
             <tbody className='divide-y divide-gray-100'>
               {table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className='hover:bg-gray-50 transition-colors'>
+                <tr
+                  key={row.id}
+                  className={`hover:bg-gray-50 transition-colors ${
+                    !row.original['Is Connected'] ? 'hidden' : ''
+                  }`}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
