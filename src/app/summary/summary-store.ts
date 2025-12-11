@@ -155,30 +155,53 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
             // Fetch spend MTD
             let spendMtd: number | null = null;
             let spendMtdIndicatorKey: string | null = null;
+            
+            const accountName = account['Account Name Editable'] || account['Account Name Original'] || 'N/A';
+            const accountNumber = account['Id'] || 'N/A';
+            
+            console.log(`📊 Spend MTD [SUMMARY] [${accountName}] - Starting fetch for account`);
+            console.log(`📊 Spend MTD [SUMMARY] [${accountName}] - adsAccountId:`, account.id);
+            console.log(`📊 Spend MTD [SUMMARY] [${accountName}] - customerId:`, account['Id']);
+            console.log(`📊 Spend MTD [SUMMARY] [${accountName}] - loginCustomerId:`, account['Manager Account Id']);
+            console.log(`📊 Spend MTD [SUMMARY] [${accountName}] - accountNumber:`, accountNumber);
+            
             if (dashboardDaily && dashboardDaily['Spend MTD'] !== undefined) {
               spendMtd = dashboardDaily['Spend MTD'] ?? null;
+              console.log(`📊 Spend MTD [SUMMARY] [${accountName}] - Using cached value from dashboardDaily:`, spendMtd);
             } else {
               // Fetch spend MTD from the API and update dashboardDaily
               try {
                 const path = getFirebaseFnPath('dashboard-spend-mtd-fb');
+                console.log(`📊 Spend MTD [SUMMARY] [${accountName}] - API endpoint:`, path);
+
+                const requestBody = {
+                  adsAccountId: account.id,
+                  customerId: account['Id'],
+                  loginCustomerId: account['Manager Account Id'],
+                };
+                console.log(`📊 Spend MTD [SUMMARY] [${accountName}] - Request body:`, JSON.stringify(requestBody, null, 2));
 
                 const response = await fetch(path, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
                   },
-                  body: JSON.stringify({
-                    adsAccountId: account.id,
-                    customerId: account['Id'],
-                    loginCustomerId: account['Manager Account Id'],
-                  }),
+                  body: JSON.stringify(requestBody),
                 });
+
+                console.log(`📊 Spend MTD [SUMMARY] [${accountName}] - Response status:`, response.status);
+                console.log(`📊 Spend MTD [SUMMARY] [${accountName}] - Response ok:`, response.ok);
 
                 if (response.ok) {
                   const result = await response.json();
-                  // console.log("Spend MTD result:", result);
+                  console.log(`📊 Spend MTD [SUMMARY] [${accountName}] - Response result (raw):`, JSON.stringify(result, null, 2));
+                  console.log(`📊 Spend MTD [SUMMARY] [${accountName}] - spendMtd value:`, result.spendMtd);
+                  console.log(`📊 Spend MTD [SUMMARY] [${accountName}] - spendMtd type:`, typeof result.spendMtd);
+                  console.log(`📊 Spend MTD [SUMMARY] [${accountName}] - spendMtd is null?:`, result.spendMtd === null);
+                  console.log(`📊 Spend MTD [SUMMARY] [${accountName}] - spendMtd is undefined?:`, result.spendMtd === undefined);
 
                   spendMtd = result.spendMtd ?? null;
+                  console.log(`📊 Spend MTD [SUMMARY] [${accountName}] - Final spendMtd after processing:`, spendMtd);
 
                   // Update the dashboardDaily document with the spendMtd value
                   if (dashboardDaily) {
@@ -187,26 +210,38 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
                       COLLECTIONS.DASHBOARD_DAILIES,
                       dashboardDaily.id,
                     );
+                    console.log(`📊 Spend MTD [SUMMARY] [${accountName}] - Updating Firestore document:`, dashboardDaily.id);
                     await updateDoc(dashboardDailyRef, {
                       'Spend MTD': result.spendMtd,
                       'Modified Date': Timestamp.now(),
                     });
+                    console.log(`📊 Spend MTD [SUMMARY] [${accountName}] - Firestore update successful`);
 
                     // Update the local dashboardDaily object
                     dashboardDaily = {
                       ...dashboardDaily,
                       'Spend MTD': result.spendMtd,
                     };
+                    console.log(`📊 Spend MTD [SUMMARY] [${accountName}] - Local dashboardDaily updated`);
+                  } else {
+                    console.warn(`📊 Spend MTD [SUMMARY] [${accountName}] - No dashboardDaily found, cannot update Firestore`);
                   }
                 } else {
-                  console.error('Failed to fetch spend MTD data');
+                  const errorText = await response.text();
+                  console.error(`❌ Spend MTD [SUMMARY] [${accountName}] - Failed to fetch spend MTD data`);
+                  console.error(`❌ Spend MTD [SUMMARY] [${accountName}] - Response status:`, response.status);
+                  console.error(`❌ Spend MTD [SUMMARY] [${accountName}] - Response error:`, errorText);
                   spendMtd = null;
                 }
               } catch (error) {
-                console.error('Error fetching spend MTD:', error);
+                console.error(`❌ Spend MTD [SUMMARY] [${accountName}] - ERROR:`, error);
+                console.error(`❌ Spend MTD [SUMMARY] [${accountName}] - Error message:`, error instanceof Error ? error.message : String(error));
+                console.error(`❌ Spend MTD [SUMMARY] [${accountName}] - Error stack:`, error instanceof Error ? error.stack : 'N/A');
                 spendMtd = null;
               }
             }
+            
+            console.log(`📊 Spend MTD [SUMMARY] [${accountName}] - Final spendMtd for this account:`, spendMtd);
 
             // console.log("dashboardDaily: ", dashboardDaily);
 
