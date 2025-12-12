@@ -292,25 +292,28 @@ export function Header() {
               <div className='flex items-center gap-2'>
                 {userDoc['User Type'] !== 'Manager' && (
                   <Button
-                    variant='ghost'
-                    size='icon'
-                    className={`text-blue-600 ${
-                      isSubscriptionExpired
-                        ? 'opacity-50 cursor-not-allowed'
-                        : ''
-                    }`}
-                    onClick={() =>
-                      !isSubscriptionExpired && router.push('/add-ads-account')
+                  variant="ghost"
+                  size="icon"
+                  className={`text-blue-600 ${
+                    isSubscriptionExpired ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                  onClick={() => {
+                    if (!isSubscriptionExpired) {
+                      router.push("/add-ads-account");
+                      Promise.resolve().then(() => router.refresh());
                     }
-                    disabled={isSubscriptionExpired}
-                    title={
-                      isSubscriptionExpired
-                        ? 'Subscription expired. Please renew to add ads accounts.'
-                        : 'Add Ads Account'
-                    }
-                  >
-                    <Plus className='w-5 h-5' />
-                  </Button>
+                  }}
+                  
+                  disabled={isSubscriptionExpired}
+                  title={
+                    isSubscriptionExpired
+                      ? "Subscription expired. Please renew to add ads accounts."
+                      : "Add Ads Account"
+                  }
+                >
+                  <Plus className="w-5 h-5" />
+                </Button>
+                
                 )}
                 {userAdsAccounts.length >= 2 && (
                   <Button
@@ -409,26 +412,29 @@ export function Header() {
             {user && userDoc && (
               <>
                 {userDoc['User Type'] !== 'Manager' && (
-                  <Button
-                    variant='ghost'
-                    size='icon'
-                    className={`text-blue-600 ${
-                      isSubscriptionExpired
-                        ? 'opacity-50 cursor-not-allowed'
-                        : ''
-                    }`}
-                    onClick={() =>
-                      !isSubscriptionExpired && router.push('/add-ads-account')
-                    }
-                    disabled={isSubscriptionExpired}
-                    title={
-                      isSubscriptionExpired
-                        ? 'Subscription expired. Please renew to add ads accounts.'
-                        : 'Add Ads Account'
-                    }
-                  >
-                    <Plus className='w-5 h-5' />
-                  </Button>
+                 <Button
+                 variant="ghost"
+                 size="icon"
+                 className={`text-blue-600 ${
+                   isSubscriptionExpired ? "opacity-50 cursor-not-allowed" : ""
+                 }`}
+                 onClick={() => {
+                  if (!isSubscriptionExpired) {
+                    router.push("/add-ads-account");
+                    Promise.resolve().then(() => router.refresh());
+                  }
+                }}
+                
+                 disabled={isSubscriptionExpired}
+                 title={
+                   isSubscriptionExpired
+                     ? "Subscription expired. Please renew to add ads accounts."
+                     : "Add Ads Account"
+                 }
+               >
+                 <Plus className="w-5 h-5" />
+               </Button>
+               
                 )}
                 {userAdsAccounts.length >= 2 && (
                   <Button
