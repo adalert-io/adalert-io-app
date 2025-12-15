@@ -627,10 +627,7 @@ export default function Dashboard() {
   }) {
     const [expandedRowIds, setExpandedRowIds] = React.useState<string[]>([]);
     const [pageIndex, setPageIndex] = React.useState(0);
-    React.useEffect(() => {
-      const currentIds = new Set(filteredAlerts.map((a) => a.id));
-      setExpandedRowIds((prev) => prev.filter((id) => currentIds.has(id)));
-    }, [filteredAlerts]);
+    
     const columns = React.useMemo(
       () => useAlertColumns(expandedRowIds, setExpandedRowIds),
       [expandedRowIds],
