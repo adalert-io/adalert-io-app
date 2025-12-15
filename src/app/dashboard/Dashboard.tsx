@@ -381,9 +381,9 @@ export default function Dashboard() {
 
       // Set up new interval to refresh data every 15 minutes (900000 ms)
       const interval = setInterval(() => {
-        // console.log(
-        //   'Auto-refreshing alerts, ads label, spend MTD, and spend MTD indicator...',
-        // );
+        console.log(
+          'Auto-refreshing alerts, ads label, spend MTD, and spend MTD indicator...',
+        );
         fetchAlerts(selectedAdsAccount.id);
         triggerShowingAdsLabel(selectedAdsAccount);
 
