@@ -1880,7 +1880,7 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           const { useAuthStore } = await import('./auth-store');
           await useAuthStore.getState().checkSubscriptionStatus(userDoc.uid);
 
-          toast.success("You've successfully subscribed to AdAlerts.io");
+          toast.success("You've successfully subscribed to adAlert.io");
 
           // Fetch receipt instead of invoices
           if (subData.subscriptionId) {
