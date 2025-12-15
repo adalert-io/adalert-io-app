@@ -627,7 +627,23 @@ export default function Dashboard() {
   }) {
     const [expandedRowIds, setExpandedRowIds] = React.useState<string[]>([]);
     const [pageIndex, setPageIndex] = React.useState(0);
+    const prevAlertIdsRef = React.useRef<string>('');
     
+    // Preserve expanded rows - only update when alert IDs actually change
+    React.useEffect(() => {
+      const currentIdsString = filteredAlerts.map(a => a.id).sort().join(',');
+      
+      // Only update if alert IDs actually changed (not just array reference)
+      if (currentIdsString !== prevAlertIdsRef.current) {
+        const currentIds = new Set(filteredAlerts.map(a => a.id));
+        setExpandedRowIds(prev => {
+          // Keep all existing expanded IDs that still exist
+          const validExpanded = prev.filter(id => currentIds.has(id));
+          return validExpanded;
+        });
+        prevAlertIdsRef.current = currentIdsString;
+      }
+    }, [filteredAlerts]);
     const columns = React.useMemo(
       () => useAlertColumns(expandedRowIds, setExpandedRowIds),
       [expandedRowIds],
