@@ -271,6 +271,7 @@ export default function Dashboard() {
   // Replace selectedRows with selectedAlertIds for better performance and to avoid infinite loops
   const [selectedAlertIds, setSelectedAlertIds] = useState<string[]>([]);
   const [pageSize, setPageSize] = React.useState(25);
+  const [expandedRowIds, setExpandedRowIds] = useState<string[]>([]);
   const [hasFetchedFirstAlerts, setHasFetchedFirstAlerts] = useState(false);
 
   // Auto-refresh alerts every 15 minutes
@@ -618,32 +619,19 @@ export default function Dashboard() {
     filteredAlerts,
     selectedAlertIds,
     setSelectedAlertIds,
+    expandedRowIds,
+    setExpandedRowIds,
   }: {
     pageSize: number;
     setPageSize: React.Dispatch<React.SetStateAction<number>>;
     filteredAlerts: any[];
     selectedAlertIds: string[];
     setSelectedAlertIds: React.Dispatch<React.SetStateAction<string[]>>;
+    expandedRowIds: string[];
+    setExpandedRowIds: React.Dispatch<React.SetStateAction<string[]>>;
   }) {
-    const [expandedRowIds, setExpandedRowIds] = React.useState<string[]>([]);
     const [pageIndex, setPageIndex] = React.useState(0);
-    const prevAlertIdsRef = React.useRef<string>('');
-    
-    // Preserve expanded rows - only update when alert IDs actually change
-    React.useEffect(() => {
-      const currentIdsString = filteredAlerts.map(a => a.id).sort().join(',');
-      
-      // Only update if alert IDs actually changed (not just array reference)
-      if (currentIdsString !== prevAlertIdsRef.current) {
-        const currentIds = new Set(filteredAlerts.map(a => a.id));
-        setExpandedRowIds(prev => {
-          // Keep all existing expanded IDs that still exist
-          const validExpanded = prev.filter(id => currentIds.has(id));
-          return validExpanded;
-        });
-        prevAlertIdsRef.current = currentIdsString;
-      }
-    }, [filteredAlerts]);
+
     const columns = React.useMemo(
       () => useAlertColumns(expandedRowIds, setExpandedRowIds),
       [expandedRowIds],
@@ -1924,6 +1912,8 @@ export default function Dashboard() {
               filteredAlerts={filteredAlerts}
               selectedAlertIds={selectedAlertIds}
               setSelectedAlertIds={setSelectedAlertIds}
+              expandedRowIds={expandedRowIds}
+              setExpandedRowIds={setExpandedRowIds}
             />
             {alertsLoading && (
               <div className='absolute inset-0 bg-white/50 flex items-center justify-center rounded-md'>
