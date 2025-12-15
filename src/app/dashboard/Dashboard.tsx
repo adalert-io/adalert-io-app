@@ -628,21 +628,6 @@ export default function Dashboard() {
     const [expandedRowIds, setExpandedRowIds] = React.useState<string[]>([]);
     const [pageIndex, setPageIndex] = React.useState(0);
 
-    // Preserve expanded rows when data refreshes - only remove IDs that no longer exist
-    const alertIdsString = React.useMemo(
-      () => filteredAlerts.map((alert) => alert.id).sort().join(','),
-      [filteredAlerts]
-    );
-
-    React.useEffect(() => {
-      const currentAlertIds = new Set(filteredAlerts.map((alert) => alert.id));
-      
-      // Filter expandedRowIds to only keep IDs that still exist in current data
-      setExpandedRowIds((prevExpanded) => 
-        prevExpanded.filter((id) => currentAlertIds.has(id))
-      );
-    }, [alertIdsString, filteredAlerts]);
-
     const columns = React.useMemo(
       () => useAlertColumns(expandedRowIds, setExpandedRowIds),
       [expandedRowIds],
