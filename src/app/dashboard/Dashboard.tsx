@@ -154,11 +154,10 @@ function KpiMetricsRow({
           <button
             key={p.key}
             type='button'
-            className={`px-4 py-2 rounded-lg font-semibold border transition-colors text-base cursor-pointer ${
-              activePeriod === p.key
+            className={`px-4 py-2 rounded-lg font-semibold border transition-colors text-base cursor-pointer ${activePeriod === p.key
                 ? 'bg-[#015AFD] text-white border-[#015AFD]'
                 : 'bg-white text-[#015AFD] border-[#015AFD] hover:bg-blue-50'
-            }`}
+              }`}
             onClick={() => setActivePeriod(p.key)}
           >
             {p.label}
@@ -180,15 +179,15 @@ function KpiMetricsRow({
                 pct > 0
                   ? 'text-red-600'
                   : pct < 0
-                  ? 'text-green-600'
-                  : 'text-black';
+                    ? 'text-green-600'
+                    : 'text-black';
             } else {
               pctColor =
                 pct > 0
                   ? 'text-green-600'
                   : pct < 0
-                  ? 'text-red-600'
-                  : 'text-black';
+                    ? 'text-red-600'
+                    : 'text-black';
             }
           }
           let valueDisplay = value;
@@ -209,9 +208,9 @@ function KpiMetricsRow({
             pct === 0
               ? '0%'
               : `${pct > 0 ? '+' : ''}${Number(pct).toLocaleString('en-US', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}%`;
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}%`;
 
           return (
             <Card
@@ -518,99 +517,99 @@ export default function Dashboard() {
     expandedRowIds: string[],
     setExpandedRowIds: React.Dispatch<React.SetStateAction<string[]>>,
   ): ColumnDef<any>[] => [
-    {
-      id: 'select',
-      header: ({ table }) => (
-        <Checkbox
-          checked={table.getIsAllPageRowsSelected()}
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label='Select all'
-          className={checkboxClass}
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label='Select row'
-          className={checkboxClass}
-        />
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: 'date',
-      header: 'Found',
-      cell: ({ row }) => {
-        const dateObj = row.original['Date Found']?.toDate?.();
-        const formatted = dateObj ? moment(dateObj).format('DD MMM') : '-';
-        return <span>{formatted}</span>;
-      },
-    },
-    {
-      accessorKey: 'severity',
-      header: 'Severity',
-      cell: ({ row }) => {
-        let color = ALERT_SEVERITY_COLORS.LOW; // default fallback
-
-        if (
-          row.original.Severity?.toLowerCase() ===
-          ALERT_SEVERITIES.CRITICAL.toLowerCase()
-        ) {
-          color = ALERT_SEVERITY_COLORS.CRITICAL;
-        } else if (
-          row.original.Severity?.toLowerCase() ===
-          ALERT_SEVERITIES.MEDIUM.toLowerCase()
-        ) {
-          color = ALERT_SEVERITY_COLORS.MEDIUM;
-        }
-
-        return (
-          <span
-            className='inline-block w-3 h-3 rounded-full'
-            style={{ backgroundColor: color }}
+      {
+        id: 'select',
+        header: ({ table }) => (
+          <Checkbox
+            checked={table.getIsAllPageRowsSelected()}
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            aria-label='Select all'
+            className={checkboxClass}
           />
-        );
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label='Select row'
+            className={checkboxClass}
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
       },
-    },
+      {
+        accessorKey: 'date',
+        header: 'Found',
+        cell: ({ row }) => {
+          const dateObj = row.original['Date Found']?.toDate?.();
+          const formatted = dateObj ? moment(dateObj).format('DD MMM') : '-';
+          return <span>{formatted}</span>;
+        },
+      },
+      {
+        accessorKey: 'severity',
+        header: 'Severity',
+        cell: ({ row }) => {
+          let color = ALERT_SEVERITY_COLORS.LOW; // default fallback
 
-    {
-      accessorKey: 'description',
-      header: 'Description',
-      cell: ({ row }) => <span>{row.original.Alert}</span>,
-    },
-    {
-      accessorKey: 'type',
-      header: 'Type',
-      cell: ({ row }) => <span>{row.original.Type}</span>,
-    },
-    {
-      accessorKey: 'level',
-      header: 'Level',
-      cell: ({ row }) => <span>{row.original.Level}</span>,
-    },
-    {
-      id: 'expand',
-      header: '',
-      cell: ({ row }) => {
-        const isExpanded = expandedRowIds.includes(row.id);
-        return (
-          <Button
-            variant='ghost'
-            size='icon'
-            onClick={() => {
-              setExpandedRowIds(isExpanded ? [] : [row.id]); // ✅ only 1 open at a time
-            }}
-          >
-            {isExpanded ? <ChevronUp /> : <ChevronDown />}
-          </Button>
-        );
+          if (
+            row.original.Severity?.toLowerCase() ===
+            ALERT_SEVERITIES.CRITICAL.toLowerCase()
+          ) {
+            color = ALERT_SEVERITY_COLORS.CRITICAL;
+          } else if (
+            row.original.Severity?.toLowerCase() ===
+            ALERT_SEVERITIES.MEDIUM.toLowerCase()
+          ) {
+            color = ALERT_SEVERITY_COLORS.MEDIUM;
+          }
+
+          return (
+            <span
+              className='inline-block w-3 h-3 rounded-full'
+              style={{ backgroundColor: color }}
+            />
+          );
+        },
       },
-      enableSorting: false,
-      enableHiding: false,
-    },
-  ];
+
+      {
+        accessorKey: 'description',
+        header: 'Description',
+        cell: ({ row }) => <span>{row.original.Alert}</span>,
+      },
+      {
+        accessorKey: 'type',
+        header: 'Type',
+        cell: ({ row }) => <span>{row.original.Type}</span>,
+      },
+      {
+        accessorKey: 'level',
+        header: 'Level',
+        cell: ({ row }) => <span>{row.original.Level}</span>,
+      },
+      {
+        id: 'expand',
+        header: '',
+        cell: ({ row }) => {
+          const isExpanded = expandedRowIds.includes(row.id);
+          return (
+            <Button
+              variant='ghost'
+              size='icon'
+              onClick={() => {
+                setExpandedRowIds(isExpanded ? [] : [row.id]); // ✅ only 1 open at a time
+              }}
+            >
+              {isExpanded ? <ChevronUp /> : <ChevronDown />}
+            </Button>
+          );
+        },
+        enableSorting: false,
+        enableHiding: false,
+      },
+    ];
 
   function AlertsDataTable({
     pageSize,
@@ -627,7 +626,11 @@ export default function Dashboard() {
   }) {
     const [expandedRowIds, setExpandedRowIds] = React.useState<string[]>([]);
     const [pageIndex, setPageIndex] = React.useState(0);
-
+    // Preserve expanded rows on refresh
+    React.useEffect(() => {
+      const currentIds = new Set(filteredAlerts.map(a => a.id));
+      setExpandedRowIds(prev => prev.filter(id => currentIds.has(id)));
+    }, [filteredAlerts.map(a => a.id).join(',')]);
     const columns = React.useMemo(
       () => useAlertColumns(expandedRowIds, setExpandedRowIds),
       [expandedRowIds],
@@ -733,11 +736,10 @@ export default function Dashboard() {
                     {row.getVisibleCells().map((cell) => (
                       <td
                         key={cell.id}
-                        className={`px-4 py-3 text-gray-900 text-[.95rem] ${
-                          expandedRowIds.includes(row.id)
+                        className={`px-4 py-3 text-gray-900 text-[.95rem] ${expandedRowIds.includes(row.id)
                             ? 'font-medium'
                             : 'font-normal'
-                        }`}
+                          }`}
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
@@ -772,13 +774,13 @@ export default function Dashboard() {
             Showing{' '}
             {table.getRowModel().rows.length > 0
               ? table.getState().pagination.pageIndex *
-                  table.getState().pagination.pageSize +
-                1
+              table.getState().pagination.pageSize +
+              1
               : 0}{' '}
             to{' '}
             {Math.min(
               (table.getState().pagination.pageIndex + 1) *
-                table.getState().pagination.pageSize,
+              table.getState().pagination.pageSize,
               table.getFilteredRowModel().rows.length,
             )}{' '}
             of {table.getFilteredRowModel().rows.length} results
@@ -1168,13 +1170,12 @@ export default function Dashboard() {
                 </svg>
               </span>
               <span
-                className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 ${
-                  !adsLabel
+                className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 ${!adsLabel
                     ? 'bg-[#E9F6EA] text-[#7A7D9C]'
                     : adsLabel['Is Showing Ads']
-                    ? 'bg-[#E9F6EA] text-[#34A853]'
-                    : 'bg-[#ffebee] text-[#ee1b23]'
-                }`}
+                      ? 'bg-[#E9F6EA] text-[#34A853]'
+                      : 'bg-[#ffebee] text-[#ee1b23]'
+                  }`}
               >
                 {!adsLabel ? (
                   <svg width='18' height='18' fill='none' viewBox='0 0 18 18'>
@@ -1219,8 +1220,8 @@ export default function Dashboard() {
                 {!adsLabel
                   ? 'Checking'
                   : adsLabel['Is Showing Ads']
-                  ? 'Showing Ads'
-                  : 'Not Showing Ads'}
+                    ? 'Showing Ads'
+                    : 'Not Showing Ads'}
               </span>
               <span className='text-xl text-center md:text-2xl font-bold text-gray-900 md:text-left'>
                 {selectedAdsAccount?.['Account Name Editable'] || '-'}
@@ -1233,30 +1234,30 @@ export default function Dashboard() {
                 spendMtdIndicatorLoading ||
                 kpiDataLoading ||
                 currencySymbolLoading) && (
-                <span className='ml-4 px-3 py-1 rounded-xl bg-blue-100 text-blue-900 flex items-center gap-2 text-base font-semibold animate-fade-in'>
-                  <svg
-                    className='animate-spin h-5 w-5 text-blue-500'
-                    xmlns='http://www.w3.org/2000/svg'
-                    fill='none'
-                    viewBox='0 0 24 24'
-                  >
-                    <circle
-                      className='opacity-25'
-                      cx='12'
-                      cy='12'
-                      r='10'
-                      stroke='currentColor'
-                      strokeWidth='4'
-                    />
-                    <path
-                      className='opacity-75'
-                      fill='currentColor'
-                      d='M4 12a8 8 0 018-8v8z'
-                    />
-                  </svg>
-                  analyzing...
-                </span>
-              )}
+                  <span className='ml-4 px-3 py-1 rounded-xl bg-blue-100 text-blue-900 flex items-center gap-2 text-base font-semibold animate-fade-in'>
+                    <svg
+                      className='animate-spin h-5 w-5 text-blue-500'
+                      xmlns='http://www.w3.org/2000/svg'
+                      fill='none'
+                      viewBox='0 0 24 24'
+                    >
+                      <circle
+                        className='opacity-25'
+                        cx='12'
+                        cy='12'
+                        r='10'
+                        stroke='currentColor'
+                        strokeWidth='4'
+                      />
+                      <path
+                        className='opacity-75'
+                        fill='currentColor'
+                        d='M4 12a8 8 0 018-8v8z'
+                      />
+                    </svg>
+                    analyzing...
+                  </span>
+                )}
             </div>
           </div>
         </div>
@@ -1336,8 +1337,7 @@ export default function Dashboard() {
                       {spendMtdLoading
                         ? '--'
                         : dashboardDaily?.['Spend MTD'] != null
-                        ? `${
-                            selectedAdsAccount?.['Currency Symbol'] || '$'
+                          ? `${selectedAdsAccount?.['Currency Symbol'] || '$'
                           }${Number(dashboardDaily['Spend MTD']).toLocaleString(
                             'en-US',
 
@@ -1346,13 +1346,13 @@ export default function Dashboard() {
                               maximumFractionDigits: 2,
                             },
                           )}`
-                        : '--'}
+                          : '--'}
                     </span>
                     <span className='ml-1 mt-1'>
                       {(() => {
                         const key =
                           dashboardDaily?.['Spend MTD Indicator Alert']?.[
-                            'Key'
+                          'Key'
                           ];
                         let color = '#1BC47D'; // green default
 
@@ -1434,11 +1434,11 @@ export default function Dashboard() {
                           {selectedAdsAccount?.['Currency Symbol'] || '$'}
                           {selectedAdsAccount?.['Monthly Budget'] != null
                             ? Number(
-                                selectedAdsAccount['Monthly Budget'],
-                              ).toLocaleString('en-US', {
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0,
-                              })
+                              selectedAdsAccount['Monthly Budget'],
+                            ).toLocaleString('en-US', {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            })
                             : '--'}
                         </span>
                       </>
@@ -1851,8 +1851,8 @@ export default function Dashboard() {
                     {filteredAlerts.length === 0
                       ? 'No alerts available for analysis'
                       : filteredAlerts.length < 10
-                      ? `Need at least 10 alerts for AI analysis (${filteredAlerts.length}/10)`
-                      : 'Generate AI-powered action plan from your alerts'}
+                        ? `Need at least 10 alerts for AI analysis (${filteredAlerts.length}/10)`
+                        : 'Generate AI-powered action plan from your alerts'}
                   </TooltipContent>
                 </Tooltip>
 
@@ -1958,7 +1958,7 @@ export default function Dashboard() {
                       height={22} // 👈 24 se 22
                       priority
                     />
-                  
+
                   </div>
 
                   {/* Title */}
@@ -2155,7 +2155,7 @@ export default function Dashboard() {
                         <p className='text-sm font-semibold text-[#015AFD] uppercase tracking-wide'>
                           PPC Action Plan -{' '}
                           {selectedAdsAccount &&
-                          selectedAdsAccount['Account Name Editable']
+                            selectedAdsAccount['Account Name Editable']
                             ? selectedAdsAccount['Account Name Editable']
                             : 'Account'}
                         </p>
