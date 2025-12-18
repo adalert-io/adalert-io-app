@@ -74,8 +74,29 @@ export default function AcceptInvitation({
           return;
         }
         if (data.status === "accepted") {
-          toast.error("Invitation has already been accepted");
-          router.push("/auth");
+          // If the invitation is already accepted, avoid showing a scary error.
+          // Instead, redirect based on whether the user is logged in.
+          const currentUser = auth.currentUser;
+          const authStore = useAuthStore.getState();
+
+          if (currentUser) {
+            // Ensure auth store is hydrated so post-auth navigation works
+            authStore.setUser(currentUser);
+            authStore.setRouter(router);
+
+            try {
+              await authStore.checkSubscriptionStatus(currentUser.uid);
+              await authStore.handlePostAuthNavigation();
+            } catch (error) {
+              console.error("Error during post-auth navigation from invite:", error);
+              // Fallback: send them to dashboard
+              router.replace("/dashboard");
+            }
+          } else {
+            // Not logged in – just take them to the login page without an error toast
+            router.replace("/auth");
+          }
+
           return;
         }
         setInvitation(data);
