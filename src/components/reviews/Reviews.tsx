@@ -7,7 +7,7 @@ const Reviews: React.FC = () => {
   const reviews = [
     {
       id: 1,
-      text: `"Managing multiple ad accounts used to feel overwhelming, but AdAlert.io changed that. The platform’s real-time alerts, easy setup, and dependable monitoring give our agency complete confidence and keep our clients consistently satisfied."`,
+      text: `"Managing multiple ad accounts used to feel overwhelming, but adAlert.io changed that. The platform’s real-time alerts, easy setup, and dependable monitoring give our agency complete confidence and keep our clients consistently satisfied."`,
       image: "/images/Lauren.png",
       name: "Lauren Mitchell",
       role: "Director of Digital Strategy, Horizon Growth Agency",
@@ -15,7 +15,7 @@ const Reviews: React.FC = () => {
     },
     {
       id: 2,
-      text: `"As a project manager overseeing multiple clients, AdAlert.io keeps our campaigns on track. The real-time monitoring gives our team confidence and our clients peace of mind."`,
+      text: `"As a project manager overseeing multiple clients, adAlert.io keeps our campaigns on track. The real-time monitoring gives our team confidence and our clients peace of mind."`,
       image: "/images/David.png",
       name: "David Chen",
       role: "Project Manager, Elevate Marketing Group",
@@ -23,7 +23,7 @@ const Reviews: React.FC = () => {
     },
     {
       id: 3,
-      text: `"AdAlert.io saves me hours every week. Instant alerts mean I can act before small issues become big problems. It’s a must-have for PPC managers."`,
+      text: `"adAlert.io saves me hours every week. Instant alerts mean I can act before small issues become big problems. It’s a must-have for PPC managers."`,
       image: "/images/Johann.png",
       name: "Johann Müller",
       role: "Senior PPC Specialist, BrightPath Media",
