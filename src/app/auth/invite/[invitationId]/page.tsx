@@ -228,18 +228,29 @@ export default function AcceptInvitation({
         formData.password,
       );
 
-      // 7. Set up auth store and handle navigation
+      // 7. Set up auth store
       const authStore = useAuthStore.getState();
       authStore.setUser(userCredential.user);
       authStore.setRouter(router);
 
-      // Fetch user document and check subscription status
-      await authStore.checkSubscriptionStatus(userCredential.user.uid);
+      // Kick off subscription status check in the background (no need to block navigation)
+      authStore
+        .checkSubscriptionStatus(userCredential.user.uid)
+        .catch((err: any) =>
+          console.error("Error checking subscription status after invite:", err),
+        );
 
-      // Handle post-auth navigation
-      await authStore.handlePostAuthNavigation();
+      // Decide initial destination based on invited ad accounts:
+      // - 0 or 1 account -> dashboard
+      // - >1 accounts   -> summary
+      const adsCount =
+        Array.isArray(invitation.selectedAds) && invitation.selectedAds.length
+          ? invitation.selectedAds.length
+          : 0;
+      const targetPath = adsCount > 1 ? "/summary" : "/dashboard";
 
       toast.success("Account activated! Welcome to the team!");
+      router.replace(targetPath);
     } catch (error: any) {
       if (error.code === "auth/email-already-in-use") {
         toast.error("An account with this email already exists");
