@@ -39,6 +39,12 @@ export async function POST(request: NextRequest) {
       from: fromEmail,
       templateId: templateId,
       dynamic_template_data: tags,
+      trackingSettings: {
+        clickTracking: {
+          enable: false,
+          enableText: false,
+        },
+      },
     };
 
     // Send email via SendGrid
