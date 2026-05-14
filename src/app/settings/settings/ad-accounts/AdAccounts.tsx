@@ -37,7 +37,7 @@ import {
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
 import React from 'react';
 import { toast } from 'sonner';
-import { formatAccountNumber } from '@/lib/utils';
+import { formatAccountNumber, cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
 export default function AdAccountsSubtab() {
@@ -284,17 +284,40 @@ export default function AdAccountsSubtab() {
       pages.push(totalPages);
     }
 
+    const wrapCellColumnIds = new Set(['Id', 'name']);
+    const compactUiColumnIds = new Set([
+      'Is Connected',
+      'Send Me Alert',
+      'actions',
+    ]);
+
     return (
-      <div className='bg-white rounded-2xl shadow-none border border-[#e5e5e5] overflow-hidden'>
-        <div className='overflow-x-auto'>
-          <table className='min-w-full text-[0.75rem]'>
+      <div className='bg-white rounded-2xl shadow-none border border-[#e5e5e5] overflow-hidden w-full max-w-full min-w-0'>
+        <div className='w-full max-w-full min-w-0 overflow-x-hidden'>
+          <table className='w-full max-w-full table-fixed border-collapse text-[0.75rem]'>
+            <colgroup>
+              <col className='min-w-0 w-[13%]' />
+              <col className='min-w-0 w-[24%]' />
+              <col className='min-w-0 w-[11%]' />
+              <col className='min-w-0 w-[15%]' />
+              <col className='min-w-0 w-[15%]' />
+              <col className='min-w-0 w-[12%]' />
+              <col className='min-w-[88px] w-[10%]' />
+            </colgroup>
             <thead className='bg-gray-50 border-b border-gray-200'>
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
                     <th
                       key={header.id}
-                      className='px-3 py-4 text-left font-semibold text-gray-700 whitespace-nowrap overflow-hidden text-ellipsis max-w-[160px]'
+                      className={cn(
+                        'px-3 py-4 text-left font-semibold text-gray-700 align-top min-w-0',
+                        wrapCellColumnIds.has(header.column.id)
+                          ? 'break-words whitespace-normal'
+                          : compactUiColumnIds.has(header.column.id)
+                            ? 'whitespace-nowrap'
+                            : 'break-words whitespace-normal',
+                      )}
                     >
                       {flexRender(
                         header.column.columnDef.header,
@@ -317,7 +340,14 @@ export default function AdAccountsSubtab() {
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
-                      className='px-4 py-6 align-top text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis max-w-[170px]'
+                      className={cn(
+                        'px-4 py-6 align-top text-gray-900 min-w-0',
+                        wrapCellColumnIds.has(cell.column.id)
+                          ? 'break-words [overflow-wrap:anywhere] whitespace-normal'
+                          : compactUiColumnIds.has(cell.column.id)
+                            ? 'whitespace-nowrap'
+                            : 'whitespace-nowrap overflow-hidden text-ellipsis',
+                      )}
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
@@ -488,7 +518,7 @@ export default function AdAccountsSubtab() {
   const isSaveDisabled = !adAccountName || isSaving;
 
   return (
-    <div className='bg-white p-4 min-h-[600px]'>
+    <div className='bg-white p-4 min-h-[600px] min-w-0 max-w-full'>
       {screen === 'list' && (
         <>
           <h2 className='text-2xl font-bold mb-1'>Ad Account</h2>
