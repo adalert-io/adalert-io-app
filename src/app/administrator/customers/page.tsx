@@ -1,10 +1,5 @@
-import { AdminPageFrame } from "@/features/administrator/AdminPageFrame";
+import { AdminCustomersView } from "@/features/administrator/customers/AdminCustomersView";
 
 export default function AdministratorCustomersPage() {
-  return (
-    <AdminPageFrame
-      title="Customers"
-      description="Organizations, usage, MRR rollup — placeholders until APIs are wired."
-    />
-  );
+  return <AdminCustomersView />;
 }
