@@ -1,10 +1,5 @@
-import { AdminPageFrame } from "@/features/administrator/AdminPageFrame";
+import { AdminUsersView } from "@/features/administrator/users/AdminUsersView";
 
 export default function AdministratorUsersPage() {
-  return (
-    <AdminPageFrame
-      title="User accounts"
-      description="Tenant users, impersonation tooling, password resets."
-    />
-  );
+  return <AdminUsersView />;
 }
