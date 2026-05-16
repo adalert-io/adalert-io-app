@@ -1,10 +1,5 @@
-import { AdminPageFrame } from "@/features/administrator/AdminPageFrame";
+import { AdminAdAccountsView } from "@/features/administrator/ad-accounts/AdminAdAccountsView";
 
 export default function AdministratorAdAccountsPage() {
-  return (
-    <AdminPageFrame
-      title="Ad Accounts"
-      description="Connected ad platforms and OAuth status will appear here."
-    />
-  );
+  return <AdminAdAccountsView />;
 }
