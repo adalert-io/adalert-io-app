@@ -6,14 +6,10 @@ import { usePathname } from "next/navigation";
 import {
   ArrowLeft,
   ChevronDown,
-  ChevronsUpDown,
-  Command,
-  GalleryVerticalEnd,
   Menu,
   PanelLeftIcon,
   X,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
@@ -35,16 +31,38 @@ import {
 
 const STORAGE_KEY = "admin_console_sidebar_collapsed";
 
-interface WorkspaceOption {
-  name: string;
-  plan: string;
-  Logo: LucideIcon;
-}
+/** Same visual lockup as `LoginForm` (logo + adAlert.io + marketing link). */
+function AdminSidebarBrand({ collapsed }: { collapsed: boolean }) {
+  const lockup = collapsed ? (
+    <Link
+      href="https://adalert.io/"
+      className="flex items-center justify-center rounded-lg py-1 outline-none hover:opacity-90 focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+    >
+      <Image src="/images/adalert-logo.avif" alt="adAlert.io logo" width={38} height={38} priority />
+    </Link>
+  ) : (
+    <Link
+      href="https://adalert.io/"
+      className="flex items-center gap-2 min-w-0 py-2 outline-none hover:opacity-95 focus-visible:ring-2 focus-visible:ring-sidebar-ring rounded-lg px-1"
+    >
+      <Image src="/images/adalert-logo.avif" alt="" width={40} height={40} priority />
+      <span className="truncate text-[22px] font-bold leading-none text-[#223b53] sm:text-[25px]">
+        adAlert.io
+      </span>
+    </Link>
+  );
 
-const workspaceOptions: WorkspaceOption[] = [
-  { name: "AdAlert production", plan: "Live", Logo: GalleryVerticalEnd },
-  { name: "AdAlert sandbox", plan: "Staging", Logo: Command },
-];
+  if (collapsed) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>{lockup}</TooltipTrigger>
+        <TooltipContent side="right">adAlert.io</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return lockup;
+}
 
 function NavSubLink({ leaf, collapsed }: { leaf: AdminNavLeaf; collapsed: boolean }) {
   const pathname = usePathname();
@@ -204,8 +222,6 @@ export function AdminConsoleShell({ children }: AdminConsoleShellProps) {
   const pathname = usePathname() ?? "/administrator";
   const [collapsed, setCollapsed] = React.useState(false);
   const [mobileOpen, setMobileOpen] = React.useState(false);
-  const [workspacePickerOpen, setWorkspacePickerOpen] = React.useState(false);
-  const [activeWs, setActiveWs] = React.useState(workspaceOptions[0]);
 
   React.useEffect(() => {
     const stored = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
@@ -237,7 +253,6 @@ export function AdminConsoleShell({ children }: AdminConsoleShellProps) {
   }, [pathname]);
 
   const crumbs = breadcrumbsForPathname(pathname);
-  const ActiveWorkspaceLogo = activeWs.Logo;
 
   return (
     <TooltipProvider delayDuration={collapsed ? 120 : 500}>
@@ -246,83 +261,26 @@ export function AdminConsoleShell({ children }: AdminConsoleShellProps) {
         <div className={cn("fixed inset-0 z-40 bg-black/60 lg:hidden", mobileOpen ? "block" : "hidden")} aria-hidden={!mobileOpen} />
         <aside
           className={cn(
-            "fixed inset-y-0 left-0 z-50 flex flex-col border-r bg-sidebar text-sidebar-foreground transition-[transform,width] duration-200 lg:fixed lg:z-40",
+            "fixed inset-y-0 left-0 z-50 flex min-h-svh min-w-0 flex-col overflow-hidden border-r bg-sidebar text-sidebar-foreground transition-[transform,width] duration-200 lg:fixed lg:z-40",
             mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
             collapsed ? "w-[76px]" : "w-64 lg:w-[16rem]"
           )}
         >
-          <div className="flex h-[56px] items-center gap-3 border-b border-sidebar-border px-3 lg:hidden shrink-0">
-            <Link href="/administrator" className="flex min-w-0 items-center gap-2">
-              <Image src="/images/adalert-logo.avif" alt="" width={32} height={32} />
-              <span className="truncate text-sm font-semibold text-sidebar-foreground">Admin</span>
-            </Link>
+          <div className="flex shrink-0 items-center gap-2 border-b border-sidebar-border px-2 py-2">
+            <div className={cn("flex min-w-0 flex-1", collapsed ? "justify-center" : "justify-start")}>
+              <AdminSidebarBrand collapsed={collapsed} />
+            </div>
             <button
               type="button"
-              className="ml-auto rounded-lg p-2 hover:bg-sidebar-accent"
+              className="ms-auto shrink-0 rounded-lg p-2 hover:bg-sidebar-accent lg:hidden"
               aria-label="Close sidebar"
               onClick={() => setMobileOpen(false)}
             >
-              <X className="size-5" />
+              <X className="size-5 text-sidebar-foreground" />
             </button>
           </div>
 
-          {/* Team switcher (sidebar-07) */}
-          <div className="border-b border-sidebar-border p-2">
-            <div className="relative">
-              <button
-                type="button"
-                aria-expanded={workspacePickerOpen}
-                onClick={() => setWorkspacePickerOpen((previous) => !previous)}
-                className={cn(
-                  "flex w-full items-center gap-2 rounded-lg border border-sidebar-border bg-sidebar p-2 text-left text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-                  collapsed ? "justify-center border-transparent bg-transparent hover:bg-sidebar-accent" : ""
-                )}
-              >
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <ActiveWorkspaceLogo className="size-4 shrink-0" />
-                </div>
-                {!collapsed ? (
-                  <>
-                    <div className="min-w-0 flex-1 truncate text-xs">
-                      <p className="truncate font-semibold leading-tight">{activeWs.name}</p>
-                      <p className="truncate text-muted-foreground text-[11px] leading-tight">{activeWs.plan}</p>
-                    </div>
-                    <ChevronsUpDown className="size-4 shrink-0 opacity-60" />
-                  </>
-                ) : null}
-              </button>
-              {workspacePickerOpen && !collapsed ? (
-                <>
-                  <div
-                    role="presentation"
-                    className="fixed inset-0 z-30"
-                    onClick={() => setWorkspacePickerOpen(false)}
-                  />
-                  <div className="absolute left-0 right-0 top-full z-40 mt-1 rounded-lg border bg-popover py-1 text-popover-foreground shadow-md">
-                    {workspaceOptions.map((option) => {
-                      const OptionLogo = option.Logo;
-                      return (
-                        <button
-                          key={option.name}
-                          type="button"
-                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
-                          onClick={() => {
-                            setActiveWs(option);
-                            setWorkspacePickerOpen(false);
-                          }}
-                        >
-                          <OptionLogo className="size-4 shrink-0" />
-                          <span>{option.name}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </>
-              ) : null}
-            </div>
-          </div>
-
-          <nav className="flex flex-1 flex-col gap-3 overflow-y-auto overscroll-contain p-3">
+          <nav className="flex min-h-0 flex-1 flex-col gap-3 overflow-x-hidden overflow-y-auto overscroll-contain [scrollbar-width:none] p-3 [&::-webkit-scrollbar]:hidden">
             {adminConsoleNavGroups.map((group) => (
               <section key={group.label}>
                 {!collapsed ? (

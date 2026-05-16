@@ -1,10 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   AlertTriangle,
-  BarChart3,
-  Building2,
   CreditCard,
-  FileSpreadsheet,
   FileText,
   LayoutDashboard,
   LifeBuoy,
@@ -30,7 +27,7 @@ export interface AdminNavGroup {
   items: AdminNavItem[];
 }
 
-/** Matches sidebar-07 structure: collapsible sections + leaf links — routes are frontend-only stubs. */
+/** Collapsible sidebar nav — stubs only until APIs are wired. */
 export const adminConsoleNavGroups: AdminNavGroup[] = [
   {
     label: "Platform",
@@ -39,14 +36,6 @@ export const adminConsoleNavGroups: AdminNavGroup[] = [
         title: "Overview",
         href: "/administrator",
         icon: LayoutDashboard,
-      },
-      {
-        title: "Analytics",
-        icon: BarChart3,
-        items: [
-          { title: "Usage", href: "/administrator/analytics/usage" },
-          { title: "Growth", href: "/administrator/analytics/growth" },
-        ],
       },
     ],
   },
@@ -60,11 +49,6 @@ export const adminConsoleNavGroups: AdminNavGroup[] = [
           { title: "Accounts", href: "/administrator/users" },
           { title: "Roles", href: "/administrator/users/roles" },
         ],
-      },
-      {
-        title: "Organizations",
-        href: "/administrator/organizations",
-        icon: Building2,
       },
     ],
   },
@@ -93,11 +77,6 @@ export const adminConsoleNavGroups: AdminNavGroup[] = [
         title: "Alerts",
         href: "/administrator/alerts",
         icon: AlertTriangle,
-      },
-      {
-        title: "Reports",
-        href: "/administrator/reports",
-        icon: FileSpreadsheet,
       },
     ],
   },
