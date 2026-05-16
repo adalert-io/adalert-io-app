@@ -1,10 +1,5 @@
-import { AdminPageFrame } from "@/features/administrator/AdminPageFrame";
+import { AdminSupportView } from "@/features/administrator/support/AdminSupportView";
 
 export default function AdministratorSupportPage() {
-  return (
-    <AdminPageFrame
-      title="Support tickets"
-      description="Zendesk/intercom ingestion placeholder UI."
-    />
-  );
+  return <AdminSupportView />;
 }

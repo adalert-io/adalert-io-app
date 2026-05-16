@@ -1,10 +1,5 @@
-import { AdminPageFrame } from "@/features/administrator/AdminPageFrame";
+import { AdminSettingsView } from "@/features/administrator/settings/AdminSettingsView";
 
 export default function AdministratorSettingsGeneralPage() {
-  return (
-    <AdminPageFrame
-      title="General settings"
-      description="Branding knobs, SLA defaults, feature flags targeting."
-    />
-  );
+  return <AdminSettingsView />;
 }

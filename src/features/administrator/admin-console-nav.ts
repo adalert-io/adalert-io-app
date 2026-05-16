@@ -1,12 +1,10 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  BarChart3,
   Bell,
   CircleHelp,
   CreditCard,
   LayoutDashboard,
   LayoutGrid,
-  Plug,
   Settings,
   UserCircle2,
   UsersRound,
@@ -68,7 +66,6 @@ export const adminConsoleNavGroups: AdminNavGroup[] = [
         ],
       },
       { title: "Alerts", href: "/administrator/alerts", icon: Bell },
-      { title: "Reports", href: "/administrator/reports", icon: BarChart3 },
       {
         title: "Users",
         href: "/administrator/users",
@@ -78,11 +75,6 @@ export const adminConsoleNavGroups: AdminNavGroup[] = [
         title: "Settings",
         href: "/administrator/settings/general",
         icon: Settings,
-      },
-      {
-        title: "Integrations",
-        href: "/administrator/settings/integrations",
-        icon: Plug,
       },
       { title: "Support", href: "/administrator/support", icon: CircleHelp },
     ],
