@@ -1,10 +1,5 @@
-import { AdminPageFrame } from "@/features/administrator/AdminPageFrame";
+import { AdminAlertsView } from "@/features/administrator/alerts/AdminAlertsView";
 
 export default function AdministratorAlertsPage() {
-  return (
-    <AdminPageFrame
-      title="Alerts"
-      description="Global alerting queue, escalation policies, acknowledgement tools."
-    />
-  );
+  return <AdminAlertsView />;
 }
