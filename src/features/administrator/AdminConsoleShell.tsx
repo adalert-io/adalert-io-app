@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -30,6 +31,33 @@ import {
   type AdminNavLeaf,
 } from "./admin-console-nav";
 
+/** Same lockup as LoginForm: `/images/adalert-logo.avif` + `adAlert.io` in `text-[25px] font-bold text-[#223b53]`. */
+function AdminSidebarAuthBrandLockup({ className }: { className?: string }) {
+  return (
+    <Link
+      href="https://adalert.io/"
+      className={cn("flex items-center gap-2 min-w-0 py-2 outline-none focus-visible:ring-2 focus-visible:ring-[#3b82f6] rounded-lg", className)}
+    >
+      <span className="flex items-center gap-2 min-w-0">
+        <Image
+          src="/images/adalert-logo.avif"
+          alt=""
+          width={40}
+          height={40}
+          priority
+          className="size-10 shrink-0"
+        />
+        <span className="truncate text-[25px] font-bold leading-none text-[#223b53]">adAlert.io</span>
+      </span>
+    </Link>
+  );
+}
+
+/** Aligns icons to a fixed gutter so labels align — matches screenshot grid. */
+const ICON_COL = "flex size-[22px] shrink-0 items-center justify-center";
+
+const SIDEBAR_GUTTER = "px-[22px]";
+const SIDEBAR_W = "w-[264px]";
 function DarkNavLeafLink({ leaf, pathname }: { leaf: AdminNavLeaf; pathname: string }) {
   const isActive = pathname.length > 0 && leafHrefMatches(pathname, leaf);
 
@@ -37,18 +65,18 @@ function DarkNavLeafLink({ leaf, pathname }: { leaf: AdminNavLeaf; pathname: str
     <Link
       href={leaf.href}
       className={cn(
-        "relative flex items-center gap-3 rounded-lg py-2 ps-11 pe-4 text-[13px] font-medium transition-colors",
-        isActive ? "bg-[#334155]/60 text-white" : "text-slate-400 hover:bg-white/[0.05] hover:text-white",
+        "flex items-center gap-2.5 rounded-lg py-[6px] pe-2 ps-3 text-[13px] font-medium leading-snug outline-none ring-offset-[#0b1426] focus-visible:ring-2 focus-visible:ring-[#3b82f6]",
+        isActive ? "text-[#3b82f6]" : "text-[#94a3b8] hover:text-white",
       )}
     >
       <span
         className={cn(
-          "absolute left-9 top-1/2 size-2 -translate-y-1/2 rounded-full",
-          isActive ? "bg-[#3b82f6]" : "bg-transparent",
+          "size-[5px] shrink-0 rounded-full",
+          isActive ? "bg-[#3b82f6]" : "bg-[#64748b]",
         )}
         aria-hidden
       />
-      {leaf.title}
+      <span>{leaf.title}</span>
     </Link>
   );
 }
@@ -73,20 +101,25 @@ function DarkNavPrimaryLink({
     <Link
       href={href}
       className={cn(
-        "block rounded-lg px-2 outline-none ring-offset-[#0f172a] focus-visible:ring-2 focus-visible:ring-[#3b82f6] ring-offset-2",
+        "group block rounded-lg px-1 outline-none ring-offset-[#0b1426] focus-visible:ring-2 focus-visible:ring-[#3b82f6]",
       )}
     >
       <span
         className={cn(
-          "relative flex items-center gap-3 rounded-lg px-3 py-2.5 ps-8 text-[14px] font-medium",
-          "border-l-[3px]",
+          "flex items-center gap-[14px] rounded-lg px-3 py-2.5 text-[14px] font-medium leading-none",
           isActive
-            ? "border-[#3b82f6] bg-[#1e293b] text-white"
-            : "border-transparent text-slate-300 hover:bg-white/[0.05] hover:text-white",
+            ? "bg-[#1e293b] text-white"
+            : "text-[#94a3b8] hover:bg-white/[0.06] hover:text-white",
         )}
       >
-        <Icon className="size-[18px] shrink-0 text-[#cbd5f5]" aria-hidden />
-        <span>{title}</span>
+        <span className={ICON_COL}>
+          <Icon
+            className="size-[18px]"
+            aria-hidden
+            strokeWidth={1.65}
+          />
+        </span>
+        <span className="min-w-0 flex-1">{title}</span>
       </span>
     </Link>
   );
@@ -111,29 +144,39 @@ function DarkPaymentsGroup({
     }
   }, [isSubActive]);
 
+  const headerActiveStyles = open || isSubActive;
+
   return (
-    <div className="space-y-1">
+    <div className="px-1">
       <button
         type="button"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
         className={cn(
-          "relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 ps-8 text-[14px] font-medium outline-none ring-offset-[#0f172a] focus-visible:ring-2 focus-visible:ring-[#3b82f6] ring-offset-2",
-          "border-l-[3px]",
-          open || isSubActive
-            ? "border-[#3b82f6]/80 bg-[#1e293b]/85 text-white"
-            : "border-transparent text-slate-300 hover:bg-white/[0.05] hover:text-white",
+          "group flex w-full items-center gap-[14px] rounded-lg px-3 py-2.5 text-left text-[14px] font-medium leading-none outline-none ring-offset-[#0b1426] focus-visible:ring-2 focus-visible:ring-[#3b82f6]",
+          headerActiveStyles
+            ? "bg-[#1e293b] text-white"
+            : "text-[#94a3b8] hover:bg-white/[0.06] hover:text-white",
         )}
       >
-        <Icon className="size-[18px] shrink-0 text-[#cbd5f5]" aria-hidden />
-        <span className="flex-1 text-start">{item.title}</span>
+        <span className={ICON_COL}>
+          <Icon className="size-[18px]" aria-hidden strokeWidth={1.65} />
+        </span>
+        <span className="min-w-0 flex-1">{item.title}</span>
         <ChevronDown
           aria-hidden
-          className={cn("size-4 shrink-0 text-slate-500 transition-transform", open ? "rotate-180" : "rotate-0")}
+          className={cn(
+            "size-4 shrink-0 text-[#64748b] transition-transform duration-200",
+            open ? "rotate-180" : "rotate-0",
+            headerActiveStyles && "text-white/70",
+          )}
         />
       </button>
       {open ? (
-        <nav className="mt-2 space-y-1 border-l border-[#334155] ms-11 ps-5" aria-label={`${item.title} sub-navigation`}>
+        <nav
+          className="ml-[44px] mt-1 space-y-[2px] border-l border-white/[0.08] pl-4"
+          aria-label={`${item.title} sub-navigation`}
+        >
           {subItems.map((leaf) => (
             <DarkNavLeafLink key={leaf.href} leaf={leaf} pathname={pathname} />
           ))}
@@ -159,72 +202,82 @@ export function AdminConsoleShell({ children }: AdminConsoleShellProps) {
 
   return (
     <div className="flex min-h-svh w-full bg-[#f8fafc]">
-      {/* Mobile overlay */}
       <div
         className={cn("fixed inset-0 z-40 bg-slate-900/65 backdrop-blur-sm lg:hidden", mobileOpen ? "block" : "hidden")}
         aria-hidden={!mobileOpen}
       />
 
-      {/* Sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-[272px] flex-col overflow-hidden bg-[#0f172a] text-slate-200 shadow-xl transition-transform duration-300 lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 flex bg-[#0b1426] text-slate-200 shadow-xl transition-transform duration-300 lg:translate-x-0",
+          SIDEBAR_W,
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+          "flex-col overflow-hidden antialiased font-sans",
         )}
       >
-        <div className="flex shrink-0 items-center gap-4 border-b border-white/10 px-5 pb-6 pt-7">
-          <div className="flex size-[44px] shrink-0 items-center justify-center rounded-xl bg-[#3b82f6] text-xl font-black tracking-tighter text-white">
-            ad
+        <header
+          className={cn(
+            "flex shrink-0 items-start gap-3 border-b border-white/[0.08] pb-8 pt-7",
+            SIDEBAR_GUTTER,
+          )}
+        >
+          <div className="min-w-0 flex-1">
+            {/* Mirrors LoginForm: Link + gap-2 + Image 40×40 + bold #223b53 wordmark */}
+            <AdminSidebarAuthBrandLockup />
           </div>
-          <span className="text-[22px] font-bold tracking-tight text-white">adAlert.io</span>
           <button
             type="button"
             aria-label="Close menu"
             onClick={() => setMobileOpen(false)}
-            className="ms-auto rounded-lg p-2 text-slate-400 hover:bg-white/10 lg:hidden"
+            className="-mt-1 -me-2 shrink-0 rounded-lg p-2 text-[#94a3b8] hover:bg-white/10 hover:text-white lg:hidden"
           >
             <X className="size-5" />
           </button>
-        </div>
+        </header>
 
-        <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-x-hidden overflow-y-auto px-4 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <nav
+          className={cn(
+            "flex min-h-0 flex-1 flex-col gap-1 overflow-x-hidden overflow-y-auto py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+            SIDEBAR_GUTTER,
+          )}
+        >
           {adminConsoleNavGroups.flatMap((group) =>
             group.items.map((item) => {
               const hasChildren = (item.items?.length ?? 0) > 0;
               if (hasChildren) {
-                return (
-                  <div key={item.title} className="py-px ps-2 pe-3">
-                    <DarkPaymentsGroup item={item} pathname={pathname} />
-                  </div>
-                );
+                return <DarkPaymentsGroup key={item.title} item={item} pathname={pathname} />;
               }
               const href = item.href;
               return href ? (
-                <div key={item.title} className="py-px px-3">
-                  <DarkNavPrimaryLink href={href} title={item.title} icon={item.icon} pathname={pathname} />
-                </div>
+                <DarkNavPrimaryLink
+                  key={item.title}
+                  href={href}
+                  title={item.title}
+                  icon={item.icon}
+                  pathname={pathname}
+                />
               ) : null;
             }),
           )}
         </nav>
 
-        <div className="border-t border-white/10 px-5 py-6">
+        <footer className={cn("border-t border-white/[0.08] pb-7 pt-6", SIDEBAR_GUTTER)}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="flex w-full items-center gap-3 rounded-xl bg-[#172039] px-3 py-2.5 text-left outline-none hover:bg-[#1a2544] focus-visible:ring-2 focus-visible:ring-[#3b82f6]"
+                className="flex w-full items-center gap-3 rounded-xl bg-[#111b32] px-3 py-2.5 text-left outline-none hover:bg-[#152542] focus-visible:ring-2 focus-visible:ring-[#3b82f6]"
               >
-                <Avatar className="size-10 border border-white/10">
+                <Avatar className="size-10 shrink-0 border border-white/[0.1]">
                   <AvatarFallback className="bg-[#3b82f6] text-[13px] font-semibold text-white">
                     NT
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[14px] font-semibold text-white">Nishant Thakur</p>
-                  <p className="text-slate-500 text-[12px]">Administrator</p>
+                  <p className="truncate text-[14px] font-semibold leading-tight text-white">Nishant Thakur</p>
+                  <p className="text-[#64748b] text-[12px] leading-tight">Administrator</p>
                 </div>
-                <ChevronDown aria-hidden className="size-4 shrink-0 text-slate-500" />
+                <ChevronDown aria-hidden className="size-4 shrink-0 text-[#64748b]" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent side="top" align="center" sideOffset={8} className="w-[232px]">
@@ -239,16 +292,17 @@ export function AdminConsoleShell({ children }: AdminConsoleShellProps) {
 
           <Link
             href="/auth"
-            className="mt-6 flex items-center gap-3 rounded-xl px-3 py-3 text-[14px] font-medium text-slate-400 hover:bg-white/[0.05] hover:text-white"
+            className="mt-6 flex items-center gap-[14px] rounded-lg px-3 py-2.5 text-[14px] font-medium text-[#94a3b8] hover:bg-white/[0.06] hover:text-white"
           >
-            <LogOut className="size-[18px] shrink-0" aria-hidden />
+            <span className={ICON_COL}>
+              <LogOut className="size-[18px]" aria-hidden strokeWidth={1.65} />
+            </span>
             Logout
           </Link>
-        </div>
+        </footer>
       </aside>
 
-      {/* Main */}
-      <div className="flex flex-1 flex-col min-h-svh min-w-0 lg:pl-[272px]">
+      <div className="flex min-h-svh min-w-0 flex-1 flex-col lg:pl-[264px]">
         <div className={cn(isDashboardHome ? "hidden" : "sticky top-0 z-30 flex shrink-0 items-center gap-2 border-b border-slate-200/90 bg-[#f8fafc]/90 px-4 py-2 backdrop-blur-md")}>
           <Button
             type="button"
@@ -283,8 +337,7 @@ export function AdminConsoleShell({ children }: AdminConsoleShellProps) {
           </nav>
         </div>
 
-        {/* Mobile menu trigger on dashboard */}
-        <div className={cn(isDashboardHome ? "sticky top-0 z-30 flex items-center lg:hidden bg-[#f8fafc]/90 border-b border-slate-200/80 backdrop-blur-sm px-3 py-2" : "hidden")}>
+        <div className={cn(isDashboardHome ? "sticky top-0 z-30 flex items-center border-b border-slate-200/80 bg-[#f8fafc]/90 px-3 py-2 backdrop-blur-sm lg:hidden" : "hidden")}>
           <Button
             type="button"
             variant="outline"
@@ -297,7 +350,7 @@ export function AdminConsoleShell({ children }: AdminConsoleShellProps) {
           </Button>
         </div>
 
-        <main className="relative flex flex-1 flex-col min-w-0">
+        <main className="relative flex min-w-0 flex-1 flex-col">
           {isDashboardHome ? children : <div className="flex flex-1 flex-col px-4 py-6 md:px-6 lg:px-8">{children}</div>}
         </main>
       </div>
