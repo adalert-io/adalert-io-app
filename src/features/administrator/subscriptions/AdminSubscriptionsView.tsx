@@ -434,7 +434,7 @@ function SubscriptionDetailPanel({
                         : row.status === "paused"
                           ? "Paused"
                           : row.status === "past_due"
-                            ? "Past due"
+                            ? "Past Due"
                             : "Canceled"}
                   </span>
                 </div>
@@ -482,9 +482,9 @@ function SubscriptionDetailPanel({
                 Billing history
               </h3>
               <ul className="space-y-4">
-                {row.billingHistory.map((entry) => (
+                {row.billingHistory.map((entry, entryIdx) => (
                   <li
-                    key={`${entry.dateLabel}-${entry.amountLabel}`}
+                    key={`${row.subscriptionId}-${entryIdx}`}
                     className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gray-100 bg-white px-3 py-2.5"
                   >
                     <div className="min-w-0">
@@ -624,6 +624,477 @@ export function AdminSubscriptionsView() {
 
   const handleResetPaging = () => setPage(1);
 
-  const detailRow = ALL_SUBSCRIPTIONS.find((r) => r.id === detailRowId);
+  const detailRow =
+    detailRowId === null
+      ? null
+      : (ALL_SUBSCRIPTIONS.find((r) => r.id === detailRowId) ?? null);
 
-  /** Fix useEffect mess - I'll replace with clean logic in next patch */
+  const handleActivateRow = (row: SubscriptionDemoRow) => {
+    setDetailRowId(row.id);
+    setDetailOpen(true);
+  };
+
+  return (
+    <div className="mx-auto flex w-full max-w-[1480px] flex-1 flex-col gap-8 pb-16">
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="max-w-xl space-y-2">
+          <h1 className="text-[28px] font-bold tracking-tight text-gray-900 sm:text-[30px]">
+            Subscriptions
+          </h1>
+          <p className="text-[15px] text-[#7A7D9C]">
+            Manage all customer subscriptions and plans
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <AdminDashboardDateRangePicker />
+          <Button
+            variant="outline"
+            type="button"
+            className="gap-2 rounded-xl border-[#e5e5e5] bg-white shadow-sm"
+          >
+            <Filter className="size-4 text-gray-700" aria-hidden />
+            Filters
+          </Button>
+          <Button
+            variant="outline"
+            type="button"
+            className="gap-2 rounded-xl border-[#e5e5e5] bg-white shadow-sm"
+          >
+            <Download className="size-4 text-gray-700" aria-hidden />
+            Export
+          </Button>
+        </div>
+      </header>
+
+      <section className="grid min-w-0 grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <DashboardMetricCard
+          title="Total Subscriptions"
+          value="128"
+          trend="↑ 12% vs last 7 days"
+          trendTone="positive"
+          Icon={ClipboardList}
+          accentClassName="bg-[#3b82f6]/10 text-[#2563eb]"
+        />
+        <DashboardMetricCard
+          title="Active Subscriptions"
+          value="102"
+          trend="↑ 10% vs last 7 days"
+          trendTone="positive"
+          Icon={CircleCheckBig}
+          accentClassName="bg-[#22c55e]/15 text-[#16a34a]"
+        />
+        <DashboardMetricCard
+          title="Trial Subscriptions"
+          value="8"
+          trend="↓ 2% vs last 7 days"
+          trendTone="negative"
+          Icon={Clock}
+          accentClassName="bg-orange-400/18 text-orange-700"
+        />
+        <DashboardMetricCard
+          title="Canceled"
+          value="18"
+          trend="↑ 5% vs last 7 days"
+          trendTone="positive"
+          Icon={XCircle}
+          accentClassName="bg-[#ef4444]/12 text-[#ef4444]"
+        />
+        <DashboardMetricCard
+          title="Monthly Recurring Revenue"
+          value="$24,350"
+          trend="↑ 14% vs last 7 days"
+          trendTone="positive"
+          Icon={DollarSign}
+          accentClassName="bg-emerald-400/18 text-emerald-700"
+        />
+      </section>
+
+      <div className="space-y-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center">
+          <div className="flex min-w-[240px] flex-1 items-center gap-2 rounded-lg border border-[#e5e5e5] bg-white px-3 py-2 shadow-sm transition-all focus-within:ring-2 focus-within:ring-blue-200">
+            <Search className="size-5 shrink-0 text-[#015AFD]" aria-hidden />
+            <input
+              className="min-w-0 flex-1 border-none bg-transparent text-[13px] text-gray-700 outline-none placeholder:text-gray-400"
+              placeholder="Search by customer, email or plan..."
+              value={search}
+              aria-label="Search subscriptions"
+              onChange={(e) => {
+                setSearch(e.target.value);
+                handleResetPaging();
+              }}
+            />
+            {search ? (
+              <button
+                type="button"
+                aria-label="Clear search"
+                className="shrink-0 rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                onClick={() => {
+                  setSearch("");
+                  handleResetPaging();
+                }}
+              >
+                <X className="size-4" />
+              </button>
+            ) : null}
+          </div>
+
+          <div className="relative">
+            <select
+              className={SELECT_CLASS}
+              aria-label="Filter by subscription status"
+              value={statusFilter}
+              onChange={(e) => {
+                const v = e.target.value as SubscriptionDemoStatus | "all";
+                setStatusFilter(v);
+                handleResetPaging();
+              }}
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="trial">Trial</option>
+              <option value="paused">Paused</option>
+              <option value="past_due">Past Due</option>
+              <option value="canceled">Canceled</option>
+            </select>
+            <ChevronDown
+              aria-hidden
+              className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-gray-500"
+            />
+          </div>
+
+          <div className="relative">
+            <select
+              className={SELECT_CLASS}
+              aria-label="Filter by plan"
+              value={planFilter}
+              onChange={(e) => {
+                const v = e.target.value as SubscriptionDemoPlanKey | "all";
+                setPlanFilter(v);
+                handleResetPaging();
+              }}
+            >
+              <option value="all">All Plans</option>
+              <option value="professional">Professional</option>
+              <option value="starter">Starter</option>
+              <option value="trial">Trial</option>
+            </select>
+            <ChevronDown
+              aria-hidden
+              className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-gray-500"
+            />
+          </div>
+
+          <div className="ms-auto flex items-center gap-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-pressed={viewMode === "grid"}
+              title="Grid view"
+              onClick={() => setViewMode("grid")}
+              className={cn(
+                "size-9 rounded-lg border-[#e5e5e5] bg-white text-gray-600 shadow-sm",
+                viewMode === "grid" &&
+                  "border-[#0B1426] bg-[#0B1426] text-white hover:bg-[#152542] hover:text-white",
+              )}
+            >
+              <LayoutGrid className="size-4" aria-hidden />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-pressed={viewMode === "list"}
+              title="List view"
+              onClick={() => setViewMode("list")}
+              className={cn(
+                "size-9 rounded-lg border-[#e5e5e5] bg-white text-gray-600 shadow-sm",
+                viewMode === "list" &&
+                  "border-[#0B1426] bg-[#0B1426] text-white hover:bg-[#152542] hover:text-white",
+              )}
+            >
+              <List className="size-4" aria-hidden />
+            </Button>
+          </div>
+        </div>
+
+        {viewMode === "list" ? (
+          filtered.length === 0 ? (
+            <div className="rounded-2xl border border-[#e5e5e5] bg-white py-24 text-center text-[14px] text-gray-600">
+              No subscriptions match your filters.
+            </div>
+          ) : (
+            <SubscriptionsTable
+              rows={pagedRows}
+              selected={selected}
+              toggleRow={toggleRow}
+              headerChecked={headerChecked}
+              toggleHeader={toggleHeader}
+              highlightedId={detailRowId}
+              onActivateRow={handleActivateRow}
+            />
+          )
+        ) : (
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-16 text-center text-[15px] text-muted-foreground">
+            Subscription tiles in grid view can summarize plan, renewal, and churn
+            alerts once UX signs off compact card primitives.
+          </div>
+        )}
+
+        <footer className="flex flex-col items-center justify-between gap-4 px-2 sm:flex-row">
+          <p className="text-[13px] font-medium text-gray-600">
+            {totalRows === 0
+              ? "No subscriptions match your filters."
+              : `Showing ${sliceStart + 1} to ${Math.min(safePage * PAGE_SIZE, totalRows)} of ${totalRows} subscriptions`}
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={safePage <= 1}
+              onClick={() => setPage(1)}
+              className="h-9 w-9 p-0"
+              aria-label="First page"
+            >
+              <ChevronsLeft className="size-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={safePage <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="h-9 w-9 p-0"
+              aria-label="Previous page"
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+
+            <div className="flex items-center gap-1">
+              {slots.map((item, idx) =>
+                item === "ellipsis" ? (
+                  <span
+                    key={`e-${idx}`}
+                    className="px-1.5 text-[13px] text-gray-400"
+                  >
+                    …
+                  </span>
+                ) : (
+                  <Button
+                    key={item}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(item)}
+                    aria-current={safePage === item ? "page" : undefined}
+                    className={cn(
+                      "h-9 min-w-9 px-2 text-[13px] font-medium",
+                      safePage === item &&
+                        "border-[#0B1426] bg-[#0B1426] text-white hover:bg-[#152542]",
+                    )}
+                  >
+                    {item}
+                  </Button>
+                ),
+              )}
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={safePage >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              className="h-9 w-9 p-0"
+              aria-label="Next page"
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={safePage >= totalPages}
+              onClick={() => setPage(totalPages)}
+              className="h-9 w-9 p-0"
+              aria-label="Last page"
+            >
+              <ChevronsRight className="size-4" />
+            </Button>
+          </div>
+        </footer>
+      </div>
+
+      {detailRow ? (
+        <SubscriptionDetailPanel
+          row={detailRow}
+          open={detailOpen}
+          onOpenChange={setDetailOpen}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function SubscriptionsTable({
+  rows,
+  selected,
+  toggleRow,
+  headerChecked,
+  toggleHeader,
+  highlightedId,
+  onActivateRow,
+}: {
+  rows: SubscriptionDemoRow[];
+  selected: Set<string>;
+  toggleRow: (id: string) => void;
+  headerChecked: boolean | "indeterminate";
+  toggleHeader: () => void;
+  highlightedId: string | null;
+  onActivateRow: (row: SubscriptionDemoRow) => void;
+}) {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-[#e5e5e5] bg-white shadow-none">
+      <div className="max-[1199px]:overflow-x-auto">
+        <table className="min-w-[1120px] w-full table-fixed text-[13px]">
+          <thead className="border-b border-gray-200 bg-gray-50">
+            <tr>
+              <th className="w-[48px] px-3 py-3 text-start">
+                <Checkbox
+                  checked={headerChecked}
+                  aria-label="Select all on this page"
+                  onCheckedChange={() => toggleHeader()}
+                />
+              </th>
+              <th className="min-w-[220px] ps-2 pe-4 py-3 text-start font-semibold text-gray-700">
+                Customer
+              </th>
+              <th className="w-[200px] py-3 pe-4 text-start font-semibold text-gray-700">
+                Plan
+              </th>
+              <th className="w-[148px] py-3 pe-4 text-start font-semibold text-gray-700">
+                Status
+              </th>
+              <th className="w-[120px] py-3 pe-4 text-start font-semibold text-gray-700">
+                Billing Cycle
+              </th>
+              <th className="w-[148px] py-3 pe-4 text-start font-semibold text-gray-700">
+                Next Billing
+              </th>
+              <th className="w-[100px] py-3 pe-4 text-start font-semibold text-gray-700">
+                MRR
+              </th>
+              <th className="w-[132px] py-3 px-4 text-center font-semibold text-gray-700">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {rows.map((row) => {
+              const bg =
+                AVATAR_BG[row.avatarToneIndex % AVATAR_BG.length] ??
+                "bg-[#3b82f6]";
+              const isDetail = highlightedId === row.id;
+              const planTitle = planLabel(row.planKey);
+              const monthly = monthlyPrice(row.planKey);
+
+              return (
+                <tr
+                  key={row.id}
+                  className={cn(
+                    "cursor-pointer transition-colors hover:bg-gray-50",
+                    isDetail &&
+                      "bg-[#eaf3ff]/90 ring-2 ring-[#015AFD]/38 ring-inset hover:bg-[#dfeaff]/92",
+                  )}
+                  aria-selected={isDetail ? true : undefined}
+                  onClick={(e) => {
+                    const t = e.target as HTMLElement | null;
+                    if (t?.closest("[data-slot='checkbox'],button,a")) return;
+                    onActivateRow(row);
+                  }}
+                >
+                  <td
+                    className="px-3 py-4 align-middle"
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                  >
+                    <Checkbox
+                      checked={selected.has(row.id)}
+                      aria-label={`Select ${row.companyName}`}
+                      onCheckedChange={() => toggleRow(row.id)}
+                    />
+                  </td>
+                  <td className="px-3 py-4 align-middle">
+                    <div className="flex items-start gap-3">
+                      <span
+                        className={cn(
+                          "flex size-9 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white",
+                          bg,
+                        )}
+                      >
+                        {row.initials}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold leading-snug text-gray-900">
+                          {row.companyName}
+                        </p>
+                        <p className="mt-1 truncate text-[12px] leading-snug text-gray-500">
+                          {row.email}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="py-4 pe-3 align-middle">
+                    <p className="font-semibold text-gray-900">{planTitle}</p>
+                    <p className="mt-1 text-[12px] text-gray-600">
+                      {money(monthly)} / month
+                    </p>
+                  </td>
+                  <td className="py-4 pe-3 align-middle">
+                    <SubscriptionStatusBadge row={row} />
+                  </td>
+                  <td className="py-4 pe-3 align-middle text-gray-900">
+                    Monthly
+                  </td>
+                  <td className="truncate py-4 pe-3 align-middle text-gray-800">
+                    {row.nextBillingLabel}
+                  </td>
+                  <td className="truncate py-4 pe-3 align-middle tabular-nums font-semibold text-gray-900">
+                    {money(row.mrr)}
+                  </td>
+                  <td className="px-2 py-4 align-middle text-center">
+                    <div
+                      role="presentation"
+                      className="flex items-center justify-center gap-0.5"
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        aria-label={`View ${row.companyName}`}
+                        className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                        onClick={() => onActivateRow(row)}
+                      >
+                        <Eye className="size-4" strokeWidth={1.75} />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Edit ${row.companyName}`}
+                        className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                      >
+                        <Pencil className="size-4" strokeWidth={1.75} />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`More actions for ${row.companyName}`}
+                        className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                      >
+                        <MoreHorizontal className="size-4" strokeWidth={1.75} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
