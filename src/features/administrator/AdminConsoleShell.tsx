@@ -13,7 +13,7 @@ import {
 import type { ReactNode } from "react";
 import * as React from "react";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -269,12 +269,17 @@ export function AdminConsoleShell({ children }: AdminConsoleShellProps) {
                 className="flex w-full items-center gap-3 rounded-xl bg-[#111b32] px-3 py-2.5 text-left outline-none hover:bg-[#152542] focus-visible:ring-2 focus-visible:ring-[#3b82f6]"
               >
                 <Avatar className="size-10 shrink-0 border border-white/[0.1]">
+                  <AvatarImage
+                    src="/images/asher.jpg"
+                    alt="Asher Elran"
+                    className="object-cover object-top"
+                  />
                   <AvatarFallback className="bg-[#3b82f6] text-[13px] font-semibold text-white">
-                    NT
+                    AE
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[14px] font-semibold leading-tight text-white">Nishant Thakur</p>
+                  <p className="truncate text-[14px] font-semibold leading-tight text-white">Asher Elran</p>
                   <p className="text-[#64748b] text-[12px] leading-tight">Administrator</p>
                 </div>
                 <ChevronDown aria-hidden className="size-4 shrink-0 text-[#64748b]" />
