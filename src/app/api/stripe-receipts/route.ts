@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-06-30.basil',
-});
+import { getStripeServer } from '@/lib/stripe/get-stripe-server';
 
 // GET /api/stripe-receipts?subscriptionId=xxx
 export async function GET(request: NextRequest) {
   try {
+    const stripe = getStripeServer();
+    if (!stripe) {
+      return NextResponse.json(
+        { error: 'Stripe is not configured on this deployment' },
+        { status: 503 },
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const subscriptionId = searchParams.get('subscriptionId');
 

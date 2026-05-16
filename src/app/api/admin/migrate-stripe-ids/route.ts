@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
 import admin from 'firebase-admin';
 
-// Initialize Stripe with live mode key
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-06-30.basil',
-});
+import { getStripeServer } from '@/lib/stripe/get-stripe-server';
 
 // Get or initialize Firebase Admin
 function getAdminApp(): admin.app.App | null {
@@ -66,6 +62,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: 'Firebase Admin not configured' },
         { status: 500 },
+      );
+    }
+
+    const stripe = getStripeServer();
+    if (!stripe) {
+      return NextResponse.json(
+        { error: 'Stripe is not configured on this deployment' },
+        { status: 503 },
       );
     }
 
@@ -326,6 +330,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(
         { error: 'Firebase Admin not configured' },
         { status: 500 },
+      );
+    }
+
+    const stripe = getStripeServer();
+    if (!stripe) {
+      return NextResponse.json(
+        { error: 'Stripe is not configured on this deployment' },
+        { status: 503 },
       );
     }
 

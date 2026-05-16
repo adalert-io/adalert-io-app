@@ -4,7 +4,7 @@ export default function AdministratorReportsPage() {
   return (
     <AdminPageFrame
       title="Reports"
-      description="Operational exports plus scheduled briefing emails."
+      description="Operational exports & scheduled summaries — scaffold only."
     />
   );
 }

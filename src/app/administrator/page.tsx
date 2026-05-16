@@ -1,10 +1,5 @@
-import { AdminPageFrame } from "@/features/administrator/AdminPageFrame";
+import { AdminDashboardHome } from "@/features/administrator/dashboard/AdminDashboardHome";
 
 export default function AdministratorOverviewPage() {
-  return (
-    <AdminPageFrame
-      title="Overview"
-      description="Landing view for administrators. Charts, KPI tiles, and health checks will attach here."
-    />
-  );
+  return <AdminDashboardHome />;
 }

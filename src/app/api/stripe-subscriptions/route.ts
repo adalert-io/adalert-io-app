@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-06-30.basil',
-});
+import { getStripeServer } from '@/lib/stripe/get-stripe-server';
 
 // POST /api/stripe-subscriptions
 export async function POST(request: NextRequest) {
   try {
+    const stripe = getStripeServer();
+    if (!stripe) {
+      return NextResponse.json(
+        { error: 'Stripe is not configured on this deployment' },
+        { status: 503 },
+      );
+    }
+
     const body = await request.json();
     const { customerId, priceId, quantity, paymentMethodId } = body;
     if (!customerId || !priceId || !quantity || !paymentMethodId) {
@@ -48,6 +53,14 @@ export async function POST(request: NextRequest) {
 // PUT /api/stripe-subscriptions - Update subscription item quantity
 export async function PUT(request: NextRequest) {
   try {
+    const stripe = getStripeServer();
+    if (!stripe) {
+      return NextResponse.json(
+        { error: 'Stripe is not configured on this deployment' },
+        { status: 503 },
+      );
+    }
+
     const body = await request.json();
     const { subscriptionId, subscriptionItemId, quantity } = body;
 
@@ -90,6 +103,14 @@ export async function PUT(request: NextRequest) {
 // DELETE /api/stripe-subscriptions
 export async function DELETE(request: NextRequest) {
   try {
+    const stripe = getStripeServer();
+    if (!stripe) {
+      return NextResponse.json(
+        { error: 'Stripe is not configured on this deployment' },
+        { status: 503 },
+      );
+    }
+
     const body = await request.json();
     const { subscriptionId, customerId } = body;
 

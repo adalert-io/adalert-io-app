@@ -1,18 +1,22 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  AlertTriangle,
+  Bell,
+  Building2,
   CreditCard,
-  FileText,
+  FileSpreadsheet,
   LayoutDashboard,
   LifeBuoy,
-  ScrollText,
-  Settings2,
+  Plug,
+  Settings,
+  UserCircle2,
   UsersRound,
 } from "lucide-react";
 
 export interface AdminNavLeaf {
   title: string;
   href: string;
+  /** Use when this item must not activate for deeper paths (e.g. Payments overview). */
+  matchExact?: boolean;
 }
 
 export interface AdminNavItem {
@@ -23,89 +27,64 @@ export interface AdminNavItem {
 }
 
 export interface AdminNavGroup {
+  /** Empty string skips the section heading in the sidebar. */
   label: string;
   items: AdminNavItem[];
 }
 
-/** Collapsible sidebar nav — stubs only until APIs are wired. */
 export const adminConsoleNavGroups: AdminNavGroup[] = [
   {
-    label: "Platform",
+    label: "",
     items: [
+      { title: "Dashboard", href: "/administrator", icon: LayoutDashboard },
       {
-        title: "Overview",
-        href: "/administrator",
-        icon: LayoutDashboard,
+        title: "Ad Accounts",
+        href: "/administrator/ad-accounts",
+        icon: Building2,
       },
-    ],
-  },
-  {
-    label: "Directory",
-    items: [
+      {
+        title: "Customers",
+        href: "/administrator/customers",
+        icon: UserCircle2,
+      },
+      {
+        title: "Payments",
+        icon: CreditCard,
+        items: [
+          {
+            title: "Overview",
+            href: "/administrator/payments",
+            matchExact: true,
+          },
+          { title: "Invoices", href: "/administrator/billing/invoices" },
+          {
+            title: "Transactions",
+            href: "/administrator/payments/transactions",
+          },
+          {
+            title: "Subscriptions",
+            href: "/administrator/subscriptions",
+          },
+        ],
+      },
+      { title: "Alerts", href: "/administrator/alerts", icon: Bell },
+      { title: "Reports", href: "/administrator/reports", icon: FileSpreadsheet },
       {
         title: "Users",
+        href: "/administrator/users",
         icon: UsersRound,
-        items: [
-          { title: "Accounts", href: "/administrator/users" },
-          { title: "Roles", href: "/administrator/users/roles" },
-        ],
-      },
-    ],
-  },
-  {
-    label: "Revenue",
-    items: [
-      {
-        title: "Subscriptions",
-        href: "/administrator/subscriptions",
-        icon: CreditCard,
-      },
-      {
-        title: "Billing",
-        icon: FileText,
-        items: [
-          { title: "Invoices", href: "/administrator/billing/invoices" },
-          { title: "Payouts", href: "/administrator/billing/payouts" },
-        ],
-      },
-    ],
-  },
-  {
-    label: "Operations",
-    items: [
-      {
-        title: "Alerts",
-        href: "/administrator/alerts",
-        icon: AlertTriangle,
-      },
-    ],
-  },
-  {
-    label: "Support",
-    items: [
-      {
-        title: "Tickets",
-        href: "/administrator/support",
-        icon: LifeBuoy,
-      },
-    ],
-  },
-  {
-    label: "System",
-    items: [
-      {
-        title: "Audit log",
-        href: "/administrator/audit",
-        icon: ScrollText,
       },
       {
         title: "Settings",
-        icon: Settings2,
-        items: [
-          { title: "General", href: "/administrator/settings/general" },
-          { title: "Integrations", href: "/administrator/settings/integrations" },
-        ],
+        href: "/administrator/settings/general",
+        icon: Settings,
       },
+      {
+        title: "Integrations",
+        href: "/administrator/settings/integrations",
+        icon: Plug,
+      },
+      { title: "Support", href: "/administrator/support", icon: LifeBuoy },
     ],
   },
 ];
@@ -115,7 +94,18 @@ interface Crumb {
   href?: string;
 }
 
-/** True when `pathname` is exactly `href` or nested under `href/` (excluding `/administrator` subtree vs dashboard). */
+export function leafHrefMatches(pathname: string, leaf: AdminNavLeaf): boolean {
+  if (pathname === leaf.href) {
+    return true;
+  }
+  if (leaf.matchExact) {
+    return false;
+  }
+  const normalized = leaf.href.endsWith("/") ? leaf.href.slice(0, -1) : leaf.href;
+  return pathname.startsWith(`${normalized}/`);
+}
+
+/** True when `pathname` matches `href` as exact or nested (dashboard `/administrator` excludes children). */
 export function pathsMatchHref(pathname: string, href: string): boolean {
   if (pathname === href) {
     return true;
@@ -131,7 +121,7 @@ export function breadcrumbsForPathname(pathname: string): Crumb[] {
   if (pathname === "/administrator") {
     return [
       { title: "Administrator", href: "/administrator" },
-      { title: "Overview" },
+      { title: "Dashboard" },
     ];
   }
 
@@ -149,11 +139,8 @@ export function breadcrumbsForPathname(pathname: string): Crumb[] {
   for (const group of adminConsoleNavGroups) {
     for (const item of group.items) {
       for (const leaf of item.items ?? []) {
-        if (pathsMatchHref(pathname, leaf.href)) {
-          if (
-            !bestLeaf ||
-            leaf.href.length > bestLeaf.href.length
-          ) {
+        if (leafHrefMatches(pathname, leaf)) {
+          if (!bestLeaf || leaf.href.length > bestLeaf.href.length) {
             bestLeaf = leaf;
           }
         }

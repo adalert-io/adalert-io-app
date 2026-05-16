@@ -13,9 +13,7 @@ import {
 import { COLLECTIONS, SUBSCRIPTION_STATUS } from '@/lib/constants';
 import sgMail from '@sendgrid/mail';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-06-30.basil',
-});
+import { getStripeServer } from '@/lib/stripe/get-stripe-server';
 
 // Helper function to find and update subscription in Firebase
 async function findAndUpdateSubscription(
@@ -53,6 +51,10 @@ async function findAndUpdateSubscription(
 async function getInvoiceForSubscription(
   subscriptionId: string,
 ): Promise<Stripe.Invoice | null> {
+  const stripe = getStripeServer();
+  if (!stripe) {
+    return null;
+  }
   try {
     // Get the latest invoice for this subscription
     const invoices = await stripe.invoices.list({
@@ -165,6 +167,14 @@ async function sendPaymentFailureEmail(
 }
 
 export async function POST(request: NextRequest) {
+  const stripe = getStripeServer();
+  if (!stripe) {
+    return NextResponse.json(
+      { error: 'Stripe is not configured on this deployment' },
+      { status: 503 },
+    );
+  }
+
   const body = await request.text();
   const sig = request.headers.get('stripe-signature');
 
