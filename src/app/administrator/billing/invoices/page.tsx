@@ -1,10 +1,5 @@
-import { AdminPageFrame } from "@/features/administrator/AdminPageFrame";
+import { AdminInvoicesView } from "@/features/administrator/billing/AdminInvoicesView";
 
 export default function AdministratorBillingInvoicesPage() {
-  return (
-    <AdminPageFrame
-      title="Invoices"
-      description="Customer invoices, downloadable PDF hooks, statuses."
-    />
-  );
+  return <AdminInvoicesView />;
 }
