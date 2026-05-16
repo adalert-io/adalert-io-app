@@ -1,14 +1,8 @@
 "use client";
 
-import * as React from "react";
-import {
-  Bell,
-  CalendarDays,
-  ChevronDown,
-  DollarSign,
-  Info,
-  Users,
-} from "lucide-react";
+import type { ReactNode } from "react";
+
+import { Bell, ChevronDown, DollarSign, Info, Users } from "lucide-react";
 import Link from "next/link";
 import {
   Area,
@@ -31,7 +25,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { GoogleAdsMark } from "@/components/GoogleAdsMark";
 import { cn } from "@/lib/utils";
+import { AdminDashboardDateRangePicker } from "./AdminDashboardDateRangePicker";
 
 const revenueChartData = [
   { label: "May 9", v: 4200 },
@@ -119,12 +115,12 @@ function DashboardMetricCard({
   title: string;
   value: string;
   trend: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   accentClassName?: string;
 }) {
   return (
-    <Card className="rounded-2xl border border-slate-200/90 bg-white py-6 shadow-md">
-      <CardContent className="flex items-start justify-between gap-4 px-6">
+    <Card className="flex min-h-[140px] justify-center rounded-xl gap-0 border border-slate-200 bg-white py-0 shadow-sm">
+      <CardContent className="flex flex-1 items-center justify-between gap-4 px-6 py-6">
         <div className="min-w-0 space-y-1">
           <p className="text-muted-foreground text-sm font-medium">{title}</p>
           <p className="truncate text-[28px] font-bold tracking-tight text-slate-900">{value}</p>
@@ -132,7 +128,7 @@ function DashboardMetricCard({
         </div>
         <span
           className={cn(
-            "flex size-12 shrink-0 items-center justify-center rounded-xl text-[#3b82f6]",
+            "flex size-14 shrink-0 items-center justify-center rounded-full text-[#3b82f6]",
             accentClassName ?? "bg-[#3b82f6]/10",
           )}
         >
@@ -174,31 +170,23 @@ function alertDotVariant(tone: "red" | "amber" | "yellow"): string {
 }
 
 export function AdminDashboardHome() {
-  const [period] = React.useState("May 9 — May 15, 2025");
-
   return (
     <div className="flex min-h-full flex-col bg-[#f8fafc]">
       <div className="mx-auto w-full max-w-[1480px] flex-1 space-y-8 px-4 py-8 sm:px-6 lg:px-10">
-        <header className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200/80 pb-6">
-          <div className="space-y-2">
-            <h1 className="text-[28px] font-bold tracking-tight text-slate-900 sm:text-[32px]">
-              Admin Dashboard
-            </h1>
-            <p className="text-muted-foreground max-w-xl text-[15px]">
-              Overview of your ad monitoring platform
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            className="rounded-xl border-slate-200 bg-white px-4 py-2 text-sm shadow-sm hover:bg-slate-50"
-          >
-            <CalendarDays className="size-4 text-slate-500" />
-            {period}
-            <ChevronDown className="size-4 text-slate-500" aria-hidden />
-          </Button>
-        </header>
+        <section className="space-y-6">
+          <header className="flex flex-wrap items-start justify-between gap-4 pb-6">
+            <div className="space-y-2">
+              <h1 className="text-[28px] font-bold tracking-tight text-slate-900 sm:text-[32px]">
+                Admin Dashboard
+              </h1>
+              <p className="text-muted-foreground max-w-xl text-[15px]">
+                Overview of your ad monitoring platform
+              </p>
+            </div>
+            <AdminDashboardDateRangePicker className="-mt-1" />
+          </header>
 
-        <section className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid min-w-0 grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
           <DashboardMetricCard
             title="Total Customers"
             value="128"
@@ -210,11 +198,7 @@ export function AdminDashboardHome() {
             title="Active Ad Accounts"
             value="342"
             trend="↑ 18% vs last 7 days"
-            icon={
-              <span className="text-lg font-bold tracking-tighter" aria-hidden>
-                Ad
-              </span>
-            }
+            icon={<GoogleAdsMark />}
             accentClassName="bg-[#3b82f6]/15"
           />
           <DashboardMetricCard
@@ -231,6 +215,7 @@ export function AdminDashboardHome() {
             icon={<Bell className="size-6" />}
             accentClassName="bg-[#ef4444]/10 text-[#ef4444]"
           />
+          </div>
         </section>
 
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.05fr_minmax(0,0.95fr)] xl:gap-8">
