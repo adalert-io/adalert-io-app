@@ -7,6 +7,7 @@ import {
   ChevronDown,
   LogOut,
   Menu,
+  User,
   X,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -31,7 +32,7 @@ import {
   type AdminNavLeaf,
 } from "./admin-console-nav";
 
-/** Same lockup as LoginForm: `/images/adalert-logo.avif` + `adAlert.io` in `text-[25px] font-bold text-[#223b53]`. */
+/** Logo + wordmark — same asset as LoginForm (`/images/adalert-logo.avif`); sidebar uses white text on `#0B1426`. */
 function AdminSidebarAuthBrandLockup({ className }: { className?: string }) {
   return (
     <Link
@@ -47,7 +48,7 @@ function AdminSidebarAuthBrandLockup({ className }: { className?: string }) {
           priority
           className="size-10 shrink-0"
         />
-        <span className="truncate text-[25px] font-bold leading-none text-[#223b53]">adAlert.io</span>
+        <span className="truncate text-[25px] font-bold leading-none tracking-tight text-white">adAlert.io</span>
       </span>
     </Link>
   );
@@ -222,7 +223,6 @@ export function AdminConsoleShell({ children }: AdminConsoleShellProps) {
           )}
         >
           <div className="min-w-0 flex-1">
-            {/* Mirrors LoginForm: Link + gap-2 + Image 40×40 + bold #223b53 wordmark */}
             <AdminSidebarAuthBrandLockup />
           </div>
           <button
@@ -282,23 +282,22 @@ export function AdminConsoleShell({ children }: AdminConsoleShellProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent side="top" align="center" sideOffset={8} className="w-[232px]">
               <DropdownMenuItem asChild>
-                <Link href="/administrator/settings/general">Profile &amp; preferences</Link>
+                <Link
+                  href="/administrator/settings/general"
+                  className="flex w-full cursor-pointer items-center gap-2"
+                >
+                  <User className="size-4 shrink-0" aria-hidden />
+                  Profile
+                </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/">Switch to customer app</Link>
+              <DropdownMenuItem asChild variant="destructive">
+                <Link href="/auth" className="flex w-full cursor-pointer items-center gap-2">
+                  <LogOut className="size-4 shrink-0" aria-hidden />
+                  Logout
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
-          <Link
-            href="/auth"
-            className="mt-6 flex items-center gap-[14px] rounded-lg px-3 py-2.5 text-[14px] font-medium text-[#94a3b8] hover:bg-white/[0.06] hover:text-white"
-          >
-            <span className={ICON_COL}>
-              <LogOut className="size-[18px]" aria-hidden strokeWidth={1.65} />
-            </span>
-            Logout
-          </Link>
         </footer>
       </aside>
 
