@@ -1,10 +1,5 @@
-import { AdminPageFrame } from "@/features/administrator/AdminPageFrame";
+import { AdminTransactionsView } from "@/features/administrator/payments/AdminTransactionsView";
 
 export default function AdministratorPaymentsTransactionsPage() {
-  return (
-    <AdminPageFrame
-      title="Transactions"
-      description="Stripe / billing provider transaction feed scaffold."
-    />
-  );
+  return <AdminTransactionsView />;
 }
