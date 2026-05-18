@@ -25,7 +25,12 @@ import {
 } from '@/components/ui/tooltip';
 import { GoogleAdsMark } from '@/components/GoogleAdsMark';
 
-export default function Summary() {
+interface SummaryProps {
+  /** Omit top app header when rendered inside another shell (e.g. consumer console). */
+  embedded?: boolean;
+}
+
+export default function Summary({ embedded = false }: SummaryProps) {
   const { user, userDoc, loading } = useAuthStore();
   const router = useRouter();
   const {
@@ -231,11 +236,17 @@ export default function Summary() {
   }
 
   return (
-    <div className='min-h-screen bg-[#f5f7fb]'>
-      <Header />
+    <div className={embedded ? 'min-h-0 flex-1 bg-[#f5f7fb]' : 'min-h-screen bg-[#f5f7fb]'}>
+      {!embedded ? <Header /> : null}
       <main className='max-w-[1440px] mx-auto px-4 sm:px-6 py-4 sm:py-6'>
         {/* Top header row */}
-        <div className='flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4 max-[767px]:mt-[65px]'>
+        <div
+          className={
+            embedded
+              ? 'flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4'
+              : 'flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4 max-[767px]:mt-[65px]'
+          }
+        >
           <div className='flex flex-col items-start w-full lg:w-auto'>
             <div className='flex items-center gap-3 flex-wrap'>
               <h1 className='text-2xl sm:text-3xl font-bold text-gray-900'>

@@ -52,7 +52,7 @@ import {
 } from '@/components/ui/tooltip';
 import { saveAs } from 'file-saver';
 import type { Alert } from '@/lib/store/dashboard-store';
-import { formatAccountNumber } from '@/lib/utils';
+import { cn, formatAccountNumber } from '@/lib/utils';
 import Image from 'next/image';
 
 const KPI_PERIODS = [
@@ -141,14 +141,21 @@ const KPI_FIELDS = [
 function KpiMetricsRow({
   dashboardDaily,
   currencySymbol,
+  embedded = false,
 }: {
   dashboardDaily: any;
   currencySymbol: string;
+  embedded?: boolean;
 }) {
   const [activePeriod, setActivePeriod] = React.useState('7');
 
   return (
-    <div className='mb-6 -mt-[70px] max-[1211px]:mt-[0px]'>
+    <div
+      className={cn(
+        'mb-6',
+        embedded ? '' : '-mt-[70px] max-[1211px]:mt-[0px]',
+      )}
+    >
       <div className='flex gap-2 mb-3'>
         {KPI_PERIODS.map((p) => (
           <button
@@ -237,7 +244,11 @@ function KpiMetricsRow({
   );
 }
 
-export default function Dashboard() {
+interface DashboardProps {
+  embedded?: boolean;
+}
+
+export default function Dashboard({ embedded = false }: DashboardProps) {
   const { user, userDoc } = useAuthStore();
   const router = useRouter();
   const { selectedAdsAccount, userAdsAccounts, fetchUserAdsAccounts } =
@@ -1130,11 +1141,17 @@ export default function Dashboard() {
   };
 
   return (
-    <div className='min-h-screen bg-[#f5f7fb]'>
-      <Header />
+    <div className={embedded ? 'min-h-0 flex-1 bg-[#f5f7fb]' : 'min-h-screen bg-[#f5f7fb]'}>
+      {!embedded ? <Header /> : null}
       <main className='max-w-[1440px] mx-auto px-6 py-6'>
         {/* Top Section */}
-        <div className=' flex flex-col md:flex-row gap-4 mb-6 w-full  max-[767px]:mt-[80px]'>
+        <div
+          className={
+            embedded
+              ? ' flex flex-col md:flex-row gap-4 mb-6 w-full '
+              : ' flex flex-col md:flex-row gap-4 mb-6 w-full  max-[767px]:mt-[80px]'
+          }
+        >
           <div className='flex flex-col gap-2 w-full'>
             <div className='  flex flex-col items-center gap-3 md:flex-row'>
               <span className='text-lg md:text-xl font-semibold text-gray-900'>
@@ -1575,6 +1592,7 @@ export default function Dashboard() {
         <KpiMetricsRow
           dashboardDaily={dashboardDaily}
           currencySymbol={selectedAdsAccount?.['Currency Symbol'] || '$'}
+          embedded={embedded}
         />
         {/* Alerts Table */}
 

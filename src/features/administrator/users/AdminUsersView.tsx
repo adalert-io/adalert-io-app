@@ -18,7 +18,6 @@ import {
   Pencil,
   Plane,
   Search,
-  Shield,
   UserMinus,
   UsersRound,
   X,
@@ -38,12 +37,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
 
 import { AdminDashboardDateRangePicker } from "../dashboard/AdminDashboardDateRangePicker";
 
-type UserRoleKey = "administrator" | "manager" | "analyst" | "viewer";
 type UserStatusKey = "active" | "invited" | "inactive";
 
 interface AdminUserDemoRow {
@@ -52,7 +49,6 @@ interface AdminUserDemoRow {
   email: string;
   initials: string;
   avatarToneIndex: number;
-  role: UserRoleKey;
   status: UserStatusKey;
   customerAccessLabel: string;
   lastActiveLabel: string;
@@ -103,13 +99,6 @@ const LAST_NAMES = [
 
 const PAGE_SIZE = 10;
 
-const ROLE_OPTIONS: { value: UserRoleKey; label: string }[] = [
-  { value: "administrator", label: "Administrator" },
-  { value: "manager", label: "Manager" },
-  { value: "analyst", label: "Analyst" },
-  { value: "viewer", label: "Viewer" },
-];
-
 const CUSTOMER_SCOPE_OPTIONS = [
   { value: "all", label: "All Customers" },
   { value: "8", label: "8 Customers" },
@@ -141,19 +130,6 @@ function seedUsers(): AdminUserDemoRow[] {
     "active",
   ];
 
-  const roleCycle: UserRoleKey[] = [
-    "administrator",
-    "manager",
-    "analyst",
-    "viewer",
-    "administrator",
-    "manager",
-    "analyst",
-    "viewer",
-    "manager",
-    "administrator",
-  ];
-
   const accessCycle = [
     "All Customers",
     "8 Customers",
@@ -179,7 +155,6 @@ function seedUsers(): AdminUserDemoRow[] {
       email: `${local}.${idx || 102}@${idx % 4 === 0 ? "adalert.io" : "firm.co"}`,
       initials: initialsFromName(full),
       avatarToneIndex: idx % AVATAR_BG.length,
-      role: roleCycle[idx % roleCycle.length],
       status: statusCycle[idx % statusCycle.length],
       customerAccessLabel: accessCycle[idx % accessCycle.length],
       lastActiveLabel:
@@ -254,35 +229,6 @@ function DashboardMetricCard({
   );
 }
 
-function RoleBadge({ role }: { role: UserRoleKey }) {
-  if (role === "administrator") {
-    return (
-      <span className="inline-flex rounded-full bg-[#7c3aed]/14 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#5b21b6] ring-1 ring-[#a855f7]/35">
-        Administrator
-      </span>
-    );
-  }
-  if (role === "manager") {
-    return (
-      <span className="inline-flex rounded-full bg-[#3b82f6]/13 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#1e40af] ring-1 ring-[#bfdbfe]">
-        Manager
-      </span>
-    );
-  }
-  if (role === "analyst") {
-    return (
-      <span className="inline-flex rounded-full bg-[#06b6d4]/12 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#0e7490] ring-1 ring-cyan-200/80">
-        Analyst
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex rounded-full bg-slate-200/65 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#57534e] ring-1 ring-slate-300/70">
-      Viewer
-    </span>
-  );
-}
-
 function WorkflowStatusLite({ status }: { status: UserStatusKey }) {
   if (status === "active") {
     return (
@@ -331,10 +277,6 @@ function generateTemporaryPassword(length = 16): string {
     .join("");
 }
 
-function roleLabel(role: UserRoleKey): string {
-  return ROLE_OPTIONS.find((r) => r.value === role)?.label ?? role;
-}
-
 function customerLabelFromScope(value: string): string {
   if (value === "all") return "All Customers";
   if (value === "8") return "8 Customers";
@@ -350,14 +292,12 @@ export function AdminUsersView() {
     active: rows.filter((r) => r.status === "active").length,
     invited: rows.filter((r) => r.status === "invited").length,
     inactive: rows.filter((r) => r.status === "inactive").length,
-    admins: rows.filter((r) => r.role === "administrator").length,
   }), [rows]);
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
-  const [roleFilter, setRoleFilter] = useState<UserRoleKey | "all">("all");
   const [statusFilter, setStatusFilter] = useState<UserStatusKey | "all">(
     "all",
   );
@@ -366,7 +306,6 @@ export function AdminUsersView() {
   const [addOpen, setAddOpen] = useState(false);
   const [formName, setFormName] = useState("");
   const [formEmail, setFormEmail] = useState("");
-  const [formRole, setFormRole] = useState<UserRoleKey>("viewer");
   const [formCustomerScope, setFormCustomerScope] = useState("all");
   const [formPassword, setFormPassword] = useState("");
 
@@ -377,12 +316,8 @@ export function AdminUsersView() {
       list = list.filter(
         (r) =>
           r.fullName.toLowerCase().includes(q) ||
-          r.email.toLowerCase().includes(q) ||
-          roleLabel(r.role).toLowerCase().includes(q),
+          r.email.toLowerCase().includes(q),
       );
-    }
-    if (roleFilter !== "all") {
-      list = list.filter((r) => r.role === roleFilter);
     }
     if (statusFilter !== "all") {
       list = list.filter((r) => r.status === statusFilter);
@@ -394,7 +329,7 @@ export function AdminUsersView() {
       );
     }
     return list;
-  }, [rows, search, roleFilter, statusFilter, customerFilter]);
+  }, [rows, search, statusFilter, customerFilter]);
 
   const totalRows = filtered.length;
   const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
@@ -443,7 +378,6 @@ export function AdminUsersView() {
   const resetAddForm = useCallback(() => {
     setFormName("");
     setFormEmail("");
-    setFormRole("viewer");
     setFormCustomerScope("all");
     setFormPassword("");
   }, []);
@@ -469,7 +403,6 @@ export function AdminUsersView() {
       email,
       initials: initialsFromName(name),
       avatarToneIndex: rows.length % AVATAR_BG.length,
-      role: formRole,
       status: "invited",
       customerAccessLabel: scopeLabel,
       lastActiveLabel: "—",
@@ -488,7 +421,7 @@ export function AdminUsersView() {
             Users
           </h1>
           <p className="text-[15px] text-[#7A7D9C]">
-            Manage team members and their access permissions
+            Administrators for this preview console — all users share full admin access
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -519,8 +452,8 @@ export function AdminUsersView() {
               Add user
             </DialogTitle>
             <DialogDescription className="text-[14px] text-[#64748b]">
-              Invite a teammate, assign their role across all four tiers, set
-              customer scope, and provision an initial credential.
+              Invite a teammate as an administrator. Set customer scope and
+              provision an initial credential.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-5">
@@ -544,33 +477,6 @@ export function AdminUsersView() {
                 value={formEmail}
                 onChange={(e) => setFormEmail(e.target.value)}
               />
-            </div>
-
-            <div className="space-y-3">
-              <Label>Role</Label>
-              <RadioGroup
-                value={formRole}
-                onValueChange={(v) => setFormRole(v as UserRoleKey)}
-                className="grid gap-3"
-              >
-                {ROLE_OPTIONS.map((option) => (
-                  <Label
-                    key={option.value}
-                    htmlFor={`role-${option.value}`}
-                    className={cn(
-                      "flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition-colors hover:bg-gray-50",
-                      formRole === option.value
-                        ? "border-[#015AFD] bg-[#eaf3ff]/60"
-                        : "border-[#e5e5e5]",
-                    )}
-                  >
-                    <RadioGroupItem value={option.value} id={`role-${option.value}`} />
-                    <span className="text-[13px] font-semibold text-gray-900">
-                      {option.label}
-                    </span>
-                  </Label>
-                ))}
-              </RadioGroup>
             </div>
 
             <div className="space-y-2">
@@ -642,7 +548,7 @@ export function AdminUsersView() {
         </DialogContent>
       </Dialog>
 
-      <section className="grid min-w-0 grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <section className="grid min-w-0 grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <DashboardMetricCard
           title="Total Users"
           value={String(kpiTotals.total)}
@@ -675,14 +581,6 @@ export function AdminUsersView() {
           Icon={UserMinus}
           accentClassName="bg-[#fecaca]/45 text-[#dc2626]"
         />
-        <DashboardMetricCard
-          title="Admins"
-          value={String(kpiTotals.admins)}
-          trend="↑11% vs last 7 days"
-          trendTone="positive"
-          Icon={Shield}
-          accentClassName="bg-[#ddd6fe]/70 text-[#5b21b6]"
-        />
       </section>
 
       <div className="space-y-4">
@@ -691,7 +589,7 @@ export function AdminUsersView() {
             <Search className="size-5 shrink-0 text-[#015AFD]" aria-hidden />
             <input
               className="min-w-0 flex-1 border-none bg-transparent text-[13px] text-gray-700 outline-none placeholder:text-gray-400"
-              placeholder="Search by name, email or role..."
+              placeholder="Search by name or email..."
               value={search}
               aria-label="Search users"
               onChange={(e) => {
@@ -712,28 +610,6 @@ export function AdminUsersView() {
                 <X className="size-4" />
               </button>
             ) : null}
-          </div>
-
-          <div className="relative">
-            <select
-              className={SELECT_CLASS}
-              aria-label="Filter by role"
-              value={roleFilter}
-              onChange={(e) => {
-                setRoleFilter(e.target.value as UserRoleKey | "all");
-                setPage(1);
-              }}
-            >
-              <option value="all">All Roles</option>
-              <option value="administrator">Administrator</option>
-              <option value="manager">Manager</option>
-              <option value="analyst">Analyst</option>
-              <option value="viewer">Viewer</option>
-            </select>
-            <ChevronDown
-              aria-hidden
-              className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-gray-500"
-            />
           </div>
 
           <div className="relative">
@@ -943,7 +819,7 @@ function UsersTable({
   return (
     <div className="overflow-hidden rounded-2xl border border-[#e5e5e5] bg-white shadow-none">
       <div className="max-[1199px]:overflow-x-auto">
-        <table className="min-w-[980px] w-full table-fixed text-[13px]">
+        <table className="min-w-[840px] w-full table-fixed text-[13px]">
           <thead className="border-b border-gray-200 bg-gray-50">
             <tr>
               <th className="w-[48px] px-3 py-3 text-start">
@@ -958,9 +834,6 @@ function UsersTable({
               </th>
               <th className="min-w-[220px] py-3 pe-4 text-start font-semibold text-gray-700">
                 Email
-              </th>
-              <th className="w-[128px] py-3 pe-4 text-start font-semibold text-gray-700">
-                Role
               </th>
               <th className="min-w-[160px] py-3 pe-4 text-start font-semibold text-gray-700">
                 Customer Access
@@ -1015,9 +888,6 @@ function UsersTable({
                   </td>
                   <td className="truncate py-4 pe-3 align-middle text-gray-700">
                     {row.email}
-                  </td>
-                  <td className="py-4 pe-3 align-middle">
-                    <RoleBadge role={row.role} />
                   </td>
                   <td className="truncate py-4 pe-3 align-middle text-gray-800">
                     {row.customerAccessLabel}

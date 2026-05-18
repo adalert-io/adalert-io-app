@@ -1,10 +1,5 @@
-import { AdminPageFrame } from "@/features/administrator/AdminPageFrame";
+import { redirect } from "next/navigation";
 
 export default function AdministratorUserRolesPage() {
-  return (
-    <AdminPageFrame
-      title="Roles & permissions"
-      description="Role templates, entitlement mapping, audits."
-    />
-  );
+  redirect("/administrator/users");
 }
