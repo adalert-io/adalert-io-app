@@ -21,13 +21,9 @@ export function AuthStateHandler() {
 
     // Listen for auth state changes
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      // console.log("firebaseUser", firebaseUser);
-      if (firebaseUser) {
-        // Update user in store
-        setUser(firebaseUser);
+      setUser(firebaseUser);
 
-        // Check subscription status and handle navigation
-        // This will also fetch user ads accounts
+      if (firebaseUser) {
         await checkSubscriptionStatus(firebaseUser.uid);
         await handlePostAuthNavigation();
       }

@@ -13,14 +13,12 @@ export function useAuthSync() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
-      
+
       if (firebaseUser) {
-        // Check subscription status and handle navigation
-        // This will also fetch user ads accounts
         await checkSubscriptionStatus(firebaseUser.uid);
         await handlePostAuthNavigation();
       }
-      
+
       setLoading(false);
     });
 

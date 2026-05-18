@@ -201,7 +201,10 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
   const displayName =
     userDoc?.Name || user?.displayName || user?.email?.split("@")[0] || "Account";
   const subtitle = userDoc?.["User Type"] === "Manager" ? "Manager" : "Member";
-  const avatarUrl = userDoc?.Avatar ?? undefined;
+  const avatarSrc =
+    typeof userDoc?.Avatar === "string" && userDoc.Avatar.trim().length > 0
+      ? userDoc.Avatar.trim()
+      : undefined;
 
   React.useEffect(() => {
     setMobileOpen(false);
@@ -279,7 +282,9 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
                 className="flex w-full items-center gap-3 rounded-xl bg-[#111b32] px-3 py-2.5 text-left outline-none hover:bg-[#152542] focus-visible:ring-2 focus-visible:ring-[#3b82f6]"
               >
                 <Avatar className="size-10 shrink-0 border border-white/[0.1]">
-                  <AvatarImage src={avatarUrl} alt="" className="object-cover object-top" />
+                  {avatarSrc ? (
+                    <AvatarImage src={avatarSrc} alt="" className="object-cover object-top" />
+                  ) : null}
                   <AvatarFallback className="bg-[#3b82f6] text-[13px] font-semibold text-white">
                     {displayInitials(userDoc?.Name, user?.email ?? undefined)}
                   </AvatarFallback>

@@ -25,6 +25,10 @@ import {
   getDocs,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
+import {
+  consumerPathForClassicRoute,
+  prefersConsumerShellRouting,
+} from '@/lib/consumer-shell-preference';
 import moment from 'moment';
 import {
   SUBSCRIPTION_STATUS,
@@ -509,6 +513,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // console.log('isFullAccess', isFullAccess);
       if (!userDoc || !router) return;
 
+      const useConsumerShell = prefersConsumerShellRouting();
+      const pushPostAuth = (classicPath: string) => {
+        const target = useConsumerShell
+          ? consumerPathForClassicRoute(classicPath)
+          : classicPath;
+        if (
+          typeof window !== "undefined" &&
+          window.location.pathname === target
+        ) {
+          return;
+        }
+        router.push(target);
+      };
+
       // Build Firestore query for Ads Account collection
       const adsAccountRef = collection(db, COLLECTIONS.ADS_ACCOUNTS);
       const companyAdminRef = userDoc['Company Admin'];
@@ -532,30 +550,30 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // Navigation logic
       if (!isFullAccess) {
         // console.log('to /settings/account/billing');
-        router.push('/settings/account/billing');
+        pushPostAuth('/settings/account/billing');
         return;
       }
 
       if (adsAccountCount === 0) {
         if (!inviter) {
           // console.log('to /add-ads-account');
-          router.push('/add-ads-account');
+          pushPostAuth('/add-ads-account');
         } else {
           // console.log('to /dashboard');
-          router.push('/dashboard');
+          pushPostAuth('/dashboard');
         }
         return;
       }
 
       if (adsAccountCount === 1) {
         // console.log('to /dashboard');
-        router.push('/dashboard');
+        pushPostAuth('/dashboard');
         return;
       }
 
       if (adsAccountCount > 1) {
         // console.log('to /summary');
-        router.push('/summary');
+        pushPostAuth('/summary');
         return;
       }
     } catch (err: any) {

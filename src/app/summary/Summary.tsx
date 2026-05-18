@@ -7,6 +7,10 @@ import { Header } from '@/components/layout/header';
 import { useSummaryStore } from './summary-store';
 import { useUserAdsAccountsStore } from '@/lib/store/user-ads-accounts-store';
 import { formatAccountNumber } from '@/lib/utils';
+import {
+  consumerPathForClassicRoute,
+  prefersConsumerShellRouting,
+} from '@/lib/consumer-shell-preference';
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
 import { Button } from '@/components/ui/button';
 import { ALERT_SEVERITY_COLORS } from '@/lib/constants';
@@ -111,7 +115,9 @@ export default function Summary({ embedded = false }: SummaryProps) {
     if (!debouncedSearch) return accounts;
     const lower = debouncedSearch.toLowerCase();
     return accounts.filter((acc) =>
-      acc.accountName.toLowerCase().includes(lower),
+      String(acc.accountName ?? "")
+        .toLowerCase()
+        .includes(lower),
     );
   }, [accounts, debouncedSearch]);
 
@@ -164,7 +170,11 @@ export default function Summary({ embedded = false }: SummaryProps) {
       // console.log('matchingAccount: ', matchingAccount);
       if (matchingAccount) {
         setSelectedAdsAccount(matchingAccount);
-        router.push('/dashboard');
+        router.push(
+          prefersConsumerShellRouting()
+            ? consumerPathForClassicRoute('/dashboard')
+            : '/dashboard',
+        );
       }
     }
   };

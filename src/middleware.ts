@@ -1,10 +1,23 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+import { CONSUMER_SHELL_COOKIE } from "@/lib/consumer-shell-preference";
+
 const ADMIN_PREVIEW_COOKIE = "admin_preview_gate";
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Mark consumer shell before client auth runs (avoids post-auth race to /summary).
+  if (pathname === "/consumer" || pathname.startsWith("/consumer/")) {
+    const res = NextResponse.next();
+    res.cookies.set(CONSUMER_SHELL_COOKIE, "1", {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30,
+      sameSite: "lax",
+    });
+    return res;
+  }
 
   if (!pathname.startsWith("/administrator")) {
     return NextResponse.next();
@@ -41,5 +54,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/administrator/:path*"],
+  matcher: ["/administrator/:path*", "/consumer", "/consumer/:path*"],
 };
