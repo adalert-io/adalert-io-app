@@ -1,10 +1,5 @@
-import { AdminPageFrame } from "@/features/administrator/AdminPageFrame";
+import { redirect } from "next/navigation";
 
 export default function AdministratorSettingsIntegrationsPage() {
-  return (
-    <AdminPageFrame
-      title="Integrations"
-      description="API credentials, webhook registry, Slack routing."
-    />
-  );
+  redirect("/administrator/settings/general");
 }

@@ -3,8 +3,8 @@
 import { Suspense, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { LockClosedIcon } from "@radix-ui/react-icons";
-import { Loader2 } from "lucide-react";
+import { EnvelopeClosedIcon, LockClosedIcon } from "@radix-ui/react-icons";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
@@ -15,10 +15,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+/** Preview-only — must match `src/app/api/admin-preview-gate/route.ts` */
+const PREVIEW_ADMIN_EMAIL = "admin@adalert.io";
+const PREVIEW_ADMIN_PASSWORD = "eyJhbGciOiJIUzI1N12@";
+
 function PreviewLoginInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [digits, setDigits] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const nextPath = searchParams.get("next");
@@ -27,16 +33,20 @@ function PreviewLoginInner() {
       ? nextPath
       : "/administrator";
 
-  function handleDigitsChange(raw: string) {
-    const only = raw.replace(/\D/g, "").slice(0, 6);
-    setDigits(only);
-  }
-
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
 
-    if (digits.length !== 6) {
-      toast.error("Enter the full six-digit access code.");
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail || !password) {
+      toast.error("Enter email and password.");
+      return;
+    }
+
+    if (
+      trimmedEmail !== PREVIEW_ADMIN_EMAIL.toLowerCase() ||
+      password !== PREVIEW_ADMIN_PASSWORD
+    ) {
+      toast.error("Incorrect email or password.");
       return;
     }
 
@@ -47,11 +57,14 @@ function PreviewLoginInner() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ code: digits }),
+        body: JSON.stringify({
+          email: trimmedEmail,
+          password,
+        }),
       });
 
       if (!response.ok) {
-        toast.error("Incorrect access code.");
+        toast.error("Could not open the console. Try again.");
         setIsSubmitting(false);
         return;
       }
@@ -67,7 +80,8 @@ function PreviewLoginInner() {
     }
   }
 
-  const canSubmit = digits.length === 6 && !isSubmitting;
+  const canSubmit =
+    email.trim().length > 0 && password.length > 0 && !isSubmitting;
 
   return (
     <div className="mobile-uses grid h-screen max-h-screen grid-cols-1 bg-[#ffffff] md:grid-cols-2">
@@ -77,7 +91,7 @@ function PreviewLoginInner() {
             <CardContent className="px-0 text-center">
               <Link
                 href="https://adalert.io/"
-                className="flex min-w-0 items-center justify-center gap-2 py-2 outline-none focus-visible:ring-2 focus-visible:ring-[#015AFD] rounded-xl"
+                className="flex min-w-0 items-center justify-center gap-2 rounded-xl py-2 outline-none focus-visible:ring-2 focus-visible:ring-[#015AFD]"
               >
                 <span className="mb-4 flex items-center gap-3 text-[25px] font-bold">
                   <Image
@@ -96,41 +110,66 @@ function PreviewLoginInner() {
               </h3>
 
               <p className="mb-10 text-[14px] leading-relaxed text-[#59657a]">
-                Enter your six-digit temporary access PIN to unlock the sandbox
-                console. This replaces email login while reviewers validate UX on
-                a non-production host.
+                Sign in with the preview administrator account to unlock the sandbox
+                console. This is a temporary front-end gate while reviewers validate UX
+                on a non-production host.
               </p>
 
-              <form onSubmit={handleSubmit} className="space-y-6 text-left">
-                <div className="space-y-3">
+              <form onSubmit={handleSubmit} className="space-y-5 text-left">
+                <div className="space-y-2">
                   <Label
-                    htmlFor="admin-pin"
+                    htmlFor="admin-email"
                     className="text-start text-[15px] font-semibold text-[#1a2030]"
                   >
-                    Six-digit PIN
+                    Email
+                  </Label>
+                  <div className="relative">
+                    <EnvelopeClosedIcon className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-blue-600" />
+                    <Input
+                      id="admin-email"
+                      name="email"
+                      type="email"
+                      autoComplete="username"
+                      className="h-12 rounded-2xl pl-11 text-[15px]"
+                      placeholder="admin@adalert.io"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="admin-password"
+                    className="text-start text-[15px] font-semibold text-[#1a2030]"
+                  >
+                    Password
                   </Label>
                   <div className="relative">
                     <LockClosedIcon className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-blue-600" />
                     <Input
-                      id="admin-pin"
-                      name="pin"
-                      type="tel"
-                      inputMode="numeric"
-                      autoComplete="one-time-code"
-                      maxLength={6}
-                      aria-describedby="admin-pin-helper"
-                      className="h-14 rounded-2xl pl-11 text-center text-2xl font-semibold tracking-[0.5em]"
-                      placeholder="• • • • • •"
-                      value={digits}
-                      onChange={(event) =>
-                        handleDigitsChange(event.target.value)
-                      }
+                      id="admin-password"
+                      name="password"
+                      type={isPasswordVisible ? "text" : "password"}
+                      autoComplete="current-password"
+                      className="h-12 rounded-2xl pl-11 pr-12 text-[15px]"
+                      placeholder="••••••••••••"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
                     />
+                    <button
+                      type="button"
+                      onClick={() => setIsPasswordVisible((v) => !v)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-[#59657a] hover:bg-slate-100 hover:text-slate-900"
+                      aria-label={isPasswordVisible ? "Hide password" : "Show password"}
+                    >
+                      {isPasswordVisible ? (
+                        <EyeOff className="size-5" aria-hidden />
+                      ) : (
+                        <Eye className="size-5" aria-hidden />
+                      )}
+                    </button>
                   </div>
-                  <p id="admin-pin-helper" className="text-[12px] text-[#7b8496]">
-                    Codes rotate per review cycle — request the newest digits from an
-                    adAlert engineer if yours fails.
-                  </p>
                 </div>
 
                 <Button
@@ -157,7 +196,7 @@ function PreviewLoginInner() {
                 Looking for the customer login? Visit{" "}
                 <Link
                   href="/auth"
-                  className="font-semibold text-[#015AFD] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#015AFD]/40 rounded"
+                  className="rounded font-semibold text-[#015AFD] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#015AFD]/40"
                 >
                   /auth
                 </Link>

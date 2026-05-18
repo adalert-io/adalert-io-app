@@ -3,7 +3,6 @@
 import type { ReactNode } from "react";
 
 import { Bell, ChevronDown, DollarSign, Info, Users } from "lucide-react";
-import Link from "next/link";
 import {
   Area,
   AreaChart,
@@ -14,17 +13,8 @@ import {
   YAxis,
 } from "recharts";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { GoogleAdsMark } from "@/components/GoogleAdsMark";
 import { cn } from "@/lib/utils";
 import { AdminDashboardDateRangePicker } from "./AdminDashboardDateRangePicker";
@@ -77,34 +67,6 @@ const recentAlerts = [
   },
 ];
 
-const topCustomers = [
-  {
-    customer: "Nexus AI Labs",
-    adAccounts: "12",
-    mrr: "$2,845",
-    status: "Active" as const,
-  },
-  {
-    customer: "PixelForge Studios",
-    adAccounts: "8",
-    mrr: "$1,995",
-    status: "Trial" as const,
-  },
-  {
-    customer: "Lakeside Boutique",
-    adAccounts: "5",
-    mrr: "$860",
-    status: "Past Due" as const,
-  },
-];
-
-const recentPayments = [
-  { customer: "Nexus AI Labs", amount: "$250.00", status: "Paid" as const, date: "15 May 2025" },
-  { customer: "PixelForge Studios", amount: "$199.95", status: "Pending" as const, date: "15 May 2025" },
-  { customer: "Lakeside Boutique", amount: "$86.00", status: "Failed" as const, date: "14 May 2025" },
-  { customer: "Sunrise Catering Co.", amount: "$320.45", status: "Paid" as const, date: "14 May 2025" },
-];
-
 function DashboardMetricCard({
   title,
   value,
@@ -139,26 +101,6 @@ function DashboardMetricCard({
   );
 }
 
-function customerStatusBadge(status: "Active" | "Trial" | "Past Due") {
-  if (status === "Active") {
-    return <Badge variant="success">Active</Badge>;
-  }
-  if (status === "Trial") {
-    return <Badge variant="info">Trial</Badge>;
-  }
-  return <Badge variant="destructive">Past Due</Badge>;
-}
-
-function paymentStatusBadge(status: "Paid" | "Pending" | "Failed") {
-  if (status === "Paid") {
-    return <Badge variant="success">Paid</Badge>;
-  }
-  if (status === "Pending") {
-    return <Badge variant="warning">Pending</Badge>;
-  }
-  return <Badge variant="destructive">Failed</Badge>;
-}
-
 function alertDotVariant(tone: "red" | "amber" | "yellow"): string {
   if (tone === "red") {
     return "bg-[#ef4444]";
@@ -172,7 +114,7 @@ function alertDotVariant(tone: "red" | "amber" | "yellow"): string {
 export function AdminDashboardHome() {
   return (
     <div className="flex min-h-full flex-col bg-[#f8fafc]">
-      <div className="mx-auto w-full max-w-[1480px] flex-1 space-y-8 px-4 py-8 sm:px-6 lg:px-10">
+      <div className="mx-auto w-full max-w-[1480px] flex-1 space-y-8 px-4 py-8 pb-16 sm:px-6 lg:px-10">
         <section className="space-y-6">
           <header className="flex flex-wrap items-start justify-between gap-4 pb-6">
             <div className="space-y-2">
@@ -282,9 +224,7 @@ export function AdminDashboardHome() {
           <Card className="rounded-2xl border border-slate-200/90 bg-white py-0 shadow-md">
             <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-slate-100 px-6 py-5">
               <p className="text-lg font-semibold text-slate-900">Recent Alerts</p>
-              <Link href="/administrator/alerts" className="text-[#3b82f6] text-sm font-medium hover:underline">
-                View all
-              </Link>
+              <span className="text-muted-foreground text-sm font-medium">Preview</span>
             </CardHeader>
             <CardContent className="max-h-[420px] space-y-0 divide-y divide-slate-100 overflow-auto px-0 py-0">
               {recentAlerts.map((alertRow) => (
@@ -301,73 +241,6 @@ export function AdminDashboardHome() {
                   </div>
                 </article>
               ))}
-            </CardContent>
-          </Card>
-        </section>
-
-        <section className="grid grid-cols-1 gap-6 pb-16 lg:gap-8 xl:grid-cols-2">
-          <Card className="rounded-2xl border border-slate-200/90 bg-white py-0 shadow-md">
-            <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-6 py-5">
-              <p className="text-lg font-semibold text-slate-900">Top Customers</p>
-              <Link href="/administrator/customers" className="text-[#3b82f6] text-sm font-medium hover:underline">
-                View all
-              </Link>
-            </CardHeader>
-            <CardContent className="px-2 py-4 sm:px-4">
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent border-slate-100">
-                    <TableHead className="ps-6">Customer</TableHead>
-                    <TableHead>Ad Accounts</TableHead>
-                    <TableHead>MRR</TableHead>
-                    <TableHead className="pe-6">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {topCustomers.map((row) => (
-                    <TableRow key={row.customer} className="border-slate-100">
-                      <TableCell className="ps-6 font-semibold text-slate-900">{row.customer}</TableCell>
-                      <TableCell>{row.adAccounts}</TableCell>
-                      <TableCell className="font-medium">{row.mrr}</TableCell>
-                      <TableCell className="pe-6">{customerStatusBadge(row.status)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-2xl border border-slate-200/90 bg-white py-0 shadow-md">
-            <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-6 py-5">
-              <p className="text-lg font-semibold text-slate-900">Recent Payments</p>
-              <Link
-                href="/administrator/payments/transactions"
-                className="text-[#3b82f6] text-sm font-medium hover:underline"
-              >
-                View all
-              </Link>
-            </CardHeader>
-            <CardContent className="px-2 py-4 sm:px-4">
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent border-slate-100">
-                    <TableHead className="ps-6">Customer</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="pe-6">Date</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recentPayments.map((row) => (
-                    <TableRow key={`${row.customer}-${row.date}`} className="border-slate-100">
-                      <TableCell className="ps-6 font-semibold text-slate-900">{row.customer}</TableCell>
-                      <TableCell className="font-medium">{row.amount}</TableCell>
-                      <TableCell>{paymentStatusBadge(row.status)}</TableCell>
-                      <TableCell className="pe-6 text-muted-foreground text-sm">{row.date}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
             </CardContent>
           </Card>
         </section>

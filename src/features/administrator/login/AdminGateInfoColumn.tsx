@@ -42,17 +42,17 @@ export function AdminGateInfoColumn() {
             <CapabilityRow
               icon={Workflow}
               title="Operational queues"
-              copy="Users, invoices, subscriptions, alerts, and support tickets share the same operator-grade shell patterns."
+              copy="Users, subscriptions, payments, and support queues share the same operator-grade shell patterns."
             />
             <CapabilityRow
               icon={ShieldAlert}
               title="Privileged actions"
-              copy="Dangerous tooling is isolated here—avoid sharing this short-lived access code beyond core platform owners."
+              copy="Dangerous tooling is isolated here—treat preview sign-in credentials like production secrets."
             />
             <CapabilityRow
               icon={Lock}
               title="Rolling gate"
-              copy="Seven-day browser cookies keep this preview usable for weekly reviews while remaining hidden from anonymous traffic."
+              copy="A seven-day httpOnly cookie is set after a successful preview sign-in so reviewers stay signed in across sessions."
             />
           </CardContent>
         </Card>
