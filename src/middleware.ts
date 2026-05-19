@@ -5,8 +5,15 @@ import { CONSUMER_SHELL_COOKIE } from "@/lib/consumer-shell-preference";
 
 const ADMIN_PREVIEW_COOKIE = "admin_preview_gate";
 
+const CLASSIC_TO_CONSUMER: Record<string, string> = {
+  "/summary": "/consumer/summary",
+  "/dashboard": "/consumer/dashboard",
+};
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const hasConsumerShell =
+    request.cookies.get(CONSUMER_SHELL_COOKIE)?.value === "1";
 
   // Mark consumer shell before client auth runs (avoids post-auth race to /summary).
   if (pathname === "/consumer" || pathname.startsWith("/consumer/")) {
@@ -17,6 +24,13 @@ export function middleware(request: NextRequest) {
       sameSite: "lax",
     });
     return res;
+  }
+
+  // Classic URLs → consumer console when the user already opted into the shell.
+  if (hasConsumerShell && pathname in CLASSIC_TO_CONSUMER) {
+    return NextResponse.redirect(
+      new URL(CLASSIC_TO_CONSUMER[pathname], request.url),
+    );
   }
 
   if (!pathname.startsWith("/administrator")) {
@@ -54,5 +68,11 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/administrator/:path*", "/consumer", "/consumer/:path*"],
+  matcher: [
+    "/administrator/:path*",
+    "/consumer",
+    "/consumer/:path*",
+    "/summary",
+    "/dashboard",
+  ],
 };

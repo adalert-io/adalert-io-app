@@ -51,8 +51,11 @@ import {
 } from '@/components/ui/tooltip';
 import { saveAs } from 'file-saver';
 import type { Alert } from '@/lib/store/dashboard-store';
+import { GoogleAdsMark } from '@/components/GoogleAdsMark';
+import { Badge } from '@/components/ui/badge';
 import { cn, formatAccountNumber } from '@/lib/utils';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 
 const KPI_PERIODS = [
   { label: '7 days vs. prior', key: '7' },
@@ -242,6 +245,13 @@ function KpiMetricsRow({
 export function ConsumerDashboardView() {
   const { user, userDoc } = useAuthStore();
   const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (pathname === "/dashboard") {
+      router.replace("/consumer/dashboard");
+    }
+  }, [pathname, router]);
   const { selectedAdsAccount, userAdsAccounts, fetchUserAdsAccounts } =
     useUserAdsAccountsStore();
   // console.log('Selected Ads Account:', selectedAdsAccount)
@@ -1152,141 +1162,51 @@ export function ConsumerDashboardView() {
   return (
     <div className="min-h-0 flex-1">
       <main className="mx-auto flex w-full max-w-[1480px] flex-1 flex-col gap-8 pb-8">
-        {/* Top Section */}
-        <div
-          className={
-            'flex flex-col md:flex-row gap-4 mb-6 w-full'
-          }
-        >
-          <div className='flex flex-col gap-2 w-full'>
-            <div className='  flex flex-col items-center gap-3 md:flex-row'>
-              <span className='text-lg md:text-xl font-semibold text-gray-900'>
-                <svg
-                  xmlns='http://www.w3.org/2000/svg'
-                  width='28'
-                  height='28'
-                  viewBox='0 0 28 28'
-                  fill='none'
-                >
-                  <path
-                    d='M16.0122 1.85333C14.0875 0.739998 11.6264 1.40068 10.5151 3.32901L0.540031 20.6392C-0.571165 22.5676 0.0882575 25.0333 2.01293 26.1467C3.9376 27.26 6.3987 26.5993 7.50995 24.671L17.4851 7.36074C18.5963 5.4324 17.9368 2.96665 16.0122 1.85333Z'
-                    fill='#FFC107'
-                  ></path>
-                  <path
-                    d='M16.0119 1.85333C15.1129 1.33331 14.0969 1.20053 13.156 1.40303C13.5555 1.48922 13.9488 1.63759 14.3218 1.85333C16.2464 2.96666 16.9059 5.43241 15.7947 7.36074L5.81955 24.671C5.22739 25.6986 4.25187 26.366 3.17847 26.597C4.84064 26.9555 6.61383 26.2256 7.50966 24.671L17.4848 7.36074C18.5961 5.43241 17.9366 2.96666 16.0119 1.85333Z'
-                    fill='#FFB300'
-                  ></path>
-                  <path
-                    d='M4.01986 26.6875C6.23997 26.6875 8.03972 24.8843 8.03972 22.66C8.03972 20.4357 6.23997 18.6326 4.01986 18.6326C1.79975 18.6326 0 20.4357 0 22.66C0 24.8843 1.79975 26.6875 4.01986 26.6875Z'
-                    fill='#4CAF50'
-                  ></path>
-                  <path
-                    d='M3.17847 26.597C3.17825 26.5975 3.17814 26.5979 3.17798 26.5984C3.44956 26.6564 3.73098 26.6875 4.01984 26.6875C6.23993 26.6875 8.0397 24.8844 8.0397 22.6601C8.0397 22.1659 7.95045 21.6928 7.78792 21.2553L5.81960 24.671C5.22739 25.6986 4.25188 26.366 3.17847 26.597Z'
-                    fill='#43A047'
-                  ></path>
-                  <path
-                    d='M27.4602 20.6393L17.4851 3.32907C16.3739 1.40074 13.9128 0.740059 11.9881 1.85339C10.0634 2.96671 9.4039 5.43247 10.5152 7.3608L20.4903 24.671C21.6015 26.5994 24.0626 27.26 25.9873 26.1467C27.912 25.0334 28.5714 22.5676 27.4602 20.6393Z'
-                    fill='#2196F3'
-                  ></path>
-                  <path
-                    d='M27.4601 20.6393L17.485 3.32909C16.5891 1.77449 14.816 1.04452 13.1538 1.4031C14.2272 1.6341 15.2027 2.30151 15.7949 3.32909L25.7701 20.6393C26.8813 22.5677 26.2218 25.0334 24.2972 26.1467C23.9241 26.3625 23.5309 26.5108 23.1314 26.597C24.0722 26.7995 25.0883 26.6668 25.9873 26.1467C27.9119 25.0334 28.5714 22.5676 27.4601 20.6393Z'
-                    fill='#1E88E5'
-                  ></path>
-                </svg>
-              </span>
-              <span
-                className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 ${
-                  !adsLabel
-                    ? 'bg-[#E9F6EA] text-[#7A7D9C]'
-                    : adsLabel['Is Showing Ads']
-                    ? 'bg-[#E9F6EA] text-[#34A853]'
-                    : 'bg-[#ffebee] text-[#ee1b23]'
-                }`}
-              >
-                {!adsLabel ? (
-                  <svg width='18' height='18' fill='none' viewBox='0 0 18 18'>
-                    <g>
-                      <rect width='18' height='18' rx='9' fill='#7A7D9C' />
-                      <path
-                        d='M9 3v3l2 2'
-                        stroke='#fff'
-                        strokeWidth='1.5'
-                        strokeLinecap='round'
-                        strokeLinejoin='round'
-                      />
-                    </g>
-                  </svg>
-                ) : adsLabel['Is Showing Ads'] ? (
-                  <svg width='18' height='18' fill='none' viewBox='0 0 18 18'>
-                    <g>
-                      <rect width='18' height='18' rx='9' fill='#34A853' />
-                      <path
-                        d='M13.5 6.75l-5.25 5.25-2.25-2.25'
-                        stroke='#fff'
-                        strokeWidth='1.5'
-                        strokeLinecap='round'
-                        strokeLinejoin='round'
-                      />
-                    </g>
-                  </svg>
-                ) : (
-                  <svg width='18' height='18' fill='none' viewBox='0 0 18 18'>
-                    <g>
-                      <rect width='18' height='18' rx='9' fill='#ee1b23' />
-                      <path
-                        d='M12 6l-6 6M6 6l6 6'
-                        stroke='#fff'
-                        strokeWidth='1.5'
-                        strokeLinecap='round'
-                        strokeLinejoin='round'
-                      />
-                    </g>
-                  </svg>
-                )}
-                {!adsLabel
-                  ? 'Checking'
-                  : adsLabel['Is Showing Ads']
-                  ? 'Showing Ads'
-                  : 'Not Showing Ads'}
-              </span>
-              <span className='text-xl text-center md:text-2xl font-bold text-gray-900 md:text-left'>
-                {selectedAdsAccount?.['Account Name Editable'] || '-'}
-                {' - '}
-                {selectedAdsAccount?.['Id']
-                  ? formatAccountNumber(selectedAdsAccount['Id'])
-                  : ''}
-              </span>
-              {(spendMtdLoading ||
-                spendMtdIndicatorLoading ||
-                kpiDataLoading ||
-                currencySymbolLoading) && (
-                <span className='ml-4 px-3 py-1 rounded-xl bg-blue-100 text-blue-900 flex items-center gap-2 text-base font-semibold animate-fade-in'>
-                  <svg
-                    className='animate-spin h-5 w-5 text-blue-500'
-                    xmlns='http://www.w3.org/2000/svg'
-                    fill='none'
-                    viewBox='0 0 24 24'
-                  >
-                    <circle
-                      className='opacity-25'
-                      cx='12'
-                      cy='12'
-                      r='10'
-                      stroke='currentColor'
-                      strokeWidth='4'
-                    />
-                    <path
-                      className='opacity-75'
-                      fill='currentColor'
-                      d='M4 12a8 8 0 018-8v8z'
-                    />
-                  </svg>
-                  analyzing...
-                </span>
+        <header className="space-y-2">
+          <h1 className="text-[28px] font-bold tracking-tight text-slate-900 sm:text-[30px]">
+            Dashboard
+          </h1>
+          <p className="text-[15px] text-[#7A7D9C]">
+            Alerts, spend pacing, and KPIs for the selected ad account.
+          </p>
+        </header>
+
+        <Card className="rounded-2xl border border-slate-200/90 bg-white py-0 shadow-md">
+          <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-3">
+              <GoogleAdsMark className="size-8 shrink-0" />
+              <div className="min-w-0">
+                <p className="truncate text-lg font-bold text-slate-900">
+                  {selectedAdsAccount?.["Account Name Editable"] || "—"}
+                </p>
+                <p className="text-[13px] tabular-nums text-slate-500">
+                  {selectedAdsAccount?.["Id"]
+                    ? formatAccountNumber(selectedAdsAccount["Id"])
+                    : ""}
+                </p>
+              </div>
+              {!adsLabel ? (
+                <Badge variant="secondary">Checking ads status</Badge>
+              ) : adsLabel["Is Showing Ads"] ? (
+                <Badge variant="success">Showing ads</Badge>
+              ) : (
+                <Badge variant="destructive">Not showing ads</Badge>
               )}
             </div>
-          </div>
-        </div>
+            {(spendMtdLoading ||
+              spendMtdIndicatorLoading ||
+              kpiDataLoading ||
+              currencySymbolLoading) && (
+              <span className="inline-flex items-center gap-2 rounded-xl bg-[#015AFD]/10 px-3 py-1.5 text-[13px] font-semibold text-[#015AFD]">
+                <svg className="size-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden>
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+                Analyzing…
+              </span>
+            )}
+          </CardContent>
+        </Card>
 
         <div
           className='flex w-full flex-col md:flex-row justify-between items-stretch gap-8 mb-6 md:flex-row md:gap-8'
