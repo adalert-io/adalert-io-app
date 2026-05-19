@@ -11,21 +11,19 @@ import {
   Pencil1Icon,
   InfoCircledIcon,
 } from '@radix-ui/react-icons';
-import { Filter, FileChartColumn, MailCheck } from 'lucide-react';
+import {
+  AlertTriangle as AlertTriangleIcon,
+  Filter,
+  FileChartColumn,
+  Info,
+  MailCheck,
+  TriangleAlert,
+} from 'lucide-react';
 import { useUserAdsAccountsStore } from '@/lib/store/user-ads-accounts-store';
 import { useDashboardStore } from '@/lib/store/dashboard-store';
 import { useAlertOptionSetsStore } from '@/lib/store/alert-option-sets-store';
 import * as React from 'react';
 import {
-  useReactTable,
-  getCoreRowModel,
-  getPaginationRowModel,
-  flexRender,
-  ColumnDef,
-} from '@tanstack/react-table';
-import {
-  ChevronDown,
-  ChevronUp,
   ChevronsLeft,
   ChevronsRight,
   ChevronLeft,
@@ -56,6 +54,9 @@ import { Badge } from '@/components/ui/badge';
 import { cn, formatAccountNumber } from '@/lib/utils';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+
+import { ConsumerDashboardAlertsTable } from './ConsumerDashboardAlertsTable';
+import { ConsumerDashboardMetricCard } from './ConsumerDashboardMetricCard';
 
 const KPI_PERIODS = [
   { label: '7 days vs. prior', key: '7' },
@@ -221,7 +222,7 @@ function KpiMetricsRow({
           return (
             <Card
               key={field.label}
-              className='rounded-xl border border-slate-200 bg-white py-2 shadow-sm'
+              className='rounded-xl border border-slate-200 bg-white py-0 shadow-sm'
             >
               <CardContent className='px-2 flex flex-col items-center'>
                 <span className='text-base font-bold text-gray-900'>
@@ -283,7 +284,6 @@ export function ConsumerDashboardView() {
   // Replace selectedRows with selectedAlertIds for better performance and to avoid infinite loops
   const [selectedAlertIds, setSelectedAlertIds] = useState<string[]>([]);
   const [pageSize, setPageSize] = React.useState(25);
-  const [expandedRowIds, setExpandedRowIds] = useState<string[]>([]);
   const [hasFetchedFirstAlerts, setHasFetchedFirstAlerts] = useState(false);
 
   // Auto-refresh alerts every 15 minutes
@@ -526,415 +526,6 @@ export function ConsumerDashboardView() {
   }, [searchValue]);
   const checkboxClass =
     'shadow-none border-[#c5c5c5] text-[#c5c5c5] data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600';
-  // Alerts Table Columns
-  const useAlertColumns = (
-    expandedRowIds: string[],
-    setExpandedRowIds: React.Dispatch<React.SetStateAction<string[]>>,
-  ): ColumnDef<any>[] => [
-    {
-      id: 'select',
-      header: ({ table }) => (
-        <Checkbox
-          checked={table.getIsAllPageRowsSelected()}
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label='Select all'
-          className={checkboxClass}
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label='Select row'
-          className={checkboxClass}
-        />
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: 'date',
-      header: 'Found',
-      cell: ({ row }) => {
-        const dateObj = row.original['Date Found']?.toDate?.();
-        const formatted = dateObj ? moment(dateObj).format('DD MMM') : '-';
-        return <span>{formatted}</span>;
-      },
-    },
-    {
-      accessorKey: 'severity',
-      header: 'Severity',
-      cell: ({ row }) => {
-        let color = ALERT_SEVERITY_COLORS.LOW; // default fallback
-
-        if (
-          row.original.Severity?.toLowerCase() ===
-          ALERT_SEVERITIES.CRITICAL.toLowerCase()
-        ) {
-          color = ALERT_SEVERITY_COLORS.CRITICAL;
-        } else if (
-          row.original.Severity?.toLowerCase() ===
-          ALERT_SEVERITIES.MEDIUM.toLowerCase()
-        ) {
-          color = ALERT_SEVERITY_COLORS.MEDIUM;
-        }
-
-        return (
-          <span
-            className='inline-block w-3 h-3 rounded-full'
-            style={{ backgroundColor: color }}
-          />
-        );
-      },
-    },
-
-    {
-      accessorKey: 'description',
-      header: 'Description',
-      cell: ({ row }) => <span>{row.original.Alert}</span>,
-    },
-    {
-      accessorKey: 'type',
-      header: 'Type',
-      cell: ({ row }) => <span>{row.original.Type}</span>,
-    },
-    {
-      accessorKey: 'level',
-      header: 'Level',
-      cell: ({ row }) => <span>{row.original.Level}</span>,
-    },
-    {
-      id: 'expand',
-      header: '',
-      cell: ({ row }) => {
-        const isExpanded = expandedRowIds.includes(row.id);
-        return (
-          <Button
-            variant='ghost'
-            size='icon'
-            onClick={() => {
-              setExpandedRowIds(isExpanded ? [] : [row.id]); // ✅ only 1 open at a time
-            }}
-          >
-            {isExpanded ? <ChevronUp /> : <ChevronDown />}
-          </Button>
-        );
-      },
-      enableSorting: false,
-      enableHiding: false,
-    },
-  ];
-
-  function AlertsDataTable({
-    pageSize,
-    setPageSize,
-    filteredAlerts,
-    selectedAlertIds,
-    setSelectedAlertIds,
-    expandedRowIds,
-    setExpandedRowIds,
-  }: {
-    pageSize: number;
-    setPageSize: React.Dispatch<React.SetStateAction<number>>;
-    filteredAlerts: any[];
-    selectedAlertIds: string[];
-    setSelectedAlertIds: React.Dispatch<React.SetStateAction<string[]>>;
-    expandedRowIds: string[];
-    setExpandedRowIds: React.Dispatch<React.SetStateAction<string[]>>;
-  }) {
-    const [pageIndex, setPageIndex] = React.useState(0);
-
-    const columns = React.useMemo(
-      () => useAlertColumns(expandedRowIds, setExpandedRowIds),
-      [expandedRowIds],
-    );
-
-    // Create a stable rowSelection object based on selectedAlertIds
-    const rowSelection = useMemo(() => {
-      const selection: Record<string, boolean> = {};
-      selectedAlertIds.forEach((id) => {
-        selection[id] = true;
-      });
-      return selection;
-    }, [selectedAlertIds]);
-
-    // Handle row selection changes from the table
-    const handleRowSelectionChange = React.useCallback(
-      (updater: any) => {
-        const newSelection =
-          typeof updater === 'function' ? updater(rowSelection) : updater;
-
-        // Convert the selection object to an array of selected IDs
-        const newSelectedIds = Object.keys(newSelection).filter(
-          (key) => newSelection[key],
-        );
-        // console.log('Row selection changed:', { newSelection, newSelectedIds })
-        setSelectedAlertIds(newSelectedIds);
-      },
-      [rowSelection, setSelectedAlertIds],
-    );
-
-    const table = useReactTable({
-      data: filteredAlerts,
-      columns,
-      getCoreRowModel: getCoreRowModel(),
-      getPaginationRowModel: getPaginationRowModel(),
-      state: {
-        pagination: {
-          pageIndex,
-          pageSize,
-        },
-        rowSelection,
-      },
-      onPaginationChange: (updater) => {
-        if (typeof updater === 'function') {
-          const next = updater({ pageIndex, pageSize });
-          setPageIndex(next.pageIndex);
-          setPageSize(next.pageSize);
-        } else {
-          if (updater.pageIndex !== undefined) {
-            setPageIndex(updater.pageIndex);
-          }
-          if (updater.pageSize !== undefined) {
-            setPageSize(updater.pageSize);
-          }
-        }
-      },
-      onRowSelectionChange: handleRowSelectionChange,
-      enableRowSelection: true,
-      pageCount: Math.ceil(filteredAlerts.length / pageSize),
-      // Use the alert ID as the row ID instead of the table's internal ID
-      getRowId: (row) => {
-        // Add safety check for row.original and id
-        if (!row.original) {
-          // console.warn('Row original is undefined:', row);
-          return row.id || Math.random().toString();
-        }
-        if (!row.original.id) {
-          // console.warn('Row original.id is undefined:', row.original);
-          return row.id || Math.random().toString();
-        }
-        return row.original.id;
-      },
-    });
-
-    return (
-      <div className='mt-6 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-md'>
-        <div className='overflow-x-auto'>
-          <table className='min-w-full'>
-            {/* Header */}
-            <thead className='border-b border-slate-100 bg-slate-50/80 text-[13px]'>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      className='px-4 py-3 text-left font-semibold text-slate-700'
-                    >
-                      {flexRender(
-                        header.column.columnDef.header,
-                        header.getContext(),
-                      )}
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-
-            {/* Body */}
-            <tbody className='divide-y divide-slate-100 text-[14px]'>
-              {table.getRowModel().rows.map((row) => (
-                <React.Fragment key={row.id}>
-                  <tr className='transition-colors hover:bg-slate-50/80'>
-                    {row.getVisibleCells().map((cell) => (
-                      <td
-                        key={cell.id}
-                        className={`px-4 py-3 text-gray-900 text-[.95rem] ${
-                          expandedRowIds.includes(row.id)
-                            ? 'font-medium'
-                            : 'font-normal'
-                        }`}
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-
-                  {expandedRowIds.includes(row.id) && (
-                    <tr className='bg-gray-50'>
-                      <td colSpan={columns.length} className='py-4 ps-20'>
-                        <div
-                          className='prose max-w-none text-sm'
-                          dangerouslySetInnerHTML={{
-                            __html: row.original['Long Description'] || '',
-                          }}
-                        />
-                      </td>
-                    </tr>
-                  )}
-                </React.Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Footer with pagination */}
-        <div className='flex flex-col items-center justify-between gap-4 border-t border-slate-100 bg-slate-50/50 px-6 py-4 sm:flex-row'>
-          {/* Showing text */}
-          <div className='text-[0.75rem] text-gray-600 font-medium'>
-            Showing{' '}
-            {table.getRowModel().rows.length > 0
-              ? table.getState().pagination.pageIndex *
-                  table.getState().pagination.pageSize +
-                1
-              : 0}{' '}
-            to{' '}
-            {Math.min(
-              (table.getState().pagination.pageIndex + 1) *
-                table.getState().pagination.pageSize,
-              table.getFilteredRowModel().rows.length,
-            )}{' '}
-            of {table.getFilteredRowModel().rows.length} results
-          </div>
-
-          {/* Pagination buttons */}
-          <div className='flex items-center gap-3 '>
-            {/* First */}
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={() => table.setPageIndex(0)}
-              disabled={!table.getCanPreviousPage()}
-              className='h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed'
-            >
-              <ChevronsLeft className='w-4 h-4' />
-            </Button>
-
-            {/* Prev */}
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-              className='h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed'
-            >
-              <ChevronLeft className='w-4 h-4' />
-            </Button>
-
-            {/* Page numbers */}
-            <div className='flex items-center gap-1'>
-              {(() => {
-                const maxVisiblePages = 5;
-                const page = table.getState().pagination.pageIndex + 1;
-                const totalPages = table.getPageCount();
-                const halfVisible = Math.floor(maxVisiblePages / 2);
-                let startPage = Math.max(1, page - halfVisible);
-                const endPage = Math.min(
-                  totalPages,
-                  startPage + maxVisiblePages - 1,
-                );
-
-                if (endPage - startPage + 1 < maxVisiblePages) {
-                  startPage = Math.max(1, endPage - maxVisiblePages + 1);
-                }
-
-                const pages = [];
-
-                if (startPage > 1) {
-                  pages.push(
-                    <Button
-                      key={1}
-                      variant={1 === page ? 'default' : 'outline'}
-                      size='sm'
-                      onClick={() => table.setPageIndex(0)}
-                      className='h-8 w-8 p-0 text-[0.75rem] font-medium'
-                    >
-                      1
-                    </Button>,
-                  );
-                  if (startPage > 2) {
-                    pages.push(
-                      <span
-                        key='ellipsis1'
-                        className='px-2 text-gray-400 text-[0.75rem]'
-                      >
-                        ...
-                      </span>,
-                    );
-                  }
-                }
-
-                for (let i = startPage; i <= endPage; i++) {
-                  pages.push(
-                    <Button
-                      key={i}
-                      variant={i === page ? 'default' : 'outline'}
-                      size='sm'
-                      onClick={() => table.setPageIndex(i - 1)}
-                      className='h-8 w-8 p-0 text-[0.75rem] font-medium'
-                    >
-                      {i}
-                    </Button>,
-                  );
-                }
-
-                if (endPage < totalPages) {
-                  if (endPage < totalPages - 1) {
-                    pages.push(
-                      <span
-                        key='ellipsis2'
-                        className='px-2 text-gray-400 text-[0.75rem]'
-                      >
-                        ...
-                      </span>,
-                    );
-                  }
-                  pages.push(
-                    <Button
-                      key={totalPages}
-                      variant={totalPages === page ? 'default' : 'outline'}
-                      size='sm'
-                      onClick={() => table.setPageIndex(totalPages - 1)}
-                      className='h-8 w-8 p-0 text-[0.75rem] font-medium'
-                    >
-                      {totalPages}
-                    </Button>,
-                  );
-                }
-
-                return pages;
-              })()}
-            </div>
-
-            {/* Next */}
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-              className='h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed'
-            >
-              <ChevronRight className='w-4 h-4' />
-            </Button>
-
-            {/* Last */}
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-              disabled={!table.getCanNextPage()}
-              className='h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed'
-            >
-              <ChevronsRight className='w-4 h-4' />
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   const alerts = useDashboardStore((state) => state.alerts);
 
@@ -1177,7 +768,7 @@ export function ConsumerDashboardView() {
               <GoogleAdsMark className="size-8 shrink-0" />
               <div className="min-w-0">
                 <p className="truncate text-lg font-bold text-slate-900">
-                  {selectedAdsAccount?.["Account Name Editable"] || "�"}
+                  {selectedAdsAccount?.["Account Name Editable"] || "?"}
                 </p>
                 <p className="text-[13px] tabular-nums text-slate-500">
                   {selectedAdsAccount?.["Id"]
@@ -1202,55 +793,39 @@ export function ConsumerDashboardView() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                 </svg>
-                Analyzing�
+                Analyzing?
               </span>
             )}
           </CardContent>
         </Card>
 
-        <div
-          className='flex w-full flex-col md:flex-row justify-between items-stretch gap-8 mb-6 md:flex-row md:gap-8'
-          style={{ minWidth: 0 }}
-        >
-          {/* Row 2: Cards in a row (Critical, Medium, Low, Spend MTD/Budget) */}
-          <div className='flex gap-4 flex-nowrap justify-center max-w-full h-full md:flex-wrap  lg:flex-wrap max-[767px]:pb-0 flex-nowrap max-[1211px]:justify-start flex'>
-            <Card className='h-[100px] w-full rounded-xl border border-slate-200 border-l-4 border-l-[#ED1A22] bg-white shadow-sm sm:w-64 md:w-[190px] max-[767px]:w-[32%] '>
-              <CardContent className='h-full flex flex-col items-center justify-center p-2'>
-                <span className='text-2xl font-bold text-gray-800'>
-                  {criticalCount}
-                </span>
-                <span className='text-sm font-semibold text-gray-800 mt-1'>
-                  Critical
-                </span>
-              </CardContent>
-            </Card>
-
-            <Card className='h-[100px] w-full rounded-xl border border-slate-200 border-l-4 border-l-[#FF8028] bg-white shadow-sm sm:w-64 md:w-[190px] max-[767px]:w-[32%]'>
-              <CardContent className='h-full flex flex-col items-center justify-center p-2'>
-                <span className='text-2xl font-bold text-gray-800'>
-                  {mediumCount}
-                </span>
-                <span className='text-sm font-semibold text-gray-800 mt-1'>
-                  Medium
-                </span>
-              </CardContent>
-            </Card>
-
-            <Card className='h-[100px] w-full rounded-xl border border-slate-200 border-l-4 border-l-[#ECE31B] bg-white shadow-sm sm:w-64 md:w-[190px] max-[767px]:w-[32%]'>
-              <CardContent className='h-full flex flex-col items-center justify-center p-2'>
-                <span className='text-2xl font-bold text-gray-800'>
-                  {lowCount}
-                </span>
-                <span className='text-sm font-semibold text-gray-800 mt-1'>
-                  Low
-                </span>
-              </CardContent>
-            </Card>
+        <section className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_500px] lg:items-start">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <ConsumerDashboardMetricCard
+              title="Critical alerts"
+              value={String(criticalCount)}
+              subtitle="Requires immediate action"
+              Icon={TriangleAlert}
+              accentClassName="bg-[#fecaca]/45 text-[#dc2626]"
+            />
+            <ConsumerDashboardMetricCard
+              title="Medium alerts"
+              value={String(mediumCount)}
+              subtitle="Review when possible"
+              Icon={AlertTriangleIcon}
+              accentClassName="bg-orange-100 text-orange-700"
+            />
+            <ConsumerDashboardMetricCard
+              title="Low alerts"
+              value={String(lowCount)}
+              subtitle="Informational items"
+              Icon={Info}
+              accentClassName="bg-[#bfdbfe]/45 text-[#1d4ed8]"
+            />
           </div>
 
-          <div className='flex flex-grow-0 flex-shrink-0 justify-end w-full md:w-auto mt-4 md:mt-0'>
-            {/* Spend MTD / Monthly Budget Card */}
-            <Card className='rounded-2xl border border-slate-200/90 bg-white shadow-md p-0 w-full  md:w-[500px] h-[175px] gap-2 flex flex-col justify-between custom-db'>
+          <div className="w-full lg:max-w-[500px]">
+            <Card className="flex h-[175px] w-full flex-col justify-between gap-2 rounded-2xl border border-slate-200/90 bg-white p-0 shadow-md custom-db">
               <div className='flex justify-between items-start px-6 pt-4'>
                 <div className='flex flex-col gap-1'>
                   <span className='text-xs text-[#7A7D9C] font-medium flex items-center gap-1'>
@@ -1394,7 +969,7 @@ export function ConsumerDashboardView() {
                 </div>
               </div>
 
-              {/* ✅ Progress bar section kept */}
+              {/* ??? Progress bar section kept */}
               <div className='relative px-6 mt-3' style={{ height: 60 }}>
                 {(() => {
                   const spend = Number(dashboardDaily?.['Spend MTD'] ?? 0);
@@ -1512,7 +1087,7 @@ export function ConsumerDashboardView() {
               </div>
             </Card>
           </div>
-        </div>
+        </section>
 
         {/* Metrics Row */}
         <KpiMetricsRow
@@ -1522,7 +1097,8 @@ export function ConsumerDashboardView() {
         />
         {/* Alerts Table */}
 
-        <div className='overflow-x-auto rounded-2xl border border-slate-200/90 bg-white p-4 shadow-md max-[991px]:block whitespace-nowrap'>
+        <section className="space-y-4">
+          <div className="overflow-x-auto rounded-2xl border border-slate-200/90 bg-white p-4 shadow-md max-[991px]:block whitespace-nowrap">
           <div className='flex flex-col gap-3 mb-2'>
             {/* Parent row: behaves like row on desktop, column on mobile */}
             <div className='flex justify-between items-center max-[599px]:flex-col max-[599px]:gap-3'>
@@ -1850,14 +1426,13 @@ export function ConsumerDashboardView() {
           </div>
 
           <div className='relative'>
-            <AlertsDataTable
+            <ConsumerDashboardAlertsTable
               pageSize={pageSize}
               setPageSize={setPageSize}
               filteredAlerts={filteredAlerts}
               selectedAlertIds={selectedAlertIds}
               setSelectedAlertIds={setSelectedAlertIds}
-              expandedRowIds={expandedRowIds}
-              setExpandedRowIds={setExpandedRowIds}
+              accountName={selectedAdsAccount?.["Account Name Editable"]}
             />
             {alertsLoading && (
               <div className='absolute inset-0 bg-white/50 flex items-center justify-center rounded-md'>
@@ -1890,6 +1465,7 @@ export function ConsumerDashboardView() {
             )}
           </div>
         </div>
+        </section>
 
         {/* Analysis Modal */}
         {isModalOpen && (
@@ -1904,8 +1480,8 @@ export function ConsumerDashboardView() {
                     <Image
                       src='/images/adalert-logo.avif'
                       alt='AdAlert Logo'
-                      width={22} // 👈 24 se 22
-                      height={22} // 👈 24 se 22
+                      width={22} // ???? 24 se 22
+                      height={22} // ???? 24 se 22
                       priority
                     />
                   
@@ -2147,7 +1723,7 @@ export function ConsumerDashboardView() {
                     {/* Footer with branding */}
                     <div className='bg-gray-50 p-4 rounded-lg border border-gray-200 text-center'>
                       <p className='text-xs text-gray-500'>
-                        Generated by adAlert.io AI •{' '}
+                        Generated by adAlert.io AI ???{' '}
                         {new Date().toLocaleDateString('en-US', {
                           year: 'numeric',
                           month: 'long',
