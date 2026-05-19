@@ -56,192 +56,10 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
 import { ConsumerDashboardAlertsTable } from './ConsumerDashboardAlertsTable';
+import { ConsumerKpiMetricsRow } from './ConsumerKpiMetricsRow';
 import { ConsumerDashboardMetricCard } from './ConsumerDashboardMetricCard';
+import { DASHBOARD_ALERT_SEVERITY_BORDER } from './dashboard-theme';
 
-const KPI_PERIODS = [
-  { label: '7 days vs. prior', key: '7' },
-  { label: '30 days vs. prior', key: '30' },
-  { label: '90 days vs. prior', key: '90' },
-];
-
-const KPI_FIELDS = [
-  {
-    label: 'CPC',
-    value: (d: Record<string, any>, k: string) => d?.[`cpc${k}`],
-    pct: (d: Record<string, any>, k: string) => d?.[`cpcPercentage${k}`],
-    pctRedIfPositive: true,
-    isMoney: true,
-  },
-  {
-    label: 'CTR',
-    value: (d: Record<string, any>, k: string) => d?.[`ctr${k}`],
-    pct: (d: Record<string, any>, k: string) => d?.[`ctrPercentage${k}`],
-    pctRedIfPositive: false,
-    isPercent: true,
-  },
-  {
-    label: 'CPA',
-    value: (d: Record<string, any>, k: string) => d?.[`cpa${k}`],
-    pct: (d: Record<string, any>, k: string) => d?.[`cpaPercentage${k}`],
-    pctRedIfPositive: true,
-    isMoney: true,
-  },
-  {
-    label: 'Conv.',
-    value: (d: Record<string, any>, k: string) => d?.[`conversions${k}`],
-    pct: (d: Record<string, any>, k: string) =>
-      d?.[`conversionsPercentage${k}`],
-    pctRedIfPositive: false,
-  },
-  {
-    label: 'Search IS',
-    value: (d: Record<string, any>, k: string) =>
-      d?.[`searchImpressionShare${k}`],
-    pct: (d: Record<string, any>, k: string) =>
-      d?.[`searchImpressionSharePercentage${k}`],
-    pctRedIfPositive: false,
-    isPercent: true,
-  },
-  {
-    label: 'Impr. Top',
-    value: (d: Record<string, any>, k: string) =>
-      d?.[`topImpressionPercentage${k}`],
-    pct: (d: Record<string, any>, k: string) =>
-      d?.[`topImpressionPercentagePercentage${k}`],
-    pctRedIfPositive: false,
-    isPercent: true,
-  },
-  {
-    label: 'Cost',
-    value: (d: Record<string, any>, k: string) => d?.[`costMicros${k}`],
-    pct: (d: Record<string, any>, k: string) => d?.[`costMicrosPercentage${k}`],
-    pctRedIfPositive: true,
-    isMoney: true,
-  },
-  {
-    label: 'Clicks',
-    value: (d: Record<string, any>, k: string) => d?.[`interactions${k}`],
-    pct: (d: Record<string, any>, k: string) =>
-      d?.[`interactionsPercentage${k}`],
-    pctRedIfPositive: false,
-  },
-  {
-    label: 'Invalid Clicks',
-    value: (d: Record<string, any>, k: string) => d?.[`invalidClicks${k}`],
-    pct: (d: Record<string, any>, k: string) =>
-      d?.[`invalidClicksPercentage${k}`],
-    pctRedIfPositive: true,
-  },
-  {
-    label: 'Impressions',
-    value: (d: Record<string, any>, k: string) => d?.[`impressions${k}`],
-    pct: (d: Record<string, any>, k: string) =>
-      d?.[`impressionsPercentage${k}`],
-    pctRedIfPositive: false,
-  },
-];
-
-function KpiMetricsRow({
-  dashboardDaily,
-  currencySymbol,
-}: {
-  dashboardDaily: Record<string, unknown> | null | undefined;
-  currencySymbol: string;
-}) {
-  const [activePeriod, setActivePeriod] = React.useState('7');
-
-  return (
-    <div
-      className='mb-6'
-    >
-      <div className='flex gap-2 mb-3'>
-        {KPI_PERIODS.map((p) => (
-          <button
-            key={p.key}
-            type='button'
-            className={`px-4 py-2 rounded-lg font-semibold border transition-colors text-base cursor-pointer ${
-              activePeriod === p.key
-                ? 'bg-[#015AFD] text-white border-[#015AFD]'
-                : 'bg-white text-[#015AFD] border-[#015AFD] hover:bg-blue-50'
-            }`}
-            onClick={() => setActivePeriod(p.key)}
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
-      <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-3'>
-        {KPI_FIELDS.map((field) => {
-          const daily = dashboardDaily ?? {};
-          let value = field.value(daily, activePeriod);
-          let pct = field.pct(daily, activePeriod);
-          let pctColor = 'text-black';
-          if (value === null || value === undefined || value === 0) {
-            value = 0;
-            pct = 0;
-          }
-          if (pct !== 0) {
-            if (field.pctRedIfPositive) {
-              pctColor =
-                pct > 0
-                  ? 'text-red-600'
-                  : pct < 0
-                  ? 'text-green-600'
-                  : 'text-black';
-            } else {
-              pctColor =
-                pct > 0
-                  ? 'text-green-600'
-                  : pct < 0
-                  ? 'text-red-600'
-                  : 'text-black';
-            }
-          }
-          let valueDisplay = value;
-          if (field.isMoney) {
-            valueDisplay = `${currencySymbol}${Number(value).toLocaleString(
-              'en-US',
-              { minimumFractionDigits: 2, maximumFractionDigits: 2 },
-            )}`;
-          } else if (field.isPercent) {
-            valueDisplay = `${Number(value).toLocaleString('en-US', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}%`;
-          } else {
-            valueDisplay = Number(value).toLocaleString('en-US');
-          }
-          let pctDisplay =
-            pct === 0
-              ? '0%'
-              : `${pct > 0 ? '+' : ''}${Number(pct).toLocaleString('en-US', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}%`;
-
-          return (
-            <Card
-              key={field.label}
-              className='rounded-xl border border-slate-200 bg-white py-0 shadow-sm'
-            >
-              <CardContent className='px-2 flex flex-col items-center'>
-                <span className='text-base font-bold text-gray-900'>
-                  {valueDisplay}
-                </span>
-                <span className='text-xs font-semibold text-gray-900'>
-                  {field.label}
-                </span>
-                <span className={`text-xs font-semibold ${pctColor}`}>
-                  {pctDisplay}
-                </span>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 export function ConsumerDashboardView() {
   const { user, userDoc } = useAuthStore();
@@ -807,6 +625,7 @@ export function ConsumerDashboardView() {
               subtitle="Requires immediate action"
               Icon={TriangleAlert}
               accentClassName="bg-[#fecaca]/45 text-[#dc2626]"
+              bottomBorderColor={DASHBOARD_ALERT_SEVERITY_BORDER.critical}
             />
             <ConsumerDashboardMetricCard
               title="Medium alerts"
@@ -814,6 +633,7 @@ export function ConsumerDashboardView() {
               subtitle="Review when possible"
               Icon={AlertTriangleIcon}
               accentClassName="bg-orange-100 text-orange-700"
+              bottomBorderColor={DASHBOARD_ALERT_SEVERITY_BORDER.medium}
             />
             <ConsumerDashboardMetricCard
               title="Low alerts"
@@ -821,6 +641,7 @@ export function ConsumerDashboardView() {
               subtitle="Informational items"
               Icon={Info}
               accentClassName="bg-[#bfdbfe]/45 text-[#1d4ed8]"
+              bottomBorderColor={DASHBOARD_ALERT_SEVERITY_BORDER.low}
             />
           </div>
 
@@ -1089,11 +910,9 @@ export function ConsumerDashboardView() {
           </div>
         </section>
 
-        {/* Metrics Row */}
-        <KpiMetricsRow
+        <ConsumerKpiMetricsRow
           dashboardDaily={dashboardDaily}
-          currencySymbol={selectedAdsAccount?.['Currency Symbol'] || '$'}
-          
+          currencySymbol={selectedAdsAccount?.["Currency Symbol"] || "$"}
         />
         {/* Alerts Table */}
 

@@ -11,6 +11,8 @@ interface ConsumerDashboardMetricCardProps {
   subtitle?: string;
   Icon: LucideIcon;
   accentClassName?: string;
+  /** 2px bottom accent — matches classic dashboard severity colors */
+  bottomBorderColor?: string;
 }
 
 export function ConsumerDashboardMetricCard({
@@ -19,9 +21,16 @@ export function ConsumerDashboardMetricCard({
   subtitle,
   Icon,
   accentClassName,
+  bottomBorderColor,
 }: ConsumerDashboardMetricCardProps) {
   return (
-    <Card className="flex min-h-[132px] justify-center gap-0 rounded-xl border border-slate-200 bg-white py-0 shadow-sm">
+    <Card
+      className={cn(
+        "flex min-h-[132px] justify-center gap-0 rounded-xl border border-slate-200 bg-white py-0 shadow-sm",
+        bottomBorderColor && "border-b-2",
+      )}
+      style={bottomBorderColor ? { borderBottomColor: bottomBorderColor } : undefined}
+    >
       <CardContent className="flex flex-1 items-center justify-between gap-4 px-6 py-5">
         <div className="min-w-0 space-y-1">
           <p className="text-muted-foreground text-sm font-medium">{title}</p>
