@@ -53,15 +53,29 @@ export function paginationSlots(
   ];
 }
 
+export function getConnectedAccounts(
+  accounts: SummaryAdsAccount[],
+): SummaryAdsAccount[] {
+  return accounts.filter((a) => a.isConnected);
+}
+
 export function computeSummaryKpis(accounts: SummaryAdsAccount[]) {
-  const connected = accounts.filter((a) => a.isConnected);
+  const connected = getConnectedAccounts(accounts);
   const criticalAlerts = connected.reduce((sum, a) => sum + a.impact.critical, 0);
   const notShowingAds = connected.filter((a) => a.showingAds === false).length;
 
   return {
-    total: accounts.length,
+    total: connected.length,
     connected: connected.length,
     criticalAlerts,
     notShowingAds,
   };
+}
+
+export function sortConnectedAccountsByName(
+  accounts: SummaryAdsAccount[],
+): SummaryAdsAccount[] {
+  return [...accounts].sort((a, b) =>
+    String(a.accountName ?? "").localeCompare(String(b.accountName ?? "")),
+  );
 }

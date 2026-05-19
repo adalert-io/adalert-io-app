@@ -48,8 +48,10 @@ import { cn, formatAccountNumber } from "@/lib/utils";
 
 import {
   computeSummaryKpis,
+  getConnectedAccounts,
   getPacingDotColor,
   paginationSlots,
+  sortConnectedAccountsByName,
 } from "./helpers";
 
 const SELECT_CLASS =
@@ -226,7 +228,7 @@ export function ConsumerSummaryView() {
   }, [search]);
 
   const connectedAccounts = useMemo(
-    () => accounts.filter((a) => a.isConnected),
+    () => sortConnectedAccountsByName(getConnectedAccounts(accounts)),
     [accounts],
   );
 
@@ -314,7 +316,7 @@ export function ConsumerSummaryView() {
         <SummaryMetricCard
           title="Total accounts"
           value={String(kpis.total)}
-          subtitle="Linked to your workspace"
+          subtitle="Connected ad accounts"
           Icon={LayoutGrid}
           accentClassName="bg-[#3b82f6]/10 text-[#2563eb]"
         />
@@ -448,7 +450,7 @@ export function ConsumerSummaryView() {
                       colSpan={5}
                       className="py-16 text-center text-[14px] text-slate-500"
                     >
-                      No connected accounts match your search.
+                      No accounts match your search.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -489,7 +491,7 @@ export function ConsumerSummaryView() {
             <p className="text-[13px] font-medium text-slate-600">
               {filteredAccounts.length === 0
                 ? "No accounts to display."
-                : `Showing ${sliceStart + 1} to ${Math.min(safePage * pageSize, filteredAccounts.length)} of ${filteredAccounts.length} connected accounts`}
+                : `Showing ${sliceStart + 1} to ${Math.min(safePage * pageSize, filteredAccounts.length)} of ${filteredAccounts.length} accounts`}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2">
               <Button
