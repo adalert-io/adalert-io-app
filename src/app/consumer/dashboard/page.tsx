@@ -1,7 +1,5 @@
-"use client";
-
-import Dashboard from "@/app/dashboard/Dashboard";
+import { ConsumerDashboardView } from "@/features/consumer/dashboard";
 
 export default function ConsumerDashboardPage() {
-  return <Dashboard embedded />;
+  return <ConsumerDashboardView />;
 }
