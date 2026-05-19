@@ -14,7 +14,6 @@ import {
   Info,
   LayoutGrid,
   Loader2,
-  RefreshCw,
   Search,
   X,
 } from "lucide-react";
@@ -39,7 +38,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { AdminDashboardDateRangePicker } from "@/features/administrator/dashboard/AdminDashboardDateRangePicker";
 import { consumerPathForClassicRoute } from "@/lib/consumer-shell-preference";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { ALERT_SEVERITY_COLORS } from "@/lib/constants";
@@ -52,6 +50,7 @@ import {
   getPacingDotColor,
   paginationSlots,
   sortConnectedAccountsByName,
+  SUMMARY_AUTO_REFRESH_MS,
 } from "./helpers";
 
 const SELECT_CLASS =
@@ -193,7 +192,7 @@ function SummaryLoadingState({ label }: { label: string }) {
 
 export function ConsumerSummaryView() {
   const router = useRouter();
-  const { userDoc } = useAuthStore();
+  const { user, userDoc } = useAuthStore();
   const {
     accounts,
     allAdsAccounts,
@@ -209,18 +208,18 @@ export function ConsumerSummaryView() {
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    if (userDoc) {
+    if (user && userDoc) {
       void fetchSummaryAccounts(userDoc);
     }
-  }, [userDoc, fetchSummaryAccounts]);
+  }, [user, userDoc, fetchSummaryAccounts]);
 
   useEffect(() => {
-    if (!userDoc) return;
+    if (!user || !userDoc) return;
     const interval = setInterval(() => {
       void fetchSummaryAccounts(userDoc);
-    }, 900_000);
+    }, SUMMARY_AUTO_REFRESH_MS);
     return () => clearInterval(interval);
-  }, [userDoc, fetchSummaryAccounts]);
+  }, [user, userDoc, fetchSummaryAccounts]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 400);
@@ -266,50 +265,26 @@ export function ConsumerSummaryView() {
     [allAdsAccounts, router, setSelectedAdsAccount],
   );
 
-  const handleRefresh = () => {
-    if (userDoc) {
-      void fetchSummaryAccounts(userDoc);
-    }
-  };
-
   if (summaryLoading && accounts.length === 0) {
     return <SummaryLoadingState label="Loading ad accounts…" />;
   }
 
   return (
     <div className="mx-auto flex w-full max-w-[1480px] flex-1 flex-col gap-8 pb-8">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div className="max-w-xl space-y-2">
-          <h1 className="text-[28px] font-bold tracking-tight text-slate-900 sm:text-[30px]">
-            Ad accounts
-          </h1>
-          <p className="text-[15px] text-[#7A7D9C]">
-            Prioritized by impact — start at the top and work down. Open an account
-            to view its dashboard.
+      <header className="max-w-xl space-y-2">
+        <h1 className="text-[28px] font-bold tracking-tight text-slate-900 sm:text-[30px]">
+          Ad accounts
+        </h1>
+        <p className="text-[15px] text-[#7A7D9C]">
+          Prioritized by impact — start at the top and work down. Open an account
+          to view its dashboard.
+        </p>
+        {isRefreshing ? (
+          <p className="inline-flex items-center gap-2 text-[13px] font-medium text-[#015AFD]">
+            <Loader2 className="size-3.5 animate-spin" aria-hidden />
+            Refreshing account data…
           </p>
-          {isRefreshing ? (
-            <p className="inline-flex items-center gap-2 text-[13px] font-medium text-[#015AFD]">
-              <Loader2 className="size-3.5 animate-spin" aria-hidden />
-              Refreshing account data…
-            </p>
-          ) : null}
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <AdminDashboardDateRangePicker />
-          <Button
-            type="button"
-            variant="outline"
-            className="gap-2 rounded-xl border-slate-200 bg-white shadow-sm"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
-            <RefreshCw
-              className={cn("size-4", isRefreshing && "animate-spin")}
-              aria-hidden
-            />
-            Refresh
-          </Button>
-        </div>
+        ) : null}
       </header>
 
       <section className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">

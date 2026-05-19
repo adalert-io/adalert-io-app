@@ -1,5 +1,8 @@
 import type { SummaryAdsAccount } from "@/app/summary/summary-store";
 
+/** Matches legacy `/summary` auto-refresh interval (15 minutes). */
+export const SUMMARY_AUTO_REFRESH_MS = 900_000;
+
 export function getPacingDotColor(key: string | null): string {
   if (
     [
