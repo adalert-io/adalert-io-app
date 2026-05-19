@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ChevronDown, LogOut, Menu, User, X } from "lucide-react";
 import type { ReactNode } from "react";
 import * as React from "react";
@@ -18,6 +18,8 @@ import {
 import { useAuthStore } from "@/lib/store/auth-store";
 import { cn } from "@/lib/utils";
 
+import { ConsumerAdsAccountSwitcher } from "./ConsumerAdsAccountSwitcher";
+import { ConsumerKBar, ConsumerKBarTrigger } from "./ConsumerKBar";
 import {
   consumerBreadcrumbs,
   consumerLeafMatches,
@@ -25,6 +27,7 @@ import {
   type ConsumerNavItem,
   type ConsumerNavLeaf,
 } from "./consumer-console-nav";
+import { useUserAdsAccountsStore } from "@/lib/store/user-ads-accounts-store";
 
 function ConsumerSidebarBrand({ className }: { className?: string }) {
   return (
@@ -189,14 +192,44 @@ function displayInitials(name: string | undefined, email: string | undefined): s
 
 export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
   const pathname = usePathname() ?? "/consumer/summary";
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const crumbs = consumerBreadcrumbs(pathname);
   const { user, userDoc, logout } = useAuthStore();
+  const {
+    userAdsAccounts,
+    selectedAdsAccount,
+    setSelectedAdsAccount,
+    fetchUserAdsAccounts,
+  } = useUserAdsAccountsStore();
+
+  const connectedAccountCount = userAdsAccounts.length;
 
   const navGroups = React.useMemo(
-    () => consumerNavGroupsForUser(userDoc?.["User Type"] as string | undefined),
-    [userDoc],
+    () =>
+      consumerNavGroupsForUser(
+        userDoc?.["User Type"] as string | undefined,
+        connectedAccountCount,
+      ),
+    [userDoc, connectedAccountCount],
   );
+
+  React.useEffect(() => {
+    if (!userDoc) return;
+    if (userAdsAccounts.length === 0) {
+      void fetchUserAdsAccounts(userDoc);
+      return;
+    }
+    if (userAdsAccounts.length === 1 && !selectedAdsAccount) {
+      setSelectedAdsAccount(userAdsAccounts[0]);
+    }
+  }, [
+    userDoc,
+    userAdsAccounts,
+    selectedAdsAccount,
+    fetchUserAdsAccounts,
+    setSelectedAdsAccount,
+  ]);
 
   const displayName =
     userDoc?.Name || user?.displayName || user?.email?.split("@")[0] || "Account";
@@ -210,7 +243,18 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
     setMobileOpen(false);
   }, [pathname]);
 
+  React.useEffect(() => {
+    if (
+      pathname === "/consumer/dashboard" &&
+      connectedAccountCount > 1 &&
+      !selectedAdsAccount
+    ) {
+      router.replace("/consumer/summary");
+    }
+  }, [pathname, connectedAccountCount, selectedAdsAccount, router]);
+
   return (
+    <ConsumerKBar>
     <div className="flex min-h-svh w-full bg-[#f8fafc]">
       <div
         className={cn(
@@ -230,21 +274,24 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
       >
         <header
           className={cn(
-            "flex shrink-0 items-start gap-3 border-b border-white/[0.08] pb-8 pt-7",
+            "flex shrink-0 flex-col gap-4 border-b border-white/[0.08] pb-6 pt-7",
             SIDEBAR_GUTTER,
           )}
         >
-          <div className="min-w-0 flex-1">
-            <ConsumerSidebarBrand />
+          <div className="flex items-start gap-3">
+            <div className="min-w-0 flex-1">
+              <ConsumerSidebarBrand />
+            </div>
+            <button
+              type="button"
+              aria-label="Close menu"
+              onClick={() => setMobileOpen(false)}
+              className="-mt-1 -me-2 shrink-0 rounded-lg p-2 text-[#94a3b8] hover:bg-white/10 hover:text-white lg:hidden"
+            >
+              <X className="size-5" />
+            </button>
           </div>
-          <button
-            type="button"
-            aria-label="Close menu"
-            onClick={() => setMobileOpen(false)}
-            className="-mt-1 -me-2 shrink-0 rounded-lg p-2 text-[#94a3b8] hover:bg-white/10 hover:text-white lg:hidden"
-          >
-            <X className="size-5" />
-          </button>
+          <ConsumerAdsAccountSwitcher />
         </header>
 
         <nav
@@ -360,6 +407,8 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
               ))}
             </ol>
           </nav>
+
+          <ConsumerKBarTrigger />
         </div>
 
         <main className="relative flex min-w-0 flex-1 flex-col overflow-x-hidden">
@@ -367,5 +416,6 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
         </main>
       </div>
     </div>
+    </ConsumerKBar>
   );
 }

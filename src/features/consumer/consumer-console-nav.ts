@@ -37,18 +37,32 @@ const ACCOUNT_LEAVES: ConsumerNavLeaf[] = [
   { title: "Company Details", href: "/consumer/settings/account/company-details" },
 ];
 
-export function consumerNavGroupsForUser(userType: string | undefined): ConsumerNavGroup[] {
+export function consumerNavGroupsForUser(
+  userType: string | undefined,
+  connectedAccountCount: number,
+): ConsumerNavGroup[] {
   const isManager = userType === "Manager";
   const orgLeaves = isManager
     ? ORG_LEAVES.filter((l) => l.title === "Alerts")
     : ORG_LEAVES;
 
+  const primaryItems: ConsumerNavItem[] = [
+    { title: "Summary", href: "/consumer/summary", icon: ListTree },
+  ];
+
+  if (connectedAccountCount === 1) {
+    primaryItems.push({
+      title: "Dashboard",
+      href: "/consumer/dashboard",
+      icon: LayoutDashboard,
+    });
+  }
+
   return [
     {
       label: "",
       items: [
-        { title: "Summary", href: "/consumer/summary", icon: ListTree },
-        { title: "Dashboard", href: "/consumer/dashboard", icon: LayoutDashboard },
+        ...primaryItems,
         {
           title: "Organization",
           icon: Bell,
