@@ -1,16 +1,11 @@
-'use client';
+﻿'use client';
 
 import { useAuthStore } from '@/lib/store/auth-store';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  FileIcon,
-  MagnifyingGlassIcon,
-  Pencil1Icon,
-  InfoCircledIcon,
-} from '@radix-ui/react-icons';
+import { FileIcon, MagnifyingGlassIcon } from '@radix-ui/react-icons';
 import {
   AlertTriangle as AlertTriangleIcon,
   Filter,
@@ -58,6 +53,7 @@ import { usePathname } from 'next/navigation';
 import { ConsumerDashboardAlertsTable } from './ConsumerDashboardAlertsTable';
 import { ConsumerKpiMetricsRow } from './ConsumerKpiMetricsRow';
 import { ConsumerDashboardMetricCard } from './ConsumerDashboardMetricCard';
+import { ConsumerSpendBudgetCard } from './ConsumerSpendBudgetCard';
 import { DASHBOARD_ALERT_SEVERITY_BORDER } from './dashboard-theme';
 
 
@@ -414,14 +410,6 @@ export function ConsumerDashboardView() {
     (a) => a.Severity === ALERT_SEVERITIES.LOW,
   ).length;
 
-  const budgetInputRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    if (isEditingBudget && budgetInputRef.current) {
-      budgetInputRef.current.focus();
-    }
-  }, [isEditingBudget]);
-
   // Add a helper to format date
   function formatDate(date: any) {
     if (!date) return '';
@@ -571,15 +559,6 @@ export function ConsumerDashboardView() {
   return (
     <div className="min-h-0 flex-1">
       <main className="mx-auto flex w-full max-w-[1480px] flex-1 flex-col gap-8 pb-8">
-        <header className="space-y-2">
-          <h1 className="text-[28px] font-bold tracking-tight text-slate-900 sm:text-[30px]">
-            Dashboard
-          </h1>
-          <p className="text-[15px] text-[#7A7D9C]">
-            Alerts, spend pacing, and KPIs for the selected ad account.
-          </p>
-        </header>
-
         <Card className="rounded-2xl border border-slate-200/90 bg-white py-0 shadow-md">
           <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-3">
@@ -645,268 +624,22 @@ export function ConsumerDashboardView() {
             />
           </div>
 
-          <div className="w-full lg:max-w-[500px]">
-            <Card className="flex h-[175px] w-full flex-col justify-between gap-2 rounded-2xl border border-slate-200/90 bg-white p-0 shadow-md custom-db">
-              <div className='flex justify-between items-start px-6 pt-4'>
-                <div className='flex flex-col gap-1'>
-                  <span className='text-xs text-[#7A7D9C] font-medium flex items-center gap-1'>
-                    Spend MTD
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          type='button'
-                          className='ml-1 p-0.5 rounded hover:bg-[#E3E8F0] transition-colors'
-                          aria-label='Spend MTD information'
-                          tabIndex={0}
-                        >
-                          <AlertTriangle className='w-3 h-3 text-[#7A7D9C]' />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent
-                        side='top'
-                        align='center'
-                        className='max-w-xs text-xs'
-                      >
-                        The actual amount can differ between users' dashboards
-                        based on API call times and could be different from what
-                        you see on the ads account, with up to a few hours'
-                        difference.
-                      </TooltipContent>
-                    </Tooltip>
-                  </span>
-                  <div className='flex items-center gap-2 mt-1'>
-                    <span className='text-[16px] leading-none font-bold text-[#232360] sm:text-[20px]'>
-                      {spendMtdLoading
-                        ? '--'
-                        : dashboardDaily?.['Spend MTD'] != null
-                        ? `${
-                            selectedAdsAccount?.['Currency Symbol'] || '$'
-                          }${Number(dashboardDaily['Spend MTD']).toLocaleString(
-                            'en-US',
-
-                            {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            },
-                          )}`
-                        : '--'}
-                    </span>
-                    <span className='ml-1 mt-1'>
-                      {(() => {
-                        const key =
-                          dashboardDaily?.['Spend MTD Indicator Alert']?.[
-                            'Key'
-                          ];
-                        let color = '#1BC47D'; // green default
-
-                        if (
-                          [
-                            'AccountIsOverPacing33PercentToDate',
-                            'AccountIsUnderPacing33PercentToDate',
-                          ].includes(key)
-                        )
-                          color = '#EDE41B';
-                        if (
-                          [
-                            'AccountIsOverPacing50PercentToDate',
-                            'AccountIsUnderPacing50PercentToDate',
-                          ].includes(key)
-                        )
-                          color = '#FF7F26';
-                        if (
-                          [
-                            'AccountIsOverPacing75PercentToDate',
-                            'AccountIsUnderPacing75PercentToDate',
-                          ].includes(key)
-                        )
-                          color = '#EE1B23';
-                        return (
-                          <span
-                            className='inline-block w-3 h-3 rounded-full'
-                            style={{ background: color }}
-                          />
-                        );
-                      })()}
-                    </span>
-                  </div>
-                </div>
-                <div className='flex flex-col items-end gap-1'>
-                  <span className='text-xs text-[#7A7D9C] font-medium flex items-center gap-1'>
-                    Monthly Budget
-                  </span>
-                  <div className='flex items-center gap-1 mt-1 flex flex-col sm:flex-row'>
-                    {isEditingBudget ? (
-                      <>
-                        <Button
-                          className='p-4 bg-[#156CFF] hover:bg-[#156CFF]/90 text-white font-semibold px-4 py-0.5 rounded-md text-xs h-6 min-w-[50px]'
-                          onClick={handleConfirmBudget}
-                          disabled={
-                            isUpdatingBudget ||
-                            !budgetInput ||
-                            Number(budgetInput) < 0
-                          }
-                        >
-                          Confirm
-                        </Button>
-                        <input
-                          ref={budgetInputRef}
-                          type='number'
-                          min={0}
-                          className='ml-2 border border-[#E3E8F0] rounded-md px-2 py-1 text-sm font-bold text-right w-28 outline-none focus:border-blue-400 h-7'
-                          value={budgetInput}
-                          onChange={(e) =>
-                            setBudgetInput(
-                              e.target.value.replace(/[^0-9.]/g, ''),
-                            )
-                          }
-                          disabled={isUpdatingBudget}
-                        />
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          type='button'
-                          className='p-0.5 rounded hover:bg-[#E3E8F0] transition-colors'
-                          aria-label='Edit budget'
-                          onClick={handleEditBudget}
-                        >
-                          {/* Pencil icon in blue (#156CFF) */}
-                          <Pencil1Icon className='w-4 h-4 text-[#156CFF]' />
-                        </button>
-                        <span className='text-[16px] leading-none font-bold text-[#232360] sm:text-[20px]'>
-                          {selectedAdsAccount?.['Currency Symbol'] || '$'}
-                          {selectedAdsAccount?.['Monthly Budget'] != null
-                            ? Number(
-                                selectedAdsAccount['Monthly Budget'],
-                              ).toLocaleString('en-US', {
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0,
-                              })
-                            : '--'}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* ??? Progress bar section kept */}
-              <div className='relative px-6 mt-3' style={{ height: 60 }}>
-                {(() => {
-                  const spend = Number(dashboardDaily?.['Spend MTD'] ?? 0);
-                  const budget = Number(
-                    selectedAdsAccount?.['Monthly Budget'] ?? 1,
-                  );
-                  const percent = budget
-                    ? Math.min((spend / budget) * 100, 100)
-                    : 0;
-                  const percentText = budget ? (spend / budget) * 100 : 0;
-                  const now = moment();
-                  const day = now.date();
-                  const daysInMonth = now.daysInMonth();
-                  const dayPercent = (day / daysInMonth) * 100;
-                  return (
-                    <div className='relative w-full h-6 flex items-center'>
-                      {/* Background */}
-                      <div className='absolute left-0 top-1/2 -translate-y-1/2 w-full h-6 rounded-full bg-white border border-[#E3E8F0]' />
-                      {/* Fill */}
-                      <div
-                        className='absolute left-0 top-1/2 -translate-y-1/2 h-6 rounded-full bg-[#156CFF]'
-                        style={{
-                          width: `${percent}%`,
-                          minWidth: percent > 0 ? 8 : 0,
-                        }}
-                      />
-                      {/* Percentage text */}
-                      {percent < 15 ? (
-                        <span
-                          className='absolute top-0 left-0 h-6 flex items-center text-black text-xs font-semibold select-none'
-                          style={{ left: `calc(${percent}% + 8px)` }}
-                        >
-                          {percentText.toFixed(1)}%
-                        </span>
-                      ) : (
-                        <span
-                          className='absolute top-0 h-6 flex items-center text-white text-xs font-semibold select-none'
-                          style={{
-                            left: `calc(${percent / 2}% )`,
-                            transform: 'translateX(-50%)',
-                          }}
-                        >
-                          {percentText.toFixed(1)}%
-                        </span>
-                      )}
-                      {/* Current day marker */}
-                      <div
-                        className='absolute top-1 h-4'
-                        style={{ left: `calc(${dayPercent}% - 1px)` }}
-                      >
-                        <div className='w-0.5 h-4 bg-[#7A7D9C] rounded' />
-                      </div>
-                      {/* Day label */}
-                      <div
-                        className='absolute left-0'
-                        style={{ top: 24, width: '100%' }}
-                      >
-                        <div
-                          style={{
-                            position: 'absolute',
-                            left:
-                              dayPercent > 93
-                                ? 'calc(100% - 48px)'
-                                : `calc(${dayPercent}% - 12px)`,
-                          }}
-                        >
-                          <span className='text-[13px] text-[#7A7D9C] font-semibold select-none'>
-                            {day}
-                          </span>
-                          <span className='text-[11px] text-[#7A7D9C] font-semibold select-none ml-1'>
-                            days
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-
-              {/* Spend Projection */}
-              <div className='flex justify-end items-end px-6 pb-3 pt-1'>
-                <span className='text-xs text-[#7A7D9C] font-medium flex items-center gap-1'>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        type='button'
-                        className='p-0.5 rounded hover:bg-gray-100 transition-colors'
-                        aria-label='Spend projection information'
-                      >
-                        <InfoCircledIcon className='w-3 h-3 text-blue-500' />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side='top'
-                      align='center'
-                      className='max-w-xs text-xs'
-                    >
-                      Spend projections improve from the second day of the month
-                      onward and get more accurate as the month progresses.
-                    </TooltipContent>
-                  </Tooltip>
-                  Spend Projection :{' '}
-                  {selectedAdsAccount?.['Currency Symbol'] || '$'}
-                  {(() => {
-                    const spend = Number(dashboardDaily?.['Spend MTD'] ?? 0);
-                    const now = moment();
-                    const day = now.date();
-                    const projection = day ? (spend / day) * 30.4 : 0;
-                    return projection.toLocaleString('en-US', {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    });
-                  })()}
-                </span>
-              </div>
-            </Card>
+          <div className="w-full lg:max-w-[520px]">
+            <ConsumerSpendBudgetCard
+              currencySymbol={selectedAdsAccount?.["Currency Symbol"] || "$"}
+              spendMtd={dashboardDaily?.["Spend MTD"] as number | null | undefined}
+              spendMtdLoading={spendMtdLoading}
+              spendMtdIndicatorKey={
+                dashboardDaily?.["Spend MTD Indicator Alert"]?.["Key"] as string | undefined
+              }
+              monthlyBudget={selectedAdsAccount?.["Monthly Budget"] as number | null | undefined}
+              isEditingBudget={isEditingBudget}
+              budgetInput={budgetInput}
+              isUpdatingBudget={isUpdatingBudget}
+              onEditBudget={handleEditBudget}
+              onConfirmBudget={handleConfirmBudget}
+              onBudgetInputChange={setBudgetInput}
+            />
           </div>
         </section>
 
