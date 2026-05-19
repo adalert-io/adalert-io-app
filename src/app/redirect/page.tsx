@@ -207,7 +207,9 @@ function RedirectPageContent() {
             let targetPath = '/dashboard';
             
             // Check if user came from add-ads-account page - if so, redirect back there
-            if (page === 'add-ads-account' || page === 'add-ads-account-from-settings') {
+            if (page === 'add-ads-account-consumer') {
+              targetPath = '/consumer/summary?addAccount=open';
+            } else if (page === 'add-ads-account' || page === 'add-ads-account-from-settings') {
               targetPath = '/add-ads-account';
             } else if (userDoc) {
               // Build Firestore query for Ads Account collection

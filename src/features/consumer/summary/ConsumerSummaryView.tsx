@@ -17,7 +17,7 @@ import {
   Search,
   X,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import type { SummaryAdsAccount } from "@/app/summary/summary-store";
 import { useSummaryStore } from "@/app/summary/summary-store";
@@ -43,6 +43,12 @@ import { useAuthStore } from "@/lib/store/auth-store";
 import { ALERT_SEVERITY_COLORS } from "@/lib/constants";
 import { useUserAdsAccountsStore } from "@/lib/store/user-ads-accounts-store";
 import { cn, formatAccountNumber } from "@/lib/utils";
+
+import {
+  ConsumerAddAdsAccountDialog,
+  ConsumerAddAdsAccountTrigger,
+  CONSUMER_ADD_ACCOUNT_QUERY,
+} from "@/features/consumer/add-ads-account/ConsumerAddAdsAccountDialog";
 
 import {
   computeSummaryKpis,
@@ -192,6 +198,7 @@ function SummaryLoadingState({ label }: { label: string }) {
 
 export function ConsumerSummaryView() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, userDoc } = useAuthStore();
   const {
     accounts,
@@ -206,6 +213,30 @@ export function ConsumerSummaryView() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [pageSize, setPageSize] = useState(25);
   const [page, setPage] = useState(1);
+  const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
+
+  useEffect(() => {
+    const shouldOpenFromQuery =
+      searchParams.get(CONSUMER_ADD_ACCOUNT_QUERY) === "open";
+    const shouldOpenFromStorage =
+      typeof window !== "undefined" &&
+      sessionStorage.getItem("consumerAddAdsAccountDialog") === "1";
+
+    if (!shouldOpenFromQuery && !shouldOpenFromStorage) return;
+
+    setIsAddAccountOpen(true);
+
+    if (shouldOpenFromStorage) {
+      sessionStorage.removeItem("consumerAddAdsAccountDialog");
+    }
+
+    if (shouldOpenFromQuery && typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete(CONSUMER_ADD_ACCOUNT_QUERY);
+      const next = url.search ? url.search : "";
+      window.history.replaceState({}, "", `${url.pathname}${next}`);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (user && userDoc) {
@@ -271,21 +302,29 @@ export function ConsumerSummaryView() {
 
   return (
     <div className="mx-auto flex w-full max-w-[1480px] flex-1 flex-col gap-8 pb-8">
-      <header className="max-w-xl space-y-2">
-        <h1 className="text-[28px] font-bold tracking-tight text-slate-900 sm:text-[30px]">
-          Ad accounts
-        </h1>
-        <p className="text-[15px] text-[#7A7D9C]">
-          Prioritized by impact — start at the top and work down. Open an account
-          to view its dashboard.
-        </p>
-        {isRefreshing ? (
-          <p className="inline-flex items-center gap-2 text-[13px] font-medium text-[#015AFD]">
-            <Loader2 className="size-3.5 animate-spin" aria-hidden />
-            Refreshing account data…
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="max-w-xl space-y-2">
+          <h1 className="text-[28px] font-bold tracking-tight text-slate-900 sm:text-[30px]">
+            Ad accounts
+          </h1>
+          <p className="text-[15px] text-[#7A7D9C]">
+            Prioritized by impact — start at the top and work down. Open an account
+            to view its dashboard.
           </p>
-        ) : null}
+          {isRefreshing ? (
+            <p className="inline-flex items-center gap-2 text-[13px] font-medium text-[#015AFD]">
+              <Loader2 className="size-3.5 animate-spin" aria-hidden />
+              Refreshing account data…
+            </p>
+          ) : null}
+        </div>
+        <ConsumerAddAdsAccountTrigger onClick={() => setIsAddAccountOpen(true)} />
       </header>
+
+      <ConsumerAddAdsAccountDialog
+        open={isAddAccountOpen}
+        onOpenChange={setIsAddAccountOpen}
+      />
 
       <section className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryMetricCard
