@@ -136,52 +136,55 @@ export function ConsumerKpiMetricsRow({
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10">
           {KPI_FIELDS.map((field) => {
-            let value = field.value(daily, activePeriod);
-            let pct = field.pct(daily, activePeriod);
+            let rawValue = field.value(daily, activePeriod);
+            let rawPct = field.pct(daily, activePeriod);
             let pctColor = "text-slate-900";
 
-            if (value === null || value === undefined || value === 0) {
-              value = 0;
-              pct = 0;
+            if (rawValue === null || rawValue === undefined || rawValue === 0) {
+              rawValue = 0;
+              rawPct = 0;
             }
+
+            const value = Number(rawValue);
+            const pct = Number(rawPct);
 
             if (pct !== 0) {
               if (field.pctRedIfPositive) {
                 pctColor =
-                  Number(pct) > 0
+                  pct > 0
                     ? "text-red-600"
-                    : Number(pct) < 0
+                    : pct < 0
                       ? "text-green-600"
                       : "text-slate-900";
               } else {
                 pctColor =
-                  Number(pct) > 0
+                  pct > 0
                     ? "text-green-600"
-                    : Number(pct) < 0
+                    : pct < 0
                       ? "text-red-600"
                       : "text-slate-900";
               }
             }
 
-            let valueDisplay: string | number = value;
-            if (field.isMoney) {
-              valueDisplay = `${currencySymbol}${Number(value).toLocaleString("en-US", {
+            let valueDisplay: string;
+            if ("isMoney" in field && field.isMoney) {
+              valueDisplay = `${currencySymbol}${value.toLocaleString("en-US", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}`;
             } else if ("isPercent" in field && field.isPercent) {
-              valueDisplay = `${Number(value).toLocaleString("en-US", {
+              valueDisplay = `${value.toLocaleString("en-US", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}%`;
             } else {
-              valueDisplay = Number(value).toLocaleString("en-US");
+              valueDisplay = value.toLocaleString("en-US");
             }
 
             const pctDisplay =
               pct === 0
                 ? "0%"
-                : `${Number(pct) > 0 ? "+" : ""}${Number(pct).toLocaleString("en-US", {
+                : `${pct > 0 ? "+" : ""}${pct.toLocaleString("en-US", {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}%`;
