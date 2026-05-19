@@ -23,11 +23,14 @@ interface ConsumerKBarProps {
   children: ReactNode;
 }
 
+const KBAR_RESULTS_MAX_HEIGHT = 360;
+
 function ConsumerKBarResults() {
   const { results } = useMatches();
 
   return (
     <KBarResults
+      maxHeight={KBAR_RESULTS_MAX_HEIGHT}
       items={results}
       onRender={({ item, active }) => {
         if (typeof item === "string") {
@@ -101,7 +104,7 @@ function ConsumerKBarPortal() {
               esc
             </kbd>
           </div>
-          <div className="max-h-[min(360px,50vh)] overflow-y-auto py-2">
+          <div className="consumer-kbar-results py-2">
             <ConsumerKBarResults />
           </div>
           <div className="flex items-center justify-between border-t border-slate-100 px-4 py-2.5 text-[11px] text-slate-500">

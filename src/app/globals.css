@@ -131,3 +131,29 @@
   overflow-wrap: normal !important;
   white-space: normal !important;
 }
+
+/* Consumer command palette — single thin scrollbar (KBarResults inner scroller only) */
+.consumer-kbar-results > div {
+  overflow-x: hidden !important;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.consumer-kbar-results > div::-webkit-scrollbar {
+  width: 6px;
+}
+
+.consumer-kbar-results > div::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.consumer-kbar-results > div::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 9999px;
+}
+
+.consumer-kbar-results > div::-webkit-scrollbar-button {
+  display: none;
+  height: 0;
+  width: 0;
+}
