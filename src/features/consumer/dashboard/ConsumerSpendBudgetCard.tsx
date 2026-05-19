@@ -254,7 +254,7 @@ export function ConsumerSpendBudgetCard({
           </span>
         </div>
 
-        <p className="flex items-center justify-end gap-1 truncate text-[10px] text-slate-500">
+        <p className="flex items-center justify-end gap-1.5 truncate text-xs font-medium text-slate-600 sm:text-[13px]">
           <Tooltip>
             <TooltipTrigger asChild>
               <button
@@ -270,11 +270,14 @@ export function ConsumerSpendBudgetCard({
             </TooltipContent>
           </Tooltip>
           <span className="truncate">
-            Proj. {currencySymbol}
-            {projection.toLocaleString("en-US", {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
+            Spend projection:{" "}
+            <span className="font-semibold text-slate-800">
+              {currencySymbol}
+              {projection.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </span>
           </span>
         </p>
       </CardContent>

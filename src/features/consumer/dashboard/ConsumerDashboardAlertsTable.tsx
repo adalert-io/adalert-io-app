@@ -3,7 +3,6 @@
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
 import {
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -21,9 +20,17 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ALERT_SEVERITIES, ALERT_SEVERITY_COLORS } from "@/lib/constants";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
+import { SeverityBadge } from "./alert-ui";
 import {
   ConsumerAlertDetailSheet,
   type ConsumerAlertRow,
@@ -39,6 +46,8 @@ interface ConsumerDashboardAlertsTableProps {
   selectedAlertIds: string[];
   setSelectedAlertIds: React.Dispatch<React.SetStateAction<string[]>>;
   accountName?: string;
+  /** When true, skips outer card chrome (parent provides container). */
+  embedded?: boolean;
 }
 
 export function ConsumerDashboardAlertsTable({
@@ -48,6 +57,7 @@ export function ConsumerDashboardAlertsTable({
   selectedAlertIds,
   setSelectedAlertIds,
   accountName,
+  embedded = false,
 }: ConsumerDashboardAlertsTableProps) {
   const [pageIndex, setPageIndex] = useState(0);
   const [detailAlertId, setDetailAlertId] = useState<string | null>(null);
@@ -87,40 +97,24 @@ export function ConsumerDashboardAlertsTable({
         header: "Found",
         cell: ({ row }) => {
           const dateObj = row.original["Date Found"]?.toDate?.();
-          const formatted = dateObj ? moment(dateObj).format("DD MMM") : "—";
-          return <span className="tabular-nums text-slate-700">{formatted}</span>;
-        },
-      },
-      {
-        accessorKey: "severity",
-        header: "Severity",
-        cell: ({ row }) => {
-          let color = ALERT_SEVERITY_COLORS.LOW;
-          const sev = row.original.Severity?.toLowerCase();
-          if (sev === ALERT_SEVERITIES.CRITICAL.toLowerCase()) {
-            color = ALERT_SEVERITY_COLORS.CRITICAL;
-          } else if (sev === ALERT_SEVERITIES.MEDIUM.toLowerCase()) {
-            color = ALERT_SEVERITY_COLORS.MEDIUM;
-          }
+          const formatted = dateObj ? moment(dateObj).format("DD MMM YYYY") : "—";
           return (
-            <span className="inline-flex items-center gap-2">
-              <span
-                className="size-2.5 rounded-full"
-                style={{ backgroundColor: color }}
-                aria-hidden
-              />
-              <span className="text-[13px] font-medium text-slate-700">
-                {row.original.Severity}
-              </span>
+            <span className="whitespace-nowrap tabular-nums text-[13px] text-slate-600">
+              {formatted}
             </span>
           );
         },
       },
       {
+        accessorKey: "severity",
+        header: "Severity",
+        cell: ({ row }) => <SeverityBadge severity={row.original.Severity} />,
+      },
+      {
         accessorKey: "description",
-        header: "Description",
+        header: "Alert",
         cell: ({ row }) => (
-          <span className="line-clamp-2 max-w-md font-medium text-slate-900">
+          <span className="line-clamp-2 font-semibold leading-snug text-slate-900">
             {row.original.Alert}
           </span>
         ),
@@ -129,19 +123,19 @@ export function ConsumerDashboardAlertsTable({
         accessorKey: "type",
         header: "Type",
         cell: ({ row }) => (
-          <span className="text-slate-600">{row.original.Type ?? "—"}</span>
+          <span className="text-[13px] text-slate-600">{row.original.Type ?? "—"}</span>
         ),
       },
       {
         accessorKey: "level",
         header: "Level",
         cell: ({ row }) => (
-          <span className="text-slate-600">{row.original.Level ?? "—"}</span>
+          <span className="text-[13px] text-slate-600">{row.original.Level ?? "—"}</span>
         ),
       },
       {
         id: "view",
-        header: "",
+        header: () => <span className="sr-only">Actions</span>,
         cell: ({ row }) => (
           <Button
             type="button"
@@ -219,114 +213,133 @@ export function ConsumerDashboardAlertsTable({
     [detailAlertId, filteredAlerts],
   );
 
+  const isRowActive = (id: string) => detailOpen && detailAlertId === id;
+
+  const tableBlock = (
+  <>
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow
+                key={headerGroup.id}
+                className="border-slate-100 bg-slate-50/90 hover:bg-slate-50/90"
+              >
+                {headerGroup.headers.map((header) => (
+                  <TableHead
+                    key={header.id}
+                    className="h-11 px-4 text-[12px] font-semibold uppercase tracking-wide text-slate-600"
+                  >
+                    {flexRender(header.column.columnDef.header, header.getContext())}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-32 text-center text-sm text-slate-500"
+                >
+                  No alerts match your filters.
+                </TableCell>
+              </TableRow>
+            ) : (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  className={cn(
+                    "cursor-pointer border-slate-100 transition-colors hover:bg-slate-50/80",
+                    isRowActive(row.id) &&
+                      "bg-[#eaf3ff]/90 ring-2 ring-inset ring-[#015AFD]/30 hover:bg-[#dfeaff]/92",
+                  )}
+                  onClick={() => openAlert(row.original)}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id} className="px-4 py-3.5 align-middle">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <footer className="flex flex-col items-center justify-between gap-4 border-t border-slate-100 bg-slate-50/40 px-4 py-4 sm:flex-row sm:px-6">
+        <p className="text-[13px] font-medium text-slate-600">
+          Showing{" "}
+          {table.getRowModel().rows.length > 0
+            ? table.getState().pagination.pageIndex *
+                table.getState().pagination.pageSize +
+              1
+            : 0}{" "}
+          to{" "}
+          {Math.min(
+            (table.getState().pagination.pageIndex + 1) *
+              table.getState().pagination.pageSize,
+            table.getFilteredRowModel().rows.length,
+          )}{" "}
+          of {table.getFilteredRowModel().rows.length} alerts
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!table.getCanPreviousPage()}
+            onClick={() => table.setPageIndex(0)}
+            className="h-9 w-9 rounded-lg p-0"
+            aria-label="First page"
+          >
+            <ChevronsLeft className="size-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!table.getCanPreviousPage()}
+            onClick={() => table.previousPage()}
+            className="h-9 w-9 rounded-lg p-0"
+            aria-label="Previous page"
+          >
+            <ChevronLeft className="size-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!table.getCanNextPage()}
+            onClick={() => table.nextPage()}
+            className="h-9 w-9 rounded-lg p-0"
+            aria-label="Next page"
+          >
+            <ChevronRight className="size-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!table.getCanNextPage()}
+            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+            className="h-9 w-9 rounded-lg p-0"
+            aria-label="Last page"
+          >
+            <ChevronsRight className="size-4" />
+          </Button>
+        </div>
+      </footer>
+    </>
+  );
+
   return (
     <>
-      <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-md">
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead className="border-b border-slate-100 bg-slate-50/80 text-[13px]">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      className="px-4 py-3 text-left font-semibold text-slate-700"
-                    >
-                      {flexRender(header.column.columnDef.header, header.getContext())}
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-[14px]">
-              {table.getRowModel().rows.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={columns.length}
-                    className="px-4 py-16 text-center text-sm text-slate-500"
-                  >
-                    No alerts match your filters.
-                  </td>
-                </tr>
-              ) : (
-                table.getRowModel().rows.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="cursor-pointer transition-colors hover:bg-slate-50/80"
-                    onClick={() => openAlert(row.original)}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="px-4 py-3 text-slate-900">
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      {embedded ? (
+        tableBlock
+      ) : (
+        <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-md">
+          {tableBlock}
         </div>
-
-        <footer className="flex flex-col items-center justify-between gap-4 border-t border-slate-100 bg-slate-50/50 px-4 py-4 sm:flex-row sm:px-6">
-          <p className="text-[13px] font-medium text-slate-600">
-            Showing{" "}
-            {table.getRowModel().rows.length > 0
-              ? table.getState().pagination.pageIndex *
-                  table.getState().pagination.pageSize +
-                1
-              : 0}{" "}
-            to{" "}
-            {Math.min(
-              (table.getState().pagination.pageIndex + 1) *
-                table.getState().pagination.pageSize,
-              table.getFilteredRowModel().rows.length,
-            )}{" "}
-            of {table.getFilteredRowModel().rows.length} alerts
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!table.getCanPreviousPage()}
-              onClick={() => table.setPageIndex(0)}
-              className="h-9 w-9 p-0"
-              aria-label="First page"
-            >
-              <ChevronsLeft className="size-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!table.getCanPreviousPage()}
-              onClick={() => table.previousPage()}
-              className="h-9 w-9 p-0"
-              aria-label="Previous page"
-            >
-              <ChevronLeft className="size-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!table.getCanNextPage()}
-              onClick={() => table.nextPage()}
-              className="h-9 w-9 p-0"
-              aria-label="Next page"
-            >
-              <ChevronRight className="size-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!table.getCanNextPage()}
-              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-              className="h-9 w-9 p-0"
-              aria-label="Last page"
-            >
-              <ChevronsRight className="size-4" />
-            </Button>
-          </div>
-        </footer>
-      </div>
+      )}
 
       <ConsumerAlertDetailSheet
         alert={detailAlert}

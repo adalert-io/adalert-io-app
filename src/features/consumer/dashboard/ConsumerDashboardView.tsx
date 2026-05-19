@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useAuthStore } from '@/lib/store/auth-store';
 import { useRouter } from 'next/navigation';
@@ -27,6 +27,8 @@ import {
   AlertTriangle,
   ChartNoAxesCombined,
   FileText,
+  Loader2,
+  Search,
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ALERT_SEVERITIES, ALERT_SEVERITY_COLORS } from '@/lib/constants/index';
@@ -647,40 +649,17 @@ export function ConsumerDashboardView() {
         {/* Alerts Table */}
 
         <section className="space-y-4">
-          <div className="overflow-x-auto rounded-2xl border border-slate-200/90 bg-white p-4 shadow-md max-[991px]:block whitespace-nowrap">
-          <div className='flex flex-col gap-3 mb-2'>
-            {/* Parent row: behaves like row on desktop, column on mobile */}
-            <div className='flex justify-between items-center max-[599px]:flex-col max-[599px]:gap-3'>
-              {/* Left Side (Heading, tooltips, settings, selection) */}
-              <div className='flex items-center gap-2 flex-wrap pl-[18px]'>
-                <h2 className='text-lg font-bold text-gray-900'>Alerts</h2>
+          <Card className="gap-0 overflow-hidden rounded-2xl border border-slate-200/90 bg-white py-0 shadow-md">
+            <div className="space-y-4 border-b border-slate-100 p-4 sm:p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-lg font-bold text-slate-900">Alerts</h2>
 
                 {alertsLoading && (
-                  <div className='flex items-center gap-2 ml-2'>
-                    <svg
-                      className='animate-spin h-4 w-4 text-blue-500'
-                      xmlns='http://www.w3.org/2000/svg'
-                      fill='none'
-                      viewBox='0 0 24 24'
-                    >
-                      <circle
-                        className='opacity-25'
-                        cx='12'
-                        cy='12'
-                        r='10'
-                        stroke='currentColor'
-                        strokeWidth='4'
-                      />
-                      <path
-                        className='opacity-75'
-                        fill='currentColor'
-                        d='M4 12a8 8 0 018-8v8z'
-                      />
-                    </svg>
-                    <span className='text-xs text-blue-600 font-medium'>
-                      Updating...
-                    </span>
-                  </div>
+                  <span className="inline-flex items-center gap-2 text-[13px] font-medium text-[#015AFD]">
+                    <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                    Updating?
+                  </span>
                 )}
 
                 {/* Auto-refresh tooltip */}
@@ -738,9 +717,9 @@ export function ConsumerDashboardView() {
                 </Tooltip>
 
                 <button
-                  type='button'
-                  onClick={() => router.push('/consumer/settings/settings/alerts')}
-                  className='text-xs text-gray-400 hover:text-gray-600 hover:underline cursor-pointer transition-colors'
+                  type="button"
+                  onClick={() => router.push("/consumer/settings/settings/alerts")}
+                  className="text-[13px] font-medium text-slate-500 transition-colors hover:text-[#015AFD] hover:underline"
                 >
                   Settings
                 </button>
@@ -785,48 +764,53 @@ export function ConsumerDashboardView() {
                 )}
               </div>
 
-              {/* Right Side (Search, filters, export, rows select) */}
-              <div className='flex gap-2 flex-wrap justify-end max-[599px]:justify-start'>
-                {showSearch && (
-                  <div className='flex items-center border rounded-lg px-3 py-1 bg-white shadow-none focus-within:ring-2 focus-within:ring-blue-200 transition-all min-w-[200px]'>
+              <div className="flex flex-wrap items-center gap-2">
+                {showSearch ? (
+                  <div className="flex min-w-[220px] flex-1 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-[#015AFD]/20 sm:max-w-sm">
+                    <Search className="size-4 shrink-0 text-[#015AFD]" aria-hidden />
                     <input
-                      className='outline-none border-none bg-transparent text-sm text-gray-500 placeholder-gray-400 flex-1'
-                      placeholder='Search for alert(s)'
+                      className="min-w-0 flex-1 border-none bg-transparent text-[13px] text-slate-700 outline-none placeholder:text-slate-400"
+                      placeholder="Search alerts?"
                       value={searchValue}
                       onChange={(e) => setSearchValue(e.target.value)}
                       autoFocus
+                      aria-label="Search alerts"
                     />
-                    {searchValue && (
+                    {searchValue ? (
                       <button
-                        type='button'
-                        className='ml-1 text-gray-400 hover:text-gray-600'
-                        onClick={() => setSearchValue('')}
-                        aria-label='Clear search'
+                        type="button"
+                        className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                        onClick={() => setSearchValue("")}
+                        aria-label="Clear search"
                       >
-                        <XIcon className='w-5 h-5' />
+                        <XIcon className="size-4" />
                       </button>
-                    )}
+                    ) : null}
                   </div>
-                )}
+                ) : null}
 
                 <Button
-                  variant='outline'
-                  size='icon'
+                  variant="outline"
+                  size="icon"
                   onClick={() => setShowSearch((v) => !v)}
-                  className={showSearch ? 'border-blue-200' : ''}
-                  aria-label='Show search'
+                  className={cn(
+                    "size-10 rounded-xl border-slate-200 shadow-sm",
+                    showSearch && "border-[#015AFD]/40 bg-[#015AFD]/5",
+                  )}
+                  aria-label="Show search"
                 >
-                  <MagnifyingGlassIcon className='w-6 h-6 text-[#015AFD]' />
+                  <Search className="size-4 text-[#015AFD]" />
                 </Button>
 
                 <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
                   <PopoverTrigger asChild>
                     <Button
-                      variant='outline'
-                      size='icon'
-                      aria-label='Open filters'
+                      variant="outline"
+                      size="icon"
+                      className="size-10 rounded-xl border-slate-200 shadow-sm"
+                      aria-label="Open filters"
                     >
-                      <Filter className='w-6 h-6 text-[#015AFD]' />
+                      <Filter className="size-4 text-[#015AFD]" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className='w-auto p-0' align='end'>
@@ -943,11 +927,12 @@ export function ConsumerDashboardView() {
                   </span>
                 </Button>
 
-                <div className='relative inline-block'>
+                <div className="relative">
                   <select
-                    className='appearance-none border border-gray-200 rounded-lg px-4 py-2 pr-8 text-sm bg-white shadow-none hover:border-gray-300 transition-colors focus:ring-2 focus:ring-blue-200 focus:border-blue-300 cursor-pointer font-medium text-gray-700'
+                    className="min-w-[120px] cursor-pointer appearance-none rounded-lg border border-slate-200 bg-white py-2.5 pe-9 ps-4 text-[13px] font-medium text-slate-700 shadow-sm transition-colors focus-visible:border-[#015AFD] focus-visible:ring-2 focus-visible:ring-[#015AFD]/25"
                     value={pageSize}
                     onChange={(e) => setPageSize(Number(e.target.value))}
+                    aria-label="Rows per page"
                   >
                     <option value={15}>15 rows</option>
                     <option value={25}>25 rows</option>
@@ -972,10 +957,11 @@ export function ConsumerDashboardView() {
                 </div>
               </div>
             </div>
-          </div>
+            </div>
 
-          <div className='relative'>
+            <div className="relative">
             <ConsumerDashboardAlertsTable
+              embedded
               pageSize={pageSize}
               setPageSize={setPageSize}
               filteredAlerts={filteredAlerts}
@@ -984,36 +970,15 @@ export function ConsumerDashboardView() {
               accountName={selectedAdsAccount?.["Account Name Editable"]}
             />
             {alertsLoading && (
-              <div className='absolute inset-0 bg-white/50 flex items-center justify-center rounded-md'>
-                <div className='flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-md'>
-                  <svg
-                    className='animate-spin h-5 w-5 text-blue-500'
-                    xmlns='http://www.w3.org/2000/svg'
-                    fill='none'
-                    viewBox='0 0 24 24'
-                  >
-                    <circle
-                      className='opacity-25'
-                      cx='12'
-                      cy='12'
-                      r='10'
-                      stroke='currentColor'
-                      strokeWidth='4'
-                    />
-                    <path
-                      className='opacity-75'
-                      fill='currentColor'
-                      d='M4 12a8 8 0 018-8v8z'
-                    />
-                  </svg>
-                  <span className='text-sm font-medium text-gray-700'>
-                    Loading alerts...
-                  </span>
-                </div>
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 backdrop-blur-[1px]">
+                <span className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-md">
+                  <Loader2 className="size-4 animate-spin text-[#015AFD]" aria-hidden />
+                  Loading alerts?
+                </span>
               </div>
             )}
           </div>
-        </div>
+          </Card>
         </section>
 
         {/* Analysis Modal */}

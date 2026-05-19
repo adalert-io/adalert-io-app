@@ -13,8 +13,6 @@ interface ConsumerDashboardMetricCardProps {
   accentClassName?: string;
   /** 2px bottom accent — matches classic dashboard severity colors */
   bottomBorderColor?: string;
-  /** Icon ring color — defaults to bottom border color */
-  iconBorderColor?: string;
 }
 
 export function ConsumerDashboardMetricCard({
@@ -24,9 +22,7 @@ export function ConsumerDashboardMetricCard({
   Icon,
   accentClassName,
   bottomBorderColor,
-  iconBorderColor,
 }: ConsumerDashboardMetricCardProps) {
-  const ringColor = iconBorderColor ?? bottomBorderColor;
   return (
     <Card
       className={cn(
@@ -47,15 +43,15 @@ export function ConsumerDashboardMetricCard({
         </div>
         <span
           className={cn(
-            "flex size-12 shrink-0 items-center justify-center rounded-full border-2 bg-white",
-            !ringColor && (accentClassName ?? "border-transparent bg-[#3b82f6]/10 text-[#3b82f6]"),
+            "flex size-12 shrink-0 items-center justify-center rounded-full",
+            !bottomBorderColor &&
+              (accentClassName ?? "bg-[#3b82f6]/10 text-[#3b82f6]"),
           )}
           style={
-            ringColor
+            bottomBorderColor
               ? {
-                  borderColor: ringColor,
-                  color: ringColor,
-                  backgroundColor: `${ringColor}18`,
+                  color: bottomBorderColor,
+                  backgroundColor: `${bottomBorderColor}22`,
                 }
               : undefined
           }

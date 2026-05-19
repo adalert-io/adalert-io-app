@@ -104,11 +104,12 @@ export function ConsumerKpiMetricsRow({
   return (
     <Card className="gap-0 overflow-hidden rounded-2xl border border-slate-200/90 bg-white py-0 shadow-md">
       <CardContent className="space-y-3 p-4 sm:p-5">
-        <div
-          className="grid w-full grid-cols-3 gap-1 rounded-xl border border-slate-200 bg-slate-50/90 p-1"
-          role="tablist"
-          aria-label="KPI comparison period"
-        >
+        <div className="flex justify-start">
+          <div
+            className="inline-flex flex-wrap gap-1 rounded-xl border border-slate-200 bg-slate-50/90 p-1"
+            role="tablist"
+            aria-label="KPI comparison period"
+          >
             {KPI_PERIODS.map((period) => {
               const isActive = activePeriod === period.key;
               return (
@@ -118,7 +119,7 @@ export function ConsumerKpiMetricsRow({
                   role="tab"
                   aria-selected={isActive}
                   className={cn(
-                    "rounded-lg px-2 py-1.5 text-center text-[11px] font-semibold transition-all sm:px-3 sm:text-xs",
+                    "whitespace-nowrap rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all sm:px-4 sm:text-xs",
                     isActive
                       ? "bg-white text-[#015AFD] shadow-sm ring-1 ring-slate-200/80"
                       : "text-slate-600 hover:bg-white/60 hover:text-slate-900",
@@ -129,6 +130,7 @@ export function ConsumerKpiMetricsRow({
                 </button>
               );
             })}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10">
