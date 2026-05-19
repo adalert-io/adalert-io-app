@@ -103,14 +103,12 @@ export function ConsumerKpiMetricsRow({
 
   return (
     <Card className="gap-0 overflow-hidden rounded-2xl border border-slate-200/90 bg-white py-0 shadow-md">
-      <CardContent className="space-y-4 p-5 sm:p-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-base font-bold text-slate-900">Performance KPIs</h2>
-          <div
-            className="inline-flex w-full max-w-full flex-wrap gap-1 rounded-xl border border-slate-200 bg-slate-50/90 p-1 sm:w-auto"
-            role="tablist"
-            aria-label="KPI comparison period"
-          >
+      <CardContent className="space-y-3 p-4 sm:p-5">
+        <div
+          className="grid w-full grid-cols-3 gap-1 rounded-xl border border-slate-200 bg-slate-50/90 p-1"
+          role="tablist"
+          aria-label="KPI comparison period"
+        >
             {KPI_PERIODS.map((period) => {
               const isActive = activePeriod === period.key;
               return (
@@ -120,7 +118,7 @@ export function ConsumerKpiMetricsRow({
                   role="tab"
                   aria-selected={isActive}
                   className={cn(
-                    "min-w-0 flex-1 rounded-lg px-3 py-2 text-center text-[13px] font-semibold transition-all sm:flex-none sm:px-4",
+                    "rounded-lg px-2 py-1.5 text-center text-[11px] font-semibold transition-all sm:px-3 sm:text-xs",
                     isActive
                       ? "bg-white text-[#015AFD] shadow-sm ring-1 ring-slate-200/80"
                       : "text-slate-600 hover:bg-white/60 hover:text-slate-900",
@@ -131,10 +129,9 @@ export function ConsumerKpiMetricsRow({
                 </button>
               );
             })}
-          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10">
           {KPI_FIELDS.map((field) => {
             let rawValue = field.value(daily, activePeriod);
             let rawPct = field.pct(daily, activePeriod);
@@ -192,13 +189,15 @@ export function ConsumerKpiMetricsRow({
             return (
               <div
                 key={field.label}
-                className="flex min-h-[88px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-50/40 px-2 py-3 text-center"
+                className="flex min-h-[58px] flex-col items-center justify-center rounded-lg border border-slate-200 bg-slate-50/40 px-1 py-1.5 text-center"
               >
-                <span className="text-base font-bold text-slate-900">{valueDisplay}</span>
-                <span className="mt-0.5 text-xs font-semibold text-slate-700">
+                <span className="text-sm font-bold leading-tight text-slate-900">
+                  {valueDisplay}
+                </span>
+                <span className="mt-0.5 text-[10px] font-semibold text-slate-600">
                   {field.label}
                 </span>
-                <span className={cn("mt-1 text-xs font-semibold", pctColor)}>
+                <span className={cn("mt-0.5 text-[10px] font-semibold", pctColor)}>
                   {pctDisplay}
                 </span>
               </div>

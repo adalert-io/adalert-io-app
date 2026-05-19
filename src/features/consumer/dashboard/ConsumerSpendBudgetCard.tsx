@@ -12,13 +12,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-
 const SPEND_MTD_TOOLTIP =
   "The actual amount can differ between users' dashboards based on API call times and could be different from what you see on the ads account, with up to a few hours' difference.";
 
 const PROJECTION_TOOLTIP =
   "Spend projections improve from the second day of the month onward and get more accurate as the month progresses.";
+
+const BAR_HEIGHT_PX = 14;
 
 function getSpendMtdIndicatorColor(key: string | undefined): string {
   if (
@@ -90,7 +90,7 @@ export function ConsumerSpendBudgetCard({
   const budget = Number(monthlyBudget ?? 1);
   const percentBar = budget ? Math.min((spend / budget) * 100, 100) : 0;
   const percentText = budget ? (spend / budget) * 100 : 0;
-  const showLabelOutsideBar = percentBar < 15;
+  const showLabelOutsideBar = percentBar < 18;
 
   const now = moment();
   const day = now.date();
@@ -117,22 +117,22 @@ export function ConsumerSpendBudgetCard({
   const indicatorColor = getSpendMtdIndicatorColor(spendMtdIndicatorKey);
 
   return (
-    <Card className="gap-0 overflow-hidden rounded-2xl border border-slate-200/90 bg-white py-0 shadow-md">
-      <CardContent className="flex flex-col gap-5 p-5 sm:p-6">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
-          <div className="min-w-0 space-y-1">
-            <div className="flex items-center gap-1.5">
-              <p className="text-muted-foreground text-sm font-medium">
+    <Card className="flex h-full min-h-[132px] w-full justify-center gap-0 rounded-xl border border-slate-200 bg-white py-0 shadow-sm">
+      <CardContent className="flex w-full flex-col justify-center gap-2 px-4 py-3.5 sm:px-5">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1">
+              <p className="text-muted-foreground truncate text-xs font-medium">
                 Spend MTD
               </p>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
                     type="button"
-                    className="rounded-md p-0.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                    className="shrink-0 rounded p-0.5 text-slate-400 hover:text-slate-600"
                     aria-label="Spend MTD information"
                   >
-                    <AlertTriangle className="size-3.5" aria-hidden />
+                    <AlertTriangle className="size-3" aria-hidden />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs text-xs">
@@ -140,29 +140,29 @@ export function ConsumerSpendBudgetCard({
                 </TooltipContent>
               </Tooltip>
             </div>
-            <div className="flex items-center gap-2">
-              <p className="truncate text-2xl font-bold tracking-tight text-slate-900 sm:text-[28px]">
+            <div className="mt-0.5 flex items-center gap-1.5">
+              <p className="truncate text-base font-bold leading-tight text-slate-900 sm:text-lg">
                 {spendDisplay}
               </p>
               <span
-                className="size-3 shrink-0 rounded-full border border-white shadow-sm"
+                className="size-2 shrink-0 rounded-full"
                 style={{ background: indicatorColor }}
                 aria-hidden
               />
             </div>
           </div>
 
-          <div className="flex flex-col items-start sm:items-end">
-            <p className="text-muted-foreground text-sm font-medium">
+          <div className="min-w-0 text-right">
+            <p className="text-muted-foreground text-xs font-medium">
               Monthly budget
             </p>
             {isEditingBudget ? (
-              <div className="mt-2 flex w-full flex-wrap items-center justify-start gap-2 sm:justify-end">
+              <div className="mt-1 flex items-center justify-end gap-1">
                 <Input
                   ref={budgetInputRef}
                   type="number"
                   min={0}
-                  className="h-9 w-28 text-right text-sm font-semibold tabular-nums"
+                  className="h-7 w-[72px] px-2 text-right text-xs font-semibold tabular-nums"
                   value={budgetInput}
                   onChange={(e) =>
                     onBudgetInputChange(e.target.value.replace(/[^0-9.]/g, ""))
@@ -172,7 +172,7 @@ export function ConsumerSpendBudgetCard({
                 />
                 <Button
                   size="sm"
-                  className="h-9 rounded-lg bg-[#015AFD] px-4 font-semibold hover:bg-[#0146ca]"
+                  className="h-7 rounded-md bg-[#015AFD] px-2 text-[11px] font-semibold hover:bg-[#0146ca]"
                   onClick={onConfirmBudget}
                   disabled={
                     isUpdatingBudget || !budgetInput || Number(budgetInput) < 0
@@ -182,16 +182,16 @@ export function ConsumerSpendBudgetCard({
                 </Button>
               </div>
             ) : (
-              <div className="mt-1 flex items-center gap-2">
+              <div className="mt-0.5 flex items-center justify-end gap-1">
                 <button
                   type="button"
-                  className="rounded-lg p-1.5 text-[#015AFD] transition-colors hover:bg-[#015AFD]/10"
+                  className="rounded p-0.5 text-[#015AFD] hover:bg-[#015AFD]/10"
                   aria-label="Edit monthly budget"
                   onClick={onEditBudget}
                 >
-                  <Pencil className="size-4" aria-hidden />
+                  <Pencil className="size-3" aria-hidden />
                 </button>
-                <p className="text-2xl font-bold tracking-tight text-slate-900 sm:text-[28px]">
+                <p className="truncate text-base font-bold leading-tight text-slate-900 sm:text-lg">
                   {budgetDisplay}
                 </p>
               </div>
@@ -199,93 +199,84 @@ export function ConsumerSpendBudgetCard({
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-4">
-          <div className="relative w-full" style={{ minHeight: 52 }}>
-            <div className="relative flex h-6 w-full items-center">
-              <div className="absolute top-1/2 left-0 z-0 h-6 w-full -translate-y-1/2 rounded-full border border-slate-200 bg-white" />
-              <div
-                className="absolute top-1/2 left-0 z-[1] h-6 -translate-y-1/2 rounded-full bg-[#015AFD] shadow-sm transition-[width]"
-                style={{
-                  width: `${percentBar}%`,
-                  minWidth: percentBar > 0 ? 10 : 0,
-                }}
-              />
-              {showLabelOutsideBar ? (
-                <span
-                  className={cn(
-                    "absolute top-0 z-[2] flex h-6 select-none items-center text-xs font-semibold text-slate-900",
-                  )}
-                  style={{ left: `calc(${percentBar}% + 10px)` }}
-                >
-                  {percentText.toFixed(1)}%
-                </span>
-              ) : (
-                <span
-                  className="absolute top-0 z-[2] flex h-6 -translate-x-1/2 select-none items-center text-xs font-semibold text-white"
-                  style={{ left: `calc(${percentBar / 2}%)` }}
-                >
-                  {percentText.toFixed(1)}%
-                </span>
-              )}
-              <div
-                className="pointer-events-none absolute top-1 z-[2] h-4"
-                style={{ left: `calc(${dayPercent}% - 1px)` }}
-              >
-                <div className="h-4 w-0.5 rounded-sm bg-slate-500" />
-              </div>
-            </div>
+        <div className="relative w-full" style={{ height: BAR_HEIGHT_PX + 14 }}>
+          <div
+            className="relative w-full"
+            style={{ height: BAR_HEIGHT_PX, marginTop: 2 }}
+          >
             <div
-              className="absolute left-0 w-full"
-              style={{ top: 28 }}
-            >
-              <div
-                className="absolute"
-                style={{
-                  left:
-                    dayPercent > 93
-                      ? "calc(100% - 48px)"
-                      : `calc(${dayPercent}% - 12px)`,
-                }}
+              className="absolute top-1/2 left-0 z-0 w-full -translate-y-1/2 rounded-full border border-slate-200 bg-white"
+              style={{ height: BAR_HEIGHT_PX }}
+            />
+            <div
+              className="absolute top-1/2 left-0 z-[1] -translate-y-1/2 rounded-full bg-[#015AFD]"
+              style={{
+                height: BAR_HEIGHT_PX,
+                width: `${percentBar}%`,
+                minWidth: percentBar > 0 ? 6 : 0,
+              }}
+            />
+            {showLabelOutsideBar ? (
+              <span
+                className="absolute top-1/2 z-[2] -translate-y-1/2 text-[10px] font-semibold text-slate-800"
+                style={{ left: `calc(${percentBar}% + 6px)` }}
               >
-                <span className="text-xs font-semibold text-slate-600">
-                  {day}
-                </span>
-                <span className="ml-1 text-[11px] font-medium text-slate-500">
-                  days
-                </span>
-              </div>
-            </div>
+                {percentText.toFixed(1)}%
+              </span>
+            ) : (
+              <span
+                className="absolute top-1/2 z-[2] -translate-x-1/2 -translate-y-1/2 text-[10px] font-semibold text-white"
+                style={{ left: `calc(${percentBar / 2}%)` }}
+              >
+                {percentText.toFixed(1)}%
+              </span>
+            )}
+            <div
+              className="pointer-events-none absolute z-[2] w-px bg-slate-500"
+              style={{
+                left: `calc(${dayPercent}% - 1px)`,
+                top: 1,
+                height: BAR_HEIGHT_PX - 2,
+              }}
+            />
           </div>
+          <span
+            className="absolute text-[10px] font-medium text-slate-500"
+            style={{
+              top: BAR_HEIGHT_PX + 4,
+              left:
+                dayPercent > 90
+                  ? "calc(100% - 36px)"
+                  : `calc(${dayPercent}% - 10px)`,
+            }}
+          >
+            {day}d
+          </span>
         </div>
 
-        <div className="flex justify-end border-t border-slate-100 pt-3">
-          <p className="text-muted-foreground flex items-center gap-1.5 text-sm">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  className="rounded-md p-0.5 text-[#015AFD] transition-colors hover:bg-[#015AFD]/10"
-                  aria-label="Spend projection information"
-                >
-                  <Info className="size-3.5" aria-hidden />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-xs text-xs">
-                {PROJECTION_TOOLTIP}
-              </TooltipContent>
-            </Tooltip>
-            <span>
-              Spend projection:{" "}
-              <span className="font-semibold text-slate-800">
-                {currencySymbol}
-                {projection.toLocaleString("en-US", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-              </span>
-            </span>
-          </p>
-        </div>
+        <p className="flex items-center justify-end gap-1 truncate text-[10px] text-slate-500">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className="shrink-0 text-[#015AFD]"
+                aria-label="Spend projection information"
+              >
+                <Info className="size-3" aria-hidden />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs text-xs">
+              {PROJECTION_TOOLTIP}
+            </TooltipContent>
+          </Tooltip>
+          <span className="truncate">
+            Proj. {currencySymbol}
+            {projection.toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </span>
+        </p>
       </CardContent>
     </Card>
   );

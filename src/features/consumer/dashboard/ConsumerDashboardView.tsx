@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { FileIcon, MagnifyingGlassIcon } from '@radix-ui/react-icons';
 import {
-  AlertTriangle as AlertTriangleIcon,
+  CircleAlert,
   Filter,
   FileChartColumn,
   Info,
@@ -596,22 +596,20 @@ export function ConsumerDashboardView() {
           </CardContent>
         </Card>
 
-        <section className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_500px] lg:items-start">
+        <section className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_minmax(280px,520px)] lg:items-stretch">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <ConsumerDashboardMetricCard
               title="Critical alerts"
               value={String(criticalCount)}
               subtitle="Requires immediate action"
               Icon={TriangleAlert}
-              accentClassName="bg-[#fecaca]/45 text-[#dc2626]"
               bottomBorderColor={DASHBOARD_ALERT_SEVERITY_BORDER.critical}
             />
             <ConsumerDashboardMetricCard
               title="Medium alerts"
               value={String(mediumCount)}
               subtitle="Review when possible"
-              Icon={AlertTriangleIcon}
-              accentClassName="bg-orange-100 text-orange-700"
+              Icon={CircleAlert}
               bottomBorderColor={DASHBOARD_ALERT_SEVERITY_BORDER.medium}
             />
             <ConsumerDashboardMetricCard
@@ -619,12 +617,11 @@ export function ConsumerDashboardView() {
               value={String(lowCount)}
               subtitle="Informational items"
               Icon={Info}
-              accentClassName="bg-[#bfdbfe]/45 text-[#1d4ed8]"
               bottomBorderColor={DASHBOARD_ALERT_SEVERITY_BORDER.low}
             />
           </div>
 
-          <div className="w-full lg:max-w-[520px]">
+          <div className="flex h-full w-full lg:max-w-[520px]">
             <ConsumerSpendBudgetCard
               currencySymbol={selectedAdsAccount?.["Currency Symbol"] || "$"}
               spendMtd={dashboardDaily?.["Spend MTD"] as number | null | undefined}
