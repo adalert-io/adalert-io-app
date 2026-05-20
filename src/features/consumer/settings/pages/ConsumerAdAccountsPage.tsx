@@ -561,23 +561,15 @@ export default function AdAccountsSubtab({
     >
       {screen === 'list' && (
         <>
-          <h2
-            className={cn(
-              'mb-1 text-2xl font-bold',
-              consumerShell && 'tracking-tight text-slate-900',
-            )}
-          >
-            Ad Account
-          </h2>
-          <p
-            className={cn(
-              'mb-6 text-gray-500',
-              consumerShell && 'text-[15px] text-slate-500',
-            )}
-          >
-            Add, edit, or remove ad accounts. You can reconnect accounts that
-            require re-authentications.
-          </p>
+          {!consumerShell && (
+            <>
+              <h2 className='mb-1 text-2xl font-bold'>Ad Account</h2>
+              <p className='mb-6 text-gray-500'>
+                Add, edit, or remove ad accounts. You can reconnect accounts
+                that require re-authentications.
+              </p>
+            </>
+          )}
           <div className='mb-6 flex flex-col gap-4 sm:flex-row sm:items-center'>
             <Button
               variant='outline'
@@ -688,7 +680,7 @@ export default function AdAccountsSubtab({
               className={cn(
                 'flex max-w-md flex-1 flex-col gap-4',
                 consumerShell &&
-                  'rounded-2xl border border-slate-200 bg-white p-6 shadow-sm',
+                  'rounded-2xl border border-slate-100 bg-white p-6 shadow-none',
               )}
             >
               <div className='relative'>

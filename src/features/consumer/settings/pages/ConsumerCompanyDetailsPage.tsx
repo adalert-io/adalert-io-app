@@ -167,34 +167,19 @@ export default function CompanyDetailsSubtab({
           'mx-auto w-full min-w-0 max-w-[1480px] rounded-2xl border border-slate-100 bg-slate-50/50 p-4 sm:p-6',
       )}
     >
-      <h2
-        className={cn(
-          'mb-2 text-xl font-bold',
-          consumerShell && 'tracking-tight text-slate-900',
-        )}
-      >
-        Company Details
-      </h2>
-      <p
-        className={cn(
-          'mb-6 text-gray-600',
-          consumerShell && 'text-[15px] text-slate-500',
-        )}
-      >
-        Update your company information to show in future invoices. You can
-        review your invoices from{' '}
-        <Link
-          href={billingHref}
-          className={cn(
-            'text-blue-600 hover:underline',
-            consumerShell &&
-              'font-medium text-[#015AFD] hover:text-[#0146ca]',
-          )}
-        >
-          billing
-        </Link>
-        .
-      </p>
+      {!consumerShell && (
+        <>
+          <h2 className='mb-2 text-xl font-bold'>Company Details</h2>
+          <p className='mb-6 text-gray-600'>
+            Update your company information to show in future invoices. You can
+            review your invoices from{' '}
+            <Link href={billingHref} className='text-blue-600 hover:underline'>
+              billing
+            </Link>
+            .
+          </p>
+        </>
+      )}
 
       {/* Company Name - Full Width */}
       <div className='mb-6'>

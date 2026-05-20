@@ -843,23 +843,15 @@ export default function UsersSubtab({
     >
       {screen === 'list' && (
         <>
-          <h2
-            className={cn(
-              'mb-1 text-2xl font-bold',
-              consumerShell && 'tracking-tight text-slate-900',
-            )}
-          >
-            Users
-          </h2>
-          <p
-            className={cn(
-              'mb-6 text-gray-500',
-              consumerShell && 'text-[15px] text-slate-500',
-            )}
-          >
-            Add, remove, or edit users including user access level and accounts
-            access. Pending invitations are also displayed here.
-          </p>
+          {!consumerShell && (
+            <>
+              <h2 className='mb-1 text-2xl font-bold'>Users</h2>
+              <p className='mb-6 text-gray-500'>
+                Add, remove, or edit users including user access level and
+                accounts access. Pending invitations are also displayed here.
+              </p>
+            </>
+          )}
           <div className='mb-6 flex flex-col gap-4 sm:flex-row sm:items-center'>
             <Button
               variant='outline'
@@ -972,7 +964,7 @@ export default function UsersSubtab({
               className={cn(
                 'flex max-w-md flex-1 flex-col gap-4 rounded-xl border border-[#e5e5e5] p-6',
                 consumerShell &&
-                  'rounded-2xl border border-slate-200 bg-white shadow-sm',
+                  'rounded-2xl border border-slate-100 bg-white shadow-none',
               )}
             >
               {screen === 'edit' && (

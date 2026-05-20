@@ -140,17 +140,12 @@ export default function SubscriptionsSubtab({
         className={cn(
           'bg-white p-4',
           consumerShell &&
-            'rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-6',
+            'rounded-2xl border border-slate-100 bg-slate-50/50 p-5 shadow-none sm:p-6',
         )}
       >
-        <h2
-          className={cn(
-            'mb-6 text-xl font-bold',
-            consumerShell && 'tracking-tight text-slate-900',
-          )}
-        >
-          Subscriptions
-        </h2>
+        {!consumerShell && (
+          <h2 className='mb-6 text-xl font-bold'>Subscriptions</h2>
+        )}
 
         {/* Current Status */}
         <div className='mb-6'>

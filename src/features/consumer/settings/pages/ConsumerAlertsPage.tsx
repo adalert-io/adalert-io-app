@@ -175,24 +175,17 @@ export default function AlertsSubtab({ consumerShell = false }: AlertsSubtabProp
           : "bg-white p-4",
       )}
     >
-      <div className="flex items-center gap-3 mb-1">
-        <h2
-          className={cn(
-            "text-2xl font-bold",
-            consumerShell && "tracking-tight text-slate-900",
-          )}
-        >
-          Alerts
-        </h2>
-      </div>
-      <p
-        className={cn(
-          "text-base mb-8 text-gray-500",
-          consumerShell && "text-[15px] text-slate-500",
-        )}
-      >
-        Control alerts frequency, add SMS, add or remove notification categories
-      </p>
+      {!consumerShell && (
+        <>
+          <div className="flex items-center gap-3 mb-1">
+            <h2 className="text-2xl font-bold">Alerts</h2>
+          </div>
+          <p className="text-base mb-8 text-gray-500">
+            Control alerts frequency, add SMS, add or remove notification
+            categories
+          </p>
+        </>
+      )}
       {error && <div className="mb-4 text-red-600">{error}</div>}
       {/* Email/SMS */}
       <div className="flex flex-col md:flex-row gap-4 mb-8">
@@ -200,7 +193,7 @@ export default function AlertsSubtab({ consumerShell = false }: AlertsSubtabProp
           className={cn(
             "flex-1 border-2 p-4 shadow-none",
             consumerShell &&
-              "rounded-xl border border-slate-200 bg-white shadow-sm",
+              "rounded-2xl border border-slate-100 bg-slate-50/50 shadow-none",
           )}
         >
           <div className="flex flex-row items-center justify-center gap-3 w-full h-full">
@@ -222,7 +215,7 @@ export default function AlertsSubtab({ consumerShell = false }: AlertsSubtabProp
           className={cn(
             "flex flex-1 flex-col gap-2 border-2 p-4 shadow-none",
             consumerShell &&
-              "rounded-xl border border-slate-200 bg-white shadow-sm",
+              "rounded-2xl border border-slate-100 bg-slate-50/50 shadow-none",
           )}
         >
           <div className="flex items-center gap-3">

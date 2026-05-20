@@ -197,33 +197,21 @@ export default function MyProfileTab({
               'rounded-2xl border border-slate-200/90 bg-white p-6 shadow-md sm:p-8',
           )}
         >
-          <h2
-            className={cn(
-              'mb-1 text-2xl font-bold',
-              consumerShell && 'tracking-tight text-slate-900',
-            )}
-          >
-            My Profile
-          </h2>
-          <p
-            className={cn(
-              'mb-6 text-gray-500',
-              consumerShell && 'text-[15px] text-slate-500',
-            )}
-          >
-            View or edit your profile. You can include or exclude yourself from
-            email alerts or control the frequency from{' '}
-            <Link
-              href={alertsSettingsHref}
-              className={cn(
-                'text-blue-600',
-                consumerShell &&
-                  'font-medium text-[#015AFD] hover:text-[#0146ca]',
-              )}
-            >
-              alert settings
-            </Link>
-          </p>
+          {!consumerShell && (
+            <>
+              <h2 className='mb-1 text-2xl font-bold'>My Profile</h2>
+              <p className='mb-6 text-gray-500'>
+                View or edit your profile. You can include or exclude yourself
+                from email alerts or control the frequency from{' '}
+                <Link
+                  href={alertsSettingsHref}
+                  className='text-blue-600'
+                >
+                  alert settings
+                </Link>
+              </p>
+            </>
+          )}
           <div className='flex flex-col gap-8 md:flex-row'>
             {/* Avatar and Name */}
             <div

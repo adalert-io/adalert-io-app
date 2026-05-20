@@ -826,34 +826,22 @@ function BillingSubtabContent({ consumerShell }: { consumerShell: boolean }) {
                   'rounded-2xl border border-slate-100 bg-slate-50/50 p-4 sm:p-6',
               )}
             >
-              <h2
-                className={cn(
-                  'mb-2 text-xl font-bold',
-                  consumerShell && 'tracking-tight text-slate-900',
-                )}
-              >
-                Billing
-              </h2>
-              <p
-                className={cn(
-                  'mb-6 text-gray-600',
-                  consumerShell && 'text-[15px] text-slate-500',
-                )}
-              >
-                Update payment method and view your receipts. You can review
-                your subscription details{' '}
-                <Link
-                  href={subscriptionsPath}
-                  className={cn(
-                    'text-blue-600 hover:underline',
-                    consumerShell &&
-                      'font-medium text-[#015AFD] hover:text-[#0146ca]',
-                  )}
-                >
-                  here
-                </Link>
-                .
-              </p>
+              {!consumerShell && (
+                <>
+                  <h2 className='mb-2 text-xl font-bold'>Billing</h2>
+                  <p className='mb-6 text-gray-600'>
+                    Update payment method and view your receipts. You can review
+                    your subscription details{' '}
+                    <Link
+                      href={subscriptionsPath}
+                      className='text-blue-600 hover:underline'
+                    >
+                      here
+                    </Link>
+                    .
+                  </p>
+                </>
+              )}
 
               {/* Payment Method Section */}
               <div className='mb-8'>
@@ -960,14 +948,9 @@ function BillingSubtabContent({ consumerShell }: { consumerShell: boolean }) {
                   'rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-6',
               )}
             >
-              <h2
-                className={cn(
-                  'mb-6 text-xl font-bold',
-                  consumerShell && 'tracking-tight text-slate-900',
-                )}
-              >
-                Receipt History
-              </h2>
+              {!consumerShell && (
+                <h2 className='mb-6 text-xl font-bold'>Receipt History</h2>
+              )}
 
               {receiptsLoading ? (
                 <div className='text-center py-12'>
