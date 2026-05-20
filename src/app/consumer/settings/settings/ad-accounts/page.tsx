@@ -1,7 +1,7 @@
 "use client";
 
-import AdAccounts from "@/app/settings/settings/ad-accounts/AdAccounts";
+import ConsumerAdAccountsPage from "@/features/consumer/settings/pages/ConsumerAdAccountsPage";
 
-export default function ConsumerSettingsAdAccountsPage() {
-  return <AdAccounts consumerShell />;
+export default function ConsumerSettingsAdAccountsPageRoute() {
+  return <ConsumerAdAccountsPage consumerShell />;
 }

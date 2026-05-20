@@ -1,7 +1,7 @@
 "use client";
 
-import BillingSubtab from "@/app/settings/account/billing/BillingSubtab";
+import ConsumerBillingPage from "@/features/consumer/settings/pages/ConsumerBillingPage";
 
-export default function ConsumerAccountBillingPage() {
-  return <BillingSubtab consumerShell />;
+export default function ConsumerAccountBillingPageRoute() {
+  return <ConsumerBillingPage consumerShell />;
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import MyProfileTab from "@/app/settings/my-profile/MyProfileTab";
+import ConsumerMyProfilePage from "@/features/consumer/settings/pages/ConsumerMyProfilePage";
 
-export default function ConsumerMyProfilePage() {
-  return <MyProfileTab consumerShell />;
+export default function ConsumerMyProfilePageRoute() {
+  return <ConsumerMyProfilePage consumerShell />;
 }

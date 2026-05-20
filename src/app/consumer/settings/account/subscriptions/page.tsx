@@ -1,7 +1,7 @@
 "use client";
 
-import SubscriptionsSubtab from "@/app/settings/account/subscriptions/SubscriptionsSubtab";
+import ConsumerSubscriptionsPage from "@/features/consumer/settings/pages/ConsumerSubscriptionsPage";
 
-export default function ConsumerAccountSubscriptionsPage() {
-  return <SubscriptionsSubtab consumerShell />;
+export default function ConsumerAccountSubscriptionsPageRoute() {
+  return <ConsumerSubscriptionsPage consumerShell />;
 }

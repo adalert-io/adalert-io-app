@@ -1,7 +1,7 @@
 "use client";
 
-import Alerts from "@/app/settings/settings/alerts/Alerts";
+import ConsumerAlertsPage from "@/features/consumer/settings/pages/ConsumerAlertsPage";
 
-export default function ConsumerSettingsAlertsPage() {
-  return <Alerts consumerShell />;
+export default function ConsumerSettingsAlertsPageRoute() {
+  return <ConsumerAlertsPage consumerShell />;
 }

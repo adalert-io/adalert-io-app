@@ -1,7 +1,7 @@
 "use client";
 
-import CompanyDetailsSubtab from "@/app/settings/account/company-details/CompanyDetailsSubtab";
+import ConsumerCompanyDetailsPage from "@/features/consumer/settings/pages/ConsumerCompanyDetailsPage";
 
-export default function ConsumerAccountCompanyDetailsPage() {
-  return <CompanyDetailsSubtab consumerShell />;
+export default function ConsumerAccountCompanyDetailsPageRoute() {
+  return <ConsumerCompanyDetailsPage consumerShell />;
 }

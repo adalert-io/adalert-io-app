@@ -1,0 +1,415 @@
+"use client";
+import { useEffect, useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import Link from "next/link";
+import { Info, Loader2 } from "lucide-react";
+import { useAlertSettingsStore } from "@/lib/store/settings-store";
+import { useAuthStore } from "@/lib/store/auth-store";
+import { CHECKBOX_CLASS } from "@/lib/constants";
+import { cn } from "@/lib/utils";
+
+const FIELD_MAP = [
+  // Email/SMS
+  {
+    key: "Send Email Alerts",
+    label: (
+      <>
+        Send me in <span className="font-bold">Email</span> alerts
+      </>
+    ),
+    id: "email-alerts",
+  },
+  {
+    key: "Send SMS Alerts",
+    label: (
+      <>
+        Send me in <span className="font-bold">SMS</span> alerts{" "}
+        <span className="font-normal text-xs">(critical alerts only)</span>
+      </>
+    ),
+    id: "sms-alerts",
+  },
+  // Severity
+  {
+    key: "Severity Critical",
+    label: "Critical",
+    id: "critical",
+    group: "Severity",
+  },
+  { key: "Severity Medium", label: "Medium", id: "medium", group: "Severity" },
+  { key: "Severity Low", label: "Low", id: "low", group: "Severity" },
+  // Level
+  { key: "Level Account", label: "Account", id: "account", group: "Level" },
+  { key: "Level Ads", label: "Ads", id: "ads", group: "Level" },
+  { key: "Level Keyword", label: "Keyword", id: "keyword", group: "Level" },
+  // Type
+  {
+    key: "Type Ad Performance",
+    label: "Ad Performance",
+    id: "ad-performance",
+    group: "Type",
+  },
+  {
+    key: "Type Brand Checker",
+    label: "Brand Checker",
+    id: "brand-checker",
+    group: "Type",
+  },
+  { key: "Type Budget", label: "Budget", id: "budget", group: "Type" },
+  {
+    key: "Type KPI Trends",
+    label: "KPI Trends",
+    id: "kpi-trends",
+    group: "Type",
+  },
+  {
+    key: "Type Keyword Performance",
+    label: "Keyword Performance",
+    id: "keyword-performance",
+    group: "Type",
+  },
+  {
+    key: "Type Landing Page",
+    label: "Landing Page",
+    id: "landing-page",
+    group: "Type",
+  },
+  {
+    key: "Type Optimization Score",
+    label: "Optimization Score",
+    id: "optimization-score",
+    group: "Type",
+  },
+  { key: "Type Policy", label: "Policy", id: "policy", group: "Type" },
+  {
+    key: "Type Serving Ads",
+    label: "Serving Ads",
+    id: "serving-ads",
+    group: "Type",
+  },
+];
+
+interface AlertsSubtabProps {
+  /** Consumer console: slate styling + profile link under `/consumer`. */
+  consumerShell?: boolean;
+}
+
+export default function AlertsSubtab({ consumerShell = false }: AlertsSubtabProps) {
+  const { user } = useAuthStore();
+  const userDoc = useAuthStore().userDoc;
+  const {
+    alertSettings,
+    loading,
+    error,
+    fetchAlertSettings,
+    refreshAlertSettings,
+    updateAlertSettings,
+    loadedUserId,
+  } = useAlertSettingsStore();
+  const [localSettings, setLocalSettings] = useState<Record<string, boolean>>(
+    {}
+  );
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (user?.uid && loadedUserId !== user.uid) fetchAlertSettings(user.uid);
+  }, [user?.uid, loadedUserId, fetchAlertSettings]);
+
+  // On mount or when tab becomes active again, force refresh to avoid stale state
+  useEffect(() => {
+    if (!user?.uid) return;
+    const onFocus = () => refreshAlertSettings(user.uid);
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [user?.uid, refreshAlertSettings]);
+
+  useEffect(() => {
+    if (alertSettings) {
+      setLocalSettings(
+        Object.fromEntries(
+          FIELD_MAP.map((f) => [
+            f.key,
+            !!alertSettings[f.key as keyof typeof alertSettings],
+          ])
+        )
+      );
+    }
+  }, [alertSettings]);
+
+  const handleCheckbox = (key: string) => {
+    setLocalSettings((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleSave = async () => {
+    if (!user?.uid || !alertSettings) return;
+    setSaving(true);
+    try {
+      await updateAlertSettings(user.uid, localSettings);
+      await refreshAlertSettings(user.uid);
+      toast.success("Alert settings saved successfully!");
+    } catch (error: any) {
+      console.error("Failed to save alert settings:", error);
+      toast.error(error?.message || "Failed to save alert settings");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Group fields for rendering
+  const getFieldsByGroup = (group: string) =>
+    FIELD_MAP.filter((f) => f.group === group);
+
+  const profileHref = consumerShell
+    ? "/consumer/settings/my-profile"
+    : "/settings/my-profile";
+
+  return (
+    <div
+      className={cn(
+        "min-w-0",
+        consumerShell
+          ? "mx-auto max-w-[1480px] space-y-6 pb-4"
+          : "bg-white p-4",
+      )}
+    >
+      <div className="flex items-center gap-3 mb-1">
+        <h2
+          className={cn(
+            "text-2xl font-bold",
+            consumerShell && "tracking-tight text-slate-900",
+          )}
+        >
+          Alerts
+        </h2>
+      </div>
+      <p
+        className={cn(
+          "text-base mb-8 text-gray-500",
+          consumerShell && "text-[15px] text-slate-500",
+        )}
+      >
+        Control alerts frequency, add SMS, add or remove notification categories
+      </p>
+      {error && <div className="mb-4 text-red-600">{error}</div>}
+      {/* Email/SMS */}
+      <div className="flex flex-col md:flex-row gap-4 mb-8">
+        <Card
+          className={cn(
+            "flex-1 border-2 p-4 shadow-none",
+            consumerShell &&
+              "rounded-xl border border-slate-200 bg-white shadow-sm",
+          )}
+        >
+          <div className="flex flex-row items-center justify-center gap-3 w-full h-full">
+            <Checkbox
+              checked={!!localSettings["Send Email Alerts"]}
+              onCheckedChange={() => handleCheckbox("Send Email Alerts")}
+              className={`mr-2 ${CHECKBOX_CLASS}`}
+              id="email-alerts"
+            />
+            <label
+              htmlFor="email-alerts"
+              className="text-base font-normal select-none"
+            >
+              Send me in <span className="font-bold">Email</span> alerts
+            </label>
+          </div>
+        </Card>
+        <Card
+          className={cn(
+            "flex flex-1 flex-col gap-2 border-2 p-4 shadow-none",
+            consumerShell &&
+              "rounded-xl border border-slate-200 bg-white shadow-sm",
+          )}
+        >
+          <div className="flex items-center gap-3">
+            <Checkbox
+              checked={!!localSettings["Send SMS Alerts"]}
+              onCheckedChange={() => handleCheckbox("Send SMS Alerts")}
+              className={`mr-3 ${CHECKBOX_CLASS}`}
+              id="sms-alerts"
+              disabled={!userDoc?.Telephone || !(userDoc && userDoc["Telephone Dial Code"]) }
+            />
+            <label
+              htmlFor="sms-alerts"
+              className="text-base font-normal select-none"
+            >
+              Send me in <span className="font-bold">SMS</span> alerts{" "}
+              <span className="font-normal text-xs">
+                (critical alerts only)
+              </span>
+            </label>
+          </div>
+          <div
+            className={cn(
+              "ml-0 mt-1 flex flex-col items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 text-xs text-gray-500 sm:ml-7 sm:flex-row sm:items-start",
+              consumerShell && "border border-slate-100 bg-slate-50 text-slate-600",
+            )}
+          >
+            <Info
+              className={cn(
+                "h-4 w-4 text-blue-400",
+                consumerShell && "text-[#015AFD]",
+              )}
+            />
+            Update phone or withdraw consent in{" "}
+            <Link
+              href={profileHref}
+              className={cn(
+                "font-medium text-blue-600 underline",
+                consumerShell && "text-[#015AFD] hover:text-[#0146ca]",
+              )}
+            >
+              My Profile
+            </Link>
+          </div>
+        </Card>
+      </div>
+      {/* Hide groups if Email alerts are disabled */}
+      {/* Severity */}
+      {localSettings["Send Email Alerts"] && (
+      <div className="mb-8">
+        <div
+          className={cn(
+            "mb-2 text-lg font-semibold",
+            consumerShell && "text-slate-800",
+          )}
+        >
+          Severity
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {getFieldsByGroup("Severity").map((f) => (
+            <Card
+              key={f.key}
+              className={cn(
+                "flex items-center gap-3 p-4 shadow-none",
+                consumerShell &&
+                  "rounded-xl border border-slate-200 bg-white shadow-sm",
+              )}
+            >
+              <div className="flex flex-row items-center gap-3 w-full h-full">
+                <Checkbox
+                  checked={!!localSettings[f.key]}
+                  onCheckedChange={() => handleCheckbox(f.key)}
+                  id={f.id}
+                  className={`mr-2 ${CHECKBOX_CLASS}`}
+                />
+                <label
+                  htmlFor={f.id}
+                  className="text-base font-normal select-none"
+                >
+                  {f.label}
+                </label>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+      )}
+      {/* Level */}
+      {localSettings["Send Email Alerts"] && (
+      <div className="mb-8">
+        <div
+          className={cn(
+            "mb-2 text-lg font-semibold",
+            consumerShell && "text-slate-800",
+          )}
+        >
+          Level
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {getFieldsByGroup("Level").map((f) => (
+            <Card
+              key={f.key}
+              className={cn(
+                "flex items-center gap-3 p-4 shadow-none",
+                consumerShell &&
+                  "rounded-xl border border-slate-200 bg-white shadow-sm",
+              )}
+            >
+              <div className="flex flex-row items-center gap-3 w-full h-full">
+                <Checkbox
+                  checked={!!localSettings[f.key]}
+                  onCheckedChange={() => handleCheckbox(f.key)}
+                  id={f.id}
+                  className={`mr-2 ${CHECKBOX_CLASS}`}
+                />
+                <label
+                  htmlFor={f.id}
+                  className="text-base font-normal select-none"
+                >
+                  {f.label}
+                </label>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+      )}
+      {/* Type */}
+      {localSettings["Send Email Alerts"] && (
+      <div className="mb-8">
+        <div
+          className={cn(
+            "mb-2 text-lg font-semibold",
+            consumerShell && "text-slate-800",
+          )}
+        >
+          Type
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3">
+          {getFieldsByGroup("Type").map((f) => (
+            <Card
+              key={f.key}
+              className={cn(
+                "flex items-center gap-3 p-4 shadow-none",
+                consumerShell &&
+                  "rounded-xl border border-slate-200 bg-white shadow-sm",
+              )}
+            >
+              <div className="flex flex-row items-center gap-3 w-full h-full">
+                <Checkbox
+                  checked={!!localSettings[f.key]}
+                  onCheckedChange={() => handleCheckbox(f.key)}
+                  id={f.id}
+                  className={`mr-2 ${CHECKBOX_CLASS}`}
+                />
+                <label
+                  htmlFor={f.id}
+                  className="text-base font-normal select-none"
+                >
+                  {f.label}
+                </label>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+      )}
+      <div className="mt-8 flex justify-center">
+        <Button
+          onClick={handleSave}
+          disabled={saving || loading}
+          className={cn(
+            "min-w-[180px] rounded px-8 py-3 text-sm font-semibold text-white shadow-md",
+            consumerShell
+              ? "rounded-xl bg-[#015AFD] hover:bg-[#0146ca]"
+              : "bg-blue-600 font-normal",
+          )}
+        >
+          {saving ? (
+            <>
+              <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+              Saving...
+            </>
+          ) : (
+            'Save'
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
