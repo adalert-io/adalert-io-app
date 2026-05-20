@@ -45,6 +45,7 @@ import {
 import { doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 // Dynamically import react-select to avoid SSR issues
 const Select = dynamic(() => import('react-select'), {
@@ -53,7 +54,13 @@ const Select = dynamic(() => import('react-select'), {
 });
 
 // Payment Form Component
-function PaymentForm({ onBack }: { onBack: () => void }) {
+function PaymentForm({
+  onBack,
+  consumerShell = false,
+}: {
+  onBack: () => void;
+  consumerShell?: boolean;
+}) {
   const stripe = useStripe();
   const elements = useElements();
   const { userDoc } = useAuthStore();
@@ -123,6 +130,7 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
   };
 
   const subscriptionPrice = calculateSubscriptionPrice();
+  const inputIconAccent = consumerShell ? 'text-[#015AFD]' : 'text-[#155dfc]';
 
   useEffect(() => {
     setIsClient(true);
@@ -178,10 +186,18 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
   // Show fallback if Stripe is not available
   if (!stripe) {
     return (
-      <div className='bg-white rounded-2xl shadow-md p-8'>
+      <div
+        className={cn(
+          'rounded-2xl bg-white p-8 shadow-md',
+          consumerShell && 'border border-slate-200/90',
+        )}
+      >
         {/* Back Button */}
         <button
-          className='flex items-center gap-2 text-blue-600 mb-6'
+          className={cn(
+            'mb-6 flex items-center gap-2 text-blue-600',
+            consumerShell && 'font-medium text-[#015AFD] hover:text-[#0146ca]',
+          )}
           onClick={onBack}
         >
           <ArrowLeft className='w-5 h-5' />
@@ -255,10 +271,18 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
   }
 
   return (
-    <div className='bg-white p-8'>
+    <div
+      className={cn(
+        'bg-white p-8',
+        consumerShell && 'rounded-2xl border border-slate-200/90',
+      )}
+    >
       {/* Back Button */}
       <button
-        className='flex items-center gap-2 text-blue-600 mb-6'
+        className={cn(
+          'mb-6 flex items-center gap-2 text-blue-600',
+          consumerShell && 'font-medium text-[#015AFD] hover:text-[#0146ca]',
+        )}
         onClick={onBack}
       >
         <ArrowLeft className='w-5 h-5' />
@@ -268,8 +292,22 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
       {/* Subscription Summary */}
       <div className='flex items-start justify-between gap-4 mb-4 sm:flex-row flex-col items-center'>
         <div className='text-3xl font-bold'>
-          <span className='text-blue-600'>${subscriptionPrice}</span>
-          <span className='text-gray-600 font-normal text-xl'>/Monthly</span>
+          <span
+            className={cn(
+              'text-blue-600',
+              consumerShell && 'text-[#015AFD]',
+            )}
+          >
+            ${subscriptionPrice}
+          </span>
+          <span
+            className={cn(
+              'font-normal text-xl text-gray-600',
+              consumerShell && 'text-slate-500',
+            )}
+          >
+            /Monthly
+          </span>
         </div>
         <div className='flex flex-col items-start'>
           {statusText && (
@@ -281,25 +319,50 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
             </div>
           )}
 
-          <div className='bg-gray-100 px-3 py-1 rounded-full'>
-            <span className='text-blue-600 font-semibold'>
+          <div
+            className={cn(
+              'rounded-full bg-gray-100 px-3 py-1',
+              consumerShell && 'bg-slate-100',
+            )}
+          >
+            <span
+              className={cn(
+                'font-semibold text-blue-600',
+                consumerShell && 'text-[#015AFD]',
+              )}
+            >
               {connectedAccountsCount}
             </span>
-            <span className='text-gray-600'> Connected ads account(s)</span>
+            <span className={cn('text-gray-600', consumerShell && 'text-slate-600')}>
+              {' '}
+              Connected ads account(s)
+            </span>
           </div>
         </div>
       </div>
 
       {/* Payment Method Form */}
       <div>
-        <h3 className='text-xl font-bold text-gray-900 mb-2'>Payment Method</h3>
-        <p className='text-gray-600 mb-6'>
+        <h3
+          className={cn(
+            'mb-2 text-xl font-bold text-gray-900',
+            consumerShell && 'text-slate-900',
+          )}
+        >
+          Payment Method
+        </h3>
+        <p className={cn('mb-6 text-gray-600', consumerShell && 'text-slate-600')}>
           Enter your payment information below
         </p>
 
         {/* Accepted Cards */}
         <div className='flex items-center gap-4 mb-6'>
-          <div className='text-sm hidden text-gray-600 sm:block'>
+          <div
+            className={cn(
+              'hidden text-sm text-gray-600 sm:block',
+              consumerShell && 'text-slate-600',
+            )}
+          >
             Accepted cards:{' '}
           </div>
           <div className='flex gap-2'>
@@ -320,7 +383,12 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
         <div className='space-y-4'>
           {/* Card Details */}
           <div>
-            <div className='mt-1 border border-gray-300 rounded-md p-3'>
+            <div
+              className={cn(
+                'mt-1 rounded-md border border-gray-300 p-3',
+                consumerShell && 'rounded-xl border-slate-200',
+              )}
+            >
               <CardElement
                 options={stripeConfig.cardElementOptions}
                 onChange={(event) => {
@@ -333,7 +401,12 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
           {/* Name on Card */}
           <div>
             <div className='relative mt-1'>
-              <User className='absolute left-3 top-1/2 transform -translate-y-1/2 text-[#155dfc] w-4 h-4' />
+              <User
+                className={cn(
+                  'absolute left-3 top-1/2 w-4 -translate-y-1/2 transform',
+                  inputIconAccent,
+                )}
+              />
               <Input
                 id='nameOnCard'
                 type='text'
@@ -350,7 +423,12 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
           {/* Street Address */}
           <div>
             <div className='relative mt-1'>
-              <MapPin className='absolute left-3 top-1/2 transform -translate-y-1/2 text-[#155dfc] w-4 h-4' />
+              <MapPin
+                className={cn(
+                  'absolute left-3 top-1/2 w-4 -translate-y-1/2 transform',
+                  inputIconAccent,
+                )}
+              />
               <Input
                 id='streetAddress'
                 type='text'
@@ -368,7 +446,12 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
           <div className='grid grid-cols-2 gap-4'>
             <div>
               <div className='relative mt-1'>
-                <Building className='absolute left-3 top-1/2 transform -translate-y-1/2 text-[#155dfc] w-4 h-4' />
+                <Building
+                  className={cn(
+                    'absolute left-3 top-1/2 w-4 -translate-y-1/2 transform',
+                    inputIconAccent,
+                  )}
+                />
                 <Input
                   id='city'
                   type='text'
@@ -381,7 +464,12 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
             </div>
             <div>
               <div className='relative mt-1'>
-                <Building className='absolute left-3 top-1/2 transform -translate-y-1/2 text-[#155dfc] w-4 h-4' />
+                <Building
+                  className={cn(
+                    'absolute left-3 top-1/2 w-4 -translate-y-1/2 transform',
+                    inputIconAccent,
+                  )}
+                />
                 <Input
                   id='state'
                   type='text'
@@ -398,7 +486,12 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
           <div className='grid grid-cols-2 gap-4'>
             <div>
               <div className='relative mt-1'>
-                <MapPin className='absolute left-3 top-1/2 transform -translate-y-1/2 text-[#155dfc] w-4 h-4 z-10' />
+                <MapPin
+                  className={cn(
+                    'absolute left-3 top-1/2 z-10 w-4 -translate-y-1/2 transform',
+                    inputIconAccent,
+                  )}
+                />
                 {isClient ? (
                   <Select
                     placeholder='Select Country'
@@ -436,7 +529,12 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
             </div>
             <div>
               <div className='relative mt-1'>
-                <Target className='absolute left-3 top-1/2 transform -translate-y-1/2 text-[#155dfc] w-4 h-4' />
+                <Target
+                  className={cn(
+                    'absolute left-3 top-1/2 w-4 -translate-y-1/2 transform',
+                    inputIconAccent,
+                  )}
+                />
                 <Input
                   id='zip'
                   type='text'
@@ -455,7 +553,12 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
           <Button
             onClick={handleSubmit}
             disabled={isSubmitting || !stripe || !isFormValid()}
-            className='px-8 py-3 bg-blue-600 text-white text-sm font-normal rounded shadow-md min-w-[180px]'
+            className={cn(
+              'min-w-[180px] rounded px-8 py-3 text-sm font-normal text-white shadow-md',
+              consumerShell
+                ? 'rounded-xl bg-[#015AFD] font-semibold hover:bg-[#0146ca]'
+                : 'bg-blue-600',
+            )}
           >
             {isSubmitting ? (
               <>
@@ -473,7 +576,14 @@ function PaymentForm({ onBack }: { onBack: () => void }) {
 }
 
 // Main Billing Component
-function BillingSubtabContent() {
+function BillingSubtabContent({ consumerShell }: { consumerShell: boolean }) {
+  const billingBasePath = consumerShell
+    ? '/consumer/settings/account/billing'
+    : '/settings/account/billing';
+  const subscriptionsPath = consumerShell
+    ? '/consumer/settings/account/subscriptions'
+    : '/settings/account/subscriptions';
+
   const { user, userDoc, fetchUserDocument } = useAuthStore();
   const {
     subscription, 
@@ -685,8 +795,13 @@ function BillingSubtabContent() {
 
   if (userDoc && userDoc['User Type'] !== 'Admin') {
     return (
-      <div className='flex items-center justify-center min-h-[400px]'>
-        <span className='text-lg text-gray-600 font-semibold'>
+      <div className='flex min-h-[400px] items-center justify-center'>
+        <span
+          className={cn(
+            'text-lg font-semibold text-gray-600',
+            consumerShell && 'text-slate-600',
+          )}
+        >
           Contact your admin
         </span>
       </div>
@@ -695,18 +810,45 @@ function BillingSubtabContent() {
 
   return (
     <Elements stripe={stripePromise}>
-      <div className='space-y-8'>
+      <div
+        className={cn(
+          'space-y-8',
+          consumerShell && 'mx-auto w-full min-w-0 max-w-[1480px]',
+        )}
+      >
         {screen === 'list' && (
           <>
             {/* Billing Section */}
-            <div className='bg-white p-4'>
-              <h2 className='text-xl font-bold mb-2'>Billing</h2>
-              <p className='text-gray-600 mb-6'>
+            <div
+              className={cn(
+                'bg-white p-4',
+                consumerShell &&
+                  'rounded-2xl border border-slate-100 bg-slate-50/50 p-4 sm:p-6',
+              )}
+            >
+              <h2
+                className={cn(
+                  'mb-2 text-xl font-bold',
+                  consumerShell && 'tracking-tight text-slate-900',
+                )}
+              >
+                Billing
+              </h2>
+              <p
+                className={cn(
+                  'mb-6 text-gray-600',
+                  consumerShell && 'text-[15px] text-slate-500',
+                )}
+              >
                 Update payment method and view your receipts. You can review
                 your subscription details{' '}
                 <Link
-                  href='/settings/account/subscriptions'
-                  className='text-blue-600 hover:underline'
+                  href={subscriptionsPath}
+                  className={cn(
+                    'text-blue-600 hover:underline',
+                    consumerShell &&
+                      'font-medium text-[#015AFD] hover:text-[#0146ca]',
+                  )}
                 >
                   here
                 </Link>
@@ -715,11 +857,24 @@ function BillingSubtabContent() {
 
               {/* Payment Method Section */}
               <div className='mb-8'>
-                <h3 className='text-lg font-semibold mb-4'>Payment Method</h3>
+                <h3
+                  className={cn(
+                    'mb-4 text-lg font-semibold',
+                    consumerShell && 'text-slate-900',
+                  )}
+                >
+                  Payment Method
+                </h3>
                 <div className='flex flex-col items-start gap-6 sm:flex-row '>
                   {/* Payment Method Card */}
                   {paymentMethods ? (
-                    <div className='bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-6 min-w-[320px]'>
+                    <div
+                      className={cn(
+                        'min-w-[320px] rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 p-6 text-white',
+                        consumerShell &&
+                          'rounded-2xl from-[#015AFD] to-[#0146ca] shadow-md',
+                      )}
+                    >
                       <div className='flex justify-between items-start mb-4'>
                         <div>
                           <div className='text-sm opacity-80 mb-1'>
@@ -755,7 +910,13 @@ function BillingSubtabContent() {
                       </div>
                     </div>
                   ) : (
-                    <div className='bg-gray-100 text-gray-600 rounded-lg p-6 w-full   flex items-center justify-center sm:w-[320px]'>
+                    <div
+                      className={cn(
+                        'flex w-full items-center justify-center rounded-lg bg-gray-100 p-6 text-gray-600 sm:w-[320px]',
+                        consumerShell &&
+                          'border border-slate-200 bg-slate-50 text-slate-600',
+                      )}
+                    >
                       <div className='text-center'>
                         <CreditCard className='w-8 h-8 mx-auto mb-2 text-gray-400' />
                         <p className='text-sm'>No payment method</p>
@@ -774,7 +935,12 @@ function BillingSubtabContent() {
                       </div>
                     )}
                     <Button
-                      className='px-8 py-3 bg-blue-600 text-white text-sm font-normal rounded shadow-md min-w-[180px] mt-6'
+                      className={cn(
+                        'mt-6 min-w-[180px] rounded px-8 py-3 text-sm font-normal text-white shadow-md',
+                        consumerShell
+                          ? 'rounded-xl bg-[#015AFD] font-semibold hover:bg-[#0146ca]'
+                          : 'bg-blue-600',
+                      )}
                       onClick={() => setScreen('payment-form')}
                     >
                       {paymentMethods
@@ -787,8 +953,21 @@ function BillingSubtabContent() {
             </div>
 
             {/* Receipt History Section */}
-            <div className='bg-white rounded-2xl  p-4'>
-              <h2 className='text-xl font-bold mb-6'>Receipt History</h2>
+            <div
+              className={cn(
+                'rounded-2xl bg-white p-4',
+                consumerShell &&
+                  'rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-6',
+              )}
+            >
+              <h2
+                className={cn(
+                  'mb-6 text-xl font-bold',
+                  consumerShell && 'tracking-tight text-slate-900',
+                )}
+              >
+                Receipt History
+              </h2>
 
               {receiptsLoading ? (
                 <div className='text-center py-12'>
@@ -803,23 +982,59 @@ function BillingSubtabContent() {
               ) : (
                 <>
                   {/* Receipt Table */}
-                  <div className='overflow-x-auto'>
+                  <div
+                    className={cn(
+                      'overflow-x-auto',
+                      consumerShell &&
+                        'rounded-xl border border-slate-200/90 bg-white',
+                    )}
+                  >
                     <table className='min-w-full'>
                       <thead>
-                        <tr className='border-b border-gray-200'>
-                          <th className='text-left py-3 px-4 font-semibold text-gray-700'>
+                        <tr
+                          className={cn(
+                            'border-b border-gray-200',
+                            consumerShell && 'border-slate-100 bg-slate-50/90',
+                          )}
+                        >
+                          <th
+                            className={cn(
+                              'px-4 py-3 text-left font-semibold text-gray-700',
+                              consumerShell && 'text-slate-600',
+                            )}
+                          >
                             Date Issued
                           </th>
-                          <th className='text-left py-3 px-4 font-semibold text-gray-700'>
+                          <th
+                            className={cn(
+                              'px-4 py-3 text-left font-semibold text-gray-700',
+                              consumerShell && 'text-slate-600',
+                            )}
+                          >
                             Invoice No.
                           </th>
-                          <th className='text-left py-3 px-4 font-semibold text-gray-700'>
+                          <th
+                            className={cn(
+                              'px-4 py-3 text-left font-semibold text-gray-700',
+                              consumerShell && 'text-slate-600',
+                            )}
+                          >
                             Payment Method
                           </th>
-                          <th className='text-left py-3 px-4 font-semibold text-gray-700'>
+                          <th
+                            className={cn(
+                              'px-4 py-3 text-left font-semibold text-gray-700',
+                              consumerShell && 'text-slate-600',
+                            )}
+                          >
                             Status
                           </th>
-                          <th className='text-left py-3 px-4 font-semibold text-gray-700'>
+                          <th
+                            className={cn(
+                              'px-4 py-3 text-left font-semibold text-gray-700',
+                              consumerShell && 'text-slate-600',
+                            )}
+                          >
                             Download
                           </th>
                         </tr>
@@ -828,7 +1043,11 @@ function BillingSubtabContent() {
                         {receipts.map((receipt, index) => (
                           <tr
                             key={index}
-                            className='border-b border-gray-100 hover:bg-gray-50'
+                            className={cn(
+                              'border-b border-gray-100 hover:bg-gray-50',
+                              consumerShell &&
+                                'border-slate-100 hover:bg-slate-50/80',
+                            )}
                           >
                             <td className='py-3 px-4'>
                               {receipt.created
@@ -867,9 +1086,17 @@ function BillingSubtabContent() {
                                   rel='noopener noreferrer'
                                   download
                                   aria-label='Download Receipt'
-                                  className='inline-flex items-center justify-center p-2 rounded hover:bg-gray-200 transition-colors'
+                                  className={cn(
+                                    'inline-flex items-center justify-center rounded p-2 transition-colors hover:bg-gray-200',
+                                    consumerShell && 'hover:bg-slate-100',
+                                  )}
                                 >
-                                  <Download className='w-5 h-5 text-blue-600' />
+                                  <Download
+                                    className={cn(
+                                      'h-5 w-5 text-blue-600',
+                                      consumerShell && 'text-[#015AFD]',
+                                    )}
+                                  />
                                 </a>
                               ) : (
                                 <span
@@ -954,8 +1181,9 @@ function BillingSubtabContent() {
 
         {screen === 'payment-form' && (
           <PaymentForm
+            consumerShell={consumerShell}
             onBack={() => {
-              router.replace('/settings/account/billing');
+              router.replace(billingBasePath);
               setScreen('list');
             }}
           />
@@ -965,10 +1193,16 @@ function BillingSubtabContent() {
   );
 }
 
-export default function BillingSubtab() {
+interface BillingSubtabProps {
+  consumerShell?: boolean;
+}
+
+export default function BillingSubtab({
+  consumerShell = false,
+}: BillingSubtabProps) {
   return (
     <Suspense fallback={<div className='p-4'>Loading…</div>}>
-      <BillingSubtabContent />
+      <BillingSubtabContent consumerShell={consumerShell} />
     </Suspense>
   );
 }

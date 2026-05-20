@@ -11,6 +11,7 @@ import { useAlertSettingsStore } from '@/lib/store/settings-store';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { countries } from 'countries-list';
+import { cn } from '@/lib/utils';
 
 // Dynamically import react-select to avoid SSR issues
 const Select = dynamic(() => import('react-select'), {
@@ -18,7 +19,18 @@ const Select = dynamic(() => import('react-select'), {
   loading: () => <div className='h-10 bg-gray-100 rounded animate-pulse' />,
 });
 
-export default function MyProfileTab() {
+interface MyProfileTabProps {
+  consumerShell?: boolean;
+}
+
+export default function MyProfileTab({
+  consumerShell = false,
+}: MyProfileTabProps) {
+  const alertsSettingsHref = consumerShell
+    ? '/consumer/settings/settings/alerts'
+    : '/settings/settings/alerts';
+  const inputIconAccent = consumerShell ? 'text-[#015AFD]' : 'text-[#155dfc]';
+
   const { userDoc } = useAuthStore();
   const isGoogleSignUp = userDoc?.['Is Google Sign Up'] === true;
   const [name, setName] = useState(userDoc?.Name || '');
@@ -166,23 +178,61 @@ export default function MyProfileTab() {
       (phone.trim() === '' && !optInForTextMessage));
 
   return (
-    <div className='flex flex-col items-center w-full min-h-[80vh] p-4'>
-      <div className='w-full max-w-5xl'>
-        <div className='bg-white rounded-2xl shadow-md p-8 border border-[#e5e5e5]'>
-          <h2 className='text-2xl font-bold mb-1'>My Profile</h2>
-          <p className='text-gray-500 mb-6'>
+    <div
+      className={cn(
+        'flex min-h-[80vh] w-full flex-col items-center p-4',
+        consumerShell && 'min-h-0 p-0',
+      )}
+    >
+      <div
+        className={cn(
+          'w-full max-w-5xl',
+          consumerShell && 'max-w-[1480px]',
+        )}
+      >
+        <div
+          className={cn(
+            'rounded-2xl border border-[#e5e5e5] bg-white p-8 shadow-md',
+            consumerShell &&
+              'rounded-2xl border border-slate-200/90 bg-white p-6 shadow-md sm:p-8',
+          )}
+        >
+          <h2
+            className={cn(
+              'mb-1 text-2xl font-bold',
+              consumerShell && 'tracking-tight text-slate-900',
+            )}
+          >
+            My Profile
+          </h2>
+          <p
+            className={cn(
+              'mb-6 text-gray-500',
+              consumerShell && 'text-[15px] text-slate-500',
+            )}
+          >
             View or edit your profile. You can include or exclude yourself from
             email alerts or control the frequency from{' '}
             <Link
-              href='/settings/settings/alerts'
-              className='text-blue-600'
+              href={alertsSettingsHref}
+              className={cn(
+                'text-blue-600',
+                consumerShell &&
+                  'font-medium text-[#015AFD] hover:text-[#0146ca]',
+              )}
             >
               alert settings
             </Link>
           </p>
-          <div className='flex flex-col md:flex-row gap-8'>
+          <div className='flex flex-col gap-8 md:flex-row'>
             {/* Avatar and Name */}
-            <div className='flex flex-col items-center flex-1 bg-white rounded-xl border border-[#e5e5e5] p-8'>
+            <div
+              className={cn(
+                'flex flex-1 flex-col items-center rounded-xl border border-[#e5e5e5] bg-white p-8',
+                consumerShell &&
+                  'rounded-2xl border border-slate-200/90 bg-slate-50/50',
+              )}
+            >
               <div className='relative w-25 h-25 flex items-center justify-center mb-4'>
                 <div className='w-full h-full border rounded-full overflow-hidden bg-gray-50 flex items-center justify-center'>
                   <img
@@ -204,7 +254,9 @@ export default function MyProfileTab() {
                   onClick={handleAvatarClick}
                   disabled={isGoogleSignUp}
                 >
-                  <Camera className='w-6 h-6 text-[#155dfc]' />
+                  <Camera
+                    className={cn('h-6 w-6', inputIconAccent)}
+                  />
                 </button>
                 {/* Hidden file input */}
                 <input
@@ -219,8 +271,19 @@ export default function MyProfileTab() {
               <div className='text-xl font-bold text-center mt-2'>{name}</div>
             </div>
             {/* Personal Info Form */}
-            <div className='flex-1 bg-white rounded-xl border border-[#e5e5e5] p-8'>
-              <div className='text-lg font-semibold mb-6'>
+            <div
+              className={cn(
+                'flex-1 rounded-xl border border-[#e5e5e5] bg-white p-8',
+                consumerShell &&
+                  'rounded-2xl border border-slate-200/90 bg-white',
+              )}
+            >
+              <div
+                className={cn(
+                  'mb-6 text-lg font-semibold',
+                  consumerShell && 'text-slate-900',
+                )}
+              >
                 Personal information
               </div>
               <form className='flex flex-col gap-4'>
@@ -232,7 +295,9 @@ export default function MyProfileTab() {
                     className='pl-10'
                     disabled={isGoogleSignUp}
                   />
-                  <User className='absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]' />
+                  <User
+                    className={cn('absolute left-3 top-2.5 h-5 w-5', inputIconAccent)}
+                  />
                 </div>
                 <div className='relative'>
                   <Input
@@ -243,7 +308,9 @@ export default function MyProfileTab() {
                     type='email'
                     disabled={isGoogleSignUp}
                   />
-                  <Mail className='absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]' />
+                  <Mail
+                    className={cn('absolute left-3 top-2.5 h-5 w-5', inputIconAccent)}
+                  />
                 </div>
                 <div className='relative flex flex-col items-center gap-2 sm:flex-row'>
                   {/* Country selector using react-select */}
@@ -303,7 +370,10 @@ export default function MyProfileTab() {
                   />
                   <label
                     htmlFor='sms-consent'
-                    className='text-xs text-gray-600 select-none'
+                    className={cn(
+                      'select-none text-xs text-gray-600',
+                      consumerShell && 'text-slate-600',
+                    )}
                   >
                     I consent to opting in for text messages. Message and data
                     rate changes may apply. Change in your alert settings to opt
@@ -315,7 +385,12 @@ export default function MyProfileTab() {
           </div>
           <div className='mt-8 flex justify-center'>
             <Button
-              className='px-8 py-3 bg-blue-600 text-white text-sm font-normal rounded shadow-md min-w-[180px]'
+              className={cn(
+                'min-w-[180px] rounded px-8 py-3 text-sm font-normal text-white shadow-md',
+                consumerShell
+                  ? 'rounded-xl bg-[#015AFD] font-semibold hover:bg-[#0146ca]'
+                  : 'bg-blue-600',
+              )}
               onClick={handleSave}
               disabled={!isSaveEnabled || isSaving}
             >

@@ -19,6 +19,7 @@ import {
   Mail,
   Loader2,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // Dynamically import react-select to avoid SSR issues
 const Select = dynamic(() => import('react-select'), {
@@ -26,7 +27,18 @@ const Select = dynamic(() => import('react-select'), {
   loading: () => <div className='h-10 bg-gray-100 rounded animate-pulse' />,
 });
 
-export default function CompanyDetailsSubtab() {
+interface CompanyDetailsSubtabProps {
+  consumerShell?: boolean;
+}
+
+export default function CompanyDetailsSubtab({
+  consumerShell = false,
+}: CompanyDetailsSubtabProps) {
+  const billingHref = consumerShell
+    ? '/consumer/settings/account/billing'
+    : '/settings/account/billing';
+  const inputIconAccent = consumerShell ? 'text-[#015AFD]' : 'text-[#155dfc]';
+
   const { stripeCompany, fetchStripeCompany, updateStripeCompany, loading } =
     useAlertSettingsStore();
   const { userDoc } = useAuthStore();
@@ -152,14 +164,36 @@ export default function CompanyDetailsSubtab() {
   };
 
   return (
-    <div className='bg-white  p-4'>
-      <h2 className='text-xl font-bold mb-2'>Company Details</h2>
-      <p className='text-gray-600 mb-6'>
+    <div
+      className={cn(
+        'bg-white p-4',
+        consumerShell &&
+          'mx-auto w-full min-w-0 max-w-[1480px] rounded-2xl border border-slate-100 bg-slate-50/50 p-4 sm:p-6',
+      )}
+    >
+      <h2
+        className={cn(
+          'mb-2 text-xl font-bold',
+          consumerShell && 'tracking-tight text-slate-900',
+        )}
+      >
+        Company Details
+      </h2>
+      <p
+        className={cn(
+          'mb-6 text-gray-600',
+          consumerShell && 'text-[15px] text-slate-500',
+        )}
+      >
         Update your company information to show in future invoices. You can
         review your invoices from{' '}
         <Link
-          href='/settings/account/billing'
-          className='text-blue-600 hover:underline'
+          href={billingHref}
+          className={cn(
+            'text-blue-600 hover:underline',
+            consumerShell &&
+              'font-medium text-[#015AFD] hover:text-[#0146ca]',
+          )}
         >
           billing
         </Link>
@@ -175,7 +209,9 @@ export default function CompanyDetailsSubtab() {
             value={formData.companyName}
             onChange={(e) => handleInputChange('companyName', e.target.value)}
           />
-          <User className='absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]' />
+          <User
+            className={cn('absolute left-3 top-2.5 h-5 w-5', inputIconAccent)}
+          />
         </div>
       </div>
 
@@ -190,7 +226,9 @@ export default function CompanyDetailsSubtab() {
               value={formData.address}
               onChange={(e) => handleInputChange('address', e.target.value)}
             />
-            <Building className='absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]' />
+            <Building
+              className={cn('absolute left-3 top-2.5 h-5 w-5', inputIconAccent)}
+            />
           </div>
 
           {/* State */}
@@ -201,13 +239,15 @@ export default function CompanyDetailsSubtab() {
               value={formData.state}
               onChange={(e) => handleInputChange('state', e.target.value)}
             />
-            <MapPin className='absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]' />
+            <MapPin
+              className={cn('absolute left-3 top-2.5 h-5 w-5', inputIconAccent)}
+            />
           </div>
 
           {/* Country */}
           <div className='relative'>
             <div className='absolute left-3 top-2.5 z-10'>
-              <Globe className='w-5 h-5 text-[#155dfc]' />
+              <Globe className={cn('h-5 w-5', inputIconAccent)} />
             </div>
             {isClient ? (
               <Select
@@ -248,7 +288,9 @@ export default function CompanyDetailsSubtab() {
               value={formData.website}
               onChange={(e) => handleInputChange('website', e.target.value)}
             />
-            <Globe className='absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]' />
+            <Globe
+              className={cn('absolute left-3 top-2.5 h-5 w-5', inputIconAccent)}
+            />
           </div>
 
           {/* VAT */}
@@ -261,7 +303,9 @@ export default function CompanyDetailsSubtab() {
               value={formData.vat}
               onChange={(e) => handleInputChange('vat', e.target.value)}
             />
-            <FileText className='absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]' />
+            <FileText
+              className={cn('absolute left-3 top-2.5 h-5 w-5', inputIconAccent)}
+            />
           </div>
         </div>
 
@@ -275,7 +319,9 @@ export default function CompanyDetailsSubtab() {
               value={formData.city}
               onChange={(e) => handleInputChange('city', e.target.value)}
             />
-            <Building className='absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]' />
+            <Building
+              className={cn('absolute left-3 top-2.5 h-5 w-5', inputIconAccent)}
+            />
           </div>
 
           {/* Zip Code */}
@@ -286,7 +332,9 @@ export default function CompanyDetailsSubtab() {
               value={formData.zipCode}
               onChange={(e) => handleInputChange('zipCode', e.target.value)}
             />
-            <MapPin className='absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]' />
+            <MapPin
+              className={cn('absolute left-3 top-2.5 h-5 w-5', inputIconAccent)}
+            />
           </div>
 
           {/* Telephone */}
@@ -300,7 +348,9 @@ export default function CompanyDetailsSubtab() {
               value={formData.telephone}
               onChange={(e) => handlePhoneNumberChange(e.target.value)}
             />
-            <Phone className='absolute left-3 top-2.5 w-4 h-4 text-[#155dfc]' />
+            <Phone
+              className={cn('absolute left-3 top-2.5 h-4 w-4', inputIconAccent)}
+            />
           </div>
 
           {/* Timezone */}
@@ -311,7 +361,9 @@ export default function CompanyDetailsSubtab() {
               value={formData.timezone}
               onChange={(e) => handleInputChange('timezone', e.target.value)}
             />
-            <Clock className='absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]' />
+            <Clock
+              className={cn('absolute left-3 top-2.5 h-5 w-5', inputIconAccent)}
+            />
           </div>
 
           {/* Email */}
@@ -322,7 +374,9 @@ export default function CompanyDetailsSubtab() {
               value={formData.email}
               onChange={(e) => handleInputChange('email', e.target.value)}
             />
-            <Mail className='absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]' />
+            <Mail
+              className={cn('absolute left-3 top-2.5 h-5 w-5', inputIconAccent)}
+            />
           </div>
         </div>
       </div>
@@ -330,7 +384,12 @@ export default function CompanyDetailsSubtab() {
       {/* Save Button */}
       <div className='mt-8 flex justify-center'>
         <Button
-          className='px-8 py-3 bg-blue-600 text-white text-sm font-normal rounded shadow-md min-w-[180px]'
+          className={cn(
+            'min-w-[180px] rounded px-8 py-3 text-sm font-normal text-white shadow-md',
+            consumerShell
+              ? 'rounded-xl bg-[#015AFD] font-semibold hover:bg-[#0146ca]'
+              : 'bg-blue-600',
+          )}
           onClick={handleSave}
           disabled={isSaving}
         >

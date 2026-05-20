@@ -9,8 +9,15 @@ import { useEffect, useState } from 'react';
 import { SUBSCRIPTION_PRICES } from '@/lib/constants';
 import moment from 'moment';
 import { SUBSCRIPTION_STATUS, SUBSCRIPTION_PERIODS } from '@/lib/constants';
+import { cn } from '@/lib/utils';
 
-export default function SubscriptionsSubtab() {
+interface SubscriptionsSubtabProps {
+  consumerShell?: boolean;
+}
+
+export default function SubscriptionsSubtab({
+  consumerShell = false,
+}: SubscriptionsSubtabProps) {
   const {
     adsAccounts,
     fetchAdsAccounts,
@@ -118,18 +125,52 @@ export default function SubscriptionsSubtab() {
     }
   };
 
+  const billingHref = consumerShell
+    ? '/consumer/settings/account/billing'
+    : '/settings/account/billing';
+
   return (
-    <div className='space-y-6'>
+    <div
+      className={cn(
+        'space-y-6',
+        consumerShell && 'mx-auto w-full max-w-[1480px] min-w-0',
+      )}
+    >
       {/* Main Subscription Card */}
-      <div className='bg-white p-4'>
-        <h2 className='text-xl font-bold mb-6'>Subscriptions</h2>
+      <div
+        className={cn(
+          'bg-white p-4',
+          consumerShell &&
+            'rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-6',
+        )}
+      >
+        <h2
+          className={cn(
+            'mb-6 text-xl font-bold',
+            consumerShell && 'tracking-tight text-slate-900',
+          )}
+        >
+          Subscriptions
+        </h2>
 
         {/* Current Status */}
         <div className='mb-6'>
           <div className='flex items-start  gap-4 mb-4 justify-between sm:flex-row flex-col items-center '>
             <div className='text-3xl font-bold'>
-              <span className='text-blue-600'>${subscriptionPrice}</span>
-              <span className='text-gray-600 font-normal text-xl'>
+              <span
+                className={cn(
+                  'text-blue-600',
+                  consumerShell && 'text-[#015AFD]',
+                )}
+              >
+                ${subscriptionPrice}
+              </span>
+              <span
+                className={cn(
+                  'text-gray-600 font-normal text-xl',
+                  consumerShell && 'text-slate-500',
+                )}
+              >
                 /Monthly
               </span>
             </div>
@@ -143,23 +184,41 @@ export default function SubscriptionsSubtab() {
                 </div>
               )}
 
-              <div className='bg-gray-100 px-3 py-1 rounded-full'>
-                <span className='text-blue-600 font-semibold text-[18px]'>
+              <div
+                className={cn(
+                  'rounded-full bg-gray-100 px-3 py-1',
+                  consumerShell && 'bg-slate-100',
+                )}
+              >
+                <span
+                  className={cn(
+                    'text-[18px] font-semibold text-blue-600',
+                    consumerShell && 'text-[#015AFD]',
+                  )}
+                >
                   {connectedAccountsCount}
                 </span>
-                <span className='text-gray-600 text-[16px]'>
+                <span
+                  className={cn(
+                    'text-[16px] text-gray-600',
+                    consumerShell && 'text-slate-600',
+                  )}
+                >
                   {' '}
                   Connected ads account(s)
                 </span>
               </div>
             </div>
           </div>
-          <div className='text-gray-700'>
+          <div className={cn('text-gray-700', consumerShell && 'text-slate-600')}>
             $59/mo for the first ads account and $19 for each additional one.{' '}
             Update or add your payment method{' '}
             <Link
-              href='/settings/account/billing'
-              className='text-blue-600 hover:underline'
+              href={billingHref}
+              className={cn(
+                'text-blue-600 hover:underline',
+                consumerShell && 'font-medium text-[#015AFD] hover:text-[#0146ca]',
+              )}
             >
               here
             </Link>
@@ -169,42 +228,143 @@ export default function SubscriptionsSubtab() {
 
         {/* Included Features */}
         <div className='mb-6'>
-          <h3 className='text-lg font-semibold mb-4'>Included Features</h3>
+          <h3
+            className={cn(
+              'mb-4 text-lg font-semibold',
+              consumerShell && 'text-slate-900',
+            )}
+          >
+            Included Features
+          </h3>
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <div className='space-y-3'>
               <div className='flex items-center gap-3'>
-                <Check className='h-5 w-5 text-blue-600 flex-shrink-0' />
-                <span className='text-gray-700'>Unlimited ad alerts</span>
+                <Check
+                  className={cn(
+                    'h-5 w-5 flex-shrink-0 text-blue-600',
+                    consumerShell && 'text-[#015AFD]',
+                  )}
+                />
+                <span
+                  className={cn(
+                    'text-gray-700',
+                    consumerShell && 'text-slate-700',
+                  )}
+                >
+                  Unlimited ad alerts
+                </span>
               </div>
               <div className='flex items-center gap-3'>
-                <Check className='h-5 w-5 text-blue-600 flex-shrink-0' />
-                <span className='text-gray-700'>Negative trends detection</span>
+                <Check
+                  className={cn(
+                    'h-5 w-5 flex-shrink-0 text-blue-600',
+                    consumerShell && 'text-[#015AFD]',
+                  )}
+                />
+                <span
+                  className={cn(
+                    'text-gray-700',
+                    consumerShell && 'text-slate-700',
+                  )}
+                >
+                  Negative trends detection
+                </span>
               </div>
               <div className='flex items-center gap-3'>
-                <Check className='h-5 w-5 text-blue-600 flex-shrink-0' />
-                <span className='text-gray-700'>Budget pacing monitoring</span>
+                <Check
+                  className={cn(
+                    'h-5 w-5 flex-shrink-0 text-blue-600',
+                    consumerShell && 'text-[#015AFD]',
+                  )}
+                />
+                <span
+                  className={cn(
+                    'text-gray-700',
+                    consumerShell && 'text-slate-700',
+                  )}
+                >
+                  Budget pacing monitoring
+                </span>
               </div>
               <div className='flex items-center gap-3'>
-                <Check className='h-5 w-5 text-blue-600 flex-shrink-0' />
-                <span className='text-gray-700'>Policy Monitoring</span>
+                <Check
+                  className={cn(
+                    'h-5 w-5 flex-shrink-0 text-blue-600',
+                    consumerShell && 'text-[#015AFD]',
+                  )}
+                />
+                <span
+                  className={cn(
+                    'text-gray-700',
+                    consumerShell && 'text-slate-700',
+                  )}
+                >
+                  Policy Monitoring
+                </span>
               </div>
             </div>
             <div className='space-y-3'>
               <div className='flex items-center gap-3'>
-                <Check className='h-5 w-5 text-blue-600 flex-shrink-0' />
-                <span className='text-gray-700'>Over 250 daily KPI audits</span>
+                <Check
+                  className={cn(
+                    'h-5 w-5 flex-shrink-0 text-blue-600',
+                    consumerShell && 'text-[#015AFD]',
+                  )}
+                />
+                <span
+                  className={cn(
+                    'text-gray-700',
+                    consumerShell && 'text-slate-700',
+                  )}
+                >
+                  Over 250 daily KPI audits
+                </span>
               </div>
               <div className='flex items-center gap-3'>
-                <Check className='h-5 w-5 text-blue-600 flex-shrink-0' />
-                <span className='text-gray-700'>Sudden drop detection</span>
+                <Check
+                  className={cn(
+                    'h-5 w-5 flex-shrink-0 text-blue-600',
+                    consumerShell && 'text-[#015AFD]',
+                  )}
+                />
+                <span
+                  className={cn(
+                    'text-gray-700',
+                    consumerShell && 'text-slate-700',
+                  )}
+                >
+                  Sudden drop detection
+                </span>
               </div>
               <div className='flex items-center gap-3'>
-                <Check className='h-5 w-5 text-blue-600 flex-shrink-0' />
-                <span className='text-gray-700'>Spend forecasting</span>
+                <Check
+                  className={cn(
+                    'h-5 w-5 flex-shrink-0 text-blue-600',
+                    consumerShell && 'text-[#015AFD]',
+                  )}
+                />
+                <span
+                  className={cn(
+                    'text-gray-700',
+                    consumerShell && 'text-slate-700',
+                  )}
+                >
+                  Spend forecasting
+                </span>
               </div>
               <div className='flex items-center gap-3'>
-                <Check className='h-5 w-5 text-blue-600 flex-shrink-0' />
-                <span className='text-gray-700'>
+                <Check
+                  className={cn(
+                    'h-5 w-5 flex-shrink-0 text-blue-600',
+                    consumerShell && 'text-[#015AFD]',
+                  )}
+                />
+                <span
+                  className={cn(
+                    'text-gray-700',
+                    consumerShell && 'text-slate-700',
+                  )}
+                >
                   Landing page uptime monitoring
                 </span>
               </div>
@@ -214,7 +374,12 @@ export default function SubscriptionsSubtab() {
       </div>
 
       {/* Account Cancellation */}
-      <div className='flex items-center gap-3 text-gray-700 ml-4 text-[14px]'>
+      <div
+        className={cn(
+          'ml-4 flex items-center gap-3 text-[14px] text-gray-700',
+          consumerShell && 'text-slate-600',
+        )}
+      >
         <AlertTriangle className='h-4 w-4 text-[#df5967] flex-shrink-0' />
         <span>
           I would like to{' '}
@@ -232,7 +397,12 @@ export default function SubscriptionsSubtab() {
       {/* Delete Account Confirmation Modal */}
       {showDeleteModal && (
         <div className='fixed inset-0 bg-black/70 flex items-center justify-center z-50'>
-          <div className='bg-white rounded-lg p-6 max-w-md w-full mx-4'>
+          <div
+            className={cn(
+              'mx-4 w-full max-w-md rounded-lg bg-white p-6',
+              consumerShell && 'rounded-2xl border border-slate-200 shadow-lg',
+            )}
+          >
             {/* Header */}
             <div className='flex items-center justify-end'>
               <button
@@ -266,7 +436,8 @@ export default function SubscriptionsSubtab() {
                 Cancel
               </Button>
               <Button
-                className='flex-1 bg-blue-600 text-white hover:bg-blue-700'
+                variant='destructive'
+                className={cn('flex-1', consumerShell && 'rounded-xl')}
                 onClick={async () => {
                   try {
                     await handleDeleteCompanyAccount();
