@@ -1,36 +1,42 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { CONSUMER_SHELL_COOKIE } from "@/lib/consumer-shell-preference";
+import { CONSUMER_PREVIEW_COOKIE } from "@/lib/consumer-preview-gate";
 
 const ADMIN_PREVIEW_COOKIE = "admin_preview_gate";
 
-const CLASSIC_TO_CONSUMER: Record<string, string> = {
-  "/summary": "/consumer/summary",
-  "/dashboard": "/consumer/dashboard",
-};
-
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const hasConsumerShell =
-    request.cookies.get(CONSUMER_SHELL_COOKIE)?.value === "1";
 
-  // Mark consumer shell before client auth runs (avoids post-auth race to /summary).
   if (pathname === "/consumer" || pathname.startsWith("/consumer/")) {
-    const res = NextResponse.next();
-    res.cookies.set(CONSUMER_SHELL_COOKIE, "1", {
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30,
-      sameSite: "lax",
-    });
-    return res;
-  }
+    const hasConsumerPreview =
+      request.cookies.get(CONSUMER_PREVIEW_COOKIE)?.value === "1";
 
-  // Classic URLs → consumer console when the user already opted into the shell.
-  if (hasConsumerShell && pathname in CLASSIC_TO_CONSUMER) {
-    return NextResponse.redirect(
-      new URL(CLASSIC_TO_CONSUMER[pathname], request.url),
-    );
+    const isPreviewGatePage =
+      pathname === "/consumer/preview-gate" ||
+      pathname.startsWith("/consumer/preview-gate/");
+
+    if (isPreviewGatePage) {
+      if (hasConsumerPreview) {
+        const nextParam = request.nextUrl.searchParams.get("next");
+        const fallback = "/consumer/summary";
+        const destination =
+          nextParam?.startsWith("/consumer") &&
+          !nextParam.startsWith("/consumer/preview-gate")
+            ? nextParam
+            : fallback;
+        return NextResponse.redirect(new URL(destination, request.url));
+      }
+      return NextResponse.next();
+    }
+
+    if (!hasConsumerPreview) {
+      const gateUrl = new URL("/consumer/preview-gate", request.url);
+      gateUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(gateUrl);
+    }
+
+    return NextResponse.next();
   }
 
   if (!pathname.startsWith("/administrator")) {
@@ -72,7 +78,5 @@ export const config = {
     "/administrator/:path*",
     "/consumer",
     "/consumer/:path*",
-    "/summary",
-    "/dashboard",
   ],
 };

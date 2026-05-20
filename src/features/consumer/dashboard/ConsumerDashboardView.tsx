@@ -50,8 +50,6 @@ import { GoogleAdsMark } from '@/components/GoogleAdsMark';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatAccountNumber } from '@/lib/utils';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
-
 import { ConsumerDashboardAlertsTable } from './ConsumerDashboardAlertsTable';
 import { ConsumerKpiMetricsRow } from './ConsumerKpiMetricsRow';
 import { ConsumerDashboardMetricCard } from './ConsumerDashboardMetricCard';
@@ -62,13 +60,6 @@ import { DASHBOARD_ALERT_SEVERITY_BORDER } from './dashboard-theme';
 export function ConsumerDashboardView() {
   const { user, userDoc } = useAuthStore();
   const router = useRouter();
-  const pathname = usePathname();
-
-  useEffect(() => {
-    if (pathname === "/dashboard") {
-      router.replace("/consumer/dashboard");
-    }
-  }, [pathname, router]);
   const { selectedAdsAccount, userAdsAccounts, fetchUserAdsAccounts } =
     useUserAdsAccountsStore();
   // console.log('Selected Ads Account:', selectedAdsAccount)

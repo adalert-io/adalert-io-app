@@ -1,24 +1,14 @@
-/**
- * Consumer shell uses different paths than the classic app. Auth listeners can run
- * before `window.location` reflects `/consumer/*`, so we persist intent in a cookie
- * (set in middleware on any `/consumer` request) and read it here.
- */
-export const CONSUMER_SHELL_COOKIE = "adalert_consumer_shell";
+import { hasConsumerPreviewCookieFromDocument } from "@/lib/consumer-preview-gate";
 
+/**
+ * Use consumer console paths only after the preview PIN gate (internal review).
+ * Normal login and navigation stay on classic `/summary`, `/dashboard`, etc.
+ */
 export function prefersConsumerShellRouting(): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
-  if (window.location.pathname.startsWith("/consumer")) {
-    return true;
-  }
-  if (typeof document === "undefined") {
-    return false;
-  }
-  return /(?:^|;\s*)adalert_consumer_shell=1(?:;|$)/.test(document.cookie);
+  return hasConsumerPreviewCookieFromDocument();
 }
 
-/** Map classic post-auth targets to the consumer console when preference is active. */
+/** Map classic targets to consumer console when preview gate cookie is active. */
 export function consumerPathForClassicRoute(classicPath: string): string {
   const map: Record<string, string> = {
     "/summary": "/consumer/summary",
