@@ -823,7 +823,7 @@ function BillingSubtabContent({ consumerShell }: { consumerShell: boolean }) {
               className={cn(
                 'bg-white p-4',
                 consumerShell &&
-                  'rounded-2xl border border-slate-100 bg-slate-50/50 p-4 sm:p-6',
+                  'rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm',
               )}
             >
               {!consumerShell && (
@@ -858,22 +858,22 @@ function BillingSubtabContent({ consumerShell }: { consumerShell: boolean }) {
                   {paymentMethods ? (
                     <div
                       className={cn(
-                        'min-w-[320px] rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 p-6 text-white',
+                        'min-w-[320px] rounded-2xl border border-slate-200 bg-white p-6 text-slate-900',
                         consumerShell &&
-                          'rounded-2xl from-[#015AFD] to-[#0146ca] shadow-md',
+                          'rounded-2xl border border-slate-200 bg-white shadow-sm',
                       )}
                     >
                       <div className='flex justify-between items-start mb-4'>
                         <div>
-                          <div className='text-sm opacity-80 mb-1'>
+                          <div className='text-xs uppercase tracking-wide text-slate-500 mb-1'>
                             {(livePm?.brand || paymentMethods['Stripe Card Brand'] || 'Card')}
                           </div>
-                          <div className='text-lg font-bold'>
+                          <div className='text-lg font-bold text-slate-900'>
                             {(livePm?.brand || paymentMethods['Stripe Card Brand'] || 'CARD').toString().toUpperCase()}
                           </div>
                         </div>
-                        <div className='text-right'>
-                          <div className='text-sm opacity-80 mb-1'>
+                        <div className='text-right text-slate-600'>
+                          <div className='text-xs uppercase tracking-wide mb-1'>
                             {''}
                           </div>
                           <div className='text-sm'>
@@ -882,11 +882,11 @@ function BillingSubtabContent({ consumerShell }: { consumerShell: boolean }) {
                           </div>
                         </div>
                       </div>
-                      <div className='text-lg font-mono'>
+                      <div className='text-lg font-mono text-slate-900'>
                         XXXX - XXXX - XXXX -{' '}
                         {livePm?.last4 ?? paymentMethods['Stripe Last 4 Digits']}
                       </div>
-                      <div className='mt-4 text-sm'>
+                      <div className='mt-4 text-sm text-slate-600'>
                         <div>Name: {paymentMethods['Stripe Name']}</div>
                         <div>
                           Address: {paymentMethods['Stripe Address']},{' '}
@@ -924,9 +924,9 @@ function BillingSubtabContent({ consumerShell }: { consumerShell: boolean }) {
                     )}
                     <Button
                       className={cn(
-                        'mt-6 min-w-[180px] rounded px-8 py-3 text-sm font-normal text-white shadow-md',
+                        'mt-6 min-w-[180px] rounded-xl px-8 py-3 text-sm font-semibold text-white shadow-sm',
                         consumerShell
-                          ? 'rounded-xl bg-[#015AFD] font-semibold hover:bg-[#0146ca]'
+                          ? 'bg-[#015AFD] hover:bg-[#0146ca]'
                           : 'bg-blue-600',
                       )}
                       onClick={() => setScreen('payment-form')}
@@ -945,7 +945,7 @@ function BillingSubtabContent({ consumerShell }: { consumerShell: boolean }) {
               className={cn(
                 'rounded-2xl bg-white p-4',
                 consumerShell &&
-                  'rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-6',
+                  'rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm',
               )}
             >
               {!consumerShell && (

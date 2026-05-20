@@ -5,7 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Link from "next/link";
-import { Info, Loader2 } from "lucide-react";
+import { Info, Loader2, Mail, MessageSquare } from "lucide-react";
 import { useAlertSettingsStore } from "@/lib/store/settings-store";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { CHECKBOX_CLASS } from "@/lib/constants";
@@ -166,6 +166,11 @@ export default function AlertsSubtab({ consumerShell = false }: AlertsSubtabProp
     ? "/consumer/settings/my-profile"
     : "/settings/my-profile";
 
+  const groupCardClassName = cn(
+    "rounded-2xl border border-slate-200 bg-white shadow-sm",
+    consumerShell && "border-slate-200/90 shadow-sm",
+  );
+
   return (
     <div
       className={cn(
@@ -187,67 +192,64 @@ export default function AlertsSubtab({ consumerShell = false }: AlertsSubtabProp
         </>
       )}
       {error && <div className="mb-4 text-red-600">{error}</div>}
-      {/* Email/SMS */}
-      <div className="flex flex-col md:flex-row gap-4 mb-8">
+      <div className="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card
           className={cn(
-            "flex-1 border-2 p-4 shadow-none",
-            consumerShell &&
-              "rounded-2xl border border-slate-100 bg-slate-50/50 shadow-none",
+            "rounded-2xl border border-slate-200 bg-white p-4 shadow-sm",
+            consumerShell && "border-slate-200/90",
           )}
         >
-          <div className="flex flex-row items-center justify-center gap-3 w-full h-full">
+          <div className="flex items-center gap-4">
             <Checkbox
               checked={!!localSettings["Send Email Alerts"]}
               onCheckedChange={() => handleCheckbox("Send Email Alerts")}
-              className={`mr-2 ${CHECKBOX_CLASS}`}
+              className={CHECKBOX_CLASS}
               id="email-alerts"
             />
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#015AFD]/10 text-[#015AFD]">
+              <Mail className="h-5 w-5" />
+            </span>
             <label
               htmlFor="email-alerts"
-              className="text-base font-normal select-none"
+              className="select-none text-[15px] font-medium text-slate-800"
             >
-              Send me in <span className="font-bold">Email</span> alerts
+              Send me in <span className="font-semibold">Email</span> alerts
             </label>
           </div>
         </Card>
         <Card
           className={cn(
-            "flex flex-1 flex-col gap-2 border-2 p-4 shadow-none",
-            consumerShell &&
-              "rounded-2xl border border-slate-100 bg-slate-50/50 shadow-none",
+            "rounded-2xl border border-slate-200 bg-white p-4 shadow-sm",
+            consumerShell && "border-slate-200/90",
           )}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <Checkbox
               checked={!!localSettings["Send SMS Alerts"]}
               onCheckedChange={() => handleCheckbox("Send SMS Alerts")}
-              className={`mr-3 ${CHECKBOX_CLASS}`}
+              className={CHECKBOX_CLASS}
               id="sms-alerts"
               disabled={!userDoc?.Telephone || !(userDoc && userDoc["Telephone Dial Code"]) }
             />
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#015AFD]/10 text-[#015AFD]">
+              <MessageSquare className="h-5 w-5" />
+            </span>
             <label
               htmlFor="sms-alerts"
-              className="text-base font-normal select-none"
+              className="select-none text-[15px] font-medium text-slate-800"
             >
-              Send me in <span className="font-bold">SMS</span> alerts{" "}
-              <span className="font-normal text-xs">
+              Send me in <span className="font-semibold">SMS</span> alerts{" "}
+              <span className="font-normal text-xs text-slate-500">
                 (critical alerts only)
               </span>
             </label>
           </div>
           <div
             className={cn(
-              "ml-0 mt-1 flex flex-col items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 text-xs text-gray-500 sm:ml-7 sm:flex-row sm:items-start",
-              consumerShell && "border border-slate-100 bg-slate-50 text-slate-600",
+              "mt-3 flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs text-slate-600",
             )}
           >
-            <Info
-              className={cn(
-                "h-4 w-4 text-blue-400",
-                consumerShell && "text-[#015AFD]",
-              )}
-            />
+            <Info className="h-4 w-4 text-[#015AFD]" />
             Update phone or withdraw consent in{" "}
             <Link
               href={profileHref}
@@ -261,126 +263,72 @@ export default function AlertsSubtab({ consumerShell = false }: AlertsSubtabProp
           </div>
         </Card>
       </div>
-      {/* Hide groups if Email alerts are disabled */}
-      {/* Severity */}
+
       {localSettings["Send Email Alerts"] && (
-      <div className="mb-8">
-        <div
-          className={cn(
-            "mb-2 text-lg font-semibold",
-            consumerShell && "text-slate-800",
-          )}
-        >
-          Severity
+        <div className="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-12">
+          <Card className={cn(groupCardClassName, "lg:col-span-3")}>
+            <div className="border-b border-slate-100 px-5 py-4">
+              <h3 className="text-base font-semibold text-slate-900">Severity</h3>
+            </div>
+            <div className="divide-y divide-slate-100">
+              {getFieldsByGroup("Severity").map((f) => (
+                <div key={f.key} className="flex items-center gap-3 px-5 py-3">
+                  <Checkbox
+                    checked={!!localSettings[f.key]}
+                    onCheckedChange={() => handleCheckbox(f.key)}
+                    id={f.id}
+                    className={CHECKBOX_CLASS}
+                  />
+                  <label htmlFor={f.id} className="select-none text-[15px] text-slate-700">
+                    {f.label}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className={cn(groupCardClassName, "lg:col-span-3")}>
+            <div className="border-b border-slate-100 px-5 py-4">
+              <h3 className="text-base font-semibold text-slate-900">Level</h3>
+            </div>
+            <div className="divide-y divide-slate-100">
+              {getFieldsByGroup("Level").map((f) => (
+                <div key={f.key} className="flex items-center gap-3 px-5 py-3">
+                  <Checkbox
+                    checked={!!localSettings[f.key]}
+                    onCheckedChange={() => handleCheckbox(f.key)}
+                    id={f.id}
+                    className={CHECKBOX_CLASS}
+                  />
+                  <label htmlFor={f.id} className="select-none text-[15px] text-slate-700">
+                    {f.label}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className={cn(groupCardClassName, "lg:col-span-6")}>
+            <div className="border-b border-slate-100 px-5 py-4">
+              <h3 className="text-base font-semibold text-slate-900">Type</h3>
+            </div>
+            <div className="grid grid-cols-1 divide-y divide-slate-100 md:grid-cols-2 md:divide-x md:divide-y-0 xl:grid-cols-3">
+              {getFieldsByGroup("Type").map((f) => (
+                <div key={f.key} className="flex items-center gap-3 px-5 py-3">
+                  <Checkbox
+                    checked={!!localSettings[f.key]}
+                    onCheckedChange={() => handleCheckbox(f.key)}
+                    id={f.id}
+                    className={CHECKBOX_CLASS}
+                  />
+                  <label htmlFor={f.id} className="select-none text-[15px] text-slate-700">
+                    {f.label}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </Card>
         </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {getFieldsByGroup("Severity").map((f) => (
-            <Card
-              key={f.key}
-              className={cn(
-                "flex items-center gap-3 p-4 shadow-none",
-                consumerShell &&
-                  "rounded-xl border border-slate-200 bg-white shadow-sm",
-              )}
-            >
-              <div className="flex flex-row items-center gap-3 w-full h-full">
-                <Checkbox
-                  checked={!!localSettings[f.key]}
-                  onCheckedChange={() => handleCheckbox(f.key)}
-                  id={f.id}
-                  className={`mr-2 ${CHECKBOX_CLASS}`}
-                />
-                <label
-                  htmlFor={f.id}
-                  className="text-base font-normal select-none"
-                >
-                  {f.label}
-                </label>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </div>
-      )}
-      {/* Level */}
-      {localSettings["Send Email Alerts"] && (
-      <div className="mb-8">
-        <div
-          className={cn(
-            "mb-2 text-lg font-semibold",
-            consumerShell && "text-slate-800",
-          )}
-        >
-          Level
-        </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {getFieldsByGroup("Level").map((f) => (
-            <Card
-              key={f.key}
-              className={cn(
-                "flex items-center gap-3 p-4 shadow-none",
-                consumerShell &&
-                  "rounded-xl border border-slate-200 bg-white shadow-sm",
-              )}
-            >
-              <div className="flex flex-row items-center gap-3 w-full h-full">
-                <Checkbox
-                  checked={!!localSettings[f.key]}
-                  onCheckedChange={() => handleCheckbox(f.key)}
-                  id={f.id}
-                  className={`mr-2 ${CHECKBOX_CLASS}`}
-                />
-                <label
-                  htmlFor={f.id}
-                  className="text-base font-normal select-none"
-                >
-                  {f.label}
-                </label>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </div>
-      )}
-      {/* Type */}
-      {localSettings["Send Email Alerts"] && (
-      <div className="mb-8">
-        <div
-          className={cn(
-            "mb-2 text-lg font-semibold",
-            consumerShell && "text-slate-800",
-          )}
-        >
-          Type
-        </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3">
-          {getFieldsByGroup("Type").map((f) => (
-            <Card
-              key={f.key}
-              className={cn(
-                "flex items-center gap-3 p-4 shadow-none",
-                consumerShell &&
-                  "rounded-xl border border-slate-200 bg-white shadow-sm",
-              )}
-            >
-              <div className="flex flex-row items-center gap-3 w-full h-full">
-                <Checkbox
-                  checked={!!localSettings[f.key]}
-                  onCheckedChange={() => handleCheckbox(f.key)}
-                  id={f.id}
-                  className={`mr-2 ${CHECKBOX_CLASS}`}
-                />
-                <label
-                  htmlFor={f.id}
-                  className="text-base font-normal select-none"
-                >
-                  {f.label}
-                </label>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </div>
       )}
       <div className="mt-8 flex justify-center">
         <Button

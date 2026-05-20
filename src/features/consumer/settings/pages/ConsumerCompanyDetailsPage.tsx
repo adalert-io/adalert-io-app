@@ -164,7 +164,7 @@ export default function CompanyDetailsSubtab({
       className={cn(
         'bg-white p-4',
         consumerShell &&
-          'mx-auto w-full min-w-0 max-w-[1480px] rounded-2xl border border-slate-100 bg-slate-50/50 p-4 sm:p-6',
+          'mx-auto w-full min-w-0 max-w-[1480px] rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm',
       )}
     >
       {!consumerShell && (
@@ -366,9 +366,9 @@ export default function CompanyDetailsSubtab({
       <div className='mt-8 flex justify-center'>
         <Button
           className={cn(
-            'min-w-[180px] rounded px-8 py-3 text-sm font-normal text-white shadow-md',
+            'min-w-[180px] rounded-xl px-8 py-3 text-sm font-semibold text-white shadow-sm',
             consumerShell
-              ? 'rounded-xl bg-[#015AFD] font-semibold hover:bg-[#0146ca]'
+              ? 'bg-[#015AFD] hover:bg-[#0146ca]'
               : 'bg-blue-600',
           )}
           onClick={handleSave}

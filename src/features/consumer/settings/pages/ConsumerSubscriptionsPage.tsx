@@ -140,7 +140,7 @@ export default function SubscriptionsSubtab({
         className={cn(
           'bg-white p-4',
           consumerShell &&
-            'rounded-2xl border border-slate-100 bg-slate-50/50 p-5 shadow-none sm:p-6',
+            'rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm',
         )}
       >
         {!consumerShell && (
@@ -371,7 +371,8 @@ export default function SubscriptionsSubtab({
       <div
         className={cn(
           'ml-4 flex items-center gap-3 text-[14px] text-gray-700',
-          consumerShell && 'text-slate-600',
+          consumerShell &&
+            'rounded-xl border border-rose-100 bg-rose-50/60 px-4 py-3 text-rose-700 ml-0',
         )}
       >
         <AlertTriangle className='h-4 w-4 text-[#df5967] flex-shrink-0' />

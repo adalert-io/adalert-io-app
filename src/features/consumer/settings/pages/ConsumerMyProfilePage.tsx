@@ -194,7 +194,7 @@ export default function MyProfileTab({
           className={cn(
             'rounded-2xl border border-[#e5e5e5] bg-white p-8 shadow-md',
             consumerShell &&
-              'rounded-2xl border border-slate-200/90 bg-white p-6 shadow-md sm:p-8',
+              'rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm sm:p-8',
           )}
         >
           {!consumerShell && (
@@ -218,7 +218,7 @@ export default function MyProfileTab({
               className={cn(
                 'flex flex-1 flex-col items-center rounded-xl border border-[#e5e5e5] bg-white p-8',
                 consumerShell &&
-                  'rounded-2xl border border-slate-200/90 bg-slate-50/50',
+                  'rounded-2xl border border-slate-200/90 bg-slate-50/50 shadow-none',
               )}
             >
               <div className='relative w-25 h-25 flex items-center justify-center mb-4'>
@@ -263,7 +263,7 @@ export default function MyProfileTab({
               className={cn(
                 'flex-1 rounded-xl border border-[#e5e5e5] bg-white p-8',
                 consumerShell &&
-                  'rounded-2xl border border-slate-200/90 bg-white',
+                  'rounded-2xl border border-slate-200/90 bg-white shadow-none',
               )}
             >
               <div
@@ -374,9 +374,9 @@ export default function MyProfileTab({
           <div className='mt-8 flex justify-center'>
             <Button
               className={cn(
-                'min-w-[180px] rounded px-8 py-3 text-sm font-normal text-white shadow-md',
+                'min-w-[180px] rounded-xl px-8 py-3 text-sm font-semibold text-white shadow-sm',
                 consumerShell
-                  ? 'rounded-xl bg-[#015AFD] font-semibold hover:bg-[#0146ca]'
+                  ? 'bg-[#015AFD] hover:bg-[#0146ca]'
                   : 'bg-blue-600',
               )}
               onClick={handleSave}

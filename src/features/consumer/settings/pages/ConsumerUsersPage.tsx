@@ -1,1312 +1,553 @@
 'use client';
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+
+import { useEffect, useMemo, useState } from 'react';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import {
-  ChevronLeft,
+  ChevronDown,
+  Loader2,
+  Mail,
+  Plus,
+  RotateCcw,
   Search,
   Trash2,
-  Edit2,
-  User,
-  ChevronDown,
-  ChevronUp,
-  ChevronsLeft,
-  ChevronsRight,
-  ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon,
+  UserPlus,
   XIcon,
-  Plus,
-  Mail,
-  Users,
-  Camera,
-  UserCircle,
-  Loader2,
-  RotateCcw,
 } from 'lucide-react';
-import { useAlertSettingsStore } from '@/lib/store/settings-store';
-import { useAuthStore } from '@/lib/store/auth-store';
-import { Checkbox } from '@/components/ui/checkbox';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
-import {
-  useReactTable,
-  getCoreRowModel,
-  getPaginationRowModel,
-  flexRender,
-  ColumnDef,
-} from '@tanstack/react-table';
-import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
-import React, { useRef } from 'react';
 import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { db } from '@/lib/firebase/config';
+import { useAuthStore } from '@/lib/store/auth-store';
+import { useAlertSettingsStore } from '@/lib/store/settings-store';
 import { cn } from '@/lib/utils';
 
-// Removed hardcoded ADS_ACCOUNTS - now using fetched data from store
+const CHECKBOX_CLASS =
+  'data-[state=checked]:bg-[#015AFD] data-[state=checked]:border-[#015AFD]';
 
-const checkboxClass =
-  'data-[state=checked]:bg-blue-700 data-[state=checked]:border-blue-700';
-
-export default function UsersSubtab({
-  consumerShell = false,
-}: {
+interface ConsumerUsersPageProps {
   consumerShell?: boolean;
-}) {
-  const [screen, setScreen] = useState<'list' | 'add' | 'edit'>('list');
-  const [editingUser, setEditingUser] = useState<any>(null);
-  const [deletingUser, setDeletingUser] = useState<any>(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [role, setRole] = useState<'Admin' | 'Manager'>('Admin');
-  const [adsDropdownOpen, setAdsDropdownOpen] = useState(false);
-  const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
-  const [selectedAds, setSelectedAds] = useState<string[]>([]);
-  const [pageSize, setPageSize] = useState(25);
-  const [showSearch, setShowSearch] = useState(false);
-  const [searchValue, setSearchValue] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [adsSearchValue, setAdsSearchValue] = useState('');
-  const [debouncedAdsSearch, setDebouncedAdsSearch] = useState('');
+}
+
+interface UserRow {
+  id: string;
+  email: string;
+  name: string;
+  userType: 'Admin' | 'Manager';
+  accessLabel: string;
+  status: 'active' | 'pending';
+  isInvitation: boolean;
+}
+
+export default function ConsumerUsersPage({
+  consumerShell = false,
+}: ConsumerUsersPageProps) {
   const { userDoc } = useAuthStore();
   const {
     users,
-    fetchUsers,
     invitations,
-    fetchInvitations,
     adsAccounts,
+    fetchUsers,
+    fetchInvitations,
     fetchAdsAccounts,
-    updateUser,
-    inviteUser,
-    deleteUserWithRecords,
     refreshUsers,
     refreshInvitations,
+    inviteUser,
+    deleteUserWithRecords,
   } = useAlertSettingsStore();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [email, setEmail] = useState('');
+
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [pageSize, setPageSize] = useState(15);
+  const [page, setPage] = useState(1);
+
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [name, setName] = useState('');
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [notifyUser, setNotifyUser] = useState(false);
-  const [resendingInvitationId, setResendingInvitationId] = useState<
-    string | null
-  >(null);
-  const [deletingInvitationId, setDeletingInvitationId] = useState<
-    string | null
-  >(null);
+  const [email, setEmail] = useState('');
+  const [role, setRole] = useState<'Admin' | 'Manager'>('Admin');
+  const [adsSearch, setAdsSearch] = useState('');
+  const [selectedAds, setSelectedAds] = useState<string[]>([]);
 
-  // Derived role-permission flags
-  const isCurrentUserSuperAdmin =
-    !!userDoc && userDoc['Company Admin']?.id === userDoc.uid;
-  const isEditingTargetSuperAdmin =
-    !!editingUser && userDoc?.['Company Admin']?.id === editingUser.id;
-  // Disable role dropdown if invited admin edits themselves OR attempts to edit super admin
-  const isRoleDropdownDisabled =
-    (!isCurrentUserSuperAdmin && editingUser?.id === userDoc?.uid) ||
-    (!isCurrentUserSuperAdmin && isEditingTargetSuperAdmin);
-
-  // Clean up object URL when component unmounts or avatarPreview changes
-  useEffect(() => {
-    return () => {
-      if (avatarPreview) {
-        URL.revokeObjectURL(avatarPreview);
-      }
-    };
-  }, [avatarPreview]);
-
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element;
-      if (
-        !target.closest('.role-dropdown') &&
-        !target.closest('.ads-dropdown')
-      ) {
-        setRoleDropdownOpen(false);
-        setAdsDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Helper: does a specific user (by id) have access to an ads account?
-  const doesUserHaveAccessToAccount = useCallback(
-    (account: any, userId: string | undefined) => {
-      if (!userId || !account['Selected Users']) return false;
-      return account['Selected Users'].some(
-        (userRef: any) => userRef.path?.includes(userId) || userRef.id === userId,
-      );
-    },
-    [],
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  const [deletingInvitationId, setDeletingInvitationId] = useState<string | null>(
+    null,
   );
+  const [deletingUser, setDeletingUser] = useState<UserRow | null>(null);
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
 
   useEffect(() => {
-    if (userDoc && userDoc['Company Admin']) {
-      fetchUsers(userDoc['Company Admin']);
-      fetchAdsAccounts(userDoc['Company Admin']);
-      fetchInvitations(userDoc['Company Admin']);
-    }
-  }, [userDoc, fetchUsers, fetchAdsAccounts, fetchInvitations]);
+    if (!userDoc?.['Company Admin']) return;
+    fetchUsers(userDoc['Company Admin']);
+    fetchInvitations(userDoc['Company Admin']);
+    fetchAdsAccounts(userDoc['Company Admin']);
+  }, [userDoc, fetchUsers, fetchInvitations, fetchAdsAccounts]);
 
-  // Debounce search value
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(searchValue);
-    }, 1500);
-    return () => clearTimeout(handler);
-  }, [searchValue]);
+    const timer = setTimeout(() => setDebouncedSearch(search.trim().toLowerCase()), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
-  // Debounce ads search value
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedAdsSearch(adsSearchValue);
-    }, 300);
-    return () => clearTimeout(handler);
-  }, [adsSearchValue]);
+  const rows = useMemo<UserRow[]>(() => {
+    const existingEmails = new Set(users.map((u) => String(u.email || '').toLowerCase()));
 
-  // Populate form data when editing user
-  useEffect(() => {
-    if (screen === 'edit' && editingUser) {
-      setRole(editingUser['User Type'] || 'Admin');
-      setEmail(editingUser.email || '');
-      setName(editingUser.Name || '');
-      setNotifyUser(editingUser.NotifyUser || false);
-
-      // Preselect ads based on the EDITING user's current access, not the current user
-      if (editingUser?.id) {
-        const editingUserSelectedAds = adsAccounts
-          .filter((account) => doesUserHaveAccessToAccount(account, editingUser.id))
-          .map((account) => account.id);
-        setSelectedAds(editingUserSelectedAds);
-      }
-    } else if (screen === 'add') {
-      setEmail('');
-      setName('');
-      setNotifyUser(false);
-    }
-  }, [screen, editingUser, adsAccounts, doesUserHaveAccessToAccount]);
-
-  // Users Table Columns
-  const columns: ColumnDef<any>[] = [
-    {
-      accessorKey: 'email',
-      header: 'Email',
-      cell: ({ row }) => <span>{row.original.email}</span>,
-    },
-    {
-      accessorKey: 'Name',
-      header: 'Name',
-      cell: ({ row }) => <span>{row.original.Name}</span>,
-    },
-    {
-      accessorKey: 'User Type',
-      header: 'Access Level',
-      cell: ({ row }) => (
-        <span
-          className={`inline-block px-3 py-1 rounded-md text-blue-700 text-xs font-bold ${
-            row.original['User Type'] === 'Admin' ||
-            row.original['User Type'] === 'Manager'
-              ? 'bg-blue-200'
-              : 'bg-blue-100'
-          }`}
-        >
-          {row.original['User Type']}
-        </span>
-      ),
-    },
-    {
-      accessorKey: 'User Access',
-      header: 'Access',
-      cell: ({ row }) => {
-        // Invitations keep showing Pending
-        if (row.original.isInvitation) {
-          return <span>Pending</span>;
-        }
-
-        const userId: string | undefined = row.original.id;
-        const isSuperAdminRow =
-          row.original?.['Company Admin']?.id === row.original?.id;
-        const totalAccounts = adsAccounts.length;
-
-        // When there are no accounts, show consistent empty state
-        if (totalAccounts === 0) {
-          return <span>All ad accounts (0)</span>;
-        }
-
-        // Count how many accounts this user can access
-        const accessibleCount = adsAccounts.filter((account) =>
-          doesUserHaveAccessToAccount(account, userId),
-        ).length;
-
-        // Admins (including super admin) → no count
-        if (row.original['User Type'] === 'Admin' || isSuperAdminRow) {
-          return <span>All ad accounts</span>;
-        }
-
-        // Managers → show assigned count only (no total)
-        return <span>{`Ad accounts (${accessibleCount})`}</span>;
-      },
-    },
-    {
-      accessorKey: 'status',
-      header: 'Status',
-      cell: ({ row }) => {
-        if (row.original.isInvitation) {
-          return (
-            <span className='inline-block px-3 py-1 rounded-md text-[#5a3402] text-xs font-bold bg-[#ff970075]'>
-              Pending
-            </span>
-          );
-        }
-        return null; // Don't show status for existing users
-      },
-    },
-    {
-      id: 'actions',
-      header: '',
-      cell: ({ row }) => (
-        <div className='flex gap-2 items-center'>
-          {!row.original.isInvitation && (
-            <>
-              <button
-                className='text-blue-600 hover:text-blue-800 cursor-pointer px-1'
-                onClick={() => {
-                  setEditingUser(row.original);
-                  setRole(row.original['User Type'] || 'Admin');
-                  setScreen('edit');
-                }}
-              >
-                <Edit2 className='w-5 h-5' />
-              </button>
-              <button
-                className={`text-red-500 hover:text-red-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
-                  row.original.id === userDoc?.uid ||
-                  userDoc?.['User Type'] !== 'Admin' ||
-                  row.original.id === userDoc?.['Company Admin']?.id
-                    ? 'opacity-50 cursor-not-allowed'
-                    : ''
-                }`}
-                disabled={
-                  row.original.id === userDoc?.uid ||
-                  userDoc?.['User Type'] !== 'Admin' ||
-                  row.original.id === userDoc?.['Company Admin']?.id
-                }
-                title={
-                  row.original.id === userDoc?.uid
-                    ? 'You cannot delete your own account'
-                    : userDoc?.['User Type'] !== 'Admin'
-                    ? 'Only admins can delete users'
-                    : row.original.id === userDoc?.['Company Admin']?.id
-                    ? 'Cannot delete the company admin'
-                    : 'Delete user'
-                }
-                onClick={() => {
-                  setDeletingUser(row.original);
-                  setShowDeleteModal(true);
-                }}
-              >
-                <Trash2 className='w-5 h-5' />
-              </button>
-            </>
-          )}
-          {row.original.isInvitation && (
-            <>
-              <button
-                className='text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'
-                onClick={async () => {
-                  if (resendingInvitationId) return; // Prevent multiple clicks
-
-                  try {
-                    setResendingInvitationId(row.original.id);
-
-                    // Get the invitation data from the original invitations array
-                    const invitation = invitations.find(
-                      (inv) => inv.id === row.original.id,
-                    );
-                    if (!invitation) return;
-
-                    // Resend invitation with the same data
-                    await inviteUser(
-                      invitation.email,
-                      invitation.userType,
-                      invitation.name,
-                      invitation.selectedAds,
-                    );
-
-                    // Delete the old invitation record
-                    const { deleteInvitation } =
-                      useAlertSettingsStore.getState();
-                    await deleteInvitation(invitation.id);
-
-                    // Refresh invitations to update the table
-                    if (userDoc && userDoc['Company Admin']) {
-                      const { refreshInvitations } =
-                        useAlertSettingsStore.getState();
-                      await refreshInvitations(userDoc['Company Admin']);
-                    }
-
-                    toast.success('Invitation resent successfully!');
-                  } catch (error: any) {
-                    console.error('Error resending invitation:', error);
-                    toast.error(error.message || 'Failed to resend invitation');
-                  } finally {
-                    setResendingInvitationId(null);
-                  }
-                }}
-                disabled={resendingInvitationId === row.original.id}
-                title='Resend invitation'
-              >
-                {resendingInvitationId === row.original.id ? (
-                  <Loader2 className='w-4 h-4 animate-spin' />
-                ) : (
-                  <RotateCcw className='w-4 h-4' />
-                )}
-              </button>
-              <button
-                className='text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'
-                onClick={async () => {
-                  if (deletingInvitationId) return; // Prevent multiple clicks
-
-                  try {
-                    setDeletingInvitationId(row.original.id);
-
-                    // Delete the invitation record
-                    const { deleteInvitation } =
-                      useAlertSettingsStore.getState();
-                    await deleteInvitation(row.original.id);
-
-                    // Refresh invitations to update the table
-                    if (userDoc && userDoc['Company Admin']) {
-                      await refreshInvitations(userDoc['Company Admin']);
-                    }
-
-                    toast.success('Invitation deleted successfully!');
-                  } catch (error: any) {
-                    console.error('Error deleting invitation:', error);
-                    toast.error(error.message || 'Failed to delete invitation');
-                  } finally {
-                    setDeletingInvitationId(null);
-                  }
-                }}
-                disabled={deletingInvitationId === row.original.id}
-                title='Delete invitation'
-              >
-                {deletingInvitationId === row.original.id ? (
-                  <Loader2 className='w-4 h-4 animate-spin' />
-                ) : (
-                  <Trash2 className='w-5 h-5' />
-                )}
-              </button>
-            </>
-          )}
-        </div>
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
-  ];
-
-  // Combine users and pending invitations, filtering out accepted invitations
-  const combinedData = useMemo(() => {
-    // Get all existing user emails to filter out invitations
-    const existingUserEmails = users.map((user) => user.email?.toLowerCase());
-
-    const pendingInvitations = invitations
-      .filter((invitation) => invitation.status === 'pending')
-      .filter(
-        (invitation) =>
-          !existingUserEmails.includes(invitation.email?.toLowerCase()),
-      )
-      .map((invitation) => ({
-        id: invitation.id,
-        email: invitation.email,
-        Name: invitation.name,
-        'User Type': invitation.userType,
-        'User Access': 'Pending',
-        status: 'pending' as const,
+    const invitationRows: UserRow[] = invitations
+      .filter((inv) => inv.status === 'pending')
+      .filter((inv) => !existingEmails.has(String(inv.email || '').toLowerCase()))
+      .map((inv) => ({
+        id: inv.id,
+        email: inv.email || '',
+        name: inv.name || 'Pending user',
+        userType: (inv.userType as 'Admin' | 'Manager') || 'Manager',
+        accessLabel: 'Pending invitation',
+        status: 'pending',
         isInvitation: true,
       }));
 
-    const existingUsers = users.map((user) => ({
-      ...user,
-      status: 'active' as const,
-      isInvitation: false,
-    }));
-
-    return [...pendingInvitations, ...existingUsers];
-  }, [users, invitations]);
-
-  // Filter combined data based on search
-  const filteredData = useMemo(() => {
-    const lower = debouncedSearch.toLowerCase();
-
-    return combinedData.filter((item) => {
-      // Search in email and name
-      const searchMatch =
-        !debouncedSearch ||
-        item.email?.toLowerCase().includes(lower) ||
-        item.Name?.toLowerCase().includes(lower);
-
-      return searchMatch;
+    const userRows: UserRow[] = users.map((u: any) => {
+      const isAdmin = u['User Type'] === 'Admin';
+      const hasAllAccess = isAdmin;
+      const linkedCount = hasAllAccess
+        ? adsAccounts.length
+        : adsAccounts.filter((acc) =>
+            (acc['Selected Users'] || []).some(
+              (ref: any) => ref?.id === u.id || ref?.path?.includes(u.id),
+            ),
+          ).length;
+      return {
+        id: u.id,
+        email: u.email || '',
+        name: u.Name || '',
+        userType: (u['User Type'] as 'Admin' | 'Manager') || 'Manager',
+        accessLabel: hasAllAccess
+          ? 'All ad accounts'
+          : `${linkedCount} ad account${linkedCount === 1 ? '' : 's'}`,
+        status: 'active',
+        isInvitation: false,
+      };
     });
-  }, [combinedData, debouncedSearch]);
 
-  // Filter ads accounts based on search
+    return [...invitationRows, ...userRows];
+  }, [users, invitations, adsAccounts]);
+
+  const filteredRows = useMemo(() => {
+    if (!debouncedSearch) return rows;
+    return rows.filter(
+      (r) =>
+        r.name.toLowerCase().includes(debouncedSearch) ||
+        r.email.toLowerCase().includes(debouncedSearch),
+    );
+  }, [rows, debouncedSearch]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const start = (safePage - 1) * pageSize;
+  const pageRows = filteredRows.slice(start, start + pageSize);
+
+  useEffect(() => {
+    setPage((p) => Math.min(p, totalPages));
+  }, [totalPages]);
+
   const filteredAdsAccounts = useMemo(() => {
-    const lower = debouncedAdsSearch.toLowerCase();
+    const q = adsSearch.trim().toLowerCase();
+    if (!q) return adsAccounts;
+    return adsAccounts.filter((a) => String(a.name || '').toLowerCase().includes(q));
+  }, [adsAccounts, adsSearch]);
 
-    return adsAccounts.filter((account) => {
-      const searchMatch =
-        !debouncedAdsSearch || account.name?.toLowerCase().includes(lower);
+  const handleToggleAd = (id: string) => {
+    setSelectedAds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
 
-      return searchMatch;
-    });
-  }, [adsAccounts, debouncedAdsSearch]);
+  const handleOpenAdd = () => {
+    setName('');
+    setEmail('');
+    setRole('Admin');
+    setSelectedAds([]);
+    setAdsSearch('');
+    setIsAddOpen(true);
+  };
 
-  function UsersDataTable() {
-    const [pageIndex, setPageIndex] = useState(0);
-
-    const table = useReactTable({
-      data: filteredData,
-      columns,
-      getCoreRowModel: getCoreRowModel(),
-      getPaginationRowModel: getPaginationRowModel(),
-      state: {
-        pagination: {
-          pageIndex,
-          pageSize,
-        },
-      },
-      onPaginationChange: (updater) => {
-        if (typeof updater === 'function') {
-          const next = updater({ pageIndex, pageSize });
-          setPageIndex(next.pageIndex);
-          setPageSize(next.pageSize);
-        } else {
-          if (updater.pageIndex !== undefined) setPageIndex(updater.pageIndex);
-          if (updater.pageSize !== undefined) setPageSize(updater.pageSize);
-        }
-      },
-      pageCount: Math.ceil(filteredData.length / pageSize),
-      getRowId: (row) => {
-        if (!row.original) return row.id || Math.random().toString();
-        if (!row.original.id) return row.id || Math.random().toString();
-        return row.original.id;
-      },
-    });
-
-    const total = filteredData.length;
-    const start = total ? pageIndex * pageSize + 1 : 0;
-    const end = Math.min((pageIndex + 1) * pageSize, total);
-    const totalPages = table.getPageCount();
-
-    // Page numbers (same pattern as reference)
-    const maxVisiblePages = 5;
-    const halfVisible = Math.floor(maxVisiblePages / 2);
-    let startPage = Math.max(1, pageIndex + 1 - halfVisible);
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+  const handleCreateUser = async () => {
+    if (!email.trim()) {
+      toast.error('Email is required');
+      return;
     }
-    const pages = [];
-    if (startPage > 1) {
-      pages.push(1);
-      if (startPage > 2) pages.push('ellipsis-start');
-    }
-    for (let i = startPage; i <= endPage; i++) pages.push(i);
-    if (endPage < totalPages) {
-      if (endPage < totalPages - 1) pages.push('ellipsis-end');
-      pages.push(totalPages);
-    }
+    if (!userDoc?.['Company Admin']) return;
+    setIsSubmitting(true);
+    try {
+      const usersRef = collection(db, 'users');
+      const emailQuery = query(usersRef, where('email', '==', email.toLowerCase()));
+      const snapshot = await getDocs(emailQuery);
+      if (!snapshot.empty) {
+        toast.error('A user with this email already exists');
+        return;
+      }
 
-    return (
-      <div
-        className={cn(
-          'overflow-hidden rounded-2xl border border-[#e5e5e5] bg-white shadow-none',
-          consumerShell &&
-            'rounded-2xl border border-slate-200/90 bg-white shadow-md',
-        )}
-      >
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-[0.75rem]">
-            <thead
-              className={cn(
-                'border-b border-gray-200 bg-gray-50',
-                consumerShell && 'border-slate-100 bg-slate-50/90',
-              )}
+      const adsToInvite =
+        role === 'Admin' ? adsAccounts.map((acc) => acc.id) : selectedAds;
+      await inviteUser(email.trim(), role, name.trim(), adsToInvite);
+      await refreshInvitations(userDoc['Company Admin']);
+      toast.success('Invitation sent successfully');
+      setIsAddOpen(false);
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to send invitation');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResendInvitation = async (invitationId: string) => {
+    if (resendingId || !userDoc?.['Company Admin']) return;
+    const invitation = invitations.find((i) => i.id === invitationId);
+    if (!invitation) return;
+    setResendingId(invitationId);
+    try {
+      await inviteUser(
+        invitation.email,
+        invitation.userType,
+        invitation.name,
+        invitation.selectedAds,
+      );
+      await useAlertSettingsStore.getState().deleteInvitation(invitation.id);
+      await refreshInvitations(userDoc['Company Admin']);
+      toast.success('Invitation resent successfully');
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to resend invitation');
+    } finally {
+      setResendingId(null);
+    }
+  };
+
+  const handleDeleteInvitation = async (invitationId: string) => {
+    if (deletingInvitationId || !userDoc?.['Company Admin']) return;
+    setDeletingInvitationId(invitationId);
+    try {
+      await useAlertSettingsStore.getState().deleteInvitation(invitationId);
+      await refreshInvitations(userDoc['Company Admin']);
+      toast.success('Invitation deleted');
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to delete invitation');
+    } finally {
+      setDeletingInvitationId(null);
+    }
+  };
+
+  const canDeleteUser = (row: UserRow) => {
+    if (row.isInvitation) return false;
+    if (!userDoc) return false;
+    if (row.id === userDoc.uid) return false;
+    if (row.id === userDoc?.['Company Admin']?.id) return false;
+    return userDoc?.['User Type'] === 'Admin';
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deletingUser || !userDoc?.['Company Admin']) return;
+    setIsDeletingUser(true);
+    try {
+      await deleteUserWithRecords(deletingUser.id, deletingUser.email);
+      await Promise.all([
+        refreshUsers(userDoc['Company Admin']),
+        refreshInvitations(userDoc['Company Admin']),
+      ]);
+      toast.success('User deleted successfully');
+      setDeletingUser(null);
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to delete user');
+    } finally {
+      setIsDeletingUser(false);
+    }
+  };
+
+  return (
+    <div
+      className={cn(
+        'min-h-[500px] min-w-0',
+        consumerShell ? 'mx-auto w-full max-w-[1480px]' : 'bg-white p-4',
+      )}
+    >
+      <div className='mb-5 flex flex-col gap-3 sm:flex-row sm:items-center'>
+        <Button
+          onClick={handleOpenAdd}
+          className='h-10 gap-2 rounded-xl bg-[#015AFD] px-4 font-semibold text-white hover:bg-[#0146ca]'
+        >
+          <UserPlus className='h-4 w-4' />
+          Add New User
+        </Button>
+        <div className='flex flex-1 items-center justify-end gap-2'>
+          <div className='flex w-full max-w-sm items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2'>
+            <Search className='h-4 w-4 text-[#015AFD]' />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder='Search users and invitations'
+              className='w-full border-0 bg-transparent text-sm outline-none placeholder:text-slate-400'
+            />
+          </div>
+          <div className='relative'>
+            <select
+              className='h-10 appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-700'
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
             >
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      className={cn(
-                        'px-4 py-4 text-left font-semibold text-gray-700',
-                        consumerShell &&
-                          'text-[12px] font-semibold uppercase tracking-wide text-slate-600',
-                      )}
-                    >
-                      {flexRender(
-                        header.column.columnDef.header,
-                        header.getContext(),
-                      )}
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
+              <option value={15}>15</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <ChevronDown className='pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500' />
+          </div>
+        </div>
+      </div>
 
-            <tbody className='divide-y divide-gray-100'>
-              {table.getRowModel().rows.map((row) => (
-                <tr
-                  key={row.id}
-                  className={cn(
-                    'transition-colors hover:bg-gray-50',
-                    consumerShell && 'hover:bg-slate-50/80',
-                  )}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <td
-                      key={cell.id}
+      <div className='overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm'>
+        <div className='overflow-x-auto'>
+          <table className='min-w-[860px] w-full'>
+            <thead className='border-b border-slate-100 bg-slate-50/70'>
+              <tr className='text-left text-xs uppercase tracking-wide text-slate-500'>
+                <th className='px-4 py-3'>User</th>
+                <th className='px-4 py-3'>Role</th>
+                <th className='px-4 py-3'>Access</th>
+                <th className='px-4 py-3'>Status</th>
+                <th className='px-4 py-3 text-right'>Actions</th>
+              </tr>
+            </thead>
+            <tbody className='divide-y divide-slate-100'>
+              {pageRows.map((row) => (
+                <tr key={row.id} className='hover:bg-slate-50/70'>
+                  <td className='px-4 py-4'>
+                    <div className='flex flex-col'>
+                      <span className='text-sm font-semibold text-slate-900'>{row.name || row.email}</span>
+                      <span className='text-xs text-slate-500'>{row.email}</span>
+                    </div>
+                  </td>
+                  <td className='px-4 py-4 text-sm text-slate-700'>{row.userType}</td>
+                  <td className='px-4 py-4 text-sm text-slate-700'>{row.accessLabel}</td>
+                  <td className='px-4 py-4'>
+                    <span
                       className={cn(
-                        'px-4 py-6 align-top text-gray-900',
-                        consumerShell && 'text-[13px] text-slate-800',
+                        'inline-flex rounded-full px-2.5 py-1 text-xs font-medium',
+                        row.status === 'pending'
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-emerald-100 text-emerald-700',
                       )}
                     >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
+                      {row.status === 'pending' ? 'Pending' : 'Active'}
+                    </span>
+                  </td>
+                  <td className='px-4 py-4'>
+                    <div className='flex items-center justify-end gap-2'>
+                      {row.isInvitation ? (
+                        <>
+                          <button
+                            className='rounded-lg p-2 text-[#015AFD] hover:bg-blue-50'
+                            onClick={() => handleResendInvitation(row.id)}
+                            disabled={resendingId === row.id}
+                            aria-label='Resend invitation'
+                          >
+                            {resendingId === row.id ? (
+                              <Loader2 className='h-4 w-4 animate-spin' />
+                            ) : (
+                              <RotateCcw className='h-4 w-4' />
+                            )}
+                          </button>
+                          <button
+                            className='rounded-lg p-2 text-red-600 hover:bg-red-50'
+                            onClick={() => handleDeleteInvitation(row.id)}
+                            disabled={deletingInvitationId === row.id}
+                            aria-label='Delete invitation'
+                          >
+                            {deletingInvitationId === row.id ? (
+                              <Loader2 className='h-4 w-4 animate-spin' />
+                            ) : (
+                              <Trash2 className='h-4 w-4' />
+                            )}
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          className='rounded-lg p-2 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40'
+                          disabled={!canDeleteUser(row)}
+                          onClick={() => setDeletingUser(row)}
+                          aria-label='Delete user'
+                        >
+                          <Trash2 className='h-4 w-4' />
+                        </button>
                       )}
-                    </td>
-                  ))}
+                    </div>
+                  </td>
                 </tr>
               ))}
-              {table.getRowModel().rows.length === 0 && (
+              {pageRows.length === 0 && (
                 <tr>
-                  <td
-                    className='px-4 py-12 text-center text-gray-500'
-                    colSpan={table.getAllColumns().length}
-                  >
-                    <div className='flex flex-col items-center gap-2'>
-                      <svg
-                        className='w-12 h-12 text-gray-300'
-                        fill='none'
-                        stroke='currentColor'
-                        viewBox='0 0 24 24'
-                      >
-                        <path
-                          strokeLinecap='round'
-                          strokeLinejoin='round'
-                          strokeWidth={1}
-                          d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
-                        />
-                      </svg>
-                      No users or invitations found.
-                    </div>
+                  <td className='px-4 py-12 text-center text-sm text-slate-500' colSpan={5}>
+                    No users or invitations found.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-
-        {/* Footer - like reference */}
-        <div
-          className={cn(
-            'flex flex-col items-center justify-between gap-4 border-t border-gray-200 bg-gray-50 px-6 py-4 sm:flex-row',
-            consumerShell && 'border-slate-100 bg-slate-50/50',
-          )}
-        >
-          <div
-            className={cn(
-              'text-[0.75rem] font-medium text-gray-600',
-              consumerShell && 'text-[13px] text-slate-600',
-            )}
-          >
-            Showing {total ? start : 0} to {end} of {total} users and
-            invitations
-          </div>
-
-          <div className='flex items-center gap-3'>
-            {/* First */}
+        <div className='flex items-center justify-between border-t border-slate-100 bg-slate-50/50 px-4 py-3 text-sm text-slate-600'>
+          <span>
+            Showing {filteredRows.length === 0 ? 0 : start + 1}-
+            {Math.min(start + pageSize, filteredRows.length)} of {filteredRows.length}
+          </span>
+          <div className='flex items-center gap-2'>
             <Button
               variant='outline'
               size='sm'
-              onClick={() => table.setPageIndex(0)}
-              disabled={!table.getCanPreviousPage()}
-              className='h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed'
-              aria-label='First page'
+              className='h-8 rounded-lg'
+              disabled={safePage <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
             >
-              <ChevronsLeft className='w-4 h-4' />
+              Prev
             </Button>
-
-            {/* Prev */}
+            <span className='text-xs'>Page {safePage} of {totalPages}</span>
             <Button
               variant='outline'
               size='sm'
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-              className='h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed'
-              aria-label='Previous page'
+              className='h-8 rounded-lg'
+              disabled={safePage >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             >
-              <ChevronLeftIcon className='w-4 h-4' />
-            </Button>
-
-            {/* Page numbers */}
-            <div className='flex items-center gap-1'>
-              {pages.map((p, idx) =>
-                typeof p === 'number' ? (
-                  <Button
-                    key={`${p}-${idx}`}
-                    variant={p === pageIndex + 1 ? 'default' : 'outline'}
-                    size='sm'
-                    onClick={() => table.setPageIndex(p - 1)}
-                    className='h-8 w-8 p-0 text-[0.75rem] font-medium'
-                  >
-                    {p}
-                  </Button>
-                ) : (
-                  <span
-                    key={`${p}-${idx}`}
-                    className='px-2 text-gray-400 text-[0.75rem]'
-                  >
-                    …
-                  </span>
-                ),
-              )}
-            </div>
-
-            {/* Next */}
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-              className='h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed'
-              aria-label='Next page'
-            >
-              <ChevronRightIcon className='w-4 h-4' />
-            </Button>
-
-            {/* Last */}
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={() => table.setPageIndex(totalPages - 1)}
-              disabled={!table.getCanNextPage()}
-              className='h-8 w-8 p-0 disabled:opacity-50 disabled:cursor-not-allowed'
-              aria-label='Last page'
-            >
-              <ChevronsRight className='w-4 h-4' />
+              Next
             </Button>
           </div>
         </div>
       </div>
-    );
-  }
 
-  // Disable logic for avatar upload
-  const isAvatarUploadDisabled =
-    screen === 'edit' &&
-    editingUser?.['Is Google Sign Up'] === true &&
-    userDoc?.uid !== editingUser?.uid;
+      {isAddOpen && (
+        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4'>
+          <div className='w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-xl'>
+            <div className='mb-4 flex items-start justify-between'>
+              <div>
+                <h3 className='text-xl font-bold text-slate-900'>Add New User</h3>
+                <p className='text-sm text-slate-500'>Invite a new teammate with account access.</p>
+              </div>
+              <button className='rounded-lg p-1 text-slate-400 hover:bg-slate-100' onClick={() => setIsAddOpen(false)}>
+                <XIcon className='h-5 w-5' />
+              </button>
+            </div>
 
-  // Handler to trigger file input
-  const handleAvatarClick = () => {
-    if (!isAvatarUploadDisabled && fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
-
-  // Handler for file change (implement upload logic as needed)
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (avatarPreview) {
-        URL.revokeObjectURL(avatarPreview);
-      }
-      const url = URL.createObjectURL(file);
-      setAvatarPreview(url);
-      setAvatarFile(file);
-    }
-  };
-
-  // Handle save button click
-  const handleSave = async () => {
-    // console.log('handleSave')
-    if (isSaving) return;
-
-    try {
-      // Prevent changing the super admin's role to Manager (including self)
-      if (
-        screen === 'edit' &&
-        editingUser &&
-        userDoc?.['Company Admin']?.id &&
-        editingUser.id === userDoc['Company Admin'].id &&
-        role !== 'Admin'
-      ) {
-        toast.error('The super admin cannot be demoted.');
-        return;
-      }
-
-      setIsSaving(true);
-      if (screen === 'add') {
-        // Check if email already exists in users collection
-        const usersRef = collection(db, 'users');
-        const emailQuery = query(
-          usersRef,
-          where('email', '==', email.toLowerCase()),
-        );
-        const emailSnapshot = await getDocs(emailQuery);
-
-        if (!emailSnapshot.empty) {
-          toast.error('A user with this email already exists');
-          return;
-        }
-
-        let adsToInvite = selectedAds;
-        if (role === 'Admin') {
-          adsToInvite = adsAccounts.map((acc) => acc.id);
-        }
-        // console.log({ email, role, name, selectedAds: adsToInvite })
-        await inviteUser(email, role, name, adsToInvite);
-        toast.success('Invitation sent successfully!');
-
-        // Refresh invitations to show the new pending invitation
-        if (userDoc && userDoc['Company Admin']) {
-          const { refreshInvitations } = useAlertSettingsStore.getState();
-          await refreshInvitations(userDoc['Company Admin']);
-        }
-
-        setScreen('list');
-        setEditingUser(null);
-        setRole('Admin');
-        setSelectedAds([]);
-        setAvatarPreview(null);
-        setAvatarFile(null);
-        setName('');
-        setEmail('');
-        setNotifyUser(false);
-        return;
-      }
-      if (!editingUser) return;
-      await updateUser(
-        editingUser.id,
-        {
-          Name: name,
-          'User Type': role,
-          avatarFile: avatarFile,
-          currentAvatarUrl: editingUser.Avatar,
-        },
-        notifyUser,
-        editingUser,
-        selectedAds,
-      );
-      toast.success('User updated successfully!');
-
-      // Refresh both users and invitations to ensure data is up to date
-      if (userDoc && userDoc['Company Admin']) {
-        const { refreshUsers, refreshInvitations } =
-          useAlertSettingsStore.getState();
-        await Promise.all([
-          refreshUsers(userDoc['Company Admin']),
-          refreshInvitations(userDoc['Company Admin']),
-        ]);
-      }
-
-      setScreen('list');
-      setEditingUser(null);
-      setRole('Admin');
-      setSelectedAds([]);
-      setAvatarPreview(null);
-      setAvatarFile(null);
-      setName('');
-      setEmail('');
-      setNotifyUser(false);
-    } catch (error: any) {
-      console.error('Error saving user:', error);
-      toast.error(error.message || 'Failed to save user');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const isSaveDisabled = !email || !role || isSaving;
-
-  return (
-    <div
-      className={cn(
-        'min-h-[600px] bg-white p-4',
-        consumerShell &&
-          'mx-auto min-h-0 max-w-[1480px] bg-transparent p-0 pb-4',
-      )}
-    >
-      {screen === 'list' && (
-        <>
-          {!consumerShell && (
-            <>
-              <h2 className='mb-1 text-2xl font-bold'>Users</h2>
-              <p className='mb-6 text-gray-500'>
-                Add, remove, or edit users including user access level and
-                accounts access. Pending invitations are also displayed here.
-              </p>
-            </>
-          )}
-          <div className='mb-6 flex flex-col gap-4 sm:flex-row sm:items-center'>
-            <Button
-              variant='outline'
-              className={cn(
-                'flex w-full items-center justify-center gap-2 border-blue-200 bg-blue-50 font-semibold text-blue-600 sm:w-auto',
-                consumerShell &&
-                  'rounded-xl border-[#015AFD]/30 bg-[#015AFD]/8 text-[#015AFD] hover:bg-[#015AFD]/12',
-              )}
-              onClick={() => setScreen('add')}
-            >
-              <Plus className='w-5 h-5' /> Add New User
-            </Button>
-            <div className='flex-1 flex items-center justify-end gap-2'>
-              {/* Search UI */}
-              {showSearch && (
-                <div className='flex items-center border rounded-lg px-3 py-1 bg-white shadow-none focus-within:ring-2 focus-within:ring-blue-200 transition-all'>
-                  <input
-                    className='outline-none border-none bg-transparent text-sm text-gray-500 placeholder-gray-400 flex-1 min-w-[180px]'
-                    placeholder='Search for users and invitations'
-                    value={searchValue}
-                    onChange={(e) => setSearchValue(e.target.value)}
-                    autoFocus
-                  />
-                  {searchValue && (
-                    <button
-                      type='button'
-                      className='ml-1 text-gray-400 hover:text-gray-600'
-                      onClick={() => setSearchValue('')}
-                      aria-label='Clear search'
-                    >
-                      <XIcon className='w-5 h-5' />
-                    </button>
-                  )}
-                </div>
-              )}
-              <Button
-                variant='outline'
-                size='icon'
-                onClick={() => setShowSearch((v) => !v)}
-                className={showSearch ? 'border-blue-200' : ''}
-                aria-label='Show search'
-              >
-                <MagnifyingGlassIcon className='w-6 h-6 text-[#015AFD]' />
-              </Button>
-
-              <div className='relative inline-block'>
-                <select
-                  className='appearance-none border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm bg-white transition-colors focus:ring-2 focus:ring-blue-200 focus:border-blue-300 cursor-pointer font-medium text-gray-700'
-                  value={pageSize}
-                  onChange={(e) => setPageSize(Number(e.target.value))}
-                  aria-label='Rows per page'
-                >
-                  <option value={15}>15 items</option>
-                  <option value={25}>25 items</option>
-                  <option value={50}>50 items</option>
-                  <option value={100}>100 items</option>
-                </select>
-
-                {/* Custom arrow */}
-                <svg
-                  className='absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
-                >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M19 9l-7 7-7-7'
-                  />
-                </svg>
+            <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+              <div className='space-y-2'>
+                <label className='text-sm font-medium text-slate-700'>Name</label>
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder='Full name' />
+              </div>
+              <div className='space-y-2'>
+                <label className='text-sm font-medium text-slate-700'>Email</label>
+                <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder='Email address' />
               </div>
             </div>
-          </div>
-          <UsersDataTable />
-        </>
-      )}
-      {(screen === 'add' || screen === 'edit') && (
-        <div className='w-full'>
-          <button
-            className={cn(
-              'mb-6 flex items-center gap-2 text-blue-600',
-              consumerShell && 'font-medium text-[#015AFD] hover:text-[#0146ca]',
-            )}
-            onClick={() => {
-              setScreen('list');
-              setEditingUser(null);
-              setRole('Admin');
-              setSelectedAds([]);
-              setAvatarPreview(null);
-              setAvatarFile(null);
-              setName('');
-              setEmail('');
-              setNotifyUser(false);
-            }}
-          >
-            <ChevronLeft className='w-5 h-5' /> Back to Users
-          </button>
-          <h2
-            className={cn(
-              'mb-6 text-2xl font-bold',
-              consumerShell && 'text-slate-900 tracking-tight',
-            )}
-          >
-            {screen === 'add' ? 'Add New User' : 'Edit User'}
-          </h2>
-          <div className='flex flex-col gap-8 md:flex-row'>
-            <div
-              className={cn(
-                'flex max-w-md flex-1 flex-col gap-4 rounded-xl border border-[#e5e5e5] p-6',
-                consumerShell &&
-                  'rounded-2xl border border-slate-100 bg-white shadow-none',
-              )}
-            >
-              {screen === 'edit' && (
-                <div className='relative'>
-                  <Input
-                    placeholder='Name'
-                    className='pl-10'
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    disabled={
-                      editingUser?.['Is Google Sign Up'] === true &&
-                      userDoc?.uid !== editingUser?.uid
-                    }
-                  />
-                  <UserCircle className='absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]' />
-                </div>
-              )}
-              <div className='relative'>
-                <Input
-                  placeholder='Email'
-                  className='pl-10'
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={screen === 'edit'}
-                />
-                <Mail className='absolute left-3 top-2.5 w-5 h-5 text-[#155dfc]' />
-              </div>
-              {/* Role dropdown */}
-              <div className={`relative role-dropdown ${
-                isRoleDropdownDisabled ? 'opacity-60 cursor-not-allowed' : ''
-              }`}>
-                <button
-                  type='button'
-                  className={`flex items-center w-full border rounded-md px-3 py-2 bg-white text-base font-nprmal focus:outline-none focus:ring-2 focus:ring-blue-200 ${
-                    isRoleDropdownDisabled ? 'pointer-events-none' : ''
-                  }`}
-                  onClick={() => {
-                    if (isRoleDropdownDisabled) return;
-                    setRoleDropdownOpen(!roleDropdownOpen);
-                  }}
-                >
-                  <span className='flex items-center gap-2'>
-                    <User className='w-5 h-5 text-[#155dfc]' /> {role}
-                  </span>
-                  <ChevronDown className='ml-auto w-4 h-4 text-[#155dfc]' />
-                </button>
-                {roleDropdownOpen && !isRoleDropdownDisabled && (
-                  <div className='absolute z-10 mt-1 w-full bg-white border rounded shadow-lg'>
-                    <div className='py-1 font-normal'>
-                      <button
-                        className='w-full text-left px-3 py-2 text-sm font-normal hover:bg-gray-100'
-                        onClick={() => {
-                          setRole('Admin');
-                          setRoleDropdownOpen(false);
-                        }}
-                      >
-                        Admin
-                      </button>
-                      <button
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 ${
-                          editingUser &&
-                          userDoc?.['Company Admin']?.id &&
-                          editingUser.id === userDoc['Company Admin'].id
-                            ? 'opacity-50 cursor-not-allowed'
-                            : ''
-                        }`}
-                        onClick={() => {
-                          // Disallow changing super admin to Manager
-                          if (
-                            editingUser &&
-                            userDoc?.['Company Admin']?.id &&
-                            editingUser.id === userDoc['Company Admin'].id
-                          ) {
-                            return;
-                          }
-                          setRole('Manager');
-                          setRoleDropdownOpen(false);
-                        }}
-                      >
-                        Manager
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-              {screen === 'edit' &&
-                editingUser &&
-                userDoc?.['Company Admin']?.id &&
-                editingUser.id === userDoc['Company Admin'].id && (
-                  <p className='text-xs text-gray-500'>
-                    The super admin role cannot be changed.
-                  </p>
-                )}
-              {/* Ads accounts dropdown */}
-              <div className='relative ads-dropdown'>
-                <button
-                  type='button'
-                  className={`flex items-center w-full border rounded-md px-3 py-2 bg-white text-base font-normal focus:outline-none focus:ring-2 focus:ring-blue-200 ${
-                    role === 'Admin' ? 'opacity-60 cursor-not-allowed' : ''
-                  }`}
-                  disabled={role === 'Admin'}
-                  onClick={() =>
-                    role === 'Manager' && setAdsDropdownOpen((v) => !v)
-                  }
-                >
-                  <span className='flex items-center gap-2'>
-                    <Users className='w-5 h-5 text-[#155dfc]' />
-                    {role === 'Admin'
-                      ? 'All Ad Accounts'
-                      : `${selectedAds.length}/${adsAccounts.length} selected`}
-                  </span>
-                  <ChevronDown className='ml-auto w-4 h-4 text-[#155dfc]' />
-                </button>
-                {/* Multi-select dropdown (mock) */}
-                {adsDropdownOpen && role === 'Manager' && (
-                  <div className='absolute z-10 mt-1 w-full bg-white border rounded shadow-lg p-3 font-normal'>
-                    <div className='flex items-center gap-2 mb-2'>
-                      <Input
-                        placeholder='Search for ads accounts'
-                        className='h-8'
-                        value={adsSearchValue}
-                        onChange={(e) => setAdsSearchValue(e.target.value)}
-                      />
-                    </div>
-                    <div className='flex items-center gap-2 mb-2 text-xs text-blue-600'>
-                      <button
-                        className='underline'
-                        onClick={() =>
-                          setSelectedAds(
-                            filteredAdsAccounts.map((acc) => acc.id),
-                          )
-                        }
-                      >
-                        Select All
-                      </button>
-                      <button
-                        className='underline'
-                        onClick={() => setSelectedAds([])}
-                      >
-                        Clear All
-                      </button>
-                    </div>
-                    <div className='max-h-32 overflow-y-auto flex flex-col gap-1'>
-                      {filteredAdsAccounts.map((acc) => (
-                        <label
-                          key={acc.id}
-                          className='flex items-center gap-2 cursor-pointer text-base'
-                        >
-                          <Checkbox
-                            className={checkboxClass}
-                            checked={selectedAds.includes(acc.id)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setSelectedAds([...selectedAds, acc.id]);
-                              } else {
-                                setSelectedAds(
-                                  selectedAds.filter((a) => a !== acc.id),
-                                );
-                              }
-                            }}
-                          />
-                          {acc.name}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-              {screen === 'edit' && (
-                <div className='flex items-center gap-2'>
-                  <Checkbox
-                    className={checkboxClass}
-                    id='notify-user'
-                    checked={notifyUser}
-                    onCheckedChange={(checked) =>
-                      setNotifyUser(checked === true)
-                    }
-                  />
-                  <label
-                    htmlFor='notify-user'
-                    className='text-base font-normal select-none'
-                  >
-                    Notify the user
-                  </label>
-                </div>
-              )}
-              <div className='mt-8 flex justify-center'>
-                <Button
-                  className={cn(
-                    'min-w-[180px] rounded px-8 py-3 text-sm font-semibold text-white shadow-md',
-                    consumerShell
-                      ? 'rounded-xl bg-[#015AFD] hover:bg-[#0146ca]'
-                      : 'bg-blue-600 font-normal',
-                  )}
-                  disabled={isSaveDisabled}
-                  onClick={handleSave}
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className='w-4 h-4 mr-2 animate-spin' />
-                      Saving...
-                    </>
-                  ) : screen === 'add' ? (
-                    'Save'
-                  ) : (
-                    'Update'
-                  )}
-                </Button>
-              </div>
-            </div>
-            {/* Avatar */}
-            <div
-              className={cn(
-                'flex flex-1 items-center justify-center rounded-xl border border-[#e5e5e5]',
-                consumerShell &&
-                  'rounded-2xl border border-slate-200 bg-slate-50/50 p-6',
-              )}
-            >
-              <div className='relative w-30 h-30 flex items-center justify-center'>
-                <div className='w-full h-full border rounded-[50%] overflow-hidden bg-gray-50 flex items-center justify-center'>
-                  {screen === 'edit' &&
-                  (avatarPreview || editingUser?.Avatar) ? (
-                    <img
-                      src={avatarPreview || editingUser.Avatar}
-                      alt={`${editingUser.Name || 'User'} avatar`}
-                      className='w-full h-full object-cover'
-                      onError={(e) => {
-                        e.currentTarget.src = '/images/default-avatar.png';
-                      }}
-                    />
-                  ) : (
-                    <img
-                      src='/images/default-avatar.png'
-                      alt='Default avatar'
-                      className='w-full h-full object-cover'
-                    />
-                  )}
-                </div>
-                {/* Camera icon button */}
-                {screen === 'edit' && (
+
+            <div className='mt-4 space-y-2'>
+              <label className='text-sm font-medium text-slate-700'>Role</label>
+              <div className='flex gap-2'>
+                {(['Admin', 'Manager'] as const).map((value) => (
                   <button
+                    key={value}
                     type='button'
-                    className='absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-1/2 bg-gray-200 hover:bg-gray-300 border-4 border-white rounded-full w-12 h-12 flex items-center justify-center shadow-md z-50'
-                    aria-label='Change avatar'
-                    style={{ zIndex: 50 }}
-                    onClick={handleAvatarClick}
-                    disabled={isAvatarUploadDisabled}
+                    onClick={() => setRole(value)}
+                    className={cn(
+                      'rounded-xl border px-4 py-2 text-sm font-medium',
+                      role === value
+                        ? 'border-[#015AFD] bg-[#015AFD]/10 text-[#015AFD]'
+                        : 'border-slate-200 text-slate-600 hover:bg-slate-50',
+                    )}
                   >
-                    <Camera className='w-6 h-6 text-blue-600' />
+                    {value}
                   </button>
-                )}
-                {/* Hidden file input */}
-                <input
-                  type='file'
-                  accept='image/*'
-                  ref={fileInputRef}
-                  className='hidden'
-                  onChange={handleFileChange}
-                  disabled={isAvatarUploadDisabled}
-                />
+                ))}
               </div>
+            </div>
+
+            {role === 'Manager' && (
+              <div className='mt-4 rounded-xl border border-slate-200 bg-slate-50/60 p-4'>
+                <div className='mb-3 flex items-center gap-2'>
+                  <Mail className='h-4 w-4 text-[#015AFD]' />
+                  <p className='text-sm font-semibold text-slate-800'>Ad account access</p>
+                </div>
+                <Input
+                  value={adsSearch}
+                  onChange={(e) => setAdsSearch(e.target.value)}
+                  placeholder='Search ad accounts'
+                  className='mb-3 bg-white'
+                />
+                <div className='max-h-52 space-y-2 overflow-auto'>
+                  {filteredAdsAccounts.map((acc) => (
+                    <label key={acc.id} className='flex items-center gap-3 rounded-lg bg-white px-3 py-2'>
+                      <Checkbox
+                        checked={selectedAds.includes(acc.id)}
+                        onCheckedChange={() => handleToggleAd(acc.id)}
+                        className={CHECKBOX_CLASS}
+                      />
+                      <span className='text-sm text-slate-700'>{acc.name}</span>
+                    </label>
+                  ))}
+                  {filteredAdsAccounts.length === 0 && (
+                    <p className='text-sm text-slate-500'>No accounts found.</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className='mt-6 flex justify-end gap-2'>
+              <Button variant='outline' className='rounded-xl' onClick={() => setIsAddOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                className='rounded-xl bg-[#015AFD] font-semibold hover:bg-[#0146ca]'
+                onClick={handleCreateUser}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Plus className='mr-2 h-4 w-4' />
+                    Send Invitation
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && deletingUser && (
-        <div className='fixed inset-0 bg-black/70 flex items-center justify-center z-50'>
-          <div className='bg-white rounded-lg p-6 max-w-md w-full mx-4'>
-            {/* Header */}
-            <div className='flex items-center justify-end'>
-              <div className='flex items-center gap-2'></div>
-              <button
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setDeletingUser(null);
-                }}
-                className='text-gray-400 hover:text-gray-600'
-              >
-                <XIcon className='w-5 h-5' />
+      {deletingUser && (
+        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4'>
+          <div className='w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6'>
+            <div className='mb-5 flex items-center justify-between'>
+              <h4 className='text-lg font-semibold text-slate-900'>Delete user</h4>
+              <button className='rounded-lg p-1 text-slate-400 hover:bg-slate-100' onClick={() => setDeletingUser(null)}>
+                <XIcon className='h-5 w-5' />
               </button>
             </div>
-
-            {/* Content */}
-            <div className='mb-6'>
-              <p className='text-gray-700'>
-                Are you sure you want to delete the user:{' '}
-                <span className='font-bold'>
-                  {deletingUser.Name} ({deletingUser.email})
-                </span>
-                ?
-              </p>
-            </div>
-
-            {/* Action Buttons */}
-            <div className='flex gap-3'>
-              <Button
-                variant='outline'
-                className='flex-1 border-blue-200 text-blue-600 hover:bg-blue-50'
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setDeletingUser(null);
-                }}
-                disabled={isDeleting}
-              >
+            <p className='mb-6 text-sm text-slate-600'>
+              Are you sure you want to delete <span className='font-semibold text-slate-900'>{deletingUser.name}</span>?
+            </p>
+            <div className='flex justify-end gap-2'>
+              <Button variant='outline' className='rounded-xl' onClick={() => setDeletingUser(null)}>
                 Cancel
               </Button>
               <Button
-                className='flex-1 bg-blue-600 text-white hover:bg-blue-700'
-                onClick={async () => {
-                  try {
-                    setIsDeleting(true);
-                    await deleteUserWithRecords(
-                      deletingUser.id,
-                      deletingUser.email,
-                    );
-                    toast.success('User deleted successfully');
-                    if (userDoc && userDoc['Company Admin']) {
-                      await Promise.all([
-                        refreshUsers(userDoc['Company Admin']),
-                        refreshInvitations(userDoc['Company Admin']),
-                      ]);
-                    }
-                    setShowDeleteModal(false);
-                    setDeletingUser(null);
-                  } catch (error: any) {
-                    console.error('Failed to delete user:', error);
-                    toast.error(error?.message || 'Failed to delete user');
-                  } finally {
-                    setIsDeleting(false);
-                  }
-                }}
-                disabled={isDeleting}
+                className='rounded-xl bg-red-600 text-white hover:bg-red-700'
+                onClick={handleDeleteUser}
+                disabled={isDeletingUser}
               >
-                {isDeleting ? (
+                {isDeletingUser ? (
                   <>
-                    <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                     Deleting...
                   </>
                 ) : (
-                  'Delete User'
+                  'Delete'
                 )}
               </Button>
             </div>
