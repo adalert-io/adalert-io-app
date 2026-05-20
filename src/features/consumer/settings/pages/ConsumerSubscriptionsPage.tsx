@@ -9,6 +9,10 @@ import { useEffect, useState } from 'react';
 import { SUBSCRIPTION_PRICES } from '@/lib/constants';
 import moment from 'moment';
 import { SUBSCRIPTION_STATUS, SUBSCRIPTION_PERIODS } from '@/lib/constants';
+import {
+  consumerSettingsPageWidth,
+  consumerSettingsSurface,
+} from '@/features/consumer/settings/consumer-settings-styles';
 import { cn } from '@/lib/utils';
 
 export interface SubscriptionsSubtabProps {
@@ -132,15 +136,14 @@ export default function SubscriptionsSubtab({
     <div
       className={cn(
         'space-y-6',
-        consumerShell && 'mx-auto w-full max-w-[1480px] min-w-0',
+        consumerShell && consumerSettingsPageWidth,
       )}
     >
       {/* Main Subscription Card */}
       <div
         className={cn(
           'bg-white p-4',
-          consumerShell &&
-            'rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm',
+          consumerShell && consumerSettingsSurface,
         )}
       >
         {!consumerShell && (

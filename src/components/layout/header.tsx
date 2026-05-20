@@ -13,15 +13,14 @@ import {
   User,
   Settings,
   LogOut,
-  Calendar1Icon,
   CreditCardIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import * as React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useIntercomContext } from '@/components/intercom';
-import { SUBSCRIPTION_STATUS, SUBSCRIPTION_PERIODS } from '@/lib/constants';
-import moment from 'moment';
+import { FreeTrialBanner } from '@/components/layout/FreeTrialBanner';
+import { SUBSCRIPTION_STATUS } from '@/lib/constants';
 
 // Utility to get initial from name or email
 function getInitial(nameOrEmail: string) {
@@ -53,32 +52,6 @@ export function Header() {
 
   // Use isFullAccess from auth store instead of calculating locally
   const isSubscriptionExpired = !isFullAccess;
-
-  // Calculate trial days left
-  const trialDaysLeft = React.useMemo(() => {
-    if (!subscription) return 0;
-    const status = subscription['User Status'];
-    if (
-      status !== SUBSCRIPTION_STATUS.TRIAL_NEW &&
-      status !== SUBSCRIPTION_STATUS.TRIAL_ENDED
-    )
-      return 0;
-
-    const trialStartDate = subscription['Free Trial Start Date']?.toDate?.();
-    if (!trialStartDate) return 0;
-
-    const trialEndDate = moment(trialStartDate).add(
-      SUBSCRIPTION_PERIODS.TRIAL_DAYS,
-      'days',
-    );
-    const now = moment();
-    const daysLeft = Math.max(
-      0,
-      Math.ceil(trialEndDate.diff(now, 'days', true)),
-    );
-
-    return daysLeft;
-  }, [subscription]);
 
   // Dropdown handler
   const handleSelectAccount = (account: any) => {
@@ -145,41 +118,10 @@ export function Header() {
 
   return (
     <>
-      {/* Trial Banner */}
-      {/* Trial Banner */}
-      {subscription &&
-        (subscription['User Status'] === SUBSCRIPTION_STATUS.TRIAL_NEW ||
-          subscription['User Status'] === SUBSCRIPTION_STATUS.TRIAL_ENDED) && (
-          <div className='w-full bg-[#FFEBEE] px-4 md:px-6 lg:px-20 py-2'>
-            <div className='max-w-[1440px] mx-auto text-center'>
-              <span className='text-gray-900 text-[13px]'>
-                <Calendar1Icon className='inline w-4 h-4 mb-1 mr-1' />
-                {trialDaysLeft > 0 ? (
-                  <>You're on a free trial with </>
-                ) : (
-                  <>Your free trial has ended. </>
-                )}
-              </span>
-              {trialDaysLeft > 0 && (
-                <span className='text-gray-900 text-[13px] font-bold'>
-                  {trialDaysLeft} days left.
-                </span>
-              )}
-              <span className='text-gray-900 text-[13px]'>
-                {' '}
-                Upgrade for 24/7 monitoring and peace of mind!
-              </span>
-              <button
-                onClick={() =>
-                  router.push('/settings/account/billing?show=payment-form')
-                }
-                className='text-white rounded rounded-[5px] border px-3 py-1 bg-[#da486b] font-medium hover:bg-[#000] transition-colors text-[12px] ml-3 cursor-pointer'
-              >
-                Upgrade Now
-              </button>
-            </div>
-          </div>
-        )}
+      <FreeTrialBanner
+        upgradeHref='/settings/account/billing?show=payment-form'
+        className='lg:px-20'
+      />
 
       {/* Payment Failed Banner */}
       {subscription &&

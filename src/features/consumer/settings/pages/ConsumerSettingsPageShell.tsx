@@ -2,6 +2,9 @@
 
 import type { ReactNode } from "react";
 
+import { consumerSettingsPageWidth } from "@/features/consumer/settings/consumer-settings-styles";
+import { cn } from "@/lib/utils";
+
 interface ConsumerSettingsPageShellProps {
   title: string;
   description: string;
@@ -14,7 +17,7 @@ export function ConsumerSettingsPageShell({
   children,
 }: ConsumerSettingsPageShellProps) {
   return (
-    <div className="mx-auto flex w-full max-w-[1480px] flex-1 flex-col gap-6 pb-8">
+    <div className={cn(consumerSettingsPageWidth, "flex flex-1 flex-col gap-6 pb-8")}>
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-3xl space-y-2">
           <h1 className="text-[28px] font-bold tracking-tight text-slate-900 sm:text-[30px]">

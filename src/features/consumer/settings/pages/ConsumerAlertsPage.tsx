@@ -9,6 +9,7 @@ import { Info, Loader2, Mail, MessageSquare } from "lucide-react";
 import { useAlertSettingsStore } from "@/lib/store/settings-store";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { CHECKBOX_CLASS } from "@/lib/constants";
+import { consumerSettingsPageWidth } from "@/features/consumer/settings/consumer-settings-styles";
 import { cn } from "@/lib/utils";
 
 const FIELD_MAP = [
@@ -176,7 +177,7 @@ export default function AlertsSubtab({ consumerShell = false }: AlertsSubtabProp
       className={cn(
         "min-w-0",
         consumerShell
-          ? "mx-auto max-w-[1480px] space-y-6 pb-4"
+          ? cn(consumerSettingsPageWidth, "space-y-6 pb-4")
           : "bg-white p-4",
       )}
     >

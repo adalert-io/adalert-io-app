@@ -45,6 +45,12 @@ import {
 import { doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { useRouter, useSearchParams } from 'next/navigation';
+import {
+  consumerSettingsPageWidth,
+  consumerSettingsPrimaryButton,
+  consumerSettingsPrimaryButtonSize,
+  consumerSettingsSurface,
+} from '@/features/consumer/settings/consumer-settings-styles';
 import { cn } from '@/lib/utils';
 
 // Dynamically import react-select to avoid SSR issues
@@ -554,10 +560,10 @@ function PaymentForm({
             onClick={handleSubmit}
             disabled={isSubmitting || !stripe || !isFormValid()}
             className={cn(
-              'min-w-[180px] rounded px-8 py-3 text-sm font-normal text-white shadow-md',
+              consumerSettingsPrimaryButtonSize,
               consumerShell
-                ? 'rounded-xl bg-[#015AFD] font-semibold hover:bg-[#0146ca]'
-                : 'bg-blue-600',
+                ? consumerSettingsPrimaryButton
+                : 'min-w-[180px] rounded bg-blue-600 px-8 py-3 text-sm font-normal text-white shadow-md',
             )}
           >
             {isSubmitting ? (
@@ -813,7 +819,7 @@ function BillingSubtabContent({ consumerShell }: { consumerShell: boolean }) {
       <div
         className={cn(
           'space-y-8',
-          consumerShell && 'mx-auto w-full min-w-0 max-w-[1480px]',
+          consumerShell && consumerSettingsPageWidth,
         )}
       >
         {screen === 'list' && (
@@ -822,8 +828,7 @@ function BillingSubtabContent({ consumerShell }: { consumerShell: boolean }) {
             <div
               className={cn(
                 'bg-white p-4',
-                consumerShell &&
-                  'rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm',
+                consumerShell && consumerSettingsSurface,
               )}
             >
               {!consumerShell && (
@@ -924,10 +929,11 @@ function BillingSubtabContent({ consumerShell }: { consumerShell: boolean }) {
                     )}
                     <Button
                       className={cn(
-                        'mt-6 min-w-[180px] rounded-xl px-8 py-3 text-sm font-semibold text-white shadow-sm',
+                        'mt-6',
+                        consumerSettingsPrimaryButtonSize,
                         consumerShell
-                          ? 'bg-[#015AFD] hover:bg-[#0146ca]'
-                          : 'bg-blue-600',
+                          ? consumerSettingsPrimaryButton
+                          : 'min-w-[180px] rounded bg-blue-600 px-8 py-3 text-sm font-normal text-white shadow-md',
                       )}
                       onClick={() => setScreen('payment-form')}
                     >
@@ -944,8 +950,7 @@ function BillingSubtabContent({ consumerShell }: { consumerShell: boolean }) {
             <div
               className={cn(
                 'rounded-2xl bg-white p-4',
-                consumerShell &&
-                  'rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm',
+                consumerShell && consumerSettingsSurface,
               )}
             >
               {!consumerShell && (

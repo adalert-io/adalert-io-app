@@ -11,6 +11,12 @@ import { useAlertSettingsStore } from '@/lib/store/settings-store';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { countries } from 'countries-list';
+import {
+  consumerSettingsPageWidth,
+  consumerSettingsPrimaryButton,
+  consumerSettingsPrimaryButtonSize,
+  consumerSettingsSurface,
+} from '@/features/consumer/settings/consumer-settings-styles';
 import { cn } from '@/lib/utils';
 
 // Dynamically import react-select to avoid SSR issues
@@ -187,14 +193,13 @@ export default function MyProfileTab({
       <div
         className={cn(
           'w-full max-w-5xl',
-          consumerShell && 'max-w-[1480px]',
+          consumerShell && consumerSettingsPageWidth,
         )}
       >
         <div
           className={cn(
             'rounded-2xl border border-[#e5e5e5] bg-white p-8 shadow-md',
-            consumerShell &&
-              'rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm sm:p-8',
+            consumerShell && cn(consumerSettingsSurface, 'sm:p-8'),
           )}
         >
           {!consumerShell && (
@@ -374,10 +379,10 @@ export default function MyProfileTab({
           <div className='mt-8 flex justify-center'>
             <Button
               className={cn(
-                'min-w-[180px] rounded-xl px-8 py-3 text-sm font-semibold text-white shadow-sm',
+                consumerSettingsPrimaryButtonSize,
                 consumerShell
-                  ? 'bg-[#015AFD] hover:bg-[#0146ca]'
-                  : 'bg-blue-600',
+                  ? consumerSettingsPrimaryButton
+                  : 'min-w-[180px] rounded bg-blue-600 px-8 py-3 text-sm font-normal text-white shadow-md',
               )}
               onClick={handleSave}
               disabled={!isSaveEnabled || isSaving}

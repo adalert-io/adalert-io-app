@@ -21,6 +21,11 @@ import { Input } from '@/components/ui/input';
 import { db } from '@/lib/firebase/config';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { useAlertSettingsStore } from '@/lib/store/settings-store';
+import {
+  consumerSettingsPageWidth,
+  consumerSettingsPrimaryButton,
+  consumerSettingsTableShell,
+} from '@/features/consumer/settings/consumer-settings-styles';
 import { cn } from '@/lib/utils';
 
 const CHECKBOX_CLASS =
@@ -265,7 +270,7 @@ export default function ConsumerUsersPage({
     <div
       className={cn(
         'min-h-[500px] min-w-0',
-        consumerShell ? 'mx-auto w-full max-w-[1480px]' : 'bg-white p-4',
+        consumerShell ? consumerSettingsPageWidth : 'bg-white p-4',
       )}
     >
       <div className='mb-5 flex flex-col gap-3 sm:flex-row sm:items-center'>
@@ -302,7 +307,7 @@ export default function ConsumerUsersPage({
         </div>
       </div>
 
-      <div className='overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm'>
+      <div className={consumerSettingsTableShell}>
         <div className='overflow-x-auto'>
           <table className='min-w-[860px] w-full'>
             <thead className='border-b border-slate-100 bg-slate-50/70'>

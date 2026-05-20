@@ -16,6 +16,10 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import {
+  consumerSettingsPageWidth,
+  consumerSettingsTableShell,
+} from '@/features/consumer/settings/consumer-settings-styles';
 import { formatAccountNumber } from '@/lib/utils';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { useAlertSettingsStore } from '@/lib/store/settings-store';
@@ -170,7 +174,7 @@ export default function ConsumerAdAccountsPage({
   };
 
   return (
-    <div className={consumerShell ? 'mx-auto w-full max-w-[1480px] min-w-0' : 'bg-white p-4'}>
+    <div className={consumerShell ? consumerSettingsPageWidth : 'bg-white p-4'}>
       <div className='mb-5 flex flex-col gap-3 sm:flex-row sm:items-center'>
         <Button
           className='h-10 gap-2 rounded-xl bg-[#015AFD] px-4 font-semibold text-white hover:bg-[#0146ca]'
@@ -206,7 +210,7 @@ export default function ConsumerAdAccountsPage({
         </div>
       </div>
 
-      <div className='overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm'>
+      <div className={consumerSettingsTableShell}>
         <div className='overflow-x-auto'>
           <table className='min-w-[980px] w-full'>
             <thead className='border-b border-slate-100 bg-slate-50/70'>

@@ -15,6 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { FreeTrialBanner } from "@/components/layout/FreeTrialBanner";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { cn } from "@/lib/utils";
 
@@ -370,6 +371,7 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
       </aside>
 
       <div className="flex min-h-svh min-w-0 flex-1 flex-col lg:pl-[264px]">
+        <FreeTrialBanner upgradeHref="/consumer/settings/account/billing?show=payment-form" />
         <div className="sticky top-0 z-30 flex shrink-0 items-center gap-2 border-b border-slate-200/90 bg-[#f8fafc]/90 px-4 py-2 backdrop-blur-md">
           <Button
             type="button"

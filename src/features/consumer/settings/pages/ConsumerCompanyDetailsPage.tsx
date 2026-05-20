@@ -19,6 +19,12 @@ import {
   Mail,
   Loader2,
 } from 'lucide-react';
+import {
+  consumerSettingsPageWidth,
+  consumerSettingsPrimaryButton,
+  consumerSettingsPrimaryButtonSize,
+  consumerSettingsSurface,
+} from '@/features/consumer/settings/consumer-settings-styles';
 import { cn } from '@/lib/utils';
 
 // Dynamically import react-select to avoid SSR issues
@@ -163,8 +169,7 @@ export default function CompanyDetailsSubtab({
     <div
       className={cn(
         'bg-white p-4',
-        consumerShell &&
-          'mx-auto w-full min-w-0 max-w-[1480px] rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm',
+        consumerShell && cn(consumerSettingsPageWidth, consumerSettingsSurface),
       )}
     >
       {!consumerShell && (
@@ -366,10 +371,10 @@ export default function CompanyDetailsSubtab({
       <div className='mt-8 flex justify-center'>
         <Button
           className={cn(
-            'min-w-[180px] rounded-xl px-8 py-3 text-sm font-semibold text-white shadow-sm',
+            consumerSettingsPrimaryButtonSize,
             consumerShell
-              ? 'bg-[#015AFD] hover:bg-[#0146ca]'
-              : 'bg-blue-600',
+              ? consumerSettingsPrimaryButton
+              : 'min-w-[180px] rounded bg-blue-600 px-8 py-3 text-sm font-normal text-white shadow-md',
           )}
           onClick={handleSave}
           disabled={isSaving}
