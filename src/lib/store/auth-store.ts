@@ -25,6 +25,7 @@ import {
   getDocs,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
+import { shouldSkipAutomaticPostAuthNavigation } from '@/lib/auth-navigation';
 import {
   consumerPathForClassicRoute,
   prefersConsumerShellRouting,
@@ -507,10 +508,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   handlePostAuthNavigation: async () => {
     try {
-      // console.log('handlePostAuthNavigation......');
+      if (
+        typeof window !== "undefined" &&
+        shouldSkipAutomaticPostAuthNavigation(window.location.pathname)
+      ) {
+        return;
+      }
+
       const { userDoc, isFullAccess, router } = get();
-      // console.log('userDoc', userDoc);
-      // console.log('isFullAccess', isFullAccess);
       if (!userDoc || !router) return;
 
       const useConsumerShell = prefersConsumerShellRouting();
