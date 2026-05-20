@@ -38,13 +38,18 @@ import {
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
 import React, { useRef } from 'react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 // Removed hardcoded ADS_ACCOUNTS - now using fetched data from store
 
 const checkboxClass =
   'data-[state=checked]:bg-blue-700 data-[state=checked]:border-blue-700';
 
-export default function UsersSubtab() {
+export default function UsersSubtab({
+  consumerShell = false,
+}: {
+  consumerShell?: boolean;
+}) {
   const [screen, setScreen] = useState<'list' | 'add' | 'edit'>('list');
   const [editingUser, setEditingUser] = useState<any>(null);
   const [deletingUser, setDeletingUser] = useState<any>(null);
@@ -515,16 +520,31 @@ export default function UsersSubtab() {
     }
 
     return (
-      <div className='bg-white rounded-2xl shadow-none border border-[#e5e5e5] overflow-hidden'>
-        <div className='overflow-x-auto'>
-          <table className='min-w-full text-[0.75rem]'>
-            <thead className='bg-gray-50 border-b border-gray-200'>
+      <div
+        className={cn(
+          'overflow-hidden rounded-2xl border border-[#e5e5e5] bg-white shadow-none',
+          consumerShell &&
+            'rounded-2xl border border-slate-200/90 bg-white shadow-md',
+        )}
+      >
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-[0.75rem]">
+            <thead
+              className={cn(
+                'border-b border-gray-200 bg-gray-50',
+                consumerShell && 'border-slate-100 bg-slate-50/90',
+              )}
+            >
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
                     <th
                       key={header.id}
-                      className='px-4 py-4 text-left font-semibold text-gray-700'
+                      className={cn(
+                        'px-4 py-4 text-left font-semibold text-gray-700',
+                        consumerShell &&
+                          'text-[12px] font-semibold uppercase tracking-wide text-slate-600',
+                      )}
                     >
                       {flexRender(
                         header.column.columnDef.header,
@@ -538,11 +558,20 @@ export default function UsersSubtab() {
 
             <tbody className='divide-y divide-gray-100'>
               {table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className='hover:bg-gray-50 transition-colors'>
+                <tr
+                  key={row.id}
+                  className={cn(
+                    'transition-colors hover:bg-gray-50',
+                    consumerShell && 'hover:bg-slate-50/80',
+                  )}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
-                      className='px-4 py-6 align-top text-gray-900'
+                      className={cn(
+                        'px-4 py-6 align-top text-gray-900',
+                        consumerShell && 'text-[13px] text-slate-800',
+                      )}
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
@@ -582,8 +611,18 @@ export default function UsersSubtab() {
         </div>
 
         {/* Footer - like reference */}
-        <div className='flex flex-col sm:flex-row items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200 gap-4'>
-          <div className='text-[0.75rem] text-gray-600 font-medium'>
+        <div
+          className={cn(
+            'flex flex-col items-center justify-between gap-4 border-t border-gray-200 bg-gray-50 px-6 py-4 sm:flex-row',
+            consumerShell && 'border-slate-100 bg-slate-50/50',
+          )}
+        >
+          <div
+            className={cn(
+              'text-[0.75rem] font-medium text-gray-600',
+              consumerShell && 'text-[13px] text-slate-600',
+            )}
+          >
             Showing {total ? start : 0} to {end} of {total} users and
             invitations
           </div>
@@ -795,18 +834,40 @@ export default function UsersSubtab() {
   const isSaveDisabled = !email || !role || isSaving;
 
   return (
-    <div className='bg-white p-4 min-h-[600px]'>
+    <div
+      className={cn(
+        'min-h-[600px] bg-white p-4',
+        consumerShell &&
+          'mx-auto min-h-0 max-w-[1480px] bg-transparent p-0 pb-4',
+      )}
+    >
       {screen === 'list' && (
         <>
-          <h2 className='text-2xl font-bold mb-1'>Users</h2>
-          <p className='text-gray-500 mb-6'>
+          <h2
+            className={cn(
+              'mb-1 text-2xl font-bold',
+              consumerShell && 'tracking-tight text-slate-900',
+            )}
+          >
+            Users
+          </h2>
+          <p
+            className={cn(
+              'mb-6 text-gray-500',
+              consumerShell && 'text-[15px] text-slate-500',
+            )}
+          >
             Add, remove, or edit users including user access level and accounts
             access. Pending invitations are also displayed here.
           </p>
-          <div className='flex flex-col sm:flex-row sm:items-center gap-4 mb-6'>
+          <div className='mb-6 flex flex-col gap-4 sm:flex-row sm:items-center'>
             <Button
               variant='outline'
-              className='flex items-center gap-2 w-full sm:w-auto justify-center text-blue-600 font-semibold bg-blue-50 border-blue-200'
+              className={cn(
+                'flex w-full items-center justify-center gap-2 border-blue-200 bg-blue-50 font-semibold text-blue-600 sm:w-auto',
+                consumerShell &&
+                  'rounded-xl border-[#015AFD]/30 bg-[#015AFD]/8 text-[#015AFD] hover:bg-[#015AFD]/12',
+              )}
               onClick={() => setScreen('add')}
             >
               <Plus className='w-5 h-5' /> Add New User
@@ -880,7 +941,10 @@ export default function UsersSubtab() {
       {(screen === 'add' || screen === 'edit') && (
         <div className='w-full'>
           <button
-            className='flex items-center gap-2 text-blue-600 mb-6'
+            className={cn(
+              'mb-6 flex items-center gap-2 text-blue-600',
+              consumerShell && 'font-medium text-[#015AFD] hover:text-[#0146ca]',
+            )}
             onClick={() => {
               setScreen('list');
               setEditingUser(null);
@@ -895,11 +959,22 @@ export default function UsersSubtab() {
           >
             <ChevronLeft className='w-5 h-5' /> Back to Users
           </button>
-          <h2 className='text-2xl font-bold mb-6'>
+          <h2
+            className={cn(
+              'mb-6 text-2xl font-bold',
+              consumerShell && 'text-slate-900 tracking-tight',
+            )}
+          >
             {screen === 'add' ? 'Add New User' : 'Edit User'}
           </h2>
-          <div className='flex flex-col md:flex-row gap-8'>
-            <div className='flex-1 flex flex-col gap-4 max-w-md rounded-xl border border-[#e5e5e5] p-6'>
+          <div className='flex flex-col gap-8 md:flex-row'>
+            <div
+              className={cn(
+                'flex max-w-md flex-1 flex-col gap-4 rounded-xl border border-[#e5e5e5] p-6',
+                consumerShell &&
+                  'rounded-2xl border border-slate-200 bg-white shadow-sm',
+              )}
+            >
               {screen === 'edit' && (
                 <div className='relative'>
                   <Input
@@ -1086,7 +1161,12 @@ export default function UsersSubtab() {
               )}
               <div className='mt-8 flex justify-center'>
                 <Button
-                  className='px-8 py-3 bg-blue-600 text-white text-sm font-normal rounded shadow-md min-w-[180px]'
+                  className={cn(
+                    'min-w-[180px] rounded px-8 py-3 text-sm font-semibold text-white shadow-md',
+                    consumerShell
+                      ? 'rounded-xl bg-[#015AFD] hover:bg-[#0146ca]'
+                      : 'bg-blue-600 font-normal',
+                  )}
                   disabled={isSaveDisabled}
                   onClick={handleSave}
                 >
@@ -1104,7 +1184,13 @@ export default function UsersSubtab() {
               </div>
             </div>
             {/* Avatar */}
-            <div className='flex-1 flex items-center justify-center rounded-xl border border-[#e5e5e5]'>
+            <div
+              className={cn(
+                'flex flex-1 items-center justify-center rounded-xl border border-[#e5e5e5]',
+                consumerShell &&
+                  'rounded-2xl border border-slate-200 bg-slate-50/50 p-6',
+              )}
+            >
               <div className='relative w-30 h-30 flex items-center justify-center'>
                 <div className='w-full h-full border rounded-[50%] overflow-hidden bg-gray-50 flex items-center justify-center'>
                   {screen === 'edit' &&

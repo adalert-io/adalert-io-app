@@ -5,11 +5,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Link from "next/link";
-import { Info } from "lucide-react";
+import { Info, Loader2 } from "lucide-react";
 import { useAlertSettingsStore } from "@/lib/store/settings-store";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { CHECKBOX_CLASS } from "@/lib/constants";
-import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const FIELD_MAP = [
   // Email/SMS
@@ -92,7 +92,12 @@ const FIELD_MAP = [
   },
 ];
 
-export default function AlertsSubtab() {
+interface AlertsSubtabProps {
+  /** Consumer console: slate styling + profile link under `/consumer`. */
+  consumerShell?: boolean;
+}
+
+export default function AlertsSubtab({ consumerShell = false }: AlertsSubtabProps) {
   const { user } = useAuthStore();
   const userDoc = useAuthStore().userDoc;
   const {
@@ -157,18 +162,47 @@ export default function AlertsSubtab() {
   const getFieldsByGroup = (group: string) =>
     FIELD_MAP.filter((f) => f.group === group);
 
+  const profileHref = consumerShell
+    ? "/consumer/settings/my-profile"
+    : "/settings/my-profile";
+
   return (
-    <div className="bg-white p-4">
+    <div
+      className={cn(
+        "min-w-0",
+        consumerShell
+          ? "mx-auto max-w-[1480px] space-y-6 pb-4"
+          : "bg-white p-4",
+      )}
+    >
       <div className="flex items-center gap-3 mb-1">
-        <h2 className="text-2xl font-bold">Alerts</h2>
+        <h2
+          className={cn(
+            "text-2xl font-bold",
+            consumerShell && "tracking-tight text-slate-900",
+          )}
+        >
+          Alerts
+        </h2>
       </div>
-      <p className="text-gray-500 text-base mb-8">
+      <p
+        className={cn(
+          "text-base mb-8 text-gray-500",
+          consumerShell && "text-[15px] text-slate-500",
+        )}
+      >
         Control alerts frequency, add SMS, add or remove notification categories
       </p>
       {error && <div className="mb-4 text-red-600">{error}</div>}
       {/* Email/SMS */}
       <div className="flex flex-col md:flex-row gap-4 mb-8">
-        <Card className="flex-1 p-4 border-2 shadow-none">
+        <Card
+          className={cn(
+            "flex-1 border-2 p-4 shadow-none",
+            consumerShell &&
+              "rounded-xl border border-slate-200 bg-white shadow-sm",
+          )}
+        >
           <div className="flex flex-row items-center justify-center gap-3 w-full h-full">
             <Checkbox
               checked={!!localSettings["Send Email Alerts"]}
@@ -184,7 +218,13 @@ export default function AlertsSubtab() {
             </label>
           </div>
         </Card>
-        <Card className="flex-1 p-4 flex flex-col gap-2 border-2 shadow-none">
+        <Card
+          className={cn(
+            "flex flex-1 flex-col gap-2 border-2 p-4 shadow-none",
+            consumerShell &&
+              "rounded-xl border border-slate-200 bg-white shadow-sm",
+          )}
+        >
           <div className="flex items-center gap-3">
             <Checkbox
               checked={!!localSettings["Send SMS Alerts"]}
@@ -203,12 +243,25 @@ export default function AlertsSubtab() {
               </span>
             </label>
           </div>
-          <div className="flex flex-col items-center gap-2 mt-1 ml-0 text-xs text-gray-500 bg-gray-100 rounded-lg px-3 py-2 sm:flex-row sm:items-start sm:ml-7">
-            <Info className="w-4 h-4 text-blue-400" />
+          <div
+            className={cn(
+              "ml-0 mt-1 flex flex-col items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 text-xs text-gray-500 sm:ml-7 sm:flex-row sm:items-start",
+              consumerShell && "border border-slate-100 bg-slate-50 text-slate-600",
+            )}
+          >
+            <Info
+              className={cn(
+                "h-4 w-4 text-blue-400",
+                consumerShell && "text-[#015AFD]",
+              )}
+            />
             Update phone or withdraw consent in{" "}
             <Link
-              href="/settings/my-profile"
-              className="text-blue-600 underline font-medium"
+              href={profileHref}
+              className={cn(
+                "font-medium text-blue-600 underline",
+                consumerShell && "text-[#015AFD] hover:text-[#0146ca]",
+              )}
             >
               My Profile
             </Link>
@@ -219,10 +272,24 @@ export default function AlertsSubtab() {
       {/* Severity */}
       {localSettings["Send Email Alerts"] && (
       <div className="mb-8">
-        <div className="font-semibold text-lg mb-2">Severity</div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div
+          className={cn(
+            "mb-2 text-lg font-semibold",
+            consumerShell && "text-slate-800",
+          )}
+        >
+          Severity
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {getFieldsByGroup("Severity").map((f) => (
-            <Card key={f.key} className="flex items-center gap-3 p-4 shadow-none">
+            <Card
+              key={f.key}
+              className={cn(
+                "flex items-center gap-3 p-4 shadow-none",
+                consumerShell &&
+                  "rounded-xl border border-slate-200 bg-white shadow-sm",
+              )}
+            >
               <div className="flex flex-row items-center gap-3 w-full h-full">
                 <Checkbox
                   checked={!!localSettings[f.key]}
@@ -245,10 +312,24 @@ export default function AlertsSubtab() {
       {/* Level */}
       {localSettings["Send Email Alerts"] && (
       <div className="mb-8">
-        <div className="font-semibold text-lg mb-2">Level</div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div
+          className={cn(
+            "mb-2 text-lg font-semibold",
+            consumerShell && "text-slate-800",
+          )}
+        >
+          Level
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {getFieldsByGroup("Level").map((f) => (
-            <Card key={f.key} className="flex items-center gap-3 p-4 shadow-none">
+            <Card
+              key={f.key}
+              className={cn(
+                "flex items-center gap-3 p-4 shadow-none",
+                consumerShell &&
+                  "rounded-xl border border-slate-200 bg-white shadow-sm",
+              )}
+            >
               <div className="flex flex-row items-center gap-3 w-full h-full">
                 <Checkbox
                   checked={!!localSettings[f.key]}
@@ -271,10 +352,24 @@ export default function AlertsSubtab() {
       {/* Type */}
       {localSettings["Send Email Alerts"] && (
       <div className="mb-8">
-        <div className="font-semibold text-lg mb-2">Type</div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div
+          className={cn(
+            "mb-2 text-lg font-semibold",
+            consumerShell && "text-slate-800",
+          )}
+        >
+          Type
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3">
           {getFieldsByGroup("Type").map((f) => (
-            <Card key={f.key} className="flex items-center gap-3 p-4 shadow-none">
+            <Card
+              key={f.key}
+              className={cn(
+                "flex items-center gap-3 p-4 shadow-none",
+                consumerShell &&
+                  "rounded-xl border border-slate-200 bg-white shadow-sm",
+              )}
+            >
               <div className="flex flex-row items-center gap-3 w-full h-full">
                 <Checkbox
                   checked={!!localSettings[f.key]}
@@ -294,11 +389,16 @@ export default function AlertsSubtab() {
         </div>
       </div>
       )}
-      <div className='mt-8 flex justify-center'>
+      <div className="mt-8 flex justify-center">
         <Button
           onClick={handleSave}
           disabled={saving || loading}
-          className='px-8 py-3 bg-blue-600 text-white text-sm font-normal rounded shadow-md min-w-[180px]'
+          className={cn(
+            "min-w-[180px] rounded px-8 py-3 text-sm font-semibold text-white shadow-md",
+            consumerShell
+              ? "rounded-xl bg-[#015AFD] hover:bg-[#0146ca]"
+              : "bg-blue-600 font-normal",
+          )}
         >
           {saving ? (
             <>

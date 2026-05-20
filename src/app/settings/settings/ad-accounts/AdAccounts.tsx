@@ -40,7 +40,11 @@ import { toast } from 'sonner';
 import { formatAccountNumber, cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
-export default function AdAccountsSubtab() {
+export default function AdAccountsSubtab({
+  consumerShell = false,
+}: {
+  consumerShell?: boolean;
+}) {
   const router = useRouter();
   const [screen, setScreen] = useState<'list' | 'edit'>('list');
   const [editingAccount, setEditingAccount] = useState<any>(null);
@@ -292,7 +296,13 @@ export default function AdAccountsSubtab() {
     ]);
 
     return (
-      <div className='bg-white rounded-2xl shadow-none border border-[#e5e5e5] overflow-hidden w-full max-w-full min-w-0'>
+      <div
+        className={cn(
+          'w-full max-w-full min-w-0 overflow-hidden rounded-2xl border border-[#e5e5e5] bg-white shadow-none',
+          consumerShell &&
+            'rounded-2xl border border-slate-200/90 bg-white shadow-md',
+        )}
+      >
         <div className='w-full max-w-full min-w-0 overflow-x-hidden'>
           <table className='w-full max-w-full table-fixed border-collapse text-[0.75rem]'>
             <colgroup>
@@ -304,7 +314,12 @@ export default function AdAccountsSubtab() {
               <col className='min-w-0 w-[12%]' />
               <col className='min-w-[88px] w-[10%]' />
             </colgroup>
-            <thead className='bg-gray-50 border-b border-gray-200'>
+            <thead
+              className={cn(
+                'border-b border-gray-200 bg-gray-50',
+                consumerShell && 'border-slate-100 bg-slate-50/90',
+              )}
+            >
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
@@ -312,6 +327,7 @@ export default function AdAccountsSubtab() {
                       key={header.id}
                       className={cn(
                         'px-3 py-4 text-left font-semibold text-gray-700 align-top min-w-0',
+                        consumerShell && 'text-slate-600',
                         wrapCellColumnIds.has(header.column.id)
                           ? 'break-words whitespace-normal'
                           : compactUiColumnIds.has(header.column.id)
@@ -329,19 +345,27 @@ export default function AdAccountsSubtab() {
               ))}
             </thead>
 
-            <tbody className='divide-y divide-gray-100'>
+            <tbody
+              className={cn(
+                'divide-y divide-gray-100',
+                consumerShell && 'divide-slate-100',
+              )}
+            >
               {table.getRowModel().rows.map((row) => (
                 <tr
                   key={row.id}
-                  className={`hover:bg-gray-50 transition-colors ${
-                    !row.original['Is Connected'] ? 'hidden' : ''
-                  }`}
+                  className={cn(
+                    'transition-colors hover:bg-gray-50',
+                    consumerShell && 'hover:bg-slate-50/80',
+                    !row.original['Is Connected'] ? 'hidden' : '',
+                  )}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
                       className={cn(
                         'px-4 py-6 align-top text-gray-900 min-w-0',
+                        consumerShell && 'text-slate-900',
                         wrapCellColumnIds.has(cell.column.id)
                           ? 'break-words [overflow-wrap:anywhere] whitespace-normal'
                           : compactUiColumnIds.has(cell.column.id)
@@ -388,8 +412,18 @@ export default function AdAccountsSubtab() {
         </div>
 
         {/* Footer like reference */}
-        <div className='flex flex-col sm:flex-row items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200 gap-4'>
-          <div className='text-[0.75rem] text-gray-600 font-medium'>
+        <div
+          className={cn(
+            'flex flex-col items-center justify-between gap-4 border-t border-gray-200 bg-gray-50 px-6 py-4 sm:flex-row',
+            consumerShell && 'border-slate-100 bg-slate-50/50',
+          )}
+        >
+          <div
+            className={cn(
+              'text-[0.75rem] font-medium text-gray-600',
+              consumerShell && 'text-[13px] text-slate-600',
+            )}
+          >
             Showing {total ? start : 0} to {end} of {total} accounts
           </div>
 
@@ -518,18 +552,40 @@ export default function AdAccountsSubtab() {
   const isSaveDisabled = !adAccountName || isSaving;
 
   return (
-    <div className='bg-white p-4 min-h-[600px] min-w-0 max-w-full'>
+    <div
+      className={cn(
+        'min-h-[600px] min-w-0 max-w-full bg-white p-4',
+        consumerShell &&
+          'mx-auto min-h-0 max-w-[1480px] bg-transparent p-0 pb-4',
+      )}
+    >
       {screen === 'list' && (
         <>
-          <h2 className='text-2xl font-bold mb-1'>Ad Account</h2>
-          <p className='text-gray-500 mb-6'>
+          <h2
+            className={cn(
+              'mb-1 text-2xl font-bold',
+              consumerShell && 'tracking-tight text-slate-900',
+            )}
+          >
+            Ad Account
+          </h2>
+          <p
+            className={cn(
+              'mb-6 text-gray-500',
+              consumerShell && 'text-[15px] text-slate-500',
+            )}
+          >
             Add, edit, or remove ad accounts. You can reconnect accounts that
             require re-authentications.
           </p>
-          <div className='flex flex-col sm:flex-row sm:items-center gap-4 mb-6'>
+          <div className='mb-6 flex flex-col gap-4 sm:flex-row sm:items-center'>
             <Button
               variant='outline'
-              className='flex items-center gap-2 w-full sm:w-auto justify-center text-blue-600 font-semibold bg-blue-50 border-blue-200'
+              className={cn(
+                'flex w-full items-center justify-center gap-2 border-blue-200 bg-blue-50 font-semibold text-blue-600 sm:w-auto',
+                consumerShell &&
+                  'rounded-xl border-[#015AFD]/30 bg-[#015AFD]/8 text-[#015AFD] hover:bg-[#015AFD]/12',
+              )}
               onClick={() => {
                 router.push('/add-ads-account');
               }}
@@ -603,7 +659,10 @@ export default function AdAccountsSubtab() {
       {screen === 'edit' && (
         <div className='w-full'>
           <button
-            className='flex items-center gap-2 text-blue-600 mb-6'
+            className={cn(
+              'mb-6 flex items-center gap-2 text-blue-600',
+              consumerShell && 'font-medium text-[#015AFD] hover:text-[#0146ca]',
+            )}
             onClick={() => {
               setScreen('list');
               setEditingAccount(null);
@@ -615,12 +674,23 @@ export default function AdAccountsSubtab() {
             <ChevronLeft className='w-5 h-5' /> Back to Accounts
           </button>
 
-          <h2 className='text-2xl font-bold mb-6 text-center'>
+          <h2
+            className={cn(
+              'mb-6 text-center text-2xl font-bold',
+              consumerShell && 'text-slate-900 tracking-tight',
+            )}
+          >
             Edit Ads Account Details
           </h2>
 
-          <div className='flex flex-col md:flex-row gap-8 justify-center'>
-            <div className='flex-1 flex flex-col gap-4 max-w-md'>
+          <div className='flex flex-col justify-center gap-8 md:flex-row'>
+            <div
+              className={cn(
+                'flex max-w-md flex-1 flex-col gap-4',
+                consumerShell &&
+                  'rounded-2xl border border-slate-200 bg-white p-6 shadow-sm',
+              )}
+            >
               <div className='relative'>
                 <Input
                   placeholder='Ad Account Name'
@@ -635,7 +705,12 @@ export default function AdAccountsSubtab() {
               </div>
 
               {/* Google Ads Account Details */}
-              <div className='border rounded-lg p-4 bg-gray-50'>
+              <div
+                className={cn(
+                  'rounded-lg border bg-gray-50 p-4',
+                  consumerShell && 'border-slate-200 bg-slate-50/80',
+                )}
+              >
                 <div className='flex items-center justify-between mb-2'>
                   <div>
                     <div className='text-sm font-medium'>
@@ -676,7 +751,12 @@ export default function AdAccountsSubtab() {
               </div>
               <div className='mt-8 flex justify-center'>
                 <Button
-                  className='px-8 py-3 bg-blue-600 text-white text-sm font-normal rounded shadow-md min-w-[180px]'
+                  className={cn(
+                    'min-w-[180px] rounded px-8 py-3 text-sm font-semibold text-white shadow-md',
+                    consumerShell
+                      ? 'rounded-xl bg-[#015AFD] hover:bg-[#0146ca]'
+                      : 'bg-blue-600 font-normal',
+                  )}
                   disabled={isSaveDisabled}
                   onClick={handleSave}
                 >
