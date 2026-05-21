@@ -590,7 +590,7 @@ export function ConsumerDashboardView() {
         </Card>
 
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_minmax(280px,520px)] lg:items-stretch">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
             <ConsumerDashboardMetricCard
               title="Critical alerts"
               value={String(criticalCount)}

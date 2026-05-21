@@ -7,9 +7,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 const KPI_PERIODS = [
-  { label: "7 days vs. prior", key: "7" },
-  { label: "30 days vs. prior", key: "30" },
-  { label: "90 days vs. prior", key: "90" },
+  { label: "7 days vs. prior", shortLabel: "7 days", key: "7" },
+  { label: "30 days vs. prior", shortLabel: "30 days", key: "30" },
+  { label: "90 days vs. prior", shortLabel: "90 days", key: "90" },
 ] as const;
 
 const KPI_FIELDS = [
@@ -106,7 +106,7 @@ export function ConsumerKpiMetricsRow({
       <CardContent className="space-y-3 p-4 sm:p-5">
         <div className="flex justify-start">
           <div
-            className="inline-flex flex-wrap gap-1 rounded-xl border border-slate-200 bg-slate-50/90 p-1"
+            className="grid w-full grid-cols-3 gap-1 rounded-xl border border-slate-200 bg-slate-50/90 p-1 sm:inline-flex sm:w-auto sm:flex-nowrap"
             role="tablist"
             aria-label="KPI comparison period"
           >
@@ -119,14 +119,16 @@ export function ConsumerKpiMetricsRow({
                   role="tab"
                   aria-selected={isActive}
                   className={cn(
-                    "whitespace-nowrap rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all sm:px-4 sm:text-xs",
+                    "min-w-0 rounded-lg px-1.5 py-2 text-center text-[10px] font-semibold leading-tight transition-all sm:whitespace-nowrap sm:px-4 sm:py-1.5 sm:text-xs",
                     isActive
                       ? "bg-white text-[#015AFD] shadow-sm ring-1 ring-slate-200/80"
                       : "text-slate-600 hover:bg-white/60 hover:text-slate-900",
                   )}
                   onClick={() => setActivePeriod(period.key)}
+                  aria-label={period.label}
                 >
-                  {period.label}
+                  <span className="sm:hidden">{period.shortLabel}</span>
+                  <span className="hidden sm:inline">{period.label}</span>
                 </button>
               );
             })}

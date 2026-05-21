@@ -215,9 +215,153 @@ export function ConsumerDashboardAlertsTable({
 
   const isRowActive = (id: string) => detailOpen && detailAlertId === id;
 
+  const paginationFooter = (
+    <footer className="flex flex-col items-center justify-between gap-4 border-t border-slate-100 bg-slate-50/40 px-4 py-4 sm:flex-row sm:px-6">
+      <p className="text-center text-[13px] font-medium text-slate-600 sm:text-left">
+        Showing{" "}
+        {table.getRowModel().rows.length > 0
+          ? table.getState().pagination.pageIndex *
+              table.getState().pagination.pageSize +
+            1
+          : 0}{" "}
+        to{" "}
+        {Math.min(
+          (table.getState().pagination.pageIndex + 1) *
+            table.getState().pagination.pageSize,
+          table.getFilteredRowModel().rows.length,
+        )}{" "}
+        of {table.getFilteredRowModel().rows.length} alerts
+      </p>
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!table.getCanPreviousPage()}
+          onClick={() => table.setPageIndex(0)}
+          className="h-9 w-9 rounded-lg p-0"
+          aria-label="First page"
+        >
+          <ChevronsLeft className="size-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!table.getCanPreviousPage()}
+          onClick={() => table.previousPage()}
+          className="h-9 w-9 rounded-lg p-0"
+          aria-label="Previous page"
+        >
+          <ChevronLeft className="size-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!table.getCanNextPage()}
+          onClick={() => table.nextPage()}
+          className="h-9 w-9 rounded-lg p-0"
+          aria-label="Next page"
+        >
+          <ChevronRight className="size-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!table.getCanNextPage()}
+          onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+          className="h-9 w-9 rounded-lg p-0"
+          aria-label="Last page"
+        >
+          <ChevronsRight className="size-4" />
+        </Button>
+      </div>
+    </footer>
+  );
+
   const tableBlock = (
   <>
-      <div className="overflow-x-auto">
+      <div className="lg:hidden">
+        {table.getRowModel().rows.length === 0 ? (
+          <p className="px-4 py-16 text-center text-sm text-slate-500">
+            No alerts match your filters.
+          </p>
+        ) : (
+          <div className="flex flex-col">
+            {table.getRowModel().rows.map((row) => {
+              const dateObj = row.original["Date Found"]?.toDate?.();
+              const formatted = dateObj
+                ? moment(dateObj).format("DD MMM YYYY")
+                : "—";
+
+              return (
+                <div
+                  key={row.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => openAlert(row.original)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      openAlert(row.original);
+                    }
+                  }}
+                  className={cn(
+                    "flex w-full flex-col gap-2.5 border-b border-slate-100 px-4 py-3.5 text-left outline-none transition-colors last:border-b-0",
+                    "active:bg-slate-50/90 focus-visible:ring-2 focus-visible:ring-[#015AFD]/25 focus-visible:ring-inset",
+                    isRowActive(row.id) &&
+                      "bg-[#eaf3ff]/90 ring-2 ring-inset ring-[#015AFD]/30",
+                  )}
+                >
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      checked={row.getIsSelected()}
+                      onCheckedChange={(value) => row.toggleSelected(!!value)}
+                      aria-label="Select alert"
+                      className={cn(checkboxClass, "mt-0.5")}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <SeverityBadge severity={row.original.Severity} />
+                        <span className="shrink-0 text-[11px] font-medium tabular-nums text-slate-500">
+                          {formatted}
+                        </span>
+                      </div>
+                      <p className="line-clamp-3 text-[14px] font-semibold leading-snug text-slate-900">
+                        {row.original.Alert}
+                      </p>
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-slate-600">
+                        <span>
+                          <span className="font-semibold text-slate-500">Type </span>
+                          {row.original.Type ?? "—"}
+                        </span>
+                        <span>
+                          <span className="font-semibold text-slate-500">Level </span>
+                          {row.original.Level ?? "—"}
+                        </span>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-8 shrink-0 text-[#015AFD] hover:bg-[#015AFD]/10"
+                      aria-label="View alert details"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openAlert(row.original);
+                      }}
+                    >
+                      <Eye className="size-4" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="hidden overflow-x-auto lg:block">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -269,65 +413,7 @@ export function ConsumerDashboardAlertsTable({
         </Table>
       </div>
 
-      <footer className="flex flex-col items-center justify-between gap-4 border-t border-slate-100 bg-slate-50/40 px-4 py-4 sm:flex-row sm:px-6">
-        <p className="text-[13px] font-medium text-slate-600">
-          Showing{" "}
-          {table.getRowModel().rows.length > 0
-            ? table.getState().pagination.pageIndex *
-                table.getState().pagination.pageSize +
-              1
-            : 0}{" "}
-          to{" "}
-          {Math.min(
-            (table.getState().pagination.pageIndex + 1) *
-              table.getState().pagination.pageSize,
-            table.getFilteredRowModel().rows.length,
-          )}{" "}
-          of {table.getFilteredRowModel().rows.length} alerts
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!table.getCanPreviousPage()}
-            onClick={() => table.setPageIndex(0)}
-            className="h-9 w-9 rounded-lg p-0"
-            aria-label="First page"
-          >
-            <ChevronsLeft className="size-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!table.getCanPreviousPage()}
-            onClick={() => table.previousPage()}
-            className="h-9 w-9 rounded-lg p-0"
-            aria-label="Previous page"
-          >
-            <ChevronLeft className="size-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!table.getCanNextPage()}
-            onClick={() => table.nextPage()}
-            className="h-9 w-9 rounded-lg p-0"
-            aria-label="Next page"
-          >
-            <ChevronRight className="size-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!table.getCanNextPage()}
-            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-            className="h-9 w-9 rounded-lg p-0"
-            aria-label="Last page"
-          >
-            <ChevronsRight className="size-4" />
-          </Button>
-        </div>
-      </footer>
+      {paginationFooter}
     </>
   );
 
