@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { db } from '@/lib/firebase/config';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { useAlertSettingsStore } from '@/lib/store/settings-store';
+import { ConsumerSettingsListFooter } from '@/features/consumer/settings/ConsumerSettingsListFooter';
 import {
   consumerSettingsPageWidth,
   consumerSettingsPrimaryButton,
@@ -308,7 +309,94 @@ export default function ConsumerUsersPage({
       </div>
 
       <div className={consumerSettingsTableShell}>
-        <div className='overflow-x-auto'>
+        <div className="lg:hidden">
+          {pageRows.length === 0 ? (
+            <p className="px-4 py-12 text-center text-sm text-slate-500">
+              No users or invitations found.
+            </p>
+          ) : (
+            <div className="flex flex-col">
+              {pageRows.map((row) => (
+                <div
+                  key={row.id}
+                  className="border-b border-slate-100 px-4 py-4 last:border-b-0"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[15px] font-semibold text-slate-900">
+                        {row.name || row.email}
+                      </p>
+                      <p className="mt-0.5 truncate text-[12px] text-slate-500">
+                        {row.email}
+                      </p>
+                    </div>
+                    <span
+                      className={cn(
+                        'shrink-0 inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold',
+                        row.status === 'pending'
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-emerald-100 text-emerald-700',
+                      )}
+                    >
+                      {row.status === 'pending' ? 'Pending' : 'Active'}
+                    </span>
+                  </div>
+                  <div className="mt-2.5 flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-slate-600">
+                    <span>
+                      <span className="font-semibold text-slate-500">Role </span>
+                      {row.userType}
+                    </span>
+                    <span>
+                      <span className="font-semibold text-slate-500">Access </span>
+                      {row.accessLabel}
+                    </span>
+                  </div>
+                  <div className="mt-3 flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
+                    {row.isInvitation ? (
+                      <>
+                        <button
+                          className="rounded-lg p-2 text-[#015AFD] hover:bg-blue-50"
+                          onClick={() => handleResendInvitation(row.id)}
+                          disabled={resendingId === row.id}
+                          aria-label="Resend invitation"
+                        >
+                          {resendingId === row.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <RotateCcw className="h-4 w-4" />
+                          )}
+                        </button>
+                        <button
+                          className="rounded-lg p-2 text-red-600 hover:bg-red-50"
+                          onClick={() => handleDeleteInvitation(row.id)}
+                          disabled={deletingInvitationId === row.id}
+                          aria-label="Delete invitation"
+                        >
+                          {deletingInvitationId === row.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        className="rounded-lg p-2 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                        disabled={!canDeleteUser(row)}
+                        onClick={() => setDeletingUser(row)}
+                        aria-label="Delete user"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="hidden overflow-x-auto lg:block">
           <table className='min-w-[860px] w-full'>
             <thead className='border-b border-slate-100 bg-slate-50/70'>
               <tr className='text-left text-xs uppercase tracking-wide text-slate-500'>
@@ -395,33 +483,17 @@ export default function ConsumerUsersPage({
             </tbody>
           </table>
         </div>
-        <div className='flex items-center justify-between border-t border-slate-100 bg-slate-50/50 px-4 py-3 text-sm text-slate-600'>
-          <span>
-            Showing {filteredRows.length === 0 ? 0 : start + 1}-
-            {Math.min(start + pageSize, filteredRows.length)} of {filteredRows.length}
-          </span>
-          <div className='flex items-center gap-2'>
-            <Button
-              variant='outline'
-              size='sm'
-              className='h-8 rounded-lg'
-              disabled={safePage <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-            >
-              Prev
-            </Button>
-            <span className='text-xs'>Page {safePage} of {totalPages}</span>
-            <Button
-              variant='outline'
-              size='sm'
-              className='h-8 rounded-lg'
-              disabled={safePage >= totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
+
+        <ConsumerSettingsListFooter
+          start={start}
+          pageSize={pageSize}
+          total={filteredRows.length}
+          safePage={safePage}
+          totalPages={totalPages}
+          itemLabel="users"
+          onPrev={() => setPage((p) => Math.max(1, p - 1))}
+          onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+        />
       </div>
 
       {isAddOpen && (

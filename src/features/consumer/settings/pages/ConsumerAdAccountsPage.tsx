@@ -16,11 +16,12 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { ConsumerSettingsListFooter } from '@/features/consumer/settings/ConsumerSettingsListFooter';
 import {
   consumerSettingsPageWidth,
   consumerSettingsTableShell,
 } from '@/features/consumer/settings/consumer-settings-styles';
-import { formatAccountNumber } from '@/lib/utils';
+import { cn, formatAccountNumber } from '@/lib/utils';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { useAlertSettingsStore } from '@/lib/store/settings-store';
 import { useUserAdsAccountsStore } from '@/lib/store/user-ads-accounts-store';
@@ -211,7 +212,84 @@ export default function ConsumerAdAccountsPage({
       </div>
 
       <div className={consumerSettingsTableShell}>
-        <div className='overflow-x-auto'>
+        <div className="lg:hidden">
+          {pageRows.length === 0 ? (
+            <p className="px-4 py-12 text-center text-sm text-slate-500">
+              No ad accounts found.
+            </p>
+          ) : (
+            <div className="flex flex-col">
+              {pageRows.map((account: any) => (
+                <div
+                  key={account.id}
+                  className="border-b border-slate-100 px-4 py-4 last:border-b-0"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[15px] font-semibold text-slate-900">
+                        {account.name}
+                      </p>
+                      <p className="mt-0.5 text-[12px] tabular-nums text-slate-500">
+                        {formatAccountNumber(account['Id'])}
+                      </p>
+                    </div>
+                    <span
+                      className={cn(
+                        'shrink-0 inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold',
+                        account['Is Connected']
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : 'bg-rose-100 text-rose-700',
+                      )}
+                    >
+                      {account['Is Connected'] ? 'Connected' : 'Disconnected'}
+                    </span>
+                  </div>
+                  <div className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-2 text-[12px] text-slate-600">
+                    <span>
+                      <span className="font-semibold text-slate-500">Platform </span>
+                      {account['Platform'] || 'Google'}
+                    </span>
+                    <span>
+                      <span className="font-semibold text-slate-500">Budget </span>$
+                      {Number(account['Monthly Budget'] || 0).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[12px] font-semibold text-slate-500">
+                        Alerts
+                      </span>
+                      <Switch
+                        checked={Boolean(account['Send Me Alert'])}
+                        disabled={togglingAccountId === account.id}
+                        onCheckedChange={(next) => handleToggleAlert(account, next)}
+                        className="data-[state=checked]:bg-[#015AFD]"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        className="rounded-lg p-2 text-[#015AFD] hover:bg-blue-50"
+                        onClick={() => openEdit(account)}
+                        aria-label="Edit account"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </button>
+                      <button
+                        className="rounded-lg p-2 text-red-600 hover:bg-red-50"
+                        onClick={() => setDeletingAccount(account)}
+                        aria-label="Delete account"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="hidden overflow-x-auto lg:block">
           <table className='min-w-[980px] w-full'>
             <thead className='border-b border-slate-100 bg-slate-50/70'>
               <tr className='text-left text-xs uppercase tracking-wide text-slate-500'>
@@ -288,33 +366,16 @@ export default function ConsumerAdAccountsPage({
           </table>
         </div>
 
-        <div className='flex items-center justify-between border-t border-slate-100 bg-slate-50/50 px-4 py-3 text-sm text-slate-600'>
-          <span>
-            Showing {filteredRows.length === 0 ? 0 : start + 1}-
-            {Math.min(start + pageSize, filteredRows.length)} of {filteredRows.length}
-          </span>
-          <div className='flex items-center gap-2'>
-            <Button
-              variant='outline'
-              size='sm'
-              className='h-8 rounded-lg'
-              disabled={safePage <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-            >
-              Prev
-            </Button>
-            <span className='text-xs'>Page {safePage} of {totalPages}</span>
-            <Button
-              variant='outline'
-              size='sm'
-              className='h-8 rounded-lg'
-              disabled={safePage >= totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
+        <ConsumerSettingsListFooter
+          start={start}
+          pageSize={pageSize}
+          total={filteredRows.length}
+          safePage={safePage}
+          totalPages={totalPages}
+          itemLabel="accounts"
+          onPrev={() => setPage((p) => Math.max(1, p - 1))}
+          onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+        />
       </div>
 
       {editingAccount && (
