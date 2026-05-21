@@ -70,34 +70,97 @@ function SummaryMetricCard({
   accentClassName?: string;
 }) {
   return (
-    <Card className="flex min-h-[132px] justify-center gap-0 rounded-xl border border-slate-200 bg-white py-0 shadow-sm">
-      <CardContent className="flex flex-1 items-center justify-between gap-4 px-6 py-5">
-        <div className="min-w-0 space-y-1">
-          <p className="text-muted-foreground text-sm font-medium">{title}</p>
-          <p className="truncate text-[28px] font-bold tracking-tight text-slate-900">
+    <Card className="flex min-h-[108px] justify-center gap-0 rounded-xl border border-slate-200 bg-white py-0 shadow-sm sm:min-h-[132px]">
+      <CardContent className="flex flex-1 items-center justify-between gap-2 px-3 py-3.5 sm:gap-4 sm:px-6 sm:py-5">
+        <div className="min-w-0 space-y-0.5 sm:space-y-1">
+          <p className="text-[11px] font-medium leading-tight text-muted-foreground sm:text-sm">
+            {title}
+          </p>
+          <p className="truncate text-[22px] font-bold leading-none tracking-tight text-slate-900 sm:text-[28px]">
             {value}
           </p>
-          <p className="text-[13px] font-medium text-slate-500">{subtitle}</p>
+          <p className="line-clamp-2 text-[10px] font-medium leading-snug text-slate-500 sm:line-clamp-none sm:text-[13px]">
+            {subtitle}
+          </p>
         </div>
         <span
           className={cn(
-            "flex size-12 shrink-0 items-center justify-center rounded-full",
+            "flex size-9 shrink-0 items-center justify-center rounded-full sm:size-12",
             accentClassName ?? "bg-[#3b82f6]/10 text-[#3b82f6]",
           )}
         >
-          <Icon className="size-6" strokeWidth={1.85} aria-hidden />
+          <Icon className="size-5 sm:size-6" strokeWidth={1.85} aria-hidden />
         </span>
       </CardContent>
     </Card>
   );
 }
 
-function BudgetPacingBar({ account }: { account: SummaryAdsAccount }) {
+function SummaryAccountMobileCard({
+  account,
+  onOpen,
+}: {
+  account: SummaryAdsAccount;
+  onOpen: (account: SummaryAdsAccount) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(account)}
+      className="flex w-full flex-col gap-3 border-b border-slate-100 px-4 py-4 text-left outline-none transition-colors last:border-b-0 active:bg-slate-50/90 focus-visible:ring-2 focus-visible:ring-[#015AFD]/25 focus-visible:ring-inset"
+    >
+      <div className="flex items-start gap-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-slate-50">
+          <GoogleAdsMark className="size-7" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[15px] font-semibold leading-tight text-slate-900">
+            {account.accountName}
+          </p>
+          <p className="mt-0.5 text-[12px] tabular-nums leading-none text-slate-500">
+            {formatAccountNumber(account.Id)}
+          </p>
+        </div>
+        <ShowingAdsBadge account={account} />
+      </div>
+
+      <div className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-1">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+          Impact
+        </span>
+        <ImpactCounts account={account} />
+
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+          Pacing
+        </span>
+        <BudgetPacingBar account={account} compact />
+      </div>
+    </button>
+  );
+}
+
+function BudgetPacingBar({
+  account,
+  compact = false,
+}: {
+  account: SummaryAdsAccount;
+  compact?: boolean;
+}) {
   const { percent, percentText, dayPercent } = account.progressBar;
 
   return (
-    <div className="flex min-w-[200px] items-center gap-3">
-      <div className="relative flex h-6 w-full min-w-[140px] items-center">
+    <div
+      className={cn(
+        "flex items-center gap-2 sm:gap-3",
+        compact ? "min-w-0 w-full" : "min-w-[200px]",
+      )}
+    >
+      <div
+        className={cn(
+          "relative flex h-6 w-full items-center",
+          compact ? "min-w-0 flex-1" : "min-w-[140px]",
+        )}
+      >
         <div className="absolute inset-y-0 left-0 w-full rounded-full border border-slate-200 bg-white" />
         <div
           className="absolute left-0 top-0 h-6 rounded-full bg-[#015AFD]"
@@ -287,7 +350,7 @@ export function ConsumerSummaryView() {
         ) : null}
       </header>
 
-      <section className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid min-w-0 grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <SummaryMetricCard
           title="Total accounts"
           value={String(kpis.total)}
@@ -380,7 +443,26 @@ export function ConsumerSummaryView() {
         </div>
 
         <Card className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white py-0 shadow-md">
-          <div className="max-[1199px]:overflow-x-auto">
+          <div className="lg:hidden">
+            {pagedRows.length === 0 ? (
+              <p className="px-4 py-16 text-center text-[14px] text-slate-500">
+                No accounts match your search.
+              </p>
+            ) : (
+              <div className="flex flex-col">
+                {pagedRows.map((row) => (
+                  <SummaryAccountMobileCard
+                    key={row.id}
+                    account={row}
+                    onOpen={handleRowClick}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="hidden lg:block">
+            <div className="max-[1199px]:overflow-x-auto">
             <Table className="min-w-[980px]">
               <TableHeader>
                 <TableRow className="border-slate-100 hover:bg-transparent">
@@ -460,6 +542,7 @@ export function ConsumerSummaryView() {
                 )}
               </TableBody>
             </Table>
+            </div>
           </div>
 
           <footer className="flex flex-col items-center justify-between gap-4 border-t border-slate-100 px-4 py-4 sm:flex-row sm:px-6">
