@@ -157,3 +157,14 @@
   height: 0;
   width: 0;
 }
+
+/* Hide Intercom messenger on consumer console routes */
+body[data-consumer-shell] #intercom-container,
+body[data-consumer-shell] .intercom-lightweight-app,
+body[data-consumer-shell] .intercom-lightweight-app-launcher,
+body[data-consumer-shell] .intercom-messenger-frame,
+body[data-consumer-shell] iframe[name="intercom-messenger-frame"] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}

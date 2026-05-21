@@ -1,7 +1,9 @@
 'use client';
 
 import { createContext, useContext, useEffect, ReactNode } from 'react';
-import { intercomService } from '@/lib/intercom';
+import { usePathname } from 'next/navigation';
+
+import { intercomService, isConsumerAppRoute } from '@/lib/intercom';
 import { getIntercomConfig } from '@/lib/intercom/config';
 
 interface IntercomContextType {
@@ -35,46 +37,51 @@ export const IntercomProvider = ({
   autoInitialize = true,
   user,
 }: IntercomProviderProps) => {
+  const pathname = usePathname();
+  const isConsumerRoute = isConsumerAppRoute(pathname);
+
   useEffect(() => {
-    // console.log('IntercomProvider: useEffect triggered', { autoInitialize, user });
+    if (typeof window === 'undefined') return;
 
-    if (autoInitialize && typeof window !== 'undefined') {
-      const config = getIntercomConfig();
-      // console.log('IntercomProvider: Config loaded:', config);
-
-      if (config.appId) {
-        // console.log('IntercomProvider: Initializing Intercom...');
-        intercomService.initialize(config);
-
-        // Identify user if provided
-        if (user) {
-          // console.log('IntercomProvider: Identifying user:', user);
-          intercomService.identify(user);
-        }
-      } else {
-        console.warn('IntercomProvider: No App ID found in config');
-      }
+    if (isConsumerRoute) {
+      intercomService.hide();
+      intercomService.shutdown();
+      return;
     }
 
-    // Cleanup on unmount
-    return () => {
-      if (typeof window !== 'undefined') {
-        // console.log('IntercomProvider: Shutting down Intercom');
-        intercomService.shutdown();
-      }
-    };
-  }, [autoInitialize, user]);
+    if (!autoInitialize) return;
+
+    const config = getIntercomConfig();
+    if (!config.appId) {
+      console.warn('IntercomProvider: No App ID found in config');
+      return;
+    }
+
+    intercomService.initialize(config);
+    if (user) {
+      intercomService.identify(user);
+    }
+  }, [autoInitialize, user, isConsumerRoute]);
 
   const contextValue: IntercomContextType = {
-    show: () => intercomService.show(),
-    hide: () => intercomService.hide(),
-    showMessages: () => intercomService.showMessages(),
-    showNewMessage: (content?: string) =>
-      intercomService.showNewMessage(content),
-    track: (eventName: string, metadata?: Record<string, any>) => {
-      intercomService.track({ eventName, metadata });
+    show: () => {
+      if (!isConsumerRoute) intercomService.show();
     },
-    identify: (user: any) => intercomService.identify(user),
+    hide: () => intercomService.hide(),
+    showMessages: () => {
+      if (!isConsumerRoute) intercomService.showMessages();
+    },
+    showNewMessage: (content?: string) => {
+      if (!isConsumerRoute) intercomService.showNewMessage(content);
+    },
+    track: (eventName: string, metadata?: Record<string, any>) => {
+      if (!isConsumerRoute) {
+        intercomService.track({ eventName, metadata });
+      }
+    },
+    identify: (identifyUser: Parameters<IntercomContextType['identify']>[0]) => {
+      if (!isConsumerRoute) intercomService.identify(identifyUser);
+    },
   };
 
   return (

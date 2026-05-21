@@ -1,14 +1,20 @@
 'use client';
 
 import { useEffect } from 'react';
+import { usePathname } from 'next/navigation';
+
+import { isConsumerAppRoute } from '@/lib/intercom';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { useIntercomContext } from './IntercomProvider';
 
 export const IntercomUserSync = () => {
+  const pathname = usePathname();
   const { user, userDoc } = useAuthStore();
   const { identify } = useIntercomContext();
 
   useEffect(() => {
+    if (isConsumerAppRoute(pathname)) return;
+
     if (user && userDoc) {
       // Identify user in Intercom with available information
       identify({
@@ -27,7 +33,7 @@ export const IntercomUserSync = () => {
         },
       });
     }
-  }, [user, userDoc, identify]);
+  }, [user, userDoc, identify, pathname]);
 
   return null; // This component doesn't render anything
 }; 
