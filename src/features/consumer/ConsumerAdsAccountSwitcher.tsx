@@ -33,7 +33,14 @@ function accountNumber(account: AdsAccount): string {
   return formatAccountNumber(account.Id || account.id || "");
 }
 
-export function ConsumerAdsAccountSwitcher() {
+interface ConsumerAdsAccountSwitcherProps {
+  variant?: "sidebar" | "header";
+}
+
+export function ConsumerAdsAccountSwitcher({
+  variant = "sidebar",
+}: ConsumerAdsAccountSwitcherProps) {
+  const isHeader = variant === "header";
   const router = useRouter();
   const pathname = usePathname() ?? "";
   const { userDoc } = useAuthStore();
@@ -82,8 +89,15 @@ export function ConsumerAdsAccountSwitcher() {
 
   if (loading && connectedCount === 0) {
     return (
-      <div className="flex w-full items-center gap-2 rounded-xl border border-white/[0.08] bg-[#111b32] px-3 py-2.5 text-[13px] text-[#94a3b8]">
-        <Loader2 className="size-4 shrink-0 animate-spin text-[#3b82f6]" aria-hidden />
+      <div
+        className={cn(
+          "flex w-full items-center gap-2 rounded-xl border px-3 py-2.5 text-[13px]",
+          isHeader
+            ? "border-slate-200 bg-white text-slate-500 shadow-sm"
+            : "border-white/[0.08] bg-[#111b32] text-[#94a3b8]",
+        )}
+      >
+        <Loader2 className="size-4 shrink-0 animate-spin text-[#015AFD]" aria-hidden />
         <span>Loading accounts…</span>
       </div>
     );
@@ -91,11 +105,23 @@ export function ConsumerAdsAccountSwitcher() {
 
   if (connectedCount === 0) {
     return (
-      <div className="w-full rounded-xl border border-dashed border-white/[0.12] bg-[#111b32]/80 px-3 py-2.5 text-[12px] leading-snug text-[#94a3b8]">
+      <div
+        className={cn(
+          "w-full rounded-xl border border-dashed px-3 py-2.5 text-[12px] leading-snug",
+          isHeader
+            ? "border-slate-200 bg-slate-50 text-slate-600"
+            : "border-white/[0.12] bg-[#111b32]/80 text-[#94a3b8]",
+        )}
+      >
         No connected ad accounts yet.{" "}
         <Link
           href="/add-ads-account"
-          className="font-semibold text-[#60a5fa] hover:text-[#93c5fd] hover:underline"
+          className={cn(
+            "font-semibold hover:underline",
+            isHeader
+              ? "text-[#015AFD] hover:text-[#0146ca]"
+              : "text-[#60a5fa] hover:text-[#93c5fd]",
+          )}
         >
           Connect one
         </Link>
@@ -119,20 +145,43 @@ export function ConsumerAdsAccountSwitcher() {
           type="button"
           aria-label="Switch ad account"
           className={cn(
-            "group flex w-full items-center gap-2.5 rounded-xl border border-white/[0.1] bg-[#111b32] px-3 py-2.5 text-left outline-none transition-colors",
-            "hover:border-[#3b82f6]/40 hover:bg-[#152542] focus-visible:ring-2 focus-visible:ring-[#3b82f6]",
-            open && "border-[#3b82f6]/50 bg-[#152542] ring-2 ring-[#3b82f6]/30",
+            "group flex w-full items-center gap-2.5 rounded-xl border px-3 text-left outline-none transition-colors",
+            isHeader ? "py-2" : "py-2.5",
+            isHeader
+              ? "border-slate-200 bg-white shadow-sm hover:border-[#015AFD]/30 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#015AFD]/25"
+              : "border-white/[0.1] bg-[#111b32] hover:border-[#3b82f6]/40 hover:bg-[#152542] focus-visible:ring-2 focus-visible:ring-[#3b82f6]",
+            open &&
+              (isHeader
+                ? "border-[#015AFD]/40 bg-blue-50/50 ring-2 ring-[#015AFD]/20"
+                : "border-[#3b82f6]/50 bg-[#152542] ring-2 ring-[#3b82f6]/30"),
           )}
         >
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/[0.06]">
+          <span
+            className={cn(
+              "flex size-9 shrink-0 items-center justify-center rounded-lg",
+              isHeader ? "bg-slate-100" : "bg-white/[0.06]",
+            )}
+          >
             <GoogleAdsMark className="size-5" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-[13px] font-semibold leading-tight text-white">
+            <span
+              className={cn(
+                "block truncate text-[13px] font-semibold leading-tight",
+                isHeader ? "text-slate-900" : "text-white",
+              )}
+            >
               {triggerLabel}
             </span>
             {triggerSub ? (
-              <span className="mt-0.5 block truncate text-[11px] font-medium tabular-nums text-[#64748b] group-hover:text-[#94a3b8]">
+              <span
+                className={cn(
+                  "mt-0.5 block truncate text-[11px] font-medium tabular-nums",
+                  isHeader
+                    ? "text-slate-500 group-hover:text-slate-600"
+                    : "text-[#64748b] group-hover:text-[#94a3b8]",
+                )}
+              >
                 {triggerSub}
               </span>
             ) : null}
@@ -140,8 +189,10 @@ export function ConsumerAdsAccountSwitcher() {
           <ChevronDown
             aria-hidden
             className={cn(
-              "size-4 shrink-0 text-[#64748b] transition-transform duration-200",
-              open && "rotate-180 text-[#94a3b8]",
+              "size-4 shrink-0 transition-transform duration-200",
+              isHeader ? "text-slate-400" : "text-[#64748b]",
+              open && (isHeader ? "rotate-180 text-[#015AFD]" : "rotate-180 text-[#94a3b8]"),
+              !open && "rotate-0",
             )}
           />
         </button>

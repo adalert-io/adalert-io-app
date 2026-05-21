@@ -3,12 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronDown, LogOut, Menu, User, X } from "lucide-react";
+import { ChevronDown, LogOut, User } from "lucide-react";
 import type { ReactNode } from "react";
 import * as React from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,8 +18,13 @@ import { FreeTrialBanner } from "@/components/layout/FreeTrialBanner";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { cn } from "@/lib/utils";
 
+import { ConsumerAddAdsAccountHeaderControl } from "./add-ads-account/ConsumerAddAdsAccountHeaderControl";
 import { ConsumerAdsAccountSwitcher } from "./ConsumerAdsAccountSwitcher";
 import { ConsumerKBar, ConsumerKBarTrigger } from "./ConsumerKBar";
+import {
+  CONSUMER_MOBILE_TAB_BAR_OFFSET,
+  ConsumerMobileTabBar,
+} from "./ConsumerMobileTabBar";
 import {
   consumerBreadcrumbs,
   consumerLeafMatches,
@@ -194,7 +198,6 @@ function displayInitials(name: string | undefined, email: string | undefined): s
 export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
   const pathname = usePathname() ?? "/consumer/summary";
   const router = useRouter();
-  const [mobileOpen, setMobileOpen] = React.useState(false);
   const crumbs = consumerBreadcrumbs(pathname);
   const { user, userDoc, logout } = useAuthStore();
   const {
@@ -241,10 +244,6 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
       : undefined;
 
   React.useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
-
-  React.useEffect(() => {
     if (
       pathname === "/consumer/dashboard" &&
       connectedAccountCount > 1 &&
@@ -257,19 +256,10 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
   return (
     <ConsumerKBar>
     <div className="flex min-h-svh w-full bg-[#f8fafc]">
-      <div
-        className={cn(
-          "fixed inset-0 z-40 bg-slate-900/65 backdrop-blur-sm lg:hidden",
-          mobileOpen ? "block" : "hidden",
-        )}
-        aria-hidden={!mobileOpen}
-      />
-
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex bg-[#0b1426] text-slate-200 shadow-xl transition-transform duration-300 lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 hidden bg-[#0b1426] text-slate-200 shadow-xl lg:flex",
           SIDEBAR_W,
-          mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
           "flex-col overflow-hidden antialiased font-sans",
         )}
       >
@@ -279,20 +269,8 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
             SIDEBAR_GUTTER,
           )}
         >
-          <div className="flex items-start gap-3">
-            <div className="min-w-0 flex-1">
-              <ConsumerSidebarBrand />
-            </div>
-            <button
-              type="button"
-              aria-label="Close menu"
-              onClick={() => setMobileOpen(false)}
-              className="-mt-1 -me-2 shrink-0 rounded-lg p-2 text-[#94a3b8] hover:bg-white/10 hover:text-white lg:hidden"
-            >
-              <X className="size-5" />
-            </button>
-          </div>
-          <ConsumerAdsAccountSwitcher />
+          <ConsumerSidebarBrand />
+          <ConsumerAdsAccountSwitcher variant="sidebar" />
         </header>
 
         <nav
@@ -372,20 +350,8 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
 
       <div className="flex min-h-svh min-w-0 flex-1 flex-col lg:pl-[264px]">
         <FreeTrialBanner upgradeHref="/consumer/settings/account/billing?show=payment-form" />
-        <div className="sticky top-0 z-30 flex shrink-0 items-center gap-2 border-b border-slate-200/90 bg-[#f8fafc]/90 px-4 py-2 backdrop-blur-md">
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="shrink-0 border-slate-200 bg-white shadow-sm lg:hidden"
-            aria-label="Open navigation"
-            onClick={() => setMobileOpen(true)}
-          >
-            <Menu className="size-5" />
-          </Button>
-
-          <div className="hidden h-4 w-px bg-slate-200 lg:block" />
-
+        <div className="sticky top-0 z-30 flex shrink-0 flex-col border-b border-slate-200/90 bg-[#f8fafc]/90 backdrop-blur-md">
+          <div className="flex items-center gap-2 px-4 py-2">
           <nav
             aria-label="Breadcrumb"
             className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground text-xs sm:text-sm"
@@ -410,12 +376,30 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
             </ol>
           </nav>
 
-          <ConsumerKBarTrigger />
+          <div className="flex shrink-0 items-center gap-2">
+            <ConsumerAddAdsAccountHeaderControl />
+            <ConsumerKBarTrigger />
+          </div>
+          </div>
+
+          <div className="border-t border-slate-200/80 px-4 py-2 lg:hidden">
+            <ConsumerAdsAccountSwitcher variant="header" />
+          </div>
         </div>
 
-        <main className="relative flex min-w-0 flex-1 flex-col overflow-x-hidden">
+        <main
+          className={cn(
+            "relative flex min-w-0 flex-1 flex-col overflow-x-hidden",
+            CONSUMER_MOBILE_TAB_BAR_OFFSET,
+          )}
+        >
           <div className="flex min-h-0 flex-1 flex-col px-4 py-6 md:px-6 lg:px-8">{children}</div>
         </main>
+
+        <ConsumerMobileTabBar
+          userType={userDoc?.["User Type"] as string | undefined}
+          connectedAccountCount={connectedAccountCount}
+        />
       </div>
     </div>
     </ConsumerKBar>

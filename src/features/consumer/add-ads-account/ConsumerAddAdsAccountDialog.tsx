@@ -84,8 +84,9 @@ export function ConsumerAddAdsAccountTrigger({
         className,
       )}
     >
-      <Plus className="size-4" aria-hidden />
-      Add ad account
+      <Plus className="size-4 shrink-0" aria-hidden />
+      <span className="hidden sm:inline">Add ad account</span>
+      <span className="sr-only sm:hidden">Add ad account</span>
     </Button>
   );
 }

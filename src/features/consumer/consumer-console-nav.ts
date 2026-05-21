@@ -1,10 +1,15 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Bell,
+  Building2,
   CreditCard,
   LayoutDashboard,
   ListTree,
+  Megaphone,
+  MoreHorizontal,
   UserCircle2,
+  Users,
+  Wallet,
 } from "lucide-react";
 
 export interface ConsumerNavLeaf {
@@ -140,4 +145,123 @@ export function consumerBreadcrumbs(pathname: string): Crumb[] {
   }
 
   return [root, { title: "Page" }];
+}
+
+export interface ConsumerMobileMoreSection {
+  title: string;
+  items: ConsumerNavLeaf[];
+}
+
+export interface ConsumerMobileLinkTab {
+  type: "link";
+  id: string;
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  isActive: (pathname: string) => boolean;
+}
+
+export interface ConsumerMobileMoreTab {
+  type: "more";
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  sections: ConsumerMobileMoreSection[];
+  isActive: (pathname: string) => boolean;
+}
+
+export type ConsumerMobileTab = ConsumerMobileLinkTab | ConsumerMobileMoreTab;
+
+const LEAF_ICONS: Record<string, LucideIcon> = {
+  Alerts: Bell,
+  Users: Users,
+  "Ad Accounts": Megaphone,
+  Subscriptions: CreditCard,
+  Billing: Wallet,
+  "Company Details": Building2,
+};
+
+export function consumerMobileLeafIcon(title: string): LucideIcon {
+  return LEAF_ICONS[title] ?? Bell;
+}
+
+export function consumerMobileTabsForUser(
+  userType: string | undefined,
+  connectedAccountCount: number,
+): ConsumerMobileTab[] {
+  const navGroups = consumerNavGroupsForUser(userType, connectedAccountCount);
+  const items = navGroups[0]?.items ?? [];
+
+  const orgItem = items.find((i) => i.title === "Organization");
+  const accountItem = items.find((i) => i.title === "Account");
+  const orgLeaves = orgItem?.items ?? [];
+  const accountLeaves = accountItem?.items ?? [];
+
+  const tabs: ConsumerMobileTab[] = [
+    {
+      type: "link",
+      id: "summary",
+      label: "Summary",
+      href: "/consumer/summary",
+      icon: ListTree,
+      isActive: (pathname) => pathname === "/consumer/summary",
+    },
+  ];
+
+  if (connectedAccountCount === 1) {
+    tabs.push({
+      type: "link",
+      id: "dashboard",
+      label: "Dashboard",
+      href: "/consumer/dashboard",
+      icon: LayoutDashboard,
+      isActive: (pathname) => pathname === "/consumer/dashboard",
+    });
+  }
+
+  const alertsLeaf = orgLeaves.find((l) => l.title === "Alerts");
+  if (alertsLeaf) {
+    tabs.push({
+      type: "link",
+      id: "alerts",
+      label: "Alerts",
+      href: alertsLeaf.href,
+      icon: Bell,
+      isActive: (pathname) => consumerLeafMatches(pathname, alertsLeaf),
+    });
+  }
+
+  const moreSections: ConsumerMobileMoreSection[] = [];
+  const moreOrgLeaves = orgLeaves.filter((l) => l.title !== "Alerts");
+  if (moreOrgLeaves.length > 0) {
+    moreSections.push({ title: "Organization", items: moreOrgLeaves });
+  }
+  if (accountLeaves.length > 0) {
+    moreSections.push({ title: "Account", items: accountLeaves });
+  }
+
+  if (moreSections.length > 0) {
+    tabs.push({
+      type: "more",
+      id: "more",
+      label: "More",
+      icon: MoreHorizontal,
+      sections: moreSections,
+      isActive: (pathname) =>
+        moreSections.some((section) =>
+          section.items.some((leaf) => consumerLeafMatches(pathname, leaf)),
+        ),
+    });
+  }
+
+  tabs.push({
+    type: "link",
+    id: "profile",
+    label: "Profile",
+    href: "/consumer/settings/my-profile",
+    icon: UserCircle2,
+    isActive: (pathname) => pathname === "/consumer/settings/my-profile",
+  });
+
+  return tabs;
 }
