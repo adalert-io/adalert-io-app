@@ -34,6 +34,25 @@ import {
 } from "./consumer-console-nav";
 import { useUserAdsAccountsStore } from "@/lib/store/user-ads-accounts-store";
 
+function ConsumerBrandLogo({
+  className,
+  size = 40,
+}: {
+  className?: string;
+  size?: number;
+}) {
+  return (
+    <Image
+      src="/images/adalert-logo.avif"
+      alt="adAlert.io"
+      width={size}
+      height={size}
+      priority
+      className={cn("shrink-0", className)}
+    />
+  );
+}
+
 function ConsumerSidebarBrand({ className }: { className?: string }) {
   return (
     <Link
@@ -44,18 +63,23 @@ function ConsumerSidebarBrand({ className }: { className?: string }) {
       )}
     >
       <span className="flex min-w-0 items-center gap-2">
-        <Image
-          src="/images/adalert-logo.avif"
-          alt=""
-          width={40}
-          height={40}
-          priority
-          className="size-10 shrink-0"
-        />
+        <ConsumerBrandLogo className="size-10" />
         <span className="truncate text-[25px] font-bold leading-none tracking-tight text-white">
           adAlert.io
         </span>
       </span>
+    </Link>
+  );
+}
+
+function ConsumerMobileBreadcrumbBrand({ href }: { href: string }) {
+  return (
+    <Link
+      href={href}
+      className="flex shrink-0 items-center rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#015AFD]/40 lg:hidden"
+      aria-label="adAlert.io home"
+    >
+      <ConsumerBrandLogo size={32} className="size-8" />
     </Link>
   );
 }
@@ -357,22 +381,41 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
             className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground text-xs sm:text-sm"
           >
             <ol className="flex flex-wrap items-center gap-x-2 gap-y-1">
-              {crumbs.map((crumb, index) => (
-                <li key={`${crumb.title}-${index}`} className="flex items-center gap-2">
-                  {index > 0 ? <span className="text-muted-foreground/70">/</span> : null}
-                  {crumb.href && index < crumbs.length - 1 ? (
-                    <Link href={crumb.href} className="text-slate-800 hover:text-[#3b82f6] hover:underline">
-                      {crumb.title}
-                    </Link>
-                  ) : (
-                    <span
-                      className={index === crumbs.length - 1 ? "font-semibold text-slate-900" : undefined}
-                    >
-                      {crumb.title}
-                    </span>
-                  )}
-                </li>
-              ))}
+              {crumbs.map((crumb, index) => {
+                const isRoot = index === 0;
+                const isLast = index === crumbs.length - 1;
+                const isLink = Boolean(crumb.href) && !isLast;
+
+                return (
+                  <li key={`${crumb.title}-${index}`} className="flex items-center gap-2">
+                    {index > 0 ? <span className="text-muted-foreground/70">/</span> : null}
+                    {isRoot && crumb.href ? (
+                      <>
+                        <ConsumerMobileBreadcrumbBrand href={crumb.href} />
+                        <Link
+                          href={crumb.href}
+                          className="hidden text-slate-800 hover:text-[#3b82f6] hover:underline lg:inline"
+                        >
+                          {crumb.title}
+                        </Link>
+                      </>
+                    ) : isLink && crumb.href ? (
+                      <Link
+                        href={crumb.href}
+                        className="text-slate-800 hover:text-[#3b82f6] hover:underline"
+                      >
+                        {crumb.title}
+                      </Link>
+                    ) : (
+                      <span
+                        className={isLast ? "font-semibold text-slate-900" : undefined}
+                      >
+                        {crumb.title}
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
             </ol>
           </nav>
 
