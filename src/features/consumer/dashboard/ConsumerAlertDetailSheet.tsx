@@ -105,10 +105,7 @@ export function ConsumerAlertDetailSheet({
                   Alert details
                 </h3>
               </div>
-              <ConsumerAlertDescription
-                html={alert?.["Long Description"]}
-                plainText={alert?.["Long Description Plain Text"]}
-              />
+              <ConsumerAlertDescription html={alert?.["Long Description"]} />
             </section>
           </div>
         </div>
