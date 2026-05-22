@@ -7,6 +7,7 @@ import {
   Loader2,
   Mail,
   Plus,
+  Edit2,
   RotateCcw,
   Search,
   Trash2,
@@ -21,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { db } from '@/lib/firebase/config';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { useAlertSettingsStore } from '@/lib/store/settings-store';
+import { ConsumerEditUserDialog } from '@/features/consumer/settings/ConsumerEditUserDialog';
 import { ConsumerSettingsListFooter } from '@/features/consumer/settings/ConsumerSettingsListFooter';
 import {
   consumerSettingsPageWidth,
@@ -82,6 +84,13 @@ export default function ConsumerUsersPage({
   );
   const [deletingUser, setDeletingUser] = useState<UserRow | null>(null);
   const [isDeletingUser, setIsDeletingUser] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+
+  const editingUserRecord = useMemo(
+    () => users.find((u) => u.id === editingUserId) ?? null,
+    [users, editingUserId],
+  );
 
   useEffect(() => {
     if (!userDoc?.['Company Admin']) return;
@@ -249,6 +258,17 @@ export default function ConsumerUsersPage({
     return userDoc?.['User Type'] === 'Admin';
   };
 
+  const handleOpenEdit = (row: UserRow) => {
+    if (row.isInvitation) return;
+    setEditingUserId(row.id);
+    setIsEditOpen(true);
+  };
+
+  const handleCloseEdit = () => {
+    setIsEditOpen(false);
+    setEditingUserId(null);
+  };
+
   const handleDeleteUser = async () => {
     if (!deletingUser || !userDoc?.['Company Admin']) return;
     setIsDeletingUser(true);
@@ -380,14 +400,23 @@ export default function ConsumerUsersPage({
                         </button>
                       </>
                     ) : (
-                      <button
-                        className="rounded-lg p-2 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
-                        disabled={!canDeleteUser(row)}
-                        onClick={() => setDeletingUser(row)}
-                        aria-label="Delete user"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      <>
+                        <button
+                          className="rounded-lg p-2 text-[#015AFD] hover:bg-blue-50"
+                          onClick={() => handleOpenEdit(row)}
+                          aria-label="Edit user"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          className="rounded-lg p-2 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                          disabled={!canDeleteUser(row)}
+                          onClick={() => setDeletingUser(row)}
+                          aria-label="Delete user"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -460,14 +489,23 @@ export default function ConsumerUsersPage({
                           </button>
                         </>
                       ) : (
-                        <button
-                          className='rounded-lg p-2 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40'
-                          disabled={!canDeleteUser(row)}
-                          onClick={() => setDeletingUser(row)}
-                          aria-label='Delete user'
-                        >
-                          <Trash2 className='h-4 w-4' />
-                        </button>
+                        <>
+                          <button
+                            className='rounded-lg p-2 text-[#015AFD] hover:bg-blue-50'
+                            onClick={() => handleOpenEdit(row)}
+                            aria-label='Edit user'
+                          >
+                            <Edit2 className='h-4 w-4' />
+                          </button>
+                          <button
+                            className='rounded-lg p-2 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40'
+                            disabled={!canDeleteUser(row)}
+                            onClick={() => setDeletingUser(row)}
+                            aria-label='Delete user'
+                          >
+                            <Trash2 className='h-4 w-4' />
+                          </button>
+                        </>
                       )}
                     </div>
                   </td>
@@ -596,6 +634,15 @@ export default function ConsumerUsersPage({
           </div>
         </div>
       )}
+
+      <ConsumerEditUserDialog
+        open={isEditOpen}
+        onOpenChange={(open) => {
+          if (!open) handleCloseEdit();
+          else setIsEditOpen(true);
+        }}
+        user={editingUserRecord}
+      />
 
       {deletingUser && (
         <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4'>
