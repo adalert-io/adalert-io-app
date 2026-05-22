@@ -10,7 +10,6 @@ import {
   ChevronsLeft,
   ChevronsRight,
   CircleCheckBig,
-  Filter,
   Info,
   LayoutGrid,
   Loader2,
@@ -430,16 +429,6 @@ export function ConsumerSummaryView() {
               className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-slate-500"
             />
           </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            type="button"
-            className="gap-2 rounded-lg border-[#e5e5e5] bg-white"
-          >
-            <Filter className="size-4 text-slate-600" aria-hidden />
-            Filters
-          </Button>
         </div>
 
         <Card className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white py-0 shadow-md">
