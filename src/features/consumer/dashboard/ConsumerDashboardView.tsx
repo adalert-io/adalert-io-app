@@ -9,9 +9,7 @@ import { FileIcon, MagnifyingGlassIcon } from '@radix-ui/react-icons';
 import {
   CircleAlert,
   Filter,
-  FileChartColumn,
   Info,
-  MailCheck,
   TriangleAlert,
 } from 'lucide-react';
 import { useUserAdsAccountsStore } from '@/lib/store/user-ads-accounts-store';
@@ -49,8 +47,11 @@ import type { Alert } from '@/lib/store/dashboard-store';
 import { GoogleAdsMark } from '@/components/GoogleAdsMark';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatAccountNumber } from '@/lib/utils';
-import Image from 'next/image';
 import { ConsumerDashboardAlertsTable } from './ConsumerDashboardAlertsTable';
+import {
+  ConsumerPpcActionPlanDialog,
+  formatPpcPlanHtmlForEmail,
+} from './ppc-action-plan';
 import { ConsumerKpiMetricsRow } from './ConsumerKpiMetricsRow';
 import { ConsumerDashboardMetricCard } from './ConsumerDashboardMetricCard';
 import { ConsumerSpendBudgetCard } from './ConsumerSpendBudgetCard';
@@ -509,9 +510,7 @@ export function ConsumerDashboardView() {
               .replace(/<[^>]*>/g, '')
               .replace(/\n+/g, '\n\n'),
             // Convert markdown to HTML for email
-            reportContentHtml: modalContent
-              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-              .replace(/\*(.*?)\*/g, '<em>$1</em>'),
+            reportContentHtml: formatPpcPlanHtmlForEmail(modalContent),
           },
         }),
       });
@@ -972,287 +971,23 @@ export function ConsumerDashboardView() {
           </Card>
         </section>
 
-        {/* Analysis Modal */}
-        {isModalOpen && (
-          <div className='fixed inset-0 bg-black/70 flex items-center justify-center z-50'>
-            <div className='bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col'>
-              {/* Header */}
-              <div className='relative flex items-center justify-between p-6 border-b border-gray-200'>
-                {/* Left side: Logo + Title */}
-                <div className='flex items-center gap-3'>
-                  {/* Logo */}
-                  <div className='flex items-center gap-1'>
-                    <Image
-                      src='/images/adalert-logo.avif'
-                      alt='AdAlert Logo'
-                      width={22} // ???? 24 se 22
-                      height={22} // ???? 24 se 22
-                      priority
-                    />
-                  
-                  </div>
-
-                  {/* Title */}
-                  <div className='flex items-center gap-2 ml-2 pl-4 border-l border-gray-300'>
-                    <FileChartColumn className='h-5 w-5 text-[#015AFD]' />
-                    <div>
-                      <h2 className='text-lg font-semibold text-gray-900'>
-                        PPC Action Plan
-                      </h2>
-                      {selectedAdsAccount && (
-                        <p className='text-sm text-gray-600'>
-                          AI-Powered actionable insights for instant results.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right side: Send + Close */}
-                <div className='flex items-center gap-2'>
-                  <Button
-                    size='sm'
-                    className='h-8 gap-2 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed'
-                    onClick={sendEmailReport}
-                    disabled={
-                      isEmailSending || !modalContent || isGeneratingContent
-                    }
-                  >
-                    {isEmailSending ? (
-                      <>
-                        <svg
-                          className='animate-spin h-4 w-4 text-white'
-                          xmlns='http://www.w3.org/2000/svg'
-                          fill='none'
-                          viewBox='0 0 24 24'
-                        >
-                          <circle
-                            className='opacity-25'
-                            cx='12'
-                            cy='12'
-                            r='10'
-                            stroke='currentColor'
-                            strokeWidth='4'
-                          />
-                          <path
-                            className='opacity-75'
-                            fill='currentColor'
-                            d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
-                          />
-                        </svg>
-                        Sending...
-                      </>
-                    ) : emailSent ? (
-                      <>
-                        <svg
-                          className='h-4 w-4 text-white'
-                          fill='none'
-                          viewBox='0 0 24 24'
-                          stroke='currentColor'
-                        >
-                          <path
-                            strokeLinecap='round'
-                            strokeLinejoin='round'
-                            strokeWidth={2}
-                            d='M5 13l4 4L19 7'
-                          />
-                        </svg>
-                        <span className='text-white'>Email Sent!</span>
-                      </>
-                    ) : (
-                      <>
-                        <MailCheck className='h-4 w-4 text-white' />
-                        Send
-                      </>
-                    )}
-                  </Button>
-
-                  <button
-                    onClick={() => setIsModalOpen(false)}
-                    className='h-8 w-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md border border-gray-200 transition-colors'
-                  >
-                    <XIcon className='w-4 h-4' />
-                  </button>
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className='flex-1 overflow-y-auto p-6'>
-                {isGeneratingContent ? (
-                  <div className='space-y-6'>
-                    {/* Header skeleton */}
-                    <div className='bg-gradient-to-r from-[#015AFD]/5 to-blue-50 p-6 rounded-lg border border-blue-100'>
-                      <div className='flex items-center gap-2 mb-3'>
-                        <div className='w-2 h-2 bg-[#015AFD] rounded-full animate-pulse'></div>
-                        <div className='h-4 bg-gray-200 rounded w-48 animate-pulse'></div>
-                      </div>
-                      <div className='h-4 bg-gray-200 rounded w-full animate-pulse mb-2'></div>
-                      <div className='h-4 bg-gray-200 rounded w-3/4 animate-pulse'></div>
-                    </div>
-
-                    {/* Content skeleton */}
-                    <div className='bg-white border border-gray-200 rounded-lg p-8 shadow-sm space-y-6'>
-                      {/* AI generating message */}
-                      <div className='flex items-center justify-center py-8'>
-                        <div className='flex items-center gap-3'>
-                          <svg
-                            className='animate-spin h-6 w-6 text-[#015AFD]'
-                            xmlns='http://www.w3.org/2000/svg'
-                            fill='none'
-                            viewBox='0 0 24 24'
-                          >
-                            <circle
-                              className='opacity-25'
-                              cx='12'
-                              cy='12'
-                              r='10'
-                              stroke='currentColor'
-                              strokeWidth='4'
-                            />
-                            <path
-                              className='opacity-75'
-                              fill='currentColor'
-                              d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
-                            />
-                          </svg>
-                          <span className='text-lg text-gray-600 font-medium'>
-                            AI is analyzing your alerts and generating
-                            recommendations...
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Skeleton content blocks */}
-                      <div className='space-y-4'>
-                        {/* Skeleton heading */}
-                        <div className='h-6 bg-gray-200 rounded w-1/3 animate-pulse'></div>
-                        {/* Skeleton paragraphs */}
-                        <div className='space-y-2'>
-                          <div className='h-4 bg-gray-200 rounded w-full animate-pulse'></div>
-                          <div className='h-4 bg-gray-200 rounded w-5/6 animate-pulse'></div>
-                          <div className='h-4 bg-gray-200 rounded w-4/5 animate-pulse'></div>
-                        </div>
-
-                        {/* Another skeleton heading */}
-                        <div className='h-6 bg-gray-200 rounded w-1/4 animate-pulse mt-6'></div>
-                        {/* More skeleton paragraphs */}
-                        <div className='space-y-2'>
-                          <div className='h-4 bg-gray-200 rounded w-full animate-pulse'></div>
-                          <div className='h-4 bg-gray-200 rounded w-3/4 animate-pulse'></div>
-                          <div className='h-4 bg-gray-200 rounded w-5/6 animate-pulse'></div>
-                        </div>
-
-                        {/* Another skeleton heading */}
-                        <div className='h-6 bg-gray-200 rounded w-1/3 animate-pulse mt-6'></div>
-                        {/* More skeleton paragraphs */}
-                        <div className='space-y-2'>
-                          <div className='h-4 bg-gray-200 rounded w-full animate-pulse'></div>
-                          <div className='h-4 bg-gray-200 rounded w-4/5 animate-pulse'></div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Footer skeleton */}
-                    <div className='bg-gray-50 p-4 rounded-lg border border-gray-200'>
-                      <div className='h-3 bg-gray-200 rounded w-1/4 mx-auto animate-pulse'></div>
-                    </div>
-                  </div>
-                ) : modalContent ? (
-                  <div className='space-y-6'>
-                    {/* Professional PDF-style formatting */}
-                    <div className='bg-gradient-to-r from-[#015AFD]/5 to-blue-50 p-6 rounded-lg border border-blue-100'>
-                      {/* Date and Account Info */}
-                      <div className='mb-4'>
-                        <p className='text-sm text-gray-600 mb-1'>
-                          <span className='font-medium'>Date Created:</span>{' '}
-                          {new Date().toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit',
-                          })}
-                        </p>
-                        {selectedAdsAccount && (
-                          <p className='text-sm text-gray-600'>
-                            <span className='font-medium'>Account Name:</span>{' '}
-                            {selectedAdsAccount['Account Name Editable']} (
-                            {formatAccountNumber(selectedAdsAccount['Id'])})
-                          </p>
-                        )}
-                      </div>
-
-                      {/* PPC Action Plan Info */}
-                      <div className='flex items-center gap-2 mb-3'>
-                        <div className='w-2 h-2 bg-[#015AFD] rounded-full'></div>
-                        <p className='text-sm font-semibold text-[#015AFD] uppercase tracking-wide'>
-                          PPC Action Plan -{' '}
-                          {selectedAdsAccount &&
-                          selectedAdsAccount['Account Name Editable']
-                            ? selectedAdsAccount['Account Name Editable']
-                            : 'Account'}
-                        </p>
-                      </div>
-                      <p className='text-sm text-gray-600 leading-relaxed'>
-                        Based on the ~20 most recent alerts, prioritized by KPI
-                        importance, impact and alert severity.
-                      </p>
-                    </div>
-
-                    {/* Content with PDF-style formatting */}
-                    <div className='bg-white border border-gray-200 rounded-lg p-8 shadow-sm'>
-                      <div
-                        className='space-y-6 text-gray-800 leading-relaxed'
-                        style={{
-                          fontFamily: 'system-ui, -apple-system, sans-serif',
-                          fontSize: '15px',
-                          lineHeight: '1.7',
-                        }}
-                        dangerouslySetInnerHTML={{
-                          __html: modalContent
-                            .replace(
-                              /\*\*(.*?)\*\*/g,
-                              '<h3 style="font-size: 16px; font-weight: 600; color: #1f2937; margin: 24px 0 12px 0; border-left: 4px solid #015AFD; padding-left: 16px; background: #f8fafc; padding: 12px 16px; border-radius: 6px;">$1</h3>',
-                            )
-                            .replace(
-                              /\n\n/g,
-                              '</p><p style="margin: 16px 0; line-height: 1.7;">',
-                            )
-                            .replace(
-                              /^/,
-                              '<p style="margin: 16px 0; line-height: 1.7;">',
-                            )
-                            .replace(/$/, '</p>'),
-                        }}
-                      />
-                    </div>
-
-                    {/* Footer with branding */}
-                    <div className='bg-gray-50 p-4 rounded-lg border border-gray-200 text-center'>
-                      <p className='text-xs text-gray-500'>
-                        Generated by adAlert.io AI ???{' '}
-                        {new Date().toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className='text-center text-gray-500 py-16'>
-                    <FileChartColumn className='h-16 w-16 mx-auto mb-4 text-gray-300' />
-                    <h3 className='text-lg font-medium text-gray-900 mb-2'>
-                      Ready to Generate Your Action Plan
-                    </h3>
-                    <p className='text-gray-600'>
-                      Click the analysis button to get AI-powered
-                      recommendations for your ads
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+        <ConsumerPpcActionPlanDialog
+          open={isModalOpen}
+          onOpenChange={(open) => {
+            setIsModalOpen(open);
+            if (!open) {
+              setEmailSent(false);
+            }
+          }}
+          accountName={selectedAdsAccount?.["Account Name Editable"]}
+          accountId={selectedAdsAccount?.Id}
+          content={modalContent}
+          isGenerating={isGeneratingContent}
+          isEmailSending={isEmailSending}
+          emailSent={emailSent}
+          onSendEmail={sendEmailReport}
+          alertsForCharts={filteredAlerts}
+        />
       </main>
     </div>
   );
