@@ -18,9 +18,8 @@ import { ConsumerFreeTrialBanner } from "./ConsumerFreeTrialBanner";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { cn } from "@/lib/utils";
 
-import { ConsumerAddAdsAccountHeaderControl } from "./add-ads-account/ConsumerAddAdsAccountHeaderControl";
 import { ConsumerAdsAccountSwitcher } from "./ConsumerAdsAccountSwitcher";
-import { ConsumerKBar, ConsumerKBarTrigger } from "./ConsumerKBar";
+import { ConsumerHeaderActions } from "./ConsumerHeaderActions";
 import {
   CONSUMER_MOBILE_TAB_BAR_OFFSET,
   ConsumerMobileTabBar,
@@ -63,8 +62,8 @@ function ConsumerSidebarBrand({ className }: { className?: string }) {
       )}
     >
       <span className="flex min-w-0 items-center gap-2">
-        <ConsumerBrandLogo className="size-10" />
-        <span className="truncate text-[25px] font-bold leading-none tracking-tight text-white">
+        <ConsumerBrandLogo className="size-8" size={32} />
+        <span className="truncate text-[22px] font-bold leading-none tracking-tight text-white">
           adAlert.io
         </span>
       </span>
@@ -278,7 +277,6 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
   }, [pathname, connectedAccountCount, selectedAdsAccount, router]);
 
   return (
-    <ConsumerKBar>
     <div className="flex min-h-svh w-full bg-[#f8fafc]">
       <aside
         className={cn(
@@ -419,10 +417,7 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
             </ol>
           </nav>
 
-          <div className="flex shrink-0 items-center gap-2">
-            <ConsumerAddAdsAccountHeaderControl />
-            <ConsumerKBarTrigger />
-          </div>
+          <ConsumerHeaderActions />
           </div>
 
           <div className="border-t border-slate-200/80 px-4 py-2 lg:hidden">
@@ -445,6 +440,5 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
         />
       </div>
     </div>
-    </ConsumerKBar>
   );
 }

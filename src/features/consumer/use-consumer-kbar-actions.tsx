@@ -63,9 +63,8 @@ export function useConsumerKbarActions(): Action[] {
       for (const item of group.items) {
         if (item.href) {
           const shortcutMap: Record<string, string[]> = {
-            Summary: ["g", "s"],
+            "Mission Control": ["g", "m"],
             Dashboard: ["g", "d"],
-            "My profile": ["g", "p"],
           };
 
           actions.push({

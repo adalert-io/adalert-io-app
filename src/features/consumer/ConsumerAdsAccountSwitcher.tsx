@@ -260,7 +260,7 @@ export function ConsumerAdsAccountSwitcher({
             <DropdownMenuSeparator className="my-1" />
             <DropdownMenuItem asChild className="cursor-pointer rounded-lg px-2 py-2 text-[12px] text-slate-600">
               <Link href="/consumer/summary" className="w-full">
-                View all accounts on Summary
+                View all accounts in Mission Control
               </Link>
             </DropdownMenuItem>
           </>

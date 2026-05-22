@@ -1,16 +1,20 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  BarChart2,
   Bell,
   Building2,
   CreditCard,
   LayoutDashboard,
-  ListTree,
   Megaphone,
   MoreHorizontal,
+  Settings,
   UserCircle2,
   Users,
   Wallet,
 } from "lucide-react";
+
+export const CONSUMER_MISSION_CONTROL_HREF = "/consumer/summary";
+export const CONSUMER_MISSION_CONTROL_LABEL = "Mission Control";
 
 export interface ConsumerNavLeaf {
   title: string;
@@ -52,7 +56,11 @@ export function consumerNavGroupsForUser(
     : ORG_LEAVES;
 
   const primaryItems: ConsumerNavItem[] = [
-    { title: "Summary", href: "/consumer/summary", icon: ListTree },
+    {
+      title: CONSUMER_MISSION_CONTROL_LABEL,
+      href: CONSUMER_MISSION_CONTROL_HREF,
+      icon: BarChart2,
+    },
   ];
 
   if (connectedAccountCount === 1) {
@@ -69,19 +77,14 @@ export function consumerNavGroupsForUser(
       items: [
         ...primaryItems,
         {
-          title: "Organization",
-          icon: Bell,
+          title: "Settings",
+          icon: Settings,
           items: orgLeaves,
         },
         {
           title: "Account",
           icon: CreditCard,
           items: ACCOUNT_LEAVES,
-        },
-        {
-          title: "My profile",
-          href: "/consumer/settings/my-profile",
-          icon: UserCircle2,
         },
       ],
     },
@@ -116,8 +119,8 @@ export function consumerPathsMatchHref(pathname: string, href: string): boolean 
 export function consumerBreadcrumbs(pathname: string): Crumb[] {
   const root: Crumb = { title: "Console", href: "/consumer/summary" };
 
-  if (pathname === "/consumer/summary") {
-    return [root, { title: "Summary" }];
+  if (pathname === CONSUMER_MISSION_CONTROL_HREF) {
+    return [root, { title: CONSUMER_MISSION_CONTROL_LABEL }];
   }
   if (pathname === "/consumer/dashboard") {
     return [root, { title: "Dashboard" }];
@@ -132,7 +135,7 @@ export function consumerBreadcrumbs(pathname: string): Crumb[] {
       .split("-")
       .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
       .join(" ");
-    return [root, { title: "Organization" }, { title: label }];
+    return [root, { title: "Settings" }, { title: label }];
   }
 
   if (pathname.startsWith("/consumer/settings/account/")) {
@@ -192,7 +195,7 @@ export function consumerMobileTabsForUser(
   const navGroups = consumerNavGroupsForUser(userType, connectedAccountCount);
   const items = navGroups[0]?.items ?? [];
 
-  const orgItem = items.find((i) => i.title === "Organization");
+  const orgItem = items.find((i) => i.title === "Settings");
   const accountItem = items.find((i) => i.title === "Account");
   const orgLeaves = orgItem?.items ?? [];
   const accountLeaves = accountItem?.items ?? [];
@@ -200,11 +203,11 @@ export function consumerMobileTabsForUser(
   const tabs: ConsumerMobileTab[] = [
     {
       type: "link",
-      id: "summary",
-      label: "Summary",
-      href: "/consumer/summary",
-      icon: ListTree,
-      isActive: (pathname) => pathname === "/consumer/summary",
+      id: "mission-control",
+      label: "Mission Control",
+      href: CONSUMER_MISSION_CONTROL_HREF,
+      icon: BarChart2,
+      isActive: (pathname) => pathname === CONSUMER_MISSION_CONTROL_HREF,
     },
   ];
 
@@ -234,7 +237,7 @@ export function consumerMobileTabsForUser(
   const moreSections: ConsumerMobileMoreSection[] = [];
   const moreOrgLeaves = orgLeaves.filter((l) => l.title !== "Alerts");
   if (moreOrgLeaves.length > 0) {
-    moreSections.push({ title: "Organization", items: moreOrgLeaves });
+    moreSections.push({ title: "Settings", items: moreOrgLeaves });
   }
   if (accountLeaves.length > 0) {
     moreSections.push({ title: "Account", items: accountLeaves });

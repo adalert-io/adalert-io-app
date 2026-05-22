@@ -536,14 +536,14 @@ export function ConsumerDashboardView() {
       <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
         <p className="text-lg font-semibold text-slate-900">No ad account selected</p>
         <p className="max-w-md text-[15px] text-slate-500">
-          Choose an account from the sidebar switcher or open Summary to pick one.
+          Choose an account from the sidebar switcher or open Mission Control to pick one.
         </p>
         <Button
           type="button"
           className="rounded-xl bg-[#015AFD] font-semibold text-white hover:bg-[#0146ca]"
           onClick={() => router.push("/consumer/summary")}
         >
-          Go to Summary
+          Go to Mission Control
         </Button>
       </div>
     );
