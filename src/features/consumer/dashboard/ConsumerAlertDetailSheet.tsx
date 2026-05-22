@@ -1,9 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
 import moment from "moment";
+import { Calendar, Layers, Tag } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import {
   Sheet,
   SheetContent,
@@ -13,6 +12,7 @@ import {
 import type { Alert } from "@/lib/store/dashboard-store";
 import { cn } from "@/lib/utils";
 
+import { ConsumerAlertDescription } from "./alert-detail";
 import { AlertSeverityGlyph, SeverityBadge } from "./alert-ui";
 import { useResponsiveSheetSide } from "./use-responsive-sheet-side";
 
@@ -21,13 +21,24 @@ export interface ConsumerAlertRow extends Alert {
   Level?: string;
 }
 
-function MetaRow({ label, children }: { label: string; children: ReactNode }) {
+function MetaTile({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  icon: typeof Calendar;
+}) {
   return (
-    <div className="flex items-start justify-between gap-6 border-b border-slate-100 py-3.5 text-[13px] last:border-0">
-      <span className="shrink-0 font-medium text-slate-500">{label}</span>
-      <span className="min-w-0 text-end font-semibold leading-snug text-slate-900">
-        {children}
-      </span>
+    <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 px-3.5 py-3">
+      <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+        <Icon className="size-3 shrink-0 opacity-70" aria-hidden />
+        {label}
+      </div>
+      <p className="mt-1.5 text-[13px] font-semibold leading-snug text-slate-900">
+        {value}
+      </p>
     </div>
   );
 }
@@ -47,7 +58,9 @@ export function ConsumerAlertDetailSheet({
 }: ConsumerAlertDetailSheetProps) {
   const side = useResponsiveSheetSide();
   const dateObj = alert?.["Date Found"]?.toDate?.();
-  const formattedDate = dateObj ? moment(dateObj).format("DD MMM YYYY, HH:mm") : "—";
+  const formattedDate = dateObj
+    ? moment(dateObj).format("DD MMM YYYY, HH:mm")
+    : "—";
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -60,49 +73,40 @@ export function ConsumerAlertDetailSheet({
           side === "bottom" && "max-h-[88vh] rounded-t-2xl",
         )}
       >
-        <div className="flex h-full min-h-0 flex-col bg-white">
-          <SheetHeader className="gap-0 border-b border-slate-100 p-6 text-start">
-            <div className="flex items-start gap-4 pe-6">
-              <AlertSeverityGlyph severity={alert?.Severity} />
-              <div className="min-w-0 flex-1 space-y-3">
+        <div className="flex h-full min-h-0 flex-col bg-[#f8fafc]">
+          <SheetHeader className="gap-0 border-b border-slate-200/90 bg-white px-5 py-5 text-start sm:px-6">
+            <div className="flex items-start gap-3.5 pe-8">
+              <AlertSeverityGlyph severity={alert?.Severity} className="size-11 rounded-xl" iconClassName="size-6" />
+              <div className="min-w-0 flex-1 space-y-2.5">
                 <SeverityBadge severity={alert?.Severity} />
-                <SheetTitle className="text-[21px] font-bold leading-snug tracking-tight text-slate-900">
+                <SheetTitle className="text-[18px] font-bold leading-snug tracking-tight text-slate-900 sm:text-[19px]">
                   {alert?.Alert ?? "Alert details"}
                 </SheetTitle>
                 {accountName ? (
-                  <p className="text-[13px] font-medium text-slate-500">{accountName}</p>
+                  <p className="text-[13px] font-medium text-slate-500">
+                    {accountName}
+                  </p>
                 ) : null}
               </div>
             </div>
           </SheetHeader>
 
-          <div className="min-h-0 flex-1 overflow-y-auto p-6">
-            <section className="space-y-0">
-              <MetaRow label="Found">{formattedDate}</MetaRow>
-              <MetaRow label="Type">{alert?.Type ?? "—"}</MetaRow>
-              <MetaRow label="Level">{alert?.Level ?? "—"}</MetaRow>
-              <MetaRow label="Status">
-                {alert?.["Is Archived"] ? (
-                  <Badge variant="secondary" className="font-semibold">
-                    Archived
-                  </Badge>
-                ) : (
-                  <Badge variant="success" className="font-semibold">
-                    Active
-                  </Badge>
-                )}
-              </MetaRow>
-            </section>
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+              <MetaTile label="Found" value={formattedDate} icon={Calendar} />
+              <MetaTile label="Type" value={alert?.Type ?? "—"} icon={Tag} />
+              <MetaTile label="Level" value={alert?.Level ?? "—"} icon={Layers} />
+            </div>
 
-            <section className="mt-6 space-y-2">
-              <h3 className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                Description
-              </h3>
-              <div
-                className="prose prose-sm max-w-none rounded-xl border border-slate-100 bg-slate-50/80 p-4 text-[13px] leading-relaxed text-slate-700 [&_a]:text-[#015AFD]"
-                dangerouslySetInnerHTML={{
-                  __html: alert?.["Long Description"] || "<p>No description available.</p>",
-                }}
+            <section className="mt-6">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <h3 className="text-[12px] font-semibold uppercase tracking-wide text-slate-500">
+                  Alert details
+                </h3>
+              </div>
+              <ConsumerAlertDescription
+                html={alert?.["Long Description"]}
+                plainText={alert?.["Long Description Plain Text"]}
               />
             </section>
           </div>
