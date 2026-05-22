@@ -8,6 +8,14 @@ function escapeHtml(text: string): string {
     .replace(/"/g, "&quot;");
 }
 
+function stripHtmlToText(html: string): string {
+  if (typeof DOMParser === "undefined") {
+    return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  }
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  return doc.body.textContent?.replace(/\s+/g, " ").trim() ?? "";
+}
+
 function plainLineToField(line: string): AlertDescriptionField | null {
   const match = line.match(/^([^:]+):\s*(.+)$/);
   if (!match) return null;
@@ -21,7 +29,7 @@ function parsePlainDescription(plain: string | undefined): AlertDescriptionField
   if (!plain?.trim()) return [];
 
   const fields: AlertDescriptionField[] = [];
-  for (const line of plain.split(/\n+/)) {
+  for (const line of plain.split(/\r?\n+/)) {
     const trimmed = line.trim();
     if (!trimmed) continue;
     const field = plainLineToField(trimmed);
@@ -30,7 +38,7 @@ function parsePlainDescription(plain: string | undefined): AlertDescriptionField
   return fields;
 }
 
-function parseHtmlSegment(segment: string): AlertDescriptionField | null {
+function parseSegmentFromBold(segment: string): AlertDescriptionField | null {
   if (typeof DOMParser === "undefined") return null;
 
   const trimmed = segment.trim();
@@ -44,36 +52,61 @@ function parseHtmlSegment(segment: string): AlertDescriptionField | null {
   if (!root) return null;
 
   const bold = root.querySelector("b, strong");
-  if (!bold) return null;
+  if (bold) {
+    const label = bold.textContent?.replace(/:\s*$/, "").trim();
+    if (!label) return null;
+    bold.remove();
+    const valueHtml = root.innerHTML.trim();
+    if (!valueHtml) return null;
+    return { label, valueHtml };
+  }
 
-  const label = bold.textContent?.replace(/:\s*$/, "").trim();
-  if (!label) return null;
+  const text = root.textContent?.trim() ?? "";
+  const colonMatch = text.match(/^([^:]+):\s*(.+)$/);
+  if (!colonMatch) return null;
 
-  bold.remove();
+  const label = colonMatch[1].trim();
+  const value = colonMatch[2].trim();
+  if (!label || !value) return null;
+
   const valueHtml = root.innerHTML.trim();
-  if (!valueHtml) return null;
+  const hasMarkup = /<[a-z][\s\S]*>/i.test(valueHtml);
+  return {
+    label,
+    valueHtml: hasMarkup ? valueHtml : escapeHtml(value),
+  };
+}
 
-  return { label, valueHtml };
+function splitHtmlIntoSegments(html: string): string[] {
+  const normalized = html
+    .replace(/<\/p>\s*<p[^>]*>/gi, "<br>")
+    .replace(/<\/div>\s*<div[^>]*>/gi, "<br>");
+
+  const byBreak = normalized.split(/<br\s*\/?>/gi).map((s) => s.trim()).filter(Boolean);
+  if (byBreak.length > 1) return byBreak;
+
+  if (typeof DOMParser === "undefined") return [html];
+
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const fromBlocks = [...doc.body.querySelectorAll("p, li, div > span")].map(
+    (el) => el.innerHTML.trim(),
+  ).filter(Boolean);
+
+  if (fromBlocks.length > 1) return fromBlocks;
+
+  return [html];
 }
 
 function parseHtmlDescription(html: string): AlertDescriptionField[] {
-  if (!html?.trim() || typeof DOMParser === "undefined") return [];
+  if (!html?.trim()) return [];
 
-  const byBreak = html.split(/<br\s*\/?>/gi);
+  const segments = splitHtmlIntoSegments(html);
   const fields: AlertDescriptionField[] = [];
 
-  for (const segment of byBreak) {
-    const field = parseHtmlSegment(segment);
+  for (const segment of segments) {
+    const field = parseSegmentFromBold(segment);
     if (field) fields.push(field);
   }
-
-  if (fields.length > 0) return fields;
-
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  doc.body.querySelectorAll("p").forEach((paragraph) => {
-    const field = parseHtmlSegment(paragraph.innerHTML);
-    if (field) fields.push(field);
-  });
 
   return fields;
 }
@@ -85,15 +118,35 @@ export function parseAlertLongDescription({
   html?: string;
   plainText?: string;
 }): AlertDescriptionField[] {
-  const fromPlain = parsePlainDescription(plainText);
-  if (fromPlain.length > 0) return fromPlain;
-
   const fromHtml = parseHtmlDescription(html ?? "");
   if (fromHtml.length > 0) return fromHtml;
 
-  return [];
+  return parsePlainDescription(plainText);
 }
 
-export function hasStructuredAlertDescription(fields: AlertDescriptionField[]): boolean {
-  return fields.length > 0;
+export function hasStructuredAlertDescription(
+  fields: AlertDescriptionField[],
+): boolean {
+  if (fields.length === 0) return false;
+  return fields.every((field) => stripHtmlToText(field.valueHtml).length > 0);
+}
+
+export function resolveAlertDescriptionHtml({
+  html,
+  plainText,
+}: {
+  html?: string;
+  plainText?: string;
+}): string {
+  const trimmedHtml = html?.trim();
+  if (trimmedHtml) return trimmedHtml;
+
+  const trimmedPlain = plainText?.trim();
+  if (!trimmedPlain) return "";
+
+  return trimmedPlain
+    .split(/\r?\n+/)
+    .filter(Boolean)
+    .map((line) => `<p>${escapeHtml(line)}</p>`)
+    .join("");
 }

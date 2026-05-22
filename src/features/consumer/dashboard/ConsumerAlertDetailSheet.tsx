@@ -69,7 +69,8 @@ export function ConsumerAlertDetailSheet({
         showCloseButton
         className={cn(
           "gap-0 p-0",
-          side === "right" && "w-full sm:max-w-[480px]",
+          side === "right" &&
+            "w-full sm:!max-w-[560px] lg:!max-w-[600px]",
           side === "bottom" && "max-h-[88vh] rounded-t-2xl",
         )}
       >

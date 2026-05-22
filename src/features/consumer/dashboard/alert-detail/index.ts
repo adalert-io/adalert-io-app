@@ -1,3 +1,6 @@
 export { ConsumerAlertDescription } from "./ConsumerAlertDescription";
-export { parseAlertLongDescription } from "./helpers";
+export {
+  parseAlertLongDescription,
+  resolveAlertDescriptionHtml,
+} from "./helpers";
 export type { AlertDescriptionField } from "./types";
