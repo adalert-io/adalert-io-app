@@ -28,6 +28,7 @@ import {
   consumerBreadcrumbs,
   consumerLeafMatches,
   consumerNavGroupsForUser,
+  isConsumerDashboardPath,
   type ConsumerNavItem,
   type ConsumerNavLeaf,
 } from "./consumer-console-nav";
@@ -247,13 +248,18 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
       void fetchUserAdsAccounts(userDoc);
       return;
     }
-    if (userAdsAccounts.length === 1 && !selectedAdsAccount) {
+    if (
+      userAdsAccounts.length === 1 &&
+      !selectedAdsAccount &&
+      isConsumerDashboardPath(pathname)
+    ) {
       setSelectedAdsAccount(userAdsAccounts[0]);
     }
   }, [
     userDoc,
     userAdsAccounts,
     selectedAdsAccount,
+    pathname,
     fetchUserAdsAccounts,
     setSelectedAdsAccount,
   ]);
@@ -266,9 +272,33 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
       ? userDoc.Avatar.trim()
       : undefined;
 
+  const prevPathnameRef = React.useRef(pathname);
+
+  React.useEffect(() => {
+    const prevPathname = prevPathnameRef.current;
+    const leftDashboard =
+      isConsumerDashboardPath(prevPathname) &&
+      !isConsumerDashboardPath(pathname);
+
+    if (
+      leftDashboard &&
+      connectedAccountCount > 1 &&
+      selectedAdsAccount
+    ) {
+      setSelectedAdsAccount(null);
+    }
+
+    prevPathnameRef.current = pathname;
+  }, [
+    pathname,
+    connectedAccountCount,
+    selectedAdsAccount,
+    setSelectedAdsAccount,
+  ]);
+
   React.useEffect(() => {
     if (
-      pathname === "/consumer/dashboard" &&
+      isConsumerDashboardPath(pathname) &&
       connectedAccountCount > 1 &&
       !selectedAdsAccount
     ) {

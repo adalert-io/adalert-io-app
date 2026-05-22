@@ -14,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { isConsumerDashboardPath } from "@/features/consumer/consumer-console-nav";
 import { consumerPathForClassicRoute } from "@/lib/consumer-shell-preference";
 import { useAuthStore } from "@/lib/store/auth-store";
 import type { AdsAccount } from "@/lib/store/user-ads-accounts-store";
@@ -61,7 +62,15 @@ export function ConsumerAdsAccountSwitcher({
     }
   }, [userDoc, loading, connectedCount, fetchUserAdsAccounts]);
 
+  const isOnDashboard = isConsumerDashboardPath(pathname);
+
   const activeAccount = useMemo(() => {
+    if (!isOnDashboard) {
+      if (connectedCount === 1) {
+        return userAdsAccounts[0] ?? null;
+      }
+      return null;
+    }
     if (selectedAdsAccount) {
       return selectedAdsAccount;
     }
@@ -69,7 +78,12 @@ export function ConsumerAdsAccountSwitcher({
       return userAdsAccounts[0] ?? null;
     }
     return null;
-  }, [selectedAdsAccount, connectedCount, userAdsAccounts]);
+  }, [isOnDashboard, selectedAdsAccount, connectedCount, userAdsAccounts]);
+
+  const highlightedAccountId =
+    isOnDashboard && selectedAdsAccount
+      ? selectedAdsAccount.id
+      : null;
 
   const handleSelectAccount = (account: AdsAccount) => {
     const isNewSelection =
@@ -210,7 +224,7 @@ export function ConsumerAdsAccountSwitcher({
         <DropdownMenuSeparator className="my-1" />
         <div className="max-h-[min(280px,50vh)] overflow-y-auto">
           {userAdsAccounts.map((account) => {
-            const isSelected = activeAccount?.id === account.id;
+            const isSelected = highlightedAccountId === account.id;
             const name = accountDisplayName(account);
             const number = accountNumber(account);
 

@@ -15,6 +15,14 @@ import {
 
 export const CONSUMER_MISSION_CONTROL_HREF = "/consumer/summary";
 export const CONSUMER_MISSION_CONTROL_LABEL = "Mission Control";
+export const CONSUMER_DASHBOARD_HREF = "/consumer/dashboard";
+
+export function isConsumerDashboardPath(pathname: string): boolean {
+  return (
+    pathname === CONSUMER_DASHBOARD_HREF ||
+    pathname.startsWith(`${CONSUMER_DASHBOARD_HREF}/`)
+  );
+}
 
 export interface ConsumerNavLeaf {
   title: string;
