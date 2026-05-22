@@ -14,20 +14,7 @@ export interface AlertSeverityChartDatum {
 
 export interface AlertTypeChartDatum {
   name: string;
-  shortName: string;
   value: number;
-}
-
-/** Fits one line in the chart Y-axis (~132px at 11px). */
-const ALERT_CHART_LABEL_MAX = 22;
-
-export function truncateAlertChartLabel(
-  label: string,
-  maxLength = ALERT_CHART_LABEL_MAX,
-): string {
-  const trimmed = label.trim();
-  if (trimmed.length <= maxLength) return trimmed;
-  return `${trimmed.slice(0, maxLength - 1).trimEnd()}…`;
 }
 
 const SEVERITY_ORDER = [
@@ -98,11 +85,7 @@ export function buildAlertTypeChartData(alerts: Alert[]): AlertTypeChartDatum[] 
   }
 
   return [...tally.entries()]
-    .map(([name, value]) => ({
-      name,
-      shortName: truncateAlertChartLabel(name),
-      value,
-    }))
+    .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value)
     .slice(0, 5);
 }

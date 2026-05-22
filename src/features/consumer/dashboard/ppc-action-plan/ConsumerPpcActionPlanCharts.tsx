@@ -2,17 +2,14 @@
 
 import type { ReactNode } from "react";
 import {
-  Bar,
-  BarChart,
   Cell,
   Pie,
   PieChart,
   ResponsiveContainer,
   Tooltip,
-  XAxis,
-  YAxis,
 } from "recharts";
 
+import { ConsumerAlertTypesBreakdown } from "./ConsumerAlertTypesBreakdown";
 import type {
   AlertSeverityChartDatum,
   AlertTypeChartDatum,
@@ -118,68 +115,11 @@ export function ConsumerPpcActionPlanCharts({
         </div>
       </ChartCard>
 
-      <ChartCard title="Alert types" subtitle="Top 5 categories · hover for full name">
-        <div
-          className="w-full"
-          style={{ height: Math.max(200, typeData.length * 44) }}
-        >
-          {typeData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={typeData}
-                layout="vertical"
-                margin={{ top: 8, right: 12, left: 8, bottom: 8 }}
-                barCategoryGap="28%"
-              >
-                <XAxis type="number" hide />
-                <YAxis
-                  type="category"
-                  dataKey="shortName"
-                  width={132}
-                  tick={{ fontSize: 11, fill: "#64748b" }}
-                  axisLine={false}
-                  tickLine={false}
-                  interval={0}
-                />
-                <Tooltip
-                  labelFormatter={(_, payload) => {
-                    const row = payload?.[0]?.payload as
-                      | { name?: string }
-                      | undefined;
-                    return row?.name ?? "";
-                  }}
-                  formatter={(value) => [
-                    `${Number(value ?? 0)} alerts`,
-                    "Count",
-                  ]}
-                  cursor={{ fill: "rgba(1, 90, 253, 0.06)" }}
-                  contentStyle={{
-                    borderRadius: 10,
-                    border: "1px solid #e2e8f0",
-                    fontSize: 12,
-                    maxWidth: 280,
-                  }}
-                  labelStyle={{
-                    fontWeight: 600,
-                    marginBottom: 4,
-                    whiteSpace: "normal",
-                    lineHeight: 1.4,
-                  }}
-                />
-                <Bar
-                  dataKey="value"
-                  fill="#015AFD"
-                  radius={[0, 6, 6, 0]}
-                  maxBarSize={16}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className="flex h-full items-center justify-center text-[12px] text-slate-400">
-              No type data
-            </p>
-          )}
-        </div>
+      <ChartCard
+        title="Top alerts"
+        subtitle="Most frequent types in current view"
+      >
+        <ConsumerAlertTypesBreakdown data={typeData} />
       </ChartCard>
     </div>
   );
