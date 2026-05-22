@@ -5,10 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { FileIcon, MagnifyingGlassIcon } from '@radix-ui/react-icons';
+import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
 import {
   CircleAlert,
-  Filter,
   FileChartColumn,
   Info,
   MailCheck,
@@ -24,32 +23,20 @@ import {
   ChevronLeft,
   ChevronRight,
   XIcon,
-  AlertTriangle,
   ChartNoAxesCombined,
-  FileText,
   Loader2,
-  Search,
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ALERT_SEVERITIES, ALERT_SEVERITY_COLORS } from '@/lib/constants/index';
 import moment from 'moment';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { FilterPopover, FilterState } from '@/app/dashboard/FilterPopover';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import type { FilterState } from '@/app/dashboard/FilterPopover';
 import { saveAs } from 'file-saver';
 import type { Alert } from '@/lib/store/dashboard-store';
 import { GoogleAdsMark } from '@/components/GoogleAdsMark';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatAccountNumber } from '@/lib/utils';
 import Image from 'next/image';
+import { ConsumerDashboardAlertsToolbar } from './ConsumerDashboardAlertsToolbar';
 import { ConsumerDashboardAlertsTable } from './ConsumerDashboardAlertsTable';
 import { ConsumerKpiMetricsRow } from './ConsumerKpiMetricsRow';
 import { ConsumerDashboardMetricCard } from './ConsumerDashboardMetricCard';
@@ -81,8 +68,7 @@ export function ConsumerDashboardView() {
     currencySymbolLoading,
     updateMonthlyBudget,
     archiveAlerts,
-    generateAlertsPdf,
-    generateAnalysisContent, // Add this line
+    generateAnalysisContent,
     lastFetchedAccountId,
     setLastFetchedAccountId,
   } = useDashboardStore();
@@ -436,7 +422,6 @@ export function ConsumerDashboardView() {
   };
 
   const [isArchiving, setIsArchiving] = useState(false);
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState<string>('');
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
@@ -530,6 +515,16 @@ export function ConsumerDashboardView() {
       setIsEmailSending(false);
     }
   };
+
+  const analysisTooltip = useMemo(() => {
+    if (filteredAlerts.length === 0) {
+      return "No alerts available for analysis";
+    }
+    if (filteredAlerts.length < 10) {
+      return `Need at least 10 alerts for AI analysis (${filteredAlerts.length}/10)`;
+    }
+    return "Generate AI-powered action plan from your alerts";
+  }, [filteredAlerts.length]);
 
   if (!selectedAdsAccount) {
     return (
@@ -641,314 +636,80 @@ export function ConsumerDashboardView() {
 
         <section className="space-y-4">
           <Card className="gap-0 overflow-hidden rounded-2xl border border-slate-200/90 bg-white py-0 shadow-md">
-            <div className="space-y-4 border-b border-slate-100 p-4 sm:p-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-lg font-bold text-slate-900">Alerts</h2>
+            <ConsumerDashboardAlertsToolbar
+              alertsLoading={alertsLoading}
+              filteredAlertsCount={filteredAlerts.length}
+              selectedCount={selectedAlerts.length}
+              archiveLabel={filters.label === "Unarchive" ? "Archive" : "Unarchive"}
+              isArchiving={isArchiving}
+              onArchiveSelected={async () => {
+                setIsArchiving(true);
+                try {
+                  const shouldArchive = filters.label === "Unarchive";
+                  if (selectedAdsAccount) {
+                    await archiveAlerts(
+                      selectedAlerts
+                        .filter(
+                          (a): a is Alert => !!a && typeof a.id === "string",
+                        )
+                        .map((a) => a.id),
+                      shouldArchive,
+                      selectedAdsAccount.id,
+                    );
+                  }
+                  setSelectedAlertIds([]);
+                } catch (err) {
+                  console.error("Failed to update alerts", err);
+                } finally {
+                  setIsArchiving(false);
+                }
+              }}
+              showSearch={showSearch}
+              onToggleSearch={() => setShowSearch((v) => !v)}
+              searchValue={searchValue}
+              onSearchChange={setSearchValue}
+              isFilterOpen={isFilterOpen}
+              onFilterOpenChange={setIsFilterOpen}
+              filterState={filters}
+              onFilterChange={handleFilterChange}
+              isGeneratingContent={isGeneratingContent}
+              analysisTooltip={analysisTooltip}
+              onAnalysisClick={async () => {
+                if (!selectedAdsAccount) return;
 
-                {alertsLoading && (
-                  <span className="inline-flex items-center gap-2 text-[13px] font-medium text-[#015AFD]">
-                    <Loader2 className="size-3.5 animate-spin" aria-hidden />
-                    Updating?
-                  </span>
-                )}
+                setEmailSent(false);
 
-                {/* Auto-refresh tooltip */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type='button'
-                      className='p-0.5 rounded hover:bg-gray-100 transition-colors'
-                      aria-label='Auto-refresh active'
-                    >
-                      <svg
-                        className='w-3 h-3 text-green-500'
-                        fill='none'
-                        stroke='currentColor'
-                        viewBox='0 0 24 24'
-                      >
-                        <path
-                          strokeLinecap='round'
-                          strokeLinejoin='round'
-                          strokeWidth={2}
-                          d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
-                        />
-                      </svg>
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side='top'
-                    align='center'
-                    className='max-w-xs text-xs'
-                  >
-                    Alerts will automatically refresh every 15 minutes
-                  </TooltipContent>
-                </Tooltip>
+                const cachedContent = getCachedContent(selectedAdsAccount.id);
 
-                {/* Info tooltip */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type='button'
-                      className='p-0.5 rounded hover:bg-gray-100 transition-colors'
-                      aria-label='Alerts information'
-                    >
-                      <AlertTriangle className='w-3 h-3 text-gray-400' />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side='top'
-                    align='center'
-                    className='max-w-xs text-xs'
-                  >
-                    There might be data discrepancies between the results shown
-                    in the adAlert dashboard and what's reported by the ad
-                    vendor due to retroactive data updates made by the vendor.
-                  </TooltipContent>
-                </Tooltip>
+                if (cachedContent) {
+                  setIsModalOpen(true);
+                  setModalContent(cachedContent);
+                  return;
+                }
 
-                <button
-                  type="button"
-                  onClick={() => router.push("/consumer/settings/settings/alerts")}
-                  className="text-[13px] font-medium text-slate-500 transition-colors hover:text-[#015AFD] hover:underline"
-                >
-                  Settings
-                </button>
+                setIsModalOpen(true);
+                setIsGeneratingContent(true);
+                setModalContent("");
 
-                {/* Selection bar */}
-                {selectedAlerts.length > 0 && (
-                  <div className='flex items-center gap-2 ml-4'>
-                    <span className='font-semibold text-sm text-[#232360]'>
-                      {selectedAlerts.length} Selected
-                    </span>
-                    <span className='h-5 border-l border-gray-200 mx-1' />
-                    <Button
-                      className='bg-[#156CFF] hover:bg-[#156CFF]/90 text-white font-semibold h-7 px-3 py-1 rounded-md text-xs'
-                      disabled={isArchiving}
-                      onClick={async () => {
-                        setIsArchiving(true);
-                        try {
-                          const shouldArchive = filters.label === 'Unarchive';
-                          if (selectedAdsAccount) {
-                            await archiveAlerts(
-                              selectedAlerts
-                                .filter(
-                                  (a): a is Alert =>
-                                    !!a && typeof a.id === 'string',
-                                )
-                                .map((a) => a.id),
-                              shouldArchive,
-                              selectedAdsAccount.id,
-                            );
-                          }
-                          setSelectedAlertIds([]);
-                        } catch (err) {
-                          console.error('Failed to update alerts', err);
-                        } finally {
-                          setIsArchiving(false);
-                        }
-                      }}
-                    >
-                      {filters.label === 'Unarchive' ? 'Archive' : 'Unarchive'}
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                {showSearch ? (
-                  <div className="flex min-w-[220px] flex-1 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-[#015AFD]/20 sm:max-w-sm">
-                    <Search className="size-4 shrink-0 text-[#015AFD]" aria-hidden />
-                    <input
-                      className="min-w-0 flex-1 border-none bg-transparent text-[13px] text-slate-700 outline-none placeholder:text-slate-400"
-                      placeholder="Search alerts?"
-                      value={searchValue}
-                      onChange={(e) => setSearchValue(e.target.value)}
-                      autoFocus
-                      aria-label="Search alerts"
-                    />
-                    {searchValue ? (
-                      <button
-                        type="button"
-                        className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-                        onClick={() => setSearchValue("")}
-                        aria-label="Clear search"
-                      >
-                        <XIcon className="size-4" />
-                      </button>
-                    ) : null}
-                  </div>
-                ) : null}
-
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setShowSearch((v) => !v)}
-                  className={cn(
-                    "size-10 rounded-xl border-slate-200 shadow-sm",
-                    showSearch && "border-[#015AFD]/40 bg-[#015AFD]/5",
-                  )}
-                  aria-label="Show search"
-                >
-                  <Search className="size-4 text-[#015AFD]" />
-                </Button>
-
-                <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="size-10 rounded-xl border-slate-200 shadow-sm"
-                      aria-label="Open filters"
-                    >
-                      <Filter className="size-4 text-[#015AFD]" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className='w-auto p-0' align='end'>
-                    <FilterPopover
-                      filterState={filters}
-                      onFilterChange={handleFilterChange}
-                      onClose={() => setIsFilterOpen(false)}
-                    />
-                  </PopoverContent>
-                </Popover>
-
-                {/* PDF button */}
-                <Button
-                  variant='outline'
-                  size='icon'
-                  className='relative hidden'
-                  disabled={isGeneratingPdf}
-                  onClick={async () => {
-                    if (!selectedAdsAccount) return;
-                    setIsGeneratingPdf(true);
-                    try {
-                      await generateAlertsPdf(selectedAdsAccount);
-                    } catch (err) {
-                      console.error('Failed to generate PDF', err);
-                    } finally {
-                      setIsGeneratingPdf(false);
-                    }
-                  }}
-                  aria-label='Export PDF'
-                >
-                  <FileIcon className='w-6 h-6 text-[#015AFD]' />
-                  <span className='absolute bottom-0 right-0 text-[8px] font-bold text-[#015AFD] pr-[2px] pb-[1px] leading-none pointer-events-none'>
-                    PDF
-                  </span>
-                </Button>
-
-                {/* Analysis button */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant='outline'
-                      size='icon'
-                      className='relative'
-                      disabled={
-                        isGeneratingContent || filteredAlerts.length < 10
-                      }
-                      onClick={async () => {
-                        if (!selectedAdsAccount) return;
-
-                        // Reset email state when opening modal
-                        setEmailSent(false);
-
-                        // Check if content is cached for today
-                        const cachedContent = getCachedContent(
-                          selectedAdsAccount.id,
-                        );
-
-                        if (cachedContent) {
-                          // Use cached content - instant load
-                          setIsModalOpen(true);
-                          setModalContent(cachedContent);
-                          return;
-                        }
-
-                        // Open modal immediately for new generation
-                        setIsModalOpen(true);
-                        setIsGeneratingContent(true);
-                        setModalContent(''); // Clear previous content
-
-                        try {
-                          const content = await generateAnalysisContent(
-                            selectedAdsAccount,
-                          );
-                          setModalContent(content);
-                          // Cache the content for future use
-                          cacheContent(selectedAdsAccount.id, content);
-                        } catch (err) {
-                          console.error('Failed to generate analysis', err);
-                          setModalContent(
-                            'Error generating analysis. Please try again.',
-                          );
-                        } finally {
-                          setIsGeneratingContent(false);
-                        }
-                      }}
-                      aria-label='View Analysis'
-                    >
-                      <FileText className='w-6 h-6 text-[#015AFD]' />
-                      <span className='absolute bottom-0 right-0 text-[8px] font-bold text-[#015AFD] pr-[2px] pb-[1px] leading-none pointer-events-none'>
-                        AI
-                      </span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {filteredAlerts.length === 0
-                      ? 'No alerts available for analysis'
-                      : filteredAlerts.length < 10
-                      ? `Need at least 10 alerts for AI analysis (${filteredAlerts.length}/10)`
-                      : 'Generate AI-powered action plan from your alerts'}
-                  </TooltipContent>
-                </Tooltip>
-
-                {/* CSV button */}
-                <Button
-                  variant='outline'
-                  size='icon'
-                  className='relative'
-                  onClick={handleDownloadCsv}
-                  aria-label='Export CSV'
-                >
-                  <FileIcon className='w-6 h-6 text-[#015AFD]' />
-                  <span className='absolute bottom-0 right-0 text-[8px] font-bold text-[#015AFD] pr-[2px] pb-[1px] leading-none pointer-events-none'>
-                    CSV
-                  </span>
-                </Button>
-
-                <div className="relative">
-                  <select
-                    className="min-w-[120px] cursor-pointer appearance-none rounded-lg border border-slate-200 bg-white py-2.5 pe-9 ps-4 text-[13px] font-medium text-slate-700 shadow-sm transition-colors focus-visible:border-[#015AFD] focus-visible:ring-2 focus-visible:ring-[#015AFD]/25"
-                    value={pageSize}
-                    onChange={(e) => setPageSize(Number(e.target.value))}
-                    aria-label="Rows per page"
-                  >
-                    <option value={15}>15 rows</option>
-                    <option value={25}>25 rows</option>
-                    <option value={50}>50 rows</option>
-                    <option value={100}>100 rows</option>
-                  </select>
-
-                  {/* Custom dropdown chevron */}
-                  <svg
-                    className='absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                  >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M19 9l-7 7-7-7'
-                    />
-                  </svg>
-                </div>
-              </div>
-            </div>
-            </div>
+                try {
+                  const content = await generateAnalysisContent(
+                    selectedAdsAccount,
+                  );
+                  setModalContent(content);
+                  cacheContent(selectedAdsAccount.id, content);
+                } catch (err) {
+                  console.error("Failed to generate analysis", err);
+                  setModalContent(
+                    "Error generating analysis. Please try again.",
+                  );
+                } finally {
+                  setIsGeneratingContent(false);
+                }
+              }}
+              onDownloadCsv={handleDownloadCsv}
+              pageSize={pageSize}
+              onPageSizeChange={setPageSize}
+            />
 
             <div className="relative">
             <ConsumerDashboardAlertsTable
