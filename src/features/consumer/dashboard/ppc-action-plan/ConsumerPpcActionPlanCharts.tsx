@@ -118,25 +118,36 @@ export function ConsumerPpcActionPlanCharts({
         </div>
       </ChartCard>
 
-      <ChartCard title="Alert types" subtitle="Top categories in current view">
-        <div className="h-[220px] w-full">
+      <ChartCard title="Alert types" subtitle="Top 5 categories · hover for full name">
+        <div
+          className="w-full"
+          style={{ height: Math.max(200, typeData.length * 44) }}
+        >
           {typeData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={typeData}
                 layout="vertical"
-                margin={{ top: 4, right: 8, left: 4, bottom: 4 }}
+                margin={{ top: 8, right: 12, left: 8, bottom: 8 }}
+                barCategoryGap="28%"
               >
                 <XAxis type="number" hide />
                 <YAxis
                   type="category"
-                  dataKey="name"
-                  width={88}
+                  dataKey="shortName"
+                  width={132}
                   tick={{ fontSize: 11, fill: "#64748b" }}
                   axisLine={false}
                   tickLine={false}
+                  interval={0}
                 />
                 <Tooltip
+                  labelFormatter={(_, payload) => {
+                    const row = payload?.[0]?.payload as
+                      | { name?: string }
+                      | undefined;
+                    return row?.name ?? "";
+                  }}
                   formatter={(value) => [
                     `${Number(value ?? 0)} alerts`,
                     "Count",
@@ -146,13 +157,20 @@ export function ConsumerPpcActionPlanCharts({
                     borderRadius: 10,
                     border: "1px solid #e2e8f0",
                     fontSize: 12,
+                    maxWidth: 280,
+                  }}
+                  labelStyle={{
+                    fontWeight: 600,
+                    marginBottom: 4,
+                    whiteSpace: "normal",
+                    lineHeight: 1.4,
                   }}
                 />
                 <Bar
                   dataKey="value"
                   fill="#015AFD"
                   radius={[0, 6, 6, 0]}
-                  maxBarSize={14}
+                  maxBarSize={16}
                 />
               </BarChart>
             </ResponsiveContainer>
