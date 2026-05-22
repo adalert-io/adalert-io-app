@@ -335,11 +335,11 @@ export function ConsumerSummaryView() {
     <div className="mx-auto flex w-full max-w-[1480px] flex-1 flex-col gap-8 pb-8">
       <header className="max-w-xl space-y-2">
         <h1 className="text-[28px] font-bold tracking-tight text-slate-900 sm:text-[30px]">
-          Ad accounts
+          Ad Accounts
         </h1>
         <p className="text-[15px] text-[#7A7D9C]">
-          Prioritized by impact — start at the top and work down. Open an account
-          to view its dashboard.
+          We have already prioritized the work for you. Start from the top row
+          and work your way down.
         </p>
         {isRefreshing ? (
           <p className="inline-flex items-center gap-2 text-[13px] font-medium text-[#015AFD]">

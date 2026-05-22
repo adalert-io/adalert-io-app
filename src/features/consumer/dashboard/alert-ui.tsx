@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import { CircleAlert, Info, TriangleAlert } from "lucide-react";
 
-import { ALERT_SEVERITIES } from "@/lib/constants";
+import { ALERT_SEVERITIES, ALERT_SEVERITY_COLORS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 export function getAlertSeverityKey(severity: string | undefined): "critical" | "medium" | "low" {
@@ -11,48 +11,71 @@ export function getAlertSeverityKey(severity: string | undefined): "critical" | 
   return "low";
 }
 
+const SEVERITY_DOT_COLOR: Record<
+  ReturnType<typeof getAlertSeverityKey>,
+  string
+> = {
+  critical: ALERT_SEVERITY_COLORS.CRITICAL,
+  medium: ALERT_SEVERITY_COLORS.MEDIUM,
+  low: ALERT_SEVERITY_COLORS.LOW,
+};
+
+const SEVERITY_BADGE_CLASS: Record<
+  ReturnType<typeof getAlertSeverityKey>,
+  string
+> = {
+  critical:
+    "bg-[#ED1A22]/12 text-[#ED1A22] ring-[#ED1A22]/35",
+  medium:
+    "bg-[#FF8028]/14 text-[#FF8028] ring-[#FF8028]/40",
+  low:
+    "bg-[#ECE31B]/35 text-[#78700a] ring-[#ECE31B]/55",
+};
+
 export function SeverityBadge({ severity }: { severity?: string }) {
   const key = getAlertSeverityKey(severity);
+  const label =
+    key === "critical"
+      ? ALERT_SEVERITIES.CRITICAL
+      : key === "medium"
+        ? ALERT_SEVERITIES.MEDIUM
+        : ALERT_SEVERITIES.LOW;
 
-  if (key === "critical") {
-    return (
-      <span className="inline-flex rounded-full bg-[#ef4444]/12 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#b91c1c] ring-1 ring-[#fecaca]/80">
-        Critical
-      </span>
-    );
-  }
-  if (key === "medium") {
-    return (
-      <span className="inline-flex rounded-full bg-orange-400/16 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#c2410c] ring-1 ring-orange-300/55">
-        Medium
-      </span>
-    );
-  }
   return (
-    <span className="inline-flex rounded-full bg-[#3b82f6]/12 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#1d4ed8] ring-1 ring-[#bfdbfe]">
-      Low
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide ring-1",
+        SEVERITY_BADGE_CLASS[key],
+      )}
+    >
+      <span
+        className="size-2 shrink-0 rounded-full"
+        style={{ backgroundColor: SEVERITY_DOT_COLOR[key] }}
+        aria-hidden
+      />
+      {label}
     </span>
   );
 }
 
 const SEVERITY_ICON: Record<
   ReturnType<typeof getAlertSeverityKey>,
-  { Icon: LucideIcon; className: string; bgClassName: string }
+  { Icon: LucideIcon; dotColor: string; bgClassName: string }
 > = {
   critical: {
     Icon: TriangleAlert,
-    className: "text-[#ef4444]",
-    bgClassName: "bg-[#fef2f2]",
+    dotColor: ALERT_SEVERITY_COLORS.CRITICAL,
+    bgClassName: "bg-[#ED1A22]/10",
   },
   medium: {
     Icon: CircleAlert,
-    className: "text-[#ea580c]",
-    bgClassName: "bg-orange-50",
+    dotColor: ALERT_SEVERITY_COLORS.MEDIUM,
+    bgClassName: "bg-[#FF8028]/12",
   },
   low: {
     Icon: Info,
-    className: "text-[#2563eb]",
-    bgClassName: "bg-[#eff6ff]",
+    dotColor: ALERT_SEVERITY_COLORS.LOW,
+    bgClassName: "bg-[#ECE31B]/25",
   },
 };
 
@@ -66,7 +89,7 @@ export function AlertSeverityGlyph({
   iconClassName?: string;
 }) {
   const key = getAlertSeverityKey(severity);
-  const { Icon, className: iconColor, bgClassName } = SEVERITY_ICON[key];
+  const { Icon, dotColor, bgClassName } = SEVERITY_ICON[key];
 
   return (
     <span
@@ -76,7 +99,12 @@ export function AlertSeverityGlyph({
         className,
       )}
     >
-      <Icon className={cn("size-7", iconColor, iconClassName)} strokeWidth={1.85} aria-hidden />
+      <Icon
+        className={cn("size-7", iconClassName)}
+        style={{ color: dotColor }}
+        strokeWidth={1.85}
+        aria-hidden
+      />
     </span>
   );
 }
