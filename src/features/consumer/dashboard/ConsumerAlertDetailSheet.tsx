@@ -1,7 +1,7 @@
 "use client";
 
 import moment from "moment";
-import { Calendar, Layers, Tag } from "lucide-react";
+import { Calendar, FileText, Layers, Tag } from "lucide-react";
 
 import {
   Sheet,
@@ -13,7 +13,12 @@ import type { Alert } from "@/lib/store/dashboard-store";
 import { cn } from "@/lib/utils";
 
 import { ConsumerAlertDescription } from "./alert-detail";
-import { AlertSeverityGlyph, SeverityBadge } from "./alert-ui";
+import {
+  AlertSeverityGlyph,
+  getAlertSeverityKey,
+  SeverityBadge,
+} from "./alert-ui";
+import { DASHBOARD_ALERT_SEVERITY_BORDER } from "./dashboard-theme";
 import { useResponsiveSheetSide } from "./use-responsive-sheet-side";
 
 export interface ConsumerAlertRow extends Alert {
@@ -102,6 +107,8 @@ export function ConsumerAlertDetailSheet({
   const formattedDate = dateObj
     ? moment(dateObj).format("DD MMM YYYY, HH:mm")
     : "—";
+  const severityKey = getAlertSeverityKey(alert?.Severity);
+  const severityAccent = DASHBOARD_ALERT_SEVERITY_BORDER[severityKey];
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -115,18 +122,26 @@ export function ConsumerAlertDetailSheet({
           side === "bottom" && "max-h-[88vh] rounded-t-2xl",
         )}
       >
-        <div className="flex h-full min-h-0 flex-col bg-[#f8fafc]">
-          <SheetHeader className="gap-0 border-b border-slate-200/90 bg-white px-5 py-5 text-start sm:px-6">
+        <div className="flex h-full min-h-0 flex-col bg-gradient-to-b from-[#f1f5f9] to-[#f8fafc]">
+          <SheetHeader
+            className="relative gap-0 border-b border-slate-200/90 bg-white px-5 py-5 text-start shadow-sm sm:px-6"
+            style={{ borderBottomColor: `${severityAccent}33` }}
+          >
+            <div
+              className="absolute inset-x-0 top-0 h-1 rounded-t-lg"
+              style={{ backgroundColor: severityAccent }}
+              aria-hidden
+            />
             <div className="flex items-start gap-3.5 pe-8">
-              <AlertSeverityGlyph severity={alert?.Severity} className="size-11 rounded-xl" iconClassName="size-6" />
+              <AlertSeverityGlyph severity={alert?.Severity} className="size-11 rounded-xl shadow-sm" iconClassName="size-6" />
               <div className="min-w-0 flex-1 space-y-2.5">
                 <SeverityBadge severity={alert?.Severity} />
                 <SheetTitle className="text-[18px] font-bold leading-snug tracking-tight text-slate-900 sm:text-[19px]">
                   {alert?.Alert ?? "Alert details"}
                 </SheetTitle>
                 {accountName ? (
-                  <p className="text-[13px] font-medium text-slate-500">
-                    {accountName}
+                  <p className="inline-flex max-w-full items-center rounded-lg bg-slate-100/90 px-2.5 py-1 text-[12px] font-medium text-slate-600 ring-1 ring-slate-200/80">
+                    <span className="truncate">{accountName}</span>
                   </p>
                 ) : null}
               </div>
@@ -155,13 +170,35 @@ export function ConsumerAlertDetailSheet({
               />
             </div>
 
-            <section className="mt-6">
-              <div className="mb-3 flex items-center justify-between gap-2">
-                <h3 className="text-[12px] font-semibold uppercase tracking-wide text-[#015AFD]/80">
+            <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-md shadow-slate-200/40">
+              <div className="flex items-center gap-3 border-b border-slate-100 bg-gradient-to-r from-[#015AFD]/[0.06] via-slate-50/80 to-white px-4 py-3.5 sm:px-5">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#015AFD]/10 text-[#015AFD] ring-1 ring-[#015AFD]/15">
+                  <FileText className="size-4" strokeWidth={2} aria-hidden />
+                </span>
+                <h3 className="text-[12px] font-semibold uppercase tracking-wide text-slate-800">
                   Alert details
                 </h3>
               </div>
-              <ConsumerAlertDescription html={alert?.["Long Description"]} />
+              <div
+                className={cn(
+                  "px-4 py-4 sm:px-5 sm:py-5",
+                  "[&_.prose]:max-w-none [&_.prose]:text-[13px] [&_.prose]:leading-relaxed [&_.prose]:text-slate-700",
+                  "[&_.prose_p]:mb-3 [&_.prose_p:last-child]:mb-0",
+                  "[&_.prose_strong]:font-semibold [&_.prose_strong]:text-slate-900",
+                  "[&_.prose_a]:font-medium [&_.prose_a]:text-[#015AFD] [&_.prose_a]:underline-offset-2 hover:[&_.prose_a]:underline",
+                  "[&_.prose_ul]:my-2 [&_.prose_ul]:list-disc [&_.prose_ul]:pl-5",
+                  "[&_.prose_ol]:my-2 [&_.prose_ol]:list-decimal [&_.prose_ol]:pl-5",
+                  "[&_.prose_li]:mb-1",
+                  "[&_.prose_h1]:mb-2 [&_.prose_h1]:text-base [&_.prose_h1]:font-bold [&_.prose_h1]:text-slate-900",
+                  "[&_.prose_h2]:mb-2 [&_.prose_h2]:text-[15px] [&_.prose_h2]:font-bold [&_.prose_h2]:text-slate-900",
+                  "[&_.prose_h3]:mb-2 [&_.prose_h3]:text-[14px] [&_.prose_h3]:font-semibold [&_.prose_h3]:text-slate-900",
+                  "[&_.prose_table]:w-full [&_.prose_table]:border-collapse",
+                  "[&_.prose_th]:border [&_.prose_th]:border-slate-200 [&_.prose_th]:bg-slate-50 [&_.prose_th]:px-2 [&_.prose_th]:py-1.5 [&_.prose_th]:text-left [&_.prose_th]:text-[12px] [&_.prose_th]:font-semibold",
+                  "[&_.prose_td]:border [&_.prose_td]:border-slate-200 [&_.prose_td]:px-2 [&_.prose_td]:py-1.5 [&_.prose_td]:text-[12px]",
+                )}
+              >
+                <ConsumerAlertDescription html={alert?.["Long Description"]} />
+              </div>
             </section>
           </div>
         </div>
