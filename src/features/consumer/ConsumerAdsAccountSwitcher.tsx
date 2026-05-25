@@ -3,14 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Check, ChevronDown, Loader2 } from "lucide-react";
+import { Check, ChevronDown, Loader2, Search } from "lucide-react";
 
 import { GoogleAdsMark } from "@/components/GoogleAdsMark";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -53,6 +52,26 @@ export function ConsumerAdsAccountSwitcher({
     loading,
   } = useUserAdsAccountsStore();
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (!nextOpen) {
+      setSearchQuery("");
+    }
+  };
+
+  const filteredAccounts = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) {
+      return userAdsAccounts;
+    }
+    return userAdsAccounts.filter((account) => {
+      const name = accountDisplayName(account).toLowerCase();
+      const number = accountNumber(account).toLowerCase();
+      return name.includes(query) || number.includes(query);
+    });
+  }, [userAdsAccounts, searchQuery]);
 
   const connectedCount = userAdsAccounts.length;
 
@@ -153,7 +172,7 @@ export function ConsumerAdsAccountSwitcher({
       : "";
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu open={open} onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
@@ -218,12 +237,29 @@ export function ConsumerAdsAccountSwitcher({
         sideOffset={8}
         className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-[240px] max-w-[280px] border-slate-200/90 p-1.5 shadow-xl"
       >
-        <DropdownMenuLabel className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-          Switch workspace
-        </DropdownMenuLabel>
+        <div
+          className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-2 mx-1.5 mb-1.5"
+          onPointerDown={(e) => e.preventDefault()}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          <Search className="size-4 shrink-0 text-[#015AFD]" aria-hidden />
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search ad accounts"
+            aria-label="Search ad accounts"
+            className="min-w-0 flex-1 border-0 bg-transparent text-[13px] text-slate-700 outline-none placeholder:text-slate-400"
+          />
+        </div>
         <DropdownMenuSeparator className="my-1" />
         <div className="max-h-[min(280px,50vh)] overflow-y-auto">
-          {userAdsAccounts.map((account) => {
+          {filteredAccounts.length === 0 ? (
+            <p className="px-3 py-4 text-center text-[12px] text-slate-500">
+              No accounts match your search.
+            </p>
+          ) : null}
+          {filteredAccounts.map((account) => {
             const isSelected = highlightedAccountId === account.id;
             const name = accountDisplayName(account);
             const number = accountNumber(account);
