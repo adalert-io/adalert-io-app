@@ -245,9 +245,13 @@ export function ConsumerAdsAccountSwitcher({
         className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-[240px] max-w-[280px] border-slate-200/90 p-1.5 shadow-xl"
       >
         <div
-          className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-2 mx-1.5 mb-1.5"
-          onPointerDown={(e) => e.preventDefault()}
-          onKeyDown={(e) => e.stopPropagation()}
+          className="mx-1.5 mb-1.5 flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-2"
+          onPointerDown={(e) => {
+            if ((e.target as HTMLElement).closest("input")) {
+              return;
+            }
+            e.preventDefault();
+          }}
         >
           <Search className="size-4 shrink-0 text-[#015AFD]" aria-hidden />
           <input
@@ -256,6 +260,10 @@ export function ConsumerAdsAccountSwitcher({
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search ad accounts"
             aria-label="Search ad accounts"
+            autoFocus={open}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
             className="min-w-0 flex-1 border-0 bg-transparent text-[13px] text-slate-700 outline-none placeholder:text-slate-400"
           />
         </div>
