@@ -170,31 +170,34 @@ export function ConsumerAlertDetailSheet({
               />
             </div>
 
-            <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-md shadow-slate-200/40">
-              <div className="flex items-center gap-3 border-b border-slate-100 bg-gradient-to-r from-[#015AFD]/[0.06] via-slate-50/80 to-white px-4 py-3.5 sm:px-5">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#015AFD]/10 text-[#015AFD] ring-1 ring-[#015AFD]/15">
-                  <FileText className="size-4" strokeWidth={2} aria-hidden />
+            <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md ring-1 ring-slate-100/80">
+              <div className="flex items-center gap-3 border-b border-[#015AFD]/10 bg-gradient-to-r from-[#015AFD]/[0.08] via-slate-50 to-white px-4 py-3.5 sm:px-5">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#015AFD]/12 text-[#015AFD] ring-1 ring-[#015AFD]/20">
+                  <FileText className="size-4" strokeWidth={2.25} aria-hidden />
                 </span>
-                <h3 className="text-[12px] font-semibold uppercase tracking-wide text-slate-800">
+                <h3 className="text-[12px] font-bold uppercase tracking-wide text-slate-900">
                   Alert details
                 </h3>
               </div>
               <div
                 className={cn(
-                  "px-4 py-4 sm:px-5 sm:py-5",
-                  "[&_.prose]:max-w-none [&_.prose]:text-[13px] [&_.prose]:leading-relaxed [&_.prose]:text-slate-700",
-                  "[&_.prose_p]:mb-3 [&_.prose_p:last-child]:mb-0",
-                  "[&_.prose_strong]:font-semibold [&_.prose_strong]:text-slate-900",
-                  "[&_.prose_a]:font-medium [&_.prose_a]:text-[#015AFD] [&_.prose_a]:underline-offset-2 hover:[&_.prose_a]:underline",
-                  "[&_.prose_ul]:my-2 [&_.prose_ul]:list-disc [&_.prose_ul]:pl-5",
-                  "[&_.prose_ol]:my-2 [&_.prose_ol]:list-decimal [&_.prose_ol]:pl-5",
-                  "[&_.prose_li]:mb-1",
-                  "[&_.prose_h1]:mb-2 [&_.prose_h1]:text-base [&_.prose_h1]:font-bold [&_.prose_h1]:text-slate-900",
-                  "[&_.prose_h2]:mb-2 [&_.prose_h2]:text-[15px] [&_.prose_h2]:font-bold [&_.prose_h2]:text-slate-900",
-                  "[&_.prose_h3]:mb-2 [&_.prose_h3]:text-[14px] [&_.prose_h3]:font-semibold [&_.prose_h3]:text-slate-900",
-                  "[&_.prose_table]:w-full [&_.prose_table]:border-collapse",
-                  "[&_.prose_th]:border [&_.prose_th]:border-slate-200 [&_.prose_th]:bg-slate-50 [&_.prose_th]:px-2 [&_.prose_th]:py-1.5 [&_.prose_th]:text-left [&_.prose_th]:text-[12px] [&_.prose_th]:font-semibold",
-                  "[&_.prose_td]:border [&_.prose_td]:border-slate-200 [&_.prose_td]:px-2 [&_.prose_td]:py-1.5 [&_.prose_td]:text-[12px]",
+                  "border-l-[3px] border-l-[#015AFD]/25 bg-slate-50/50 px-4 py-4 sm:px-5 sm:py-5",
+                  "[&_.prose]:max-w-none [&_.prose]:text-[14px] [&_.prose]:font-medium [&_.prose]:leading-[1.65] [&_.prose]:text-slate-800",
+                  "[&_.prose_p]:mb-3 [&_.prose_p]:font-medium [&_.prose_p]:text-slate-800 [&_.prose_p:last-child]:mb-0",
+                  "[&_.prose_div]:font-medium [&_.prose_div]:text-slate-800",
+                  "[&_.prose_span]:font-medium [&_.prose_span]:text-slate-800",
+                  "[&_.prose_strong]:font-bold [&_.prose_strong]:text-slate-950",
+                  "[&_.prose_b]:font-bold [&_.prose_b]:text-slate-950",
+                  "[&_.prose_a]:font-semibold [&_.prose_a]:text-[#015AFD] [&_.prose_a]:underline-offset-2 hover:[&_.prose_a]:underline",
+                  "[&_.prose_ul]:my-2.5 [&_.prose_ul]:list-disc [&_.prose_ul]:pl-5 [&_.prose_ul]:font-medium",
+                  "[&_.prose_ol]:my-2.5 [&_.prose_ol]:list-decimal [&_.prose_ol]:pl-5 [&_.prose_ol]:font-medium",
+                  "[&_.prose_li]:mb-1.5 [&_.prose_li]:font-medium [&_.prose_li]:text-slate-800",
+                  "[&_.prose_h1]:mb-2.5 [&_.prose_h1]:text-[17px] [&_.prose_h1]:font-bold [&_.prose_h1]:text-slate-950",
+                  "[&_.prose_h2]:mb-2 [&_.prose_h2]:text-[16px] [&_.prose_h2]:font-bold [&_.prose_h2]:text-slate-950",
+                  "[&_.prose_h3]:mb-2 [&_.prose_h3]:text-[15px] [&_.prose_h3]:font-bold [&_.prose_h3]:text-slate-900",
+                  "[&_.prose_table]:my-3 [&_.prose_table]:w-full [&_.prose_table]:overflow-hidden [&_.prose_table]:rounded-lg [&_.prose_table]:border-collapse [&_.prose_table]:border [&_.prose_table]:border-slate-200",
+                  "[&_.prose_th]:border [&_.prose_th]:border-slate-200 [&_.prose_th]:bg-slate-100/90 [&_.prose_th]:px-2.5 [&_.prose_th]:py-2 [&_.prose_th]:text-left [&_.prose_th]:text-[12px] [&_.prose_th]:font-bold [&_.prose_th]:text-slate-900",
+                  "[&_.prose_td]:border [&_.prose_td]:border-slate-200 [&_.prose_td]:bg-white [&_.prose_td]:px-2.5 [&_.prose_td]:py-2 [&_.prose_td]:text-[13px] [&_.prose_td]:font-medium [&_.prose_td]:text-slate-800",
                 )}
               >
                 <ConsumerAlertDescription html={alert?.["Long Description"]} />
