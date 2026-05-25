@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Check, ChevronDown, Loader2, Search } from "lucide-react";
+import { BarChart2, Check, ChevronDown, Loader2, Plus, Search } from "lucide-react";
 
 import { GoogleAdsMark } from "@/components/GoogleAdsMark";
 import {
@@ -13,6 +13,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  ConsumerAddAdsAccountDialog,
+} from "@/features/consumer/add-ads-account/ConsumerAddAdsAccountDialog";
+import { useConsumerAddAdsAccountDialog } from "@/features/consumer/add-ads-account/use-consumer-add-ads-account-dialog";
 import { isConsumerDashboardPath } from "@/features/consumer/consumer-console-nav";
 import { consumerPathForClassicRoute } from "@/lib/consumer-shell-preference";
 import { useAuthStore } from "@/lib/store/auth-store";
@@ -53,6 +57,9 @@ export function ConsumerAdsAccountSwitcher({
   } = useUserAdsAccountsStore();
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const { isOpen: isAddAccountOpen, setIsOpen: setIsAddAccountOpen } =
+    useConsumerAddAdsAccountDialog();
+  const canAddAccount = userDoc?.["User Type"] !== "Manager";
 
   const handleOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen);
@@ -305,17 +312,51 @@ export function ConsumerAdsAccountSwitcher({
             );
           })}
         </div>
-        {connectedCount > 1 ? (
-          <>
-            <DropdownMenuSeparator className="my-1" />
-            <DropdownMenuItem asChild className="cursor-pointer rounded-lg px-2 py-2 text-[12px] text-slate-600">
-              <Link href="/consumer/summary" className="w-full">
-                View all accounts in Mission Control
-              </Link>
-            </DropdownMenuItem>
-          </>
+        <DropdownMenuSeparator className="my-1" />
+        <DropdownMenuItem
+          asChild
+          className="cursor-pointer gap-3 rounded-lg px-2 py-2.5 focus:bg-slate-100"
+        >
+          <Link
+            href="/consumer/summary"
+            className="flex w-full items-center gap-3"
+            onClick={() => setOpen(false)}
+          >
+            <BarChart2
+              className="size-4 shrink-0 text-[#015AFD]"
+              strokeWidth={2}
+              aria-hidden
+            />
+            <span className="text-[13px] font-medium text-slate-700">
+              View all accounts
+            </span>
+          </Link>
+        </DropdownMenuItem>
+        {canAddAccount ? (
+          <DropdownMenuItem
+            className="cursor-pointer gap-3 rounded-lg px-2 py-2.5 focus:bg-slate-100"
+            onSelect={() => {
+              setOpen(false);
+              setIsAddAccountOpen(true);
+            }}
+          >
+            <Plus
+              className="size-4 shrink-0 text-[#015AFD]"
+              strokeWidth={2}
+              aria-hidden
+            />
+            <span className="text-[13px] font-medium text-slate-700">
+              Add another ad account
+            </span>
+          </DropdownMenuItem>
         ) : null}
       </DropdownMenuContent>
+      {canAddAccount ? (
+        <ConsumerAddAdsAccountDialog
+          open={isAddAccountOpen}
+          onOpenChange={setIsAddAccountOpen}
+        />
+      ) : null}
     </DropdownMenu>
   );
 }
