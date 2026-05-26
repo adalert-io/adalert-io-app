@@ -51,12 +51,16 @@ function formatAccountId(id: string) {
   return id.replace(/(\d{3})(\d{3})(\d{4})/, "$1-$2-$3");
 }
 
+/**
+ * Google OAuth redirect_uri must match an entry in Google Cloud Console exactly.
+ * Consumer uses the same `page` as classic; return routing uses sessionStorage
+ * (`consumerAddAdsAccountDialog`) set before the OAuth redirect.
+ */
 function oauthRedirectPage(context: AddAdsAccountOAuthContext): string {
   switch (context) {
     case "settings":
       return "add-ads-account-from-settings";
     case "consumer":
-      return "add-ads-account-consumer";
     default:
       return "add-ads-account";
   }

@@ -207,8 +207,14 @@ function RedirectPageContent() {
             const { userDoc, isFullAccess } = authStore;
             let targetPath = consumerPathForClassicRoute('/dashboard');
             
+            const isConsumerAddAdsReturn =
+              page === 'add-ads-account-consumer' ||
+              (page === 'add-ads-account' &&
+                typeof window !== 'undefined' &&
+                sessionStorage.getItem('consumerAddAdsAccountDialog') === '1');
+
             // Check if user came from add-ads-account page - if so, redirect back there
-            if (page === 'add-ads-account-consumer') {
+            if (isConsumerAddAdsReturn) {
               targetPath = '/consumer/summary?addAccount=open';
             } else if (page === 'add-ads-account' || page === 'add-ads-account-from-settings') {
               targetPath = '/add-ads-account';
