@@ -14,6 +14,50 @@ import {
   useElements,
 } from '@stripe/react-stripe-js';
 import { stripePromise, stripeConfig } from '@/lib/stripe/config';
+
+interface ReceiptRow {
+  id: string | null;
+  receiptUrl: string | null;
+  created: number | null;
+  status: string | null;
+}
+
+interface StripeReceiptsApiResponse {
+  receipts?: Array<{
+    chargeId?: string | null;
+    receiptUrl?: string | null;
+    created?: number | null;
+    status?: string | null;
+  }>;
+  receiptUrl?: string | null;
+  chargeId?: string | null;
+  created?: number | null;
+  status?: string | null;
+}
+
+function normalizeReceiptsFromApi(data: StripeReceiptsApiResponse): ReceiptRow[] {
+  if (Array.isArray(data.receipts) && data.receipts.length > 0) {
+    return data.receipts.map((receipt) => ({
+      id: receipt.chargeId ?? null,
+      receiptUrl: receipt.receiptUrl ?? null,
+      created: receipt.created ?? null,
+      status: receipt.status ?? null,
+    }));
+  }
+
+  if (data.receiptUrl) {
+    return [
+      {
+        id: data.chargeId ?? null,
+        receiptUrl: data.receiptUrl,
+        created: data.created ?? null,
+        status: data.status ?? null,
+      },
+    ];
+  }
+
+  return [];
+}
 import { toast } from 'sonner';
 import {
   CreditCard,
@@ -680,7 +724,7 @@ function BillingSubtabContent({ consumerShell }: { consumerShell: boolean }) {
   }, [subscription?.['Stripe Customer Id']]);
 
   // --- Receipt fetching logic ---
-  const [receipts, setReceipts] = useState<any[]>([]);
+  const [receipts, setReceipts] = useState<ReceiptRow[]>([]);
   const [receiptsLoading, setReceiptsLoading] = useState(false);
   useEffect(() => {
     const fetchReceipts = async () => {
@@ -695,19 +739,9 @@ function BillingSubtabContent({ consumerShell }: { consumerShell: boolean }) {
           const res = await fetch(
             `/api/stripe-receipts?subscriptionId=${subscription['Stripe Subscription Id']}`,
           );
-          const data = await res.json();
-          if (res.ok && data.receiptUrl) {
-            // Convert single receipt to array format for consistency with table display
-            setReceipts([
-              {
-                id: data.chargeId,
-                receiptUrl: data.receiptUrl,
-                amount: data.amount,
-                currency: data.currency,
-                created: data.created,
-                status: data.status,
-              },
-            ]);
+          const data = (await res.json()) as StripeReceiptsApiResponse;
+          if (res.ok) {
+            setReceipts(normalizeReceiptsFromApi(data));
           } else {
             setReceipts([]);
           }
@@ -727,7 +761,16 @@ function BillingSubtabContent({ consumerShell }: { consumerShell: boolean }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const totalPages = Math.ceil(receipts.length / pageSize);
+  const totalPages = Math.max(1, Math.ceil(receipts.length / pageSize));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [receipts.length]);
+
+  const paginatedReceipts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return receipts.slice(start, start + pageSize);
+  }, [receipts, currentPage, pageSize]);
 
   const connectedAccountsCount = adsAccounts.length;
 
@@ -1028,9 +1071,9 @@ function BillingSubtabContent({ consumerShell }: { consumerShell: boolean }) {
                         </tr>
                       </thead>
                       <tbody>
-                        {receipts.map((receipt, index) => (
+                        {paginatedReceipts.map((receipt, index) => (
                           <tr
-                            key={index}
+                            key={receipt.id ?? `${receipt.created}-${index}`}
                             className={cn(
                               'border-b border-gray-100 hover:bg-gray-50',
                               consumerShell &&
