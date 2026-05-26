@@ -7,6 +7,7 @@ import {
   signInWithEmailAndPassword,
 } from "firebase/auth";
 import { db, auth } from "@/lib/firebase/config";
+import { consumerPathForClassicRoute } from "@/lib/consumer-shell-preference";
 import { createUserDocuments, useAuthStore } from "@/lib/store/auth-store";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -90,7 +91,7 @@ export default function AcceptInvitation({
             } catch (error) {
               console.error("Error during post-auth navigation from invite:", error);
               // Fallback: send them to dashboard
-              router.replace("/dashboard");
+              router.replace(consumerPathForClassicRoute("/dashboard"));
             }
           } else {
             // Not logged in – just take them to the login page without an error toast
@@ -247,7 +248,9 @@ export default function AcceptInvitation({
         Array.isArray(invitation.selectedAds) && invitation.selectedAds.length
           ? invitation.selectedAds.length
           : 0;
-      const targetPath = adsCount > 1 ? "/summary" : "/dashboard";
+      const targetPath = consumerPathForClassicRoute(
+        adsCount > 1 ? "/summary" : "/dashboard",
+      );
 
       toast.success("Account activated! Welcome to the team!");
       router.replace(targetPath);

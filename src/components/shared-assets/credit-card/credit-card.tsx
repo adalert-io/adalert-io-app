@@ -2,7 +2,8 @@
 
 import { useMemo } from "react";
 import { cx, sortCx } from "@/lib/utils/cx";
-import { MastercardIcon, MastercardIconWhite, PaypassIcon } from "./icons";
+import { CardBrandIcon, MastercardIcon, MastercardIconWhite, PaypassIcon } from "./icons";
+import { normalizeCardBrand } from "./card-brand";
 
 const styles = sortCx({
     // Normal
@@ -49,7 +50,7 @@ const styles = sortCx({
         cardTypeRoot: "bg-white",
     },
     "adalert-blue": {
-        root: "bg-gradient-to-br from-[#0146ca] via-[#015AFD] to-[#3b82f6] before:pointer-events-none before:absolute before:inset-0 before:z-1 before:rounded-[inherit] before:mask-linear-135 before:mask-linear-to-white/20 before:ring-1 before:ring-white/30 before:ring-inset",
+        root: "bg-gradient-to-br from-[#0146ca] via-[#015AFD] to-[#3b82f6] ring-1 ring-inset ring-white/20",
         company: "text-white",
         footerText: "text-white",
         paypassIcon: "text-white/90",
@@ -131,6 +132,8 @@ interface CreditCardProps {
     cardNumber?: string;
     cardHolder?: string;
     cardExpiration?: string;
+    /** Stripe-style brand slug, e.g. visa, mastercard, amex */
+    cardBrand?: string | null;
     type?: CreditCardType;
     className?: string;
     width?: number;
@@ -156,10 +159,12 @@ export const CreditCard = ({
     cardNumber = "1234 1234 1234 1234",
     cardHolder = "OLIVIA RHYE",
     cardExpiration = "06/28",
+    cardBrand,
     type = "brand-dark",
     className,
     width,
 }: CreditCardProps) => {
+    const normalizedBrand = normalizeCardBrand(cardBrand);
     const originalWidth = 316;
     const originalHeight = 190;
 
@@ -174,13 +179,19 @@ export const CreditCard = ({
         return calculateScale(width, originalWidth, originalHeight);
     }, [width]);
 
+    const isAdalertBlue = type === "adalert-blue";
+
     return (
         <div
             style={{
                 width: `${scaledWidth}px`,
                 height: `${scaledHeight}px`,
             }}
-            className={cx("relative flex", className)}
+            className={cx(
+                "relative flex overflow-hidden rounded-2xl",
+                isAdalertBlue && "bg-gradient-to-br from-[#0146ca] via-[#015AFD] to-[#3b82f6]",
+                className,
+            )}
         >
             <div
                 style={{
@@ -188,7 +199,11 @@ export const CreditCard = ({
                     width: `${originalWidth}px`,
                     height: `${originalHeight}px`,
                 }}
-                className={cx("absolute top-0 left-0 flex origin-top-left flex-col justify-between overflow-hidden rounded-2xl p-4", styles[type].root)}
+                className={cx(
+                    "absolute top-0 left-0 flex origin-top-left flex-col justify-between overflow-hidden rounded-2xl p-4",
+                    styles[type].root,
+                    isAdalertBlue && "rounded-2xl",
+                )}
             >
                 {/* Horizontal strip */}
                 {STRIP_TYPES.includes(type as (typeof STRIP_TYPES)[number]) && (
@@ -216,7 +231,13 @@ export const CreditCard = ({
                 )}
 
                 <div className="relative flex items-start justify-between px-1 pt-1">
-                    <div className={cx("text-md leading-[normal] font-semibold", styles[type].company)}>{company}</div>
+                    {company ? (
+                        <div className={cx("text-md leading-[normal] font-semibold", styles[type].company)}>
+                            {company}
+                        </div>
+                    ) : (
+                        <span aria-hidden />
+                    )}
 
                     <PaypassIcon className={styles[type].paypassIcon} />
                 </div>
@@ -249,8 +270,14 @@ export const CreditCard = ({
                         </div>
                     </div>
 
-                    <div className={cx("flex h-8 w-11.5 shrink-0 items-center justify-center rounded", styles[type].cardTypeRoot)}>
-                        {CARD_WITH_COLOR_LOGO.includes(type as (typeof CARD_WITH_COLOR_LOGO)[number]) ? <MastercardIcon /> : <MastercardIconWhite />}
+                    <div className={cx("flex h-8 min-w-11.5 shrink-0 items-center justify-center rounded px-1", styles[type].cardTypeRoot)}>
+                        {cardBrand != null && cardBrand !== "" ? (
+                            <CardBrandIcon brand={normalizedBrand} variant="light" />
+                        ) : CARD_WITH_COLOR_LOGO.includes(type as (typeof CARD_WITH_COLOR_LOGO)[number]) ? (
+                            <MastercardIcon />
+                        ) : (
+                            <MastercardIconWhite />
+                        )}
                     </div>
                 </div>
             </div>

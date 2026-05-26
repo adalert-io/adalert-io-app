@@ -1,6 +1,5 @@
 /**
- * Post-auth routing should only run on sign-in entry routes — not while the user
- * is already browsing classic or consumer preview pages.
+ * Post-auth routing runs on sign-in entry routes — not while browsing the app.
  */
 export function isPostAuthNavigationEntryPath(pathname: string): boolean {
   if (pathname === "/" || pathname === "/redirect") {

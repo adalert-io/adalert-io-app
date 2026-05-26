@@ -1,42 +1,16 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { CONSUMER_PREVIEW_COOKIE } from "@/lib/consumer-preview-gate";
+import { getConsumerRedirectUrl } from "@/lib/consumer-shell-preference";
 
 const ADMIN_PREVIEW_COOKIE = "admin_preview_gate";
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, search } = request.nextUrl;
 
-  if (pathname === "/consumer" || pathname.startsWith("/consumer/")) {
-    const hasConsumerPreview =
-      request.cookies.get(CONSUMER_PREVIEW_COOKIE)?.value === "1";
-
-    const isPreviewGatePage =
-      pathname === "/consumer/preview-gate" ||
-      pathname.startsWith("/consumer/preview-gate/");
-
-    if (isPreviewGatePage) {
-      if (hasConsumerPreview) {
-        const nextParam = request.nextUrl.searchParams.get("next");
-        const fallback = "/consumer/summary";
-        const destination =
-          nextParam?.startsWith("/consumer") &&
-          !nextParam.startsWith("/consumer/preview-gate")
-            ? nextParam
-            : fallback;
-        return NextResponse.redirect(new URL(destination, request.url));
-      }
-      return NextResponse.next();
-    }
-
-    if (!hasConsumerPreview) {
-      const gateUrl = new URL("/consumer/preview-gate", request.url);
-      gateUrl.searchParams.set("next", pathname);
-      return NextResponse.redirect(gateUrl);
-    }
-
-    return NextResponse.next();
+  const consumerRedirect = getConsumerRedirectUrl(pathname, search);
+  if (consumerRedirect) {
+    return NextResponse.redirect(new URL(consumerRedirect, request.url));
   }
 
   if (!pathname.startsWith("/administrator")) {
@@ -76,7 +50,9 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/administrator/:path*",
-    "/consumer",
-    "/consumer/:path*",
+    "/summary",
+    "/dashboard",
+    "/settings",
+    "/settings/:path*",
   ],
 };

@@ -1,19 +1,48 @@
-import { hasConsumerPreviewCookieFromDocument } from "@/lib/consumer-preview-gate";
-
 /**
- * Use consumer console paths only after the preview PIN gate (internal review).
- * Normal login and navigation stay on classic `/summary`, `/dashboard`, etc.
+ * Consumer console is the default app shell for authenticated users.
  */
+
 export function prefersConsumerShellRouting(): boolean {
-  return hasConsumerPreviewCookieFromDocument();
+  return true;
 }
 
-/** Map classic targets to consumer console when preview gate cookie is active. */
+/** Map a classic app path to its consumer console equivalent. */
 export function consumerPathForClassicRoute(classicPath: string): string {
-  const map: Record<string, string> = {
-    "/summary": "/consumer/summary",
-    "/dashboard": "/consumer/dashboard",
-    "/settings/account/billing": "/consumer/settings/account/billing",
-  };
-  return map[classicPath] ?? classicPath;
+  const [pathname, queryPart = ""] = classicPath.split("?");
+  const query = queryPart ? `?${queryPart}` : "";
+
+  if (pathname === "/summary" || pathname === "/dashboard") {
+    return `/consumer${pathname}${query}`;
+  }
+
+  if (pathname === "/settings" || pathname.startsWith("/settings/")) {
+    if (pathname === "/settings") {
+      return `/consumer/settings/settings/alerts${query}`;
+    }
+    return `/consumer${pathname}${query}`;
+  }
+
+  return classicPath;
+}
+
+/** Server-safe redirect target for legacy classic routes (middleware). */
+export function getConsumerRedirectUrl(
+  pathname: string,
+  search = "",
+): string | null {
+  const query =
+    search && !search.startsWith("?") ? `?${search}` : search;
+
+  if (pathname === "/summary" || pathname === "/dashboard") {
+    return `/consumer${pathname}${query}`;
+  }
+
+  if (pathname === "/settings" || pathname.startsWith("/settings/")) {
+    if (pathname === "/settings") {
+      return `/consumer/settings/settings/alerts${query}`;
+    }
+    return `/consumer${pathname}${query}`;
+  }
+
+  return null;
 }

@@ -5,15 +5,6 @@ import { CreditCard as CreditCardIcon } from "lucide-react";
 import CreditCard from "@/components/shared-assets/credit-card/credit-card";
 import { cn } from "@/lib/utils";
 
-function formatBrandLabel(brand: string | null | undefined): string {
-  const value = (brand ?? "card").toLowerCase();
-  if (value === "visa") return "VISA";
-  if (value === "mastercard") return "Mastercard";
-  if (value === "amex" || value === "american express") return "AMEX";
-  if (value === "discover") return "Discover";
-  return value.toUpperCase();
-}
-
 export interface ConsumerPaymentMethodCardProps {
   brand?: string | null;
   last4?: string | null;
@@ -35,7 +26,6 @@ export function ConsumerPaymentMethodCard({
 }: ConsumerPaymentMethodCardProps) {
   const expMonthLabel = String(expMonth ?? "").padStart(2, "0").slice(-2);
   const expYearLabel = String(expYear ?? "").slice(-2);
-  const brandLabel = formatBrandLabel(brand);
 
   if (isEmpty) {
     return (
@@ -55,7 +45,7 @@ export function ConsumerPaymentMethodCard({
   return (
     <CreditCard
       type="adalert-blue"
-      company={brandLabel}
+      cardBrand={brand}
       cardNumber={`•••• •••• •••• ${last4 ?? "••••"}`}
       cardHolder={(cardholderName?.trim() || "—").toUpperCase()}
       cardExpiration={`${expMonthLabel || "••"}/${expYearLabel || "••"}`}

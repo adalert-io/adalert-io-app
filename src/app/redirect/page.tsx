@@ -14,6 +14,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { jwtDecode } from 'jwt-decode';
+import { consumerPathForClassicRoute } from '@/lib/consumer-shell-preference';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -204,7 +205,7 @@ function RedirectPageContent() {
             
             // Get the target path before navigation
             const { userDoc, isFullAccess } = authStore;
-            let targetPath = '/dashboard';
+            let targetPath = consumerPathForClassicRoute('/dashboard');
             
             // Check if user came from add-ads-account page - if so, redirect back there
             if (page === 'add-ads-account-consumer') {
@@ -233,14 +234,16 @@ function RedirectPageContent() {
 
               // Navigation logic
               if (!isFullAccess) {
-                targetPath = '/settings/account/billing';
+                targetPath = consumerPathForClassicRoute('/settings/account/billing');
               } else if (adsAccountCount === 0) {
                 const inviter = userDoc['Inviter'];
-                targetPath = inviter ? '/dashboard' : '/add-ads-account';
+                targetPath = inviter
+                  ? consumerPathForClassicRoute('/dashboard')
+                  : '/add-ads-account';
               } else if (adsAccountCount === 1) {
-                targetPath = '/dashboard';
+                targetPath = consumerPathForClassicRoute('/dashboard');
               } else if (adsAccountCount > 1) {
-                targetPath = '/summary';
+                targetPath = consumerPathForClassicRoute('/summary');
               }
             }
             
@@ -255,7 +258,11 @@ function RedirectPageContent() {
             // Reset the flag even on error
             setGoogleOAuthRedirect(false);
             // Fallback navigation
-            const path = page ? `/${page}` : '/dashboard';
+            const path = page
+              ? page.startsWith('consumer/') || page === 'add-ads-account'
+                ? `/${page}`
+                : consumerPathForClassicRoute(`/${page}`)
+              : consumerPathForClassicRoute('/dashboard');
             router.replace(path);
           }
         } catch (err) {
@@ -281,7 +288,7 @@ function RedirectPageContent() {
             if (page) {
               router.replace(`/${page}`);
             } else {
-              router.replace('/dashboard');
+              router.replace(consumerPathForClassicRoute('/dashboard'));
             }
           }}
         >

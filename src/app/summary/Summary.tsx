@@ -9,7 +9,6 @@ import { useUserAdsAccountsStore } from '@/lib/store/user-ads-accounts-store';
 import { formatAccountNumber } from '@/lib/utils';
 import {
   consumerPathForClassicRoute,
-  prefersConsumerShellRouting,
 } from '@/lib/consumer-shell-preference';
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
 import { Button } from '@/components/ui/button';
@@ -170,11 +169,7 @@ export default function Summary({ embedded = false }: SummaryProps) {
       // console.log('matchingAccount: ', matchingAccount);
       if (matchingAccount) {
         setSelectedAdsAccount(matchingAccount);
-        router.push(
-          prefersConsumerShellRouting()
-            ? consumerPathForClassicRoute('/dashboard')
-            : '/dashboard',
-        );
+        router.push(consumerPathForClassicRoute('/dashboard'));
       }
     }
   };

@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react";
 import { useEffect } from "react";
-import { usePathname } from "next/navigation";
 
 import { ConsumerAuthGate, ConsumerConsoleShell } from "@/features/consumer";
 import { intercomService } from "@/lib/intercom";
@@ -12,8 +11,6 @@ interface ConsumerLayoutProps {
 }
 
 export default function ConsumerLayout({ children }: ConsumerLayoutProps) {
-  const pathname = usePathname();
-
   useEffect(() => {
     document.body.dataset.consumerShell = "true";
     intercomService.hide();
@@ -23,14 +20,6 @@ export default function ConsumerLayout({ children }: ConsumerLayoutProps) {
       delete document.body.dataset.consumerShell;
     };
   }, []);
-
-  const isPreviewGate =
-    pathname === "/consumer/preview-gate" ||
-    pathname?.startsWith("/consumer/preview-gate/");
-
-  if (isPreviewGate) {
-    return <ConsumerAuthGate>{children}</ConsumerAuthGate>;
-  }
 
   return (
     <ConsumerAuthGate>

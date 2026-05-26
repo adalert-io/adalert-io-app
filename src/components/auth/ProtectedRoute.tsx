@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { consumerPathForClassicRoute } from '@/lib/consumer-shell-preference';
 import { useAuthStore } from '@/lib/store/auth-store';
 
 interface ProtectedRouteProps {
@@ -24,7 +25,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
     // If authenticated but without full access, send to billing
     if (!isFullAccess) {
-      router.push('/settings/account/billing');
+      router.push(consumerPathForClassicRoute('/settings/account/billing'));
     }
   }, [user, isFullAccess, loading, isInitializing, router]);
 

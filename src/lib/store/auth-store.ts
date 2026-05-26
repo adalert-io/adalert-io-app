@@ -28,7 +28,6 @@ import { db } from '@/lib/firebase/config';
 import { shouldSkipAutomaticPostAuthNavigation } from '@/lib/auth-navigation';
 import {
   consumerPathForClassicRoute,
-  prefersConsumerShellRouting,
 } from '@/lib/consumer-shell-preference';
 import moment from 'moment';
 import {
@@ -518,11 +517,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { userDoc, isFullAccess, router } = get();
       if (!userDoc || !router) return;
 
-      const useConsumerShell = prefersConsumerShellRouting();
       const pushPostAuth = (classicPath: string) => {
-        const target = useConsumerShell
-          ? consumerPathForClassicRoute(classicPath)
-          : classicPath;
+        const target = consumerPathForClassicRoute(classicPath);
         if (
           typeof window !== "undefined" &&
           window.location.pathname === target

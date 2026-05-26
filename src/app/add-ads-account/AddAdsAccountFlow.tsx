@@ -312,19 +312,10 @@ export function AddAdsAccountFlow({
         return;
       }
 
-      const summaryPath =
-        oauthContext === "consumer"
-          ? consumerPathForClassicRoute("/summary")
-          : "/summary";
-      const dashboardPath =
-        oauthContext === "consumer"
-          ? consumerPathForClassicRoute("/dashboard")
-          : "/dashboard";
-
       if (connectedAccountsCount > 1) {
-        router.push(summaryPath);
+        router.push(consumerPathForClassicRoute("/summary"));
       } else {
-        router.push(dashboardPath);
+        router.push(consumerPathForClassicRoute("/dashboard"));
       }
     } catch (error) {
       console.error("Error updating ads accounts:", error);
