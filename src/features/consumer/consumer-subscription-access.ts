@@ -6,6 +6,8 @@ import {
 export const CONSUMER_BILLING_HREF = "/consumer/settings/account/billing";
 
 const CONSUMER_ORG_SETTINGS_PREFIX = "/consumer/settings/settings/";
+const CONSUMER_ACCOUNT_SETTINGS_PREFIX = "/consumer/settings/account/";
+const CONSUMER_PROFILE_HREF = "/consumer/settings/my-profile";
 
 export function isConsumerBillingPath(pathname: string): boolean {
   return (
@@ -14,9 +16,20 @@ export function isConsumerBillingPath(pathname: string): boolean {
   );
 }
 
-/** Paths reachable without paid / active trial (matches classic `ProtectedRoute`). */
+export function isConsumerAccountSettingsPath(pathname: string): boolean {
+  return pathname.startsWith(CONSUMER_ACCOUNT_SETTINGS_PREFIX);
+}
+
+export function isConsumerProfilePath(pathname: string): boolean {
+  return (
+    pathname === CONSUMER_PROFILE_HREF ||
+    pathname.startsWith(`${CONSUMER_PROFILE_HREF}/`)
+  );
+}
+
+/** Account + profile pages stay reachable when trial is expired. */
 export function isConsumerPathAllowedWithoutFullAccess(pathname: string): boolean {
-  return isConsumerBillingPath(pathname);
+  return isConsumerAccountSettingsPath(pathname) || isConsumerProfilePath(pathname);
 }
 
 export function isConsumerOrgSettingsPath(pathname: string): boolean {
@@ -29,7 +42,6 @@ export function isConsumerNavHrefDisabledWhenExpired(href: string): boolean {
     return true;
   }
   if (isConsumerOrgSettingsPath(href)) return true;
-  if (href === "/consumer/settings/my-profile") return true;
   return false;
 }
 
