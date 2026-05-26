@@ -95,6 +95,7 @@ import {
   consumerSettingsPrimaryButtonSize,
   consumerSettingsSurface,
 } from '@/features/consumer/settings/consumer-settings-styles';
+import { ConsumerPaymentMethodCard } from '@/features/consumer/settings/ConsumerPaymentMethodCard';
 import { cn } from '@/lib/utils';
 
 // Dynamically import react-select to avoid SSR issues
@@ -901,64 +902,87 @@ function BillingSubtabContent({ consumerShell }: { consumerShell: boolean }) {
                 >
                   Payment Method
                 </h3>
-                <div className='flex flex-col items-start gap-6 sm:flex-row '>
-                  {/* Payment Method Card */}
-                  {paymentMethods ? (
-                    <div
-                      className={cn(
-                        'min-w-[320px] rounded-2xl border border-slate-200 bg-white p-6 text-slate-900',
-                        consumerShell &&
-                          'rounded-2xl border border-slate-200 bg-white shadow-sm',
-                      )}
-                    >
-                      <div className='flex justify-between items-start mb-4'>
-                        <div>
-                          <div className='text-xs uppercase tracking-wide text-slate-500 mb-1'>
-                            {(livePm?.brand || paymentMethods['Stripe Card Brand'] || 'Card')}
+                <div className='flex flex-col items-start gap-6 sm:flex-row'>
+                  <div className='w-full sm:w-auto'>
+                    {consumerShell ? (
+                      <>
+                        <ConsumerPaymentMethodCard
+                          isEmpty={
+                            !(livePm?.last4 ?? paymentMethods?.['Stripe Last 4 Digits'])
+                          }
+                          brand={livePm?.brand ?? paymentMethods?.['Stripe Card Brand']}
+                          last4={
+                            livePm?.last4 ??
+                            paymentMethods?.['Stripe Last 4 Digits']
+                          }
+                          expMonth={
+                            livePm?.exp_month ??
+                            paymentMethods?.['Stripe Expired Month']
+                          }
+                          expYear={
+                            livePm?.exp_year ?? paymentMethods?.['Stripe Expired Year']
+                          }
+                          cardholderName={paymentMethods?.['Stripe Name']}
+                        />
+                        {paymentMethods ? (
+                          <p className='mt-3 max-w-[340px] text-xs leading-relaxed text-slate-500'>
+                            {paymentMethods['Stripe Address']},{' '}
+                            {paymentMethods['Stripe City']},{' '}
+                            {paymentMethods['Stripe State']}{' '}
+                            {paymentMethods['Zip']},{' '}
+                            {paymentMethods['Stripe Country']}
+                          </p>
+                        ) : null}
+                      </>
+                    ) : paymentMethods ? (
+                      <div className='min-w-[320px] rounded-2xl border border-slate-200 bg-white p-6 text-slate-900'>
+                        <div className='mb-4 flex items-start justify-between'>
+                          <div>
+                            <div className='mb-1 text-xs uppercase tracking-wide text-slate-500'>
+                              {livePm?.brand || paymentMethods['Stripe Card Brand'] || 'Card'}
+                            </div>
+                            <div className='text-lg font-bold text-slate-900'>
+                              {(livePm?.brand || paymentMethods['Stripe Card Brand'] || 'CARD')
+                                .toString()
+                                .toUpperCase()}
+                            </div>
                           </div>
-                          <div className='text-lg font-bold text-slate-900'>
-                            {(livePm?.brand || paymentMethods['Stripe Card Brand'] || 'CARD').toString().toUpperCase()}
+                          <div className='text-right text-slate-600'>
+                            <div className='text-sm'>
+                              {String(
+                                livePm?.exp_month ??
+                                  paymentMethods['Stripe Expired Month'] ??
+                                  '',
+                              )
+                                .toString()
+                                .padStart(2, '0')}{' '}
+                              / {livePm?.exp_year ?? paymentMethods['Stripe Expired Year'] ?? ''}
+                            </div>
                           </div>
                         </div>
-                        <div className='text-right text-slate-600'>
-                          <div className='text-xs uppercase tracking-wide mb-1'>
-                            {''}
-                          </div>
-                          <div className='text-sm'>
-                            {String(livePm?.exp_month ?? paymentMethods['Stripe Expired Month'] ?? '').toString().padStart(2, '0')}{' '}
-                            / {livePm?.exp_year ?? paymentMethods['Stripe Expired Year'] ?? ''}
+                        <div className='font-mono text-lg text-slate-900'>
+                          XXXX - XXXX - XXXX -{' '}
+                          {livePm?.last4 ?? paymentMethods['Stripe Last 4 Digits']}
+                        </div>
+                        <div className='mt-4 text-sm text-slate-600'>
+                          <div>Name: {paymentMethods['Stripe Name']}</div>
+                          <div>
+                            Address: {paymentMethods['Stripe Address']},{' '}
+                            {paymentMethods['Stripe City']},{' '}
+                            {paymentMethods['Stripe State']} {paymentMethods['Zip']},{' '}
+                            {paymentMethods['Stripe Country']}
                           </div>
                         </div>
                       </div>
-                      <div className='text-lg font-mono text-slate-900'>
-                        XXXX - XXXX - XXXX -{' '}
-                        {livePm?.last4 ?? paymentMethods['Stripe Last 4 Digits']}
-                      </div>
-                      <div className='mt-4 text-sm text-slate-600'>
-                        <div>Name: {paymentMethods['Stripe Name']}</div>
-                        <div>
-                          Address: {paymentMethods['Stripe Address']},{' '}
-                          {paymentMethods['Stripe City']},{' '}
-                          {paymentMethods['Stripe State']}{' '}
-                          {paymentMethods['Zip']},{' '}
-                          {paymentMethods['Stripe Country']}
+                    ) : (
+                      <div className='flex w-full items-center justify-center rounded-lg bg-gray-100 p-6 text-gray-600 sm:w-[320px]'>
+                        <div className='text-center'>
+                          <CreditCard className='mx-auto mb-2 h-8 w-8 text-gray-400' />
+                          <p className='text-sm'>No payment method</p>
                         </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div
-                      className={cn(
-                        'flex w-full items-center justify-center rounded-lg bg-gray-100 p-6 text-gray-600 sm:w-[320px]',
-                        consumerShell &&
-                          'border border-slate-200 bg-slate-50 text-slate-600',
-                      )}
-                    >
-                      <div className='text-center'>
-                        <CreditCard className='w-8 h-8 mx-auto mb-2 text-gray-400' />
-                        <p className='text-sm'>No payment method</p>
-                      </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
 
                   {/* Status and Actions */}
                   <div className='flex flex-col items-start'>
