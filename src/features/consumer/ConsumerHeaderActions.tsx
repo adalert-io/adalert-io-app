@@ -11,14 +11,24 @@ import {
   ConsumerAddAdsAccountDialog,
 } from "./add-ads-account/ConsumerAddAdsAccountDialog";
 import { useConsumerAddAdsAccountDialog } from "./add-ads-account/use-consumer-add-ads-account-dialog";
+import { CONSUMER_SUBSCRIPTION_EXPIRED_NAV_TITLE } from "./consumer-subscription-access";
+import { CONSUMER_MISSION_CONTROL_HREF } from "./consumer-console-nav";
 
 const ICON_BUTTON_CLASS =
   "size-9 shrink-0 rounded-lg text-[#015AFD] hover:bg-[#015AFD]/10";
 
-export function ConsumerHeaderActions() {
+interface ConsumerHeaderActionsProps {
+  isSubscriptionExpired?: boolean;
+}
+
+export function ConsumerHeaderActions({
+  isSubscriptionExpired = false,
+}: ConsumerHeaderActionsProps) {
   const { userDoc } = useAuthStore();
   const { isOpen, setIsOpen } = useConsumerAddAdsAccountDialog();
   const canAddAccount = userDoc?.["User Type"] !== "Manager";
+
+  const expiredClass = "cursor-not-allowed opacity-50";
 
   return (
     <>
@@ -32,26 +42,47 @@ export function ConsumerHeaderActions() {
             type="button"
             variant="ghost"
             size="icon"
-            className={ICON_BUTTON_CLASS}
-            onClick={() => setIsOpen(true)}
+            className={cn(ICON_BUTTON_CLASS, isSubscriptionExpired && expiredClass)}
+            onClick={() => {
+              if (!isSubscriptionExpired) setIsOpen(true);
+            }}
+            disabled={isSubscriptionExpired}
             aria-label="Add ad account"
-            title="Add ad account"
+            title={
+              isSubscriptionExpired
+                ? CONSUMER_SUBSCRIPTION_EXPIRED_NAV_TITLE
+                : "Add ad account"
+            }
           >
             <Plus className="size-5" strokeWidth={2} aria-hidden />
           </Button>
         ) : null}
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className={ICON_BUTTON_CLASS}
-          asChild
-          title="Mission Control"
-        >
-          <Link href="/consumer/summary" aria-label="Mission Control">
+        {isSubscriptionExpired ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={cn(ICON_BUTTON_CLASS, expiredClass)}
+            disabled
+            aria-label="Mission Control"
+            title={CONSUMER_SUBSCRIPTION_EXPIRED_NAV_TITLE}
+          >
             <BarChart2 className="size-5" strokeWidth={2} aria-hidden />
-          </Link>
-        </Button>
+          </Button>
+        ) : (
+          <Button
+            variant="ghost"
+            size="icon"
+            className={ICON_BUTTON_CLASS}
+            asChild
+            title="Mission Control"
+          >
+            <Link href={CONSUMER_MISSION_CONTROL_HREF} aria-label="Mission Control">
+              <BarChart2 className="size-5" strokeWidth={2} aria-hidden />
+            </Link>
+          </Button>
+        )}
 
         <Button
           type="button"
@@ -66,7 +97,7 @@ export function ConsumerHeaderActions() {
         </Button>
       </div>
 
-      {canAddAccount ? (
+      {canAddAccount && !isSubscriptionExpired ? (
         <ConsumerAddAdsAccountDialog open={isOpen} onOpenChange={setIsOpen} />
       ) : null}
     </>

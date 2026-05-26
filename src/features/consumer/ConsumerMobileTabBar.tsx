@@ -14,6 +14,10 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import {
+  CONSUMER_SUBSCRIPTION_EXPIRED_NAV_TITLE,
+  isConsumerNavHrefDisabledWhenExpired,
+} from "./consumer-subscription-access";
+import {
   consumerMobileLeafIcon,
   consumerMobileTabsForUser,
   consumerLeafMatches,
@@ -27,6 +31,7 @@ export const CONSUMER_MOBILE_TAB_BAR_HEIGHT = "3.0625rem";
 interface ConsumerMobileTabBarProps {
   userType: string | undefined;
   connectedAccountCount: number;
+  isSubscriptionExpired?: boolean;
 }
 
 function MobileTabIcon({
@@ -51,12 +56,30 @@ function MobileTabIcon({
 function MobileLinkTab({
   tab,
   pathname,
+  isDisabled,
 }: {
   tab: Extract<ConsumerMobileTab, { type: "link" }>;
   pathname: string;
+  isDisabled: boolean;
 }) {
   const Icon = tab.icon;
   const isActive = tab.isActive(pathname);
+
+  if (isDisabled) {
+    return (
+      <span
+        className="flex min-w-0 flex-1 cursor-not-allowed flex-col items-center justify-center gap-0.5 px-1 pt-0.5 opacity-50"
+        title={CONSUMER_SUBSCRIPTION_EXPIRED_NAV_TITLE}
+      >
+        <MobileTabIcon active={false}>
+          <Icon className="size-[22px] shrink-0" aria-hidden strokeWidth={1.75} />
+        </MobileTabIcon>
+        <span className="max-w-full truncate text-[10px] font-medium leading-none tracking-tight">
+          {tab.label}
+        </span>
+      </span>
+    );
+  }
 
   return (
     <Link
@@ -90,9 +113,11 @@ function MobileLinkTab({
 function MobileMoreTab({
   tab,
   pathname,
+  isSubscriptionExpired,
 }: {
   tab: Extract<ConsumerMobileTab, { type: "more" }>;
   pathname: string;
+  isSubscriptionExpired: boolean;
 }) {
   const { logout } = useAuthStore();
   const Icon = tab.icon;
@@ -155,9 +180,25 @@ function MobileMoreTab({
                   {section.items.map((leaf) => {
                     const LeafIcon = consumerMobileLeafIcon(leaf.title);
                     const leafActive = consumerLeafMatches(pathname, leaf);
+                    const isLeafDisabled =
+                      isSubscriptionExpired &&
+                      isConsumerNavHrefDisabledWhenExpired(leaf.href);
 
                     return (
                       <li key={leaf.href}>
+                        {isLeafDisabled ? (
+                          <span
+                            className="flex cursor-not-allowed items-center gap-3 rounded-xl px-3 py-3 text-slate-400 opacity-50"
+                            title={CONSUMER_SUBSCRIPTION_EXPIRED_NAV_TITLE}
+                          >
+                            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
+                              <LeafIcon className="size-[18px]" strokeWidth={1.75} aria-hidden />
+                            </span>
+                            <span className="min-w-0 flex-1 text-[15px] font-medium leading-tight">
+                              {leaf.title}
+                            </span>
+                          </span>
+                        ) : (
                         <Link
                           href={leaf.href}
                           onClick={() => setOpen(false)}
@@ -183,6 +224,7 @@ function MobileMoreTab({
                             {leaf.title}
                           </span>
                         </Link>
+                        )}
                       </li>
                     );
                   })}
@@ -214,6 +256,7 @@ function MobileMoreTab({
 export function ConsumerMobileTabBar({
   userType,
   connectedAccountCount,
+  isSubscriptionExpired = false,
 }: ConsumerMobileTabBarProps) {
   const pathname = usePathname() ?? "/consumer/summary";
 
@@ -221,6 +264,14 @@ export function ConsumerMobileTabBar({
     () => consumerMobileTabsForUser(userType, connectedAccountCount),
     [userType, connectedAccountCount],
   );
+
+  const isTabDisabled = (tab: ConsumerMobileTab) => {
+    if (!isSubscriptionExpired) return false;
+    if (tab.type === "link") {
+      return isConsumerNavHrefDisabledWhenExpired(tab.href);
+    }
+    return false;
+  };
 
   return (
     <nav
@@ -237,9 +288,19 @@ export function ConsumerMobileTabBar({
       >
         {tabs.map((tab) =>
           tab.type === "link" ? (
-            <MobileLinkTab key={tab.id} tab={tab} pathname={pathname} />
+            <MobileLinkTab
+              key={tab.id}
+              tab={tab}
+              pathname={pathname}
+              isDisabled={isTabDisabled(tab)}
+            />
           ) : (
-            <MobileMoreTab key={tab.id} tab={tab} pathname={pathname} />
+            <MobileMoreTab
+              key={tab.id}
+              tab={tab}
+              pathname={pathname}
+              isSubscriptionExpired={isSubscriptionExpired}
+            />
           ),
         )}
       </div>

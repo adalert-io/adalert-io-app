@@ -39,10 +39,12 @@ function accountNumber(account: AdsAccount): string {
 
 interface ConsumerAdsAccountSwitcherProps {
   variant?: "sidebar" | "header";
+  isSubscriptionExpired?: boolean;
 }
 
 export function ConsumerAdsAccountSwitcher({
   variant = "sidebar",
+  isSubscriptionExpired = false,
 }: ConsumerAdsAccountSwitcherProps) {
   const isHeader = variant === "header";
   const router = useRouter();
@@ -112,6 +114,8 @@ export function ConsumerAdsAccountSwitcher({
       : null;
 
   const handleSelectAccount = (account: AdsAccount) => {
+    if (isSubscriptionExpired) return;
+
     const isNewSelection =
       !selectedAdsAccount || selectedAdsAccount.id !== account.id;
     setSelectedAdsAccount(account);
@@ -178,24 +182,30 @@ export function ConsumerAdsAccountSwitcher({
       ? `${connectedCount} connected accounts`
       : "";
 
-  return (
-    <DropdownMenu open={open} onOpenChange={handleOpenChange}>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          aria-label="Switch ad account"
-          className={cn(
-            "group flex w-full items-center gap-2.5 rounded-xl border px-3 text-left outline-none transition-colors",
-            isHeader ? "py-2" : "py-2.5",
-            isHeader
-              ? "border-slate-200 bg-white shadow-sm hover:border-[#015AFD]/30 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#015AFD]/25"
-              : "border-white/[0.1] bg-[#111b32] hover:border-[#3b82f6]/40 hover:bg-[#152542] focus-visible:ring-2 focus-visible:ring-[#3b82f6]",
-            open &&
-              (isHeader
-                ? "border-[#015AFD]/40 bg-blue-50/50 ring-2 ring-[#015AFD]/20"
-                : "border-[#3b82f6]/50 bg-[#152542] ring-2 ring-[#3b82f6]/30"),
-          )}
-        >
+  const triggerButton = (
+    <button
+      type="button"
+      aria-label="Switch ad account"
+      disabled={isSubscriptionExpired}
+      title={
+        isSubscriptionExpired
+          ? "Subscription expired. Please renew on the billing page."
+          : "Switch ad account"
+      }
+      className={cn(
+        "group flex w-full items-center gap-2.5 rounded-xl border px-3 text-left outline-none transition-colors",
+        isHeader ? "py-2" : "py-2.5",
+        isSubscriptionExpired && "cursor-not-allowed opacity-50",
+        isHeader
+          ? "border-slate-200 bg-white shadow-sm hover:border-[#015AFD]/30 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#015AFD]/25"
+          : "border-white/[0.1] bg-[#111b32] hover:border-[#3b82f6]/40 hover:bg-[#152542] focus-visible:ring-2 focus-visible:ring-[#3b82f6]",
+        !isSubscriptionExpired &&
+          open &&
+          (isHeader
+            ? "border-[#015AFD]/40 bg-blue-50/50 ring-2 ring-[#015AFD]/20"
+            : "border-[#3b82f6]/50 bg-[#152542] ring-2 ring-[#3b82f6]/30"),
+      )}
+    >
           <span
             className={cn(
               "flex size-9 shrink-0 items-center justify-center rounded-lg",
@@ -236,7 +246,16 @@ export function ConsumerAdsAccountSwitcher({
             )}
           />
         </button>
-      </DropdownMenuTrigger>
+  );
+
+  return (
+    <DropdownMenu
+      open={isSubscriptionExpired ? false : open}
+      onOpenChange={(next) => {
+        if (!isSubscriptionExpired) handleOpenChange(next);
+      }}
+    >
+      <DropdownMenuTrigger asChild>{triggerButton}</DropdownMenuTrigger>
 
       <DropdownMenuContent
         side="bottom"
@@ -340,7 +359,7 @@ export function ConsumerAdsAccountSwitcher({
             </span>
           </Link>
         </DropdownMenuItem>
-        {canAddAccount ? (
+        {canAddAccount && !isSubscriptionExpired ? (
           <DropdownMenuItem
             className="cursor-pointer gap-3 rounded-lg px-2 py-2.5 focus:bg-slate-100"
             onSelect={() => {

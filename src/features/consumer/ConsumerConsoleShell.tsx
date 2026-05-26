@@ -25,6 +25,11 @@ import {
   ConsumerMobileTabBar,
 } from "./ConsumerMobileTabBar";
 import {
+  CONSUMER_BILLING_HREF,
+  CONSUMER_SUBSCRIPTION_EXPIRED_NAV_TITLE,
+  isConsumerNavHrefDisabledWhenExpired,
+} from "./consumer-subscription-access";
+import {
   consumerBreadcrumbs,
   consumerLeafMatches,
   consumerNavGroupsForUser,
@@ -88,17 +93,45 @@ const ICON_COL = "flex size-[22px] shrink-0 items-center justify-center";
 const SIDEBAR_GUTTER = "px-[22px]";
 const SIDEBAR_W = "w-[264px]";
 
-function DarkNavLeafLink({ leaf, pathname }: { leaf: ConsumerNavLeaf; pathname: string }) {
+function DarkNavLeafLink({
+  leaf,
+  pathname,
+  isSubscriptionExpired,
+}: {
+  leaf: ConsumerNavLeaf;
+  pathname: string;
+  isSubscriptionExpired: boolean;
+}) {
   const isActive = pathname.length > 0 && consumerLeafMatches(pathname, leaf);
+  const isDisabled =
+    isSubscriptionExpired && isConsumerNavHrefDisabledWhenExpired(leaf.href);
+
+  const className = cn(
+    "flex items-center gap-2.5 rounded-lg py-[6px] pe-2 ps-3 text-[13px] font-medium leading-snug outline-none ring-offset-[#0b1426]",
+    isDisabled
+      ? "cursor-not-allowed text-[#64748b] opacity-50"
+      : isActive
+        ? "text-[#3b82f6] focus-visible:ring-2 focus-visible:ring-[#3b82f6]"
+        : "text-[#94a3b8] hover:text-white focus-visible:ring-2 focus-visible:ring-[#3b82f6]",
+  );
+
+  if (isDisabled) {
+    return (
+      <span className={className} title={CONSUMER_SUBSCRIPTION_EXPIRED_NAV_TITLE}>
+        <span
+          className={cn(
+            "size-[5px] shrink-0 rounded-full",
+            isActive ? "bg-[#3b82f6]" : "bg-[#64748b]",
+          )}
+          aria-hidden
+        />
+        <span>{leaf.title}</span>
+      </span>
+    );
+  }
 
   return (
-    <Link
-      href={leaf.href}
-      className={cn(
-        "flex items-center gap-2.5 rounded-lg py-[6px] pe-2 ps-3 text-[13px] font-medium leading-snug outline-none ring-offset-[#0b1426] focus-visible:ring-2 focus-visible:ring-[#3b82f6]",
-        isActive ? "text-[#3b82f6]" : "text-[#94a3b8] hover:text-white",
-      )}
-    >
+    <Link href={leaf.href} className={className}>
       <span
         className={cn(
           "size-[5px] shrink-0 rounded-full",
@@ -116,13 +149,46 @@ function DarkNavPrimaryLink({
   title,
   icon: Icon,
   pathname,
+  isSubscriptionExpired,
 }: {
   href: string;
   title: string;
   icon: ConsumerNavItem["icon"];
   pathname: string;
+  isSubscriptionExpired: boolean;
 }) {
   const isActive = pathname === href;
+  const isDisabled =
+    isSubscriptionExpired && isConsumerNavHrefDisabledWhenExpired(href);
+
+  const inner = (
+    <span
+      className={cn(
+        "flex items-center gap-[14px] rounded-lg px-3 py-2.5 text-[14px] font-medium leading-none",
+        isDisabled
+          ? "cursor-not-allowed text-[#64748b] opacity-50"
+          : isActive
+            ? "bg-[#1e293b] text-white"
+            : "text-[#94a3b8] group-hover:bg-white/[0.06] group-hover:text-white",
+      )}
+    >
+      <span className={ICON_COL}>
+        <Icon className="size-[18px]" aria-hidden strokeWidth={1.65} />
+      </span>
+      <span className="min-w-0 flex-1">{title}</span>
+    </span>
+  );
+
+  if (isDisabled) {
+    return (
+      <span
+        className="group block rounded-lg px-1"
+        title={CONSUMER_SUBSCRIPTION_EXPIRED_NAV_TITLE}
+      >
+        {inner}
+      </span>
+    );
+  }
 
   return (
     <Link
@@ -131,24 +197,20 @@ function DarkNavPrimaryLink({
         "group block rounded-lg px-1 outline-none ring-offset-[#0b1426] focus-visible:ring-2 focus-visible:ring-[#3b82f6]",
       )}
     >
-      <span
-        className={cn(
-          "flex items-center gap-[14px] rounded-lg px-3 py-2.5 text-[14px] font-medium leading-none",
-          isActive
-            ? "bg-[#1e293b] text-white"
-            : "text-[#94a3b8] hover:bg-white/[0.06] hover:text-white",
-        )}
-      >
-        <span className={ICON_COL}>
-          <Icon className="size-[18px]" aria-hidden strokeWidth={1.65} />
-        </span>
-        <span className="min-w-0 flex-1">{title}</span>
-      </span>
+      {inner}
     </Link>
   );
 }
 
-function DarkConsumerGroup({ item, pathname }: { item: ConsumerNavItem; pathname: string }) {
+function DarkConsumerGroup({
+  item,
+  pathname,
+  isSubscriptionExpired,
+}: {
+  item: ConsumerNavItem;
+  pathname: string;
+  isSubscriptionExpired: boolean;
+}) {
   const subItems = item.items ?? [];
   const Icon = item.icon;
   const isSubActive =
@@ -195,7 +257,12 @@ function DarkConsumerGroup({ item, pathname }: { item: ConsumerNavItem; pathname
           aria-label={`${item.title} sub-navigation`}
         >
           {subItems.map((leaf) => (
-            <DarkNavLeafLink key={leaf.href} leaf={leaf} pathname={pathname} />
+            <DarkNavLeafLink
+              key={leaf.href}
+              leaf={leaf}
+              pathname={pathname}
+              isSubscriptionExpired={isSubscriptionExpired}
+            />
           ))}
         </nav>
       ) : null}
@@ -223,7 +290,8 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
   const pathname = usePathname() ?? "/consumer/summary";
   const router = useRouter();
   const crumbs = consumerBreadcrumbs(pathname);
-  const { user, userDoc, logout } = useAuthStore();
+  const { user, userDoc, logout, isFullAccess } = useAuthStore();
+  const isSubscriptionExpired = !isFullAccess;
   const {
     userAdsAccounts,
     selectedAdsAccount,
@@ -322,7 +390,10 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
           )}
         >
           <ConsumerSidebarBrand />
-          <ConsumerAdsAccountSwitcher variant="sidebar" />
+          <ConsumerAdsAccountSwitcher
+            variant="sidebar"
+            isSubscriptionExpired={isSubscriptionExpired}
+          />
         </header>
 
         <nav
@@ -336,7 +407,14 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
             group.items.map((item) => {
               const hasChildren = (item.items?.length ?? 0) > 0;
               if (hasChildren) {
-                return <DarkConsumerGroup key={item.title} item={item} pathname={pathname} />;
+                return (
+                  <DarkConsumerGroup
+                    key={item.title}
+                    item={item}
+                    pathname={pathname}
+                    isSubscriptionExpired={isSubscriptionExpired}
+                  />
+                );
               }
               const href = item.href;
               return href ? (
@@ -346,6 +424,7 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
                   title={item.title}
                   icon={item.icon}
                   pathname={pathname}
+                  isSubscriptionExpired={isSubscriptionExpired}
                 />
               ) : null;
             }),
@@ -419,9 +498,15 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
                     {index > 0 ? <span className="text-muted-foreground/70">/</span> : null}
                     {isRoot && crumb.href ? (
                       <>
-                        <ConsumerMobileBreadcrumbBrand href={crumb.href} />
+                        <ConsumerMobileBreadcrumbBrand
+                          href={
+                            isSubscriptionExpired ? CONSUMER_BILLING_HREF : crumb.href
+                          }
+                        />
                         <Link
-                          href={crumb.href}
+                          href={
+                            isSubscriptionExpired ? CONSUMER_BILLING_HREF : crumb.href
+                          }
                           className="hidden text-slate-800 hover:text-[#3b82f6] hover:underline lg:inline"
                         >
                           {crumb.title}
@@ -429,7 +514,12 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
                       </>
                     ) : isLink && crumb.href ? (
                       <Link
-                        href={crumb.href}
+                        href={
+                          isSubscriptionExpired &&
+                          isConsumerNavHrefDisabledWhenExpired(crumb.href)
+                            ? CONSUMER_BILLING_HREF
+                            : crumb.href
+                        }
                         className="text-slate-800 hover:text-[#3b82f6] hover:underline"
                       >
                         {crumb.title}
@@ -447,11 +537,14 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
             </ol>
           </nav>
 
-          <ConsumerHeaderActions />
+          <ConsumerHeaderActions isSubscriptionExpired={isSubscriptionExpired} />
           </div>
 
           <div className="border-t border-slate-200/80 px-4 py-2 lg:hidden">
-            <ConsumerAdsAccountSwitcher variant="header" />
+            <ConsumerAdsAccountSwitcher
+              variant="header"
+              isSubscriptionExpired={isSubscriptionExpired}
+            />
           </div>
         </div>
 
@@ -467,6 +560,7 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
         <ConsumerMobileTabBar
           userType={userDoc?.["User Type"] as string | undefined}
           connectedAccountCount={connectedAccountCount}
+          isSubscriptionExpired={isSubscriptionExpired}
         />
       </div>
     </div>
