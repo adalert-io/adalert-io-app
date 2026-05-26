@@ -158,8 +158,9 @@ export function ConsumerAdsAccountSwitcher({
         )}
       >
         No connected ad accounts yet.{" "}
-        <Link
-          href="/add-ads-account"
+        <button
+          type="button"
+          onClick={() => setIsAddAccountOpen(true)}
           className={cn(
             "font-semibold hover:underline",
             isHeader
@@ -168,7 +169,7 @@ export function ConsumerAdsAccountSwitcher({
           )}
         >
           Connect one
-        </Link>
+        </button>
       </div>
     );
   }

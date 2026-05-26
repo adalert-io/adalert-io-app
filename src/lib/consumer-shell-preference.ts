@@ -15,6 +15,10 @@ export function consumerPathForClassicRoute(classicPath: string): string {
     return `/consumer${pathname}${query}`;
   }
 
+  if (pathname === "/add-ads-account") {
+    return `/consumer/summary?addAccount=open${query ? `&${query.replace(/^\?/, "")}` : ""}`;
+  }
+
   if (pathname === "/settings" || pathname.startsWith("/settings/")) {
     if (pathname === "/settings") {
       return `/consumer/settings/settings/alerts${query}`;
@@ -35,6 +39,10 @@ export function getConsumerRedirectUrl(
 
   if (pathname === "/summary" || pathname === "/dashboard") {
     return `/consumer${pathname}${query}`;
+  }
+
+  if (pathname === "/add-ads-account") {
+    return `/consumer/summary?addAccount=open${query ? `&${query.replace(/^\?/, "")}` : ""}`;
   }
 
   if (pathname === "/settings" || pathname.startsWith("/settings/")) {

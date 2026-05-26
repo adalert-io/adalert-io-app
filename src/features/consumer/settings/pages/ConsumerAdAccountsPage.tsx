@@ -179,7 +179,7 @@ export default function ConsumerAdAccountsPage({
       <div className='mb-5 flex flex-col gap-3 sm:flex-row sm:items-center'>
         <Button
           className='h-10 gap-2 rounded-xl bg-[#015AFD] px-4 font-semibold text-white hover:bg-[#0146ca]'
-          onClick={() => router.push('/add-ads-account')}
+          onClick={() => router.push('/consumer/summary?addAccount=open')}
         >
           <Plus className='h-4 w-4' />
           Add New Ad Account

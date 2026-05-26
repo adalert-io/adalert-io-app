@@ -52,6 +52,7 @@ export const config = {
     "/administrator/:path*",
     "/summary",
     "/dashboard",
+    "/add-ads-account",
     "/settings",
     "/settings/:path*",
   ],

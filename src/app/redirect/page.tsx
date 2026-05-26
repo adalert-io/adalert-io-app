@@ -14,6 +14,10 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { jwtDecode } from 'jwt-decode';
+import {
+  CONSUMER_ADD_ADS_ACCOUNT_RETURN_PATH,
+  isConsumerAddAdsAccountOAuthReturn,
+} from '@/lib/add-ads-account-oauth';
 import { consumerPathForClassicRoute } from '@/lib/consumer-shell-preference';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { useEffect, useState } from 'react';
@@ -207,15 +211,13 @@ function RedirectPageContent() {
             const { userDoc, isFullAccess } = authStore;
             let targetPath = consumerPathForClassicRoute('/dashboard');
             
-            const isConsumerAddAdsReturn =
-              page === 'add-ads-account-consumer' ||
-              (page === 'add-ads-account' &&
-                typeof window !== 'undefined' &&
-                sessionStorage.getItem('consumerAddAdsAccountDialog') === '1');
+            const isConsumerAddAdsReturn = isConsumerAddAdsAccountOAuthReturn({
+              oauthState: state,
+              page,
+            });
 
-            // Check if user came from add-ads-account page - if so, redirect back there
             if (isConsumerAddAdsReturn) {
-              targetPath = '/consumer/summary?addAccount=open';
+              targetPath = CONSUMER_ADD_ADS_ACCOUNT_RETURN_PATH;
             } else if (page === 'add-ads-account' || page === 'add-ads-account-from-settings') {
               targetPath = '/add-ads-account';
             } else if (userDoc) {
@@ -245,7 +247,7 @@ function RedirectPageContent() {
                 const inviter = userDoc['Inviter'];
                 targetPath = inviter
                   ? consumerPathForClassicRoute('/dashboard')
-                  : '/add-ads-account';
+                  : consumerPathForClassicRoute('/add-ads-account');
               } else if (adsAccountCount === 1) {
                 targetPath = consumerPathForClassicRoute('/dashboard');
               } else if (adsAccountCount > 1) {
@@ -264,11 +266,23 @@ function RedirectPageContent() {
             // Reset the flag even on error
             setGoogleOAuthRedirect(false);
             // Fallback navigation
-            const path = page
-              ? page.startsWith('consumer/') || page === 'add-ads-account'
-                ? `/${page}`
-                : consumerPathForClassicRoute(`/${page}`)
-              : consumerPathForClassicRoute('/dashboard');
+            const path = (() => {
+              if (!page) {
+                return consumerPathForClassicRoute('/dashboard');
+              }
+              if (
+                isConsumerAddAdsAccountOAuthReturn({ oauthState: state, page })
+              ) {
+                return CONSUMER_ADD_ADS_ACCOUNT_RETURN_PATH;
+              }
+              if (page === 'add-ads-account' || page === 'add-ads-account-from-settings') {
+                return '/add-ads-account';
+              }
+              if (page.startsWith('consumer/')) {
+                return `/${page}`;
+              }
+              return consumerPathForClassicRoute(`/${page}`);
+            })();
             router.replace(path);
           }
         } catch (err) {

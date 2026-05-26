@@ -23,6 +23,10 @@ import { toast } from "sonner";
 
 import { db } from "@/lib/firebase/config";
 import { COLLECTIONS, DEFAULT_ADS_ACCOUNT_VARIABLE } from "@/lib/constants";
+import {
+  ADD_ADS_ACCOUNT_OAUTH_STATE,
+  markConsumerAddAdsAccountReturn,
+} from "@/lib/add-ads-account-oauth";
 import { consumerPathForClassicRoute } from "@/lib/consumer-shell-preference";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useUserAdsAccountsStore } from "@/lib/store/user-ads-accounts-store";
@@ -63,6 +67,17 @@ function oauthRedirectPage(context: AddAdsAccountOAuthContext): string {
     case "consumer":
     default:
       return "add-ads-account";
+  }
+}
+
+function oauthStateParam(context: AddAdsAccountOAuthContext): string {
+  switch (context) {
+    case "consumer":
+      return ADD_ADS_ACCOUNT_OAUTH_STATE.consumer;
+    case "settings":
+      return ADD_ADS_ACCOUNT_OAUTH_STATE.settings;
+    default:
+      return ADD_ADS_ACCOUNT_OAUTH_STATE.classic;
   }
 }
 
@@ -139,15 +154,18 @@ export function AddAdsAccountFlow({
       setIsConnecting(true);
       await setAdsAccountAuthenticating(user.uid, true);
 
-      if (oauthContext === "consumer" && typeof window !== "undefined") {
-        sessionStorage.setItem("consumerAddAdsAccountDialog", "1");
+      if (oauthContext === "consumer") {
+        markConsumerAddAdsAccountReturn();
       }
 
       const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
       const page = oauthRedirectPage(oauthContext);
+      const oauthState = oauthStateParam(oauthContext);
       const redirectUri = `${window.location.origin}/redirect?page=${page}`;
 
-      const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?scope=https://www.googleapis.com/auth/adwords%20openid%20https://www.googleapis.com/auth/userinfo.email%20https://www.googleapis.com/auth/userinfo.profile&access_type=offline&include_granted_scopes=true&response_type=code&state=state_parameter_passthrough_value&redirect_uri=${encodeURIComponent(
+      const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?scope=https://www.googleapis.com/auth/adwords%20openid%20https://www.googleapis.com/auth/userinfo.email%20https://www.googleapis.com/auth/userinfo.profile&access_type=offline&include_granted_scopes=true&response_type=code&state=${encodeURIComponent(
+        oauthState,
+      )}&redirect_uri=${encodeURIComponent(
         redirectUri,
       )}&client_id=${GOOGLE_CLIENT_ID}&prompt=consent`;
 
