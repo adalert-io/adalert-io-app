@@ -1,14 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import {
-  Check,
-  FileChartColumn,
-  Loader2,
-  MailCheck,
-  Sparkles,
-  X,
-} from "lucide-react";
+import { FileChartColumn, Loader2, Sparkles, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -34,9 +27,6 @@ interface ConsumerPpcActionPlanDialogProps {
   accountId?: string;
   content: string;
   isGenerating: boolean;
-  isEmailSending: boolean;
-  emailSent: boolean;
-  onSendEmail: () => void;
   alertsForCharts: Alert[];
 }
 
@@ -85,9 +75,6 @@ export function ConsumerPpcActionPlanDialog({
   accountId,
   content,
   isGenerating,
-  isEmailSending,
-  emailSent,
-  onSendEmail,
   alertsForCharts,
 }: ConsumerPpcActionPlanDialogProps) {
   const sections = parsePpcActionPlanSections(content);
@@ -98,8 +85,6 @@ export function ConsumerPpcActionPlanDialog({
     month: "long",
     day: "numeric",
   });
-
-  const canSend = Boolean(content) && !isGenerating && !isEmailSending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -139,30 +124,6 @@ export function ConsumerPpcActionPlanDialog({
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
-            <Button
-              type="button"
-              size="sm"
-              disabled={!canSend}
-              onClick={onSendEmail}
-              className="h-9 gap-2 rounded-xl bg-[#015AFD] px-4 font-semibold text-white hover:bg-[#0146ca]"
-            >
-              {isEmailSending ? (
-                <>
-                  <Loader2 className="size-4 animate-spin" aria-hidden />
-                  Sending…
-                </>
-              ) : emailSent ? (
-                <>
-                  <Check className="size-4" aria-hidden />
-                  Sent
-                </>
-              ) : (
-                <>
-                  <MailCheck className="size-4" aria-hidden />
-                  Send
-                </>
-              )}
-            </Button>
             <Button
               type="button"
               variant="outline"

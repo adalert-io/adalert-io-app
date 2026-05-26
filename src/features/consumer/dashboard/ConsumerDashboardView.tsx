@@ -48,10 +48,7 @@ import { GoogleAdsMark } from '@/components/GoogleAdsMark';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatAccountNumber } from '@/lib/utils';
 import { ConsumerDashboardAlertsTable } from './ConsumerDashboardAlertsTable';
-import {
-  ConsumerPpcActionPlanDialog,
-  formatPpcPlanHtmlForEmail,
-} from './ppc-action-plan';
+import { ConsumerPpcActionPlanDialog } from './ppc-action-plan';
 import { ConsumerKpiMetricsRow } from './ConsumerKpiMetricsRow';
 import { ConsumerDashboardMetricCard } from './ConsumerDashboardMetricCard';
 import { ConsumerSpendBudgetCard } from './ConsumerSpendBudgetCard';
@@ -441,8 +438,6 @@ export function ConsumerDashboardView() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState<string>('');
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
-  const [isEmailSending, setIsEmailSending] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
 
   // Cache for AI analysis content
   const [analysisCache, setAnalysisCache] = useState<
@@ -477,57 +472,6 @@ export function ConsumerDashboardView() {
         date: new Date().toDateString(),
       },
     }));
-  };
-
-  // Email function
-  const sendEmailReport = async () => {
-    if (!modalContent || !selectedAdsAccount || !user || !userDoc) return;
-
-    setIsEmailSending(true);
-
-    try {
-      const response = await fetch('/api/send-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          toEmail: user.email,
-          toName: userDoc.Name || user.displayName || 'User',
-          templateId: 'd-aa31d2d59d9a433998249ae7b8eb22f4',
-          tags: {
-            accountName: selectedAdsAccount['Account Name Editable'],
-            accountNumber: formatAccountNumber(selectedAdsAccount['Id']),
-            reportContent: modalContent,
-            dateGenerated: new Date().toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            }),
-            userName: userDoc.Name || user.displayName || 'User',
-            // Clean up the content for email (remove HTML tags)
-            reportContentPlain: modalContent
-              .replace(/<[^>]*>/g, '')
-              .replace(/\n+/g, '\n\n'),
-            // Convert markdown to HTML for email
-            reportContentHtml: formatPpcPlanHtmlForEmail(modalContent),
-          },
-        }),
-      });
-
-      if (response.ok) {
-        setEmailSent(true);
-        console.log('Email sent successfully!');
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to send email');
-      }
-    } catch (error) {
-      console.error('Error sending email:', error);
-      alert('Failed to send email. Please try again.');
-    } finally {
-      setIsEmailSending(false);
-    }
   };
 
   if (!selectedAdsAccount) {
@@ -850,9 +794,6 @@ export function ConsumerDashboardView() {
                       onClick={async () => {
                         if (!selectedAdsAccount) return;
 
-                        // Reset email state when opening modal
-                        setEmailSent(false);
-
                         // Check if content is cached for today
                         const cachedContent = getCachedContent(
                           selectedAdsAccount.id,
@@ -973,19 +914,11 @@ export function ConsumerDashboardView() {
 
         <ConsumerPpcActionPlanDialog
           open={isModalOpen}
-          onOpenChange={(open) => {
-            setIsModalOpen(open);
-            if (!open) {
-              setEmailSent(false);
-            }
-          }}
+          onOpenChange={setIsModalOpen}
           accountName={selectedAdsAccount?.["Account Name Editable"]}
           accountId={selectedAdsAccount?.Id}
           content={modalContent}
           isGenerating={isGeneratingContent}
-          isEmailSending={isEmailSending}
-          emailSent={emailSent}
-          onSendEmail={sendEmailReport}
           alertsForCharts={filteredAlerts}
         />
       </main>
