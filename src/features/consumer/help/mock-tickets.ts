@@ -4,6 +4,7 @@ import type { SupportTicket } from "./types";
 export const MOCK_SUPPORT_TICKETS: SupportTicket[] = [
   {
     id: "TKT-1042",
+    documentId: "mock-tic-1042",
     subject: "Google Ads account not appearing after OAuth",
     category: "Ad account connection",
     status: "in_progress",
@@ -15,6 +16,7 @@ export const MOCK_SUPPORT_TICKETS: SupportTicket[] = [
   },
   {
     id: "TKT-1038",
+    documentId: "mock-tic-1038",
     subject: "Invoice PDF download link expired",
     category: "Billing & subscription",
     status: "waiting",
@@ -26,6 +28,7 @@ export const MOCK_SUPPORT_TICKETS: SupportTicket[] = [
   },
   {
     id: "TKT-1021",
+    documentId: "mock-tic-1021",
     subject: "Severity colors on dashboard look different than expected",
     category: "Dashboard & reporting",
     status: "open",
@@ -36,6 +39,7 @@ export const MOCK_SUPPORT_TICKETS: SupportTicket[] = [
   },
   {
     id: "TKT-0994",
+    documentId: "mock-tic-0994",
     subject: "Invite email not received for new team member",
     category: "Users & permissions",
     status: "resolved",

@@ -10,6 +10,7 @@ export type SupportTicketFilter = "all" | SupportTicketStatus;
 
 export interface SupportTicket {
   id: string;
+  documentId: string;
   subject: string;
   category: string;
   status: SupportTicketStatus;
@@ -17,6 +18,14 @@ export interface SupportTicket {
   createdAt: string;
   updatedAt: string;
   lastMessagePreview: string;
+}
+
+export interface SupportTicketMessage {
+  id: string;
+  authorType: "customer" | "agent";
+  authorName: string;
+  body: string;
+  createdAt: string;
 }
 
 export interface NewSupportTicketForm {
