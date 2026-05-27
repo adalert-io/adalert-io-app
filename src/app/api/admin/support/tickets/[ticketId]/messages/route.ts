@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import admin from "firebase-admin";
 
+import { sendEmail } from "@/lib/email/sendgrid";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 
 const ADMIN_PREVIEW_COOKIE = "admin_preview_gate";
@@ -20,6 +21,15 @@ function timestampToIso(value: admin.firestore.Timestamp | null | undefined): st
 
 function hasAdminAccess(request: NextRequest): boolean {
   return request.cookies.get(ADMIN_PREVIEW_COOKIE)?.value === "1";
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 export async function GET(
@@ -42,7 +52,6 @@ export async function GET(
     if (!ticketSnap.exists) {
       return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
     }
-
     const ticketData = ticketSnap.data() as Record<string, unknown>;
     const initialDescription =
       typeof ticketData.description === "string" ? ticketData.description.trim() : "";
@@ -54,7 +63,13 @@ export async function GET(
       ticketData.createdAt as admin.firestore.Timestamp | undefined,
     );
 
-    const messagesSnap = await ticketRef.collection("messages").orderBy("createdAt", "asc").get();
+    let messagesSnap: admin.firestore.QuerySnapshot;
+    try {
+      messagesSnap = await ticketRef.collection("messages").orderBy("createdAt", "asc").get();
+    } catch {
+      // Fallback for older docs that might be missing createdAt.
+      messagesSnap = await ticketRef.collection("messages").get();
+    }
     const messages = messagesSnap.docs.map((doc) => {
       const data = doc.data() as Record<string, unknown>;
       return {
@@ -116,6 +131,7 @@ export async function POST(
     if (!ticketSnap.exists) {
       return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
     }
+    const ticketData = ticketSnap.data() as Record<string, unknown>;
 
     const now = admin.firestore.FieldValue.serverTimestamp();
     const messageRef = ticketRef.collection("messages").doc();
@@ -132,6 +148,56 @@ export async function POST(
       lastMessagePreview: content.length > 140 ? `${content.slice(0, 140)}…` : content,
       ...(visibility === "public" ? { status: "pending_customer" } : {}),
     });
+
+    if (visibility === "public") {
+      const customerEmail =
+        typeof ticketData.createdByEmail === "string" ? ticketData.createdByEmail.trim() : "";
+      const ticketCode =
+        typeof ticketData.ticketCode === "string" && ticketData.ticketCode.trim()
+          ? ticketData.ticketCode
+          : ticketId;
+      const ticketSubject =
+        typeof ticketData.subject === "string" && ticketData.subject.trim()
+          ? ticketData.subject
+          : "Support ticket update";
+
+      if (customerEmail) {
+        try {
+          const emailSubject = `Update on your support ticket ${ticketCode}`;
+          const text = [
+            "Your support ticket has a new reply from AdAlert Support.",
+            "",
+            `Ticket: ${ticketCode}`,
+            `Subject: ${ticketSubject}`,
+            "",
+            "Reply:",
+            content,
+          ].join("\n");
+          const html = `
+            <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height: 1.45;">
+              <h2 style="margin: 0 0 12px;">Support reply</h2>
+              <p style="margin: 0 0 10px;">Your support ticket has a new reply from AdAlert Support.</p>
+              <p style="margin: 0 0 14px; color: #334155;">
+                <strong>Ticket:</strong> ${escapeHtml(ticketCode)}<br />
+                <strong>Subject:</strong> ${escapeHtml(ticketSubject)}
+              </p>
+              <div style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; white-space: pre-wrap;">
+                ${escapeHtml(content)}
+              </div>
+            </div>
+          `;
+
+          await sendEmail({
+            to: [customerEmail],
+            subject: emailSubject,
+            text,
+            html,
+          });
+        } catch (emailError) {
+          console.error("Failed to send customer support reply email:", emailError);
+        }
+      }
+    }
 
     const saved = await messageRef.get();
     const savedData = saved.data() as Record<string, unknown>;

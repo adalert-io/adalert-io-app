@@ -440,6 +440,10 @@ function TicketSheet({
           error?: string;
         };
         if (!response.ok) {
+          if (response.status === 404) {
+            if (!isUnmounted) setMessages(row.thread);
+            return;
+          }
           throw new Error(payload.error || "Failed to load messages");
         }
 
@@ -461,7 +465,6 @@ function TicketSheet({
         console.error("Failed to load ticket messages:", error);
         if (!isUnmounted) {
           setMessages(row.thread);
-          toast.error("Couldn't load full conversation yet");
         }
       } finally {
         if (!isUnmounted) setIsLoadingMessages(false);
