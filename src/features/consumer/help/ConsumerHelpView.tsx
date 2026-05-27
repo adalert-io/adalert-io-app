@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ComponentType } from "react";
+import { useEffect, useMemo, useState, type ComponentType } from "react";
 import {
   CheckCircle2,
   Clock3,
@@ -15,6 +15,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuthStore } from "@/lib/store/auth-store";
 import { cn } from "@/lib/utils";
 
 import { ConsumerHelpNewTicketDialog } from "./ConsumerHelpNewTicketDialog";
@@ -69,13 +70,51 @@ function StatCard({
 }
 
 export function ConsumerHelpView() {
-  const [tickets, setTickets] = useState<SupportTicket[]>(MOCK_SUPPORT_TICKETS);
+  const { user } = useAuthStore();
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [filter, setFilter] = useState<SupportTicketFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [isNewTicketOpen, setIsNewTicketOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingTickets, setIsLoadingTickets] = useState(false);
+
+  const loadTickets = async () => {
+    if (!user) return;
+
+    setIsLoadingTickets(true);
+    try {
+      const idToken = await user.getIdToken();
+      const response = await fetch("/api/support/tickets", {
+        method: "GET",
+        headers: {
+          authorization: `Bearer ${idToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to load tickets (${response.status})`);
+      }
+
+      const data = (await response.json()) as { tickets?: SupportTicket[] };
+      setTickets(Array.isArray(data.tickets) ? data.tickets : []);
+    } catch (error) {
+      console.error("Failed to load support tickets:", error);
+      setTickets(MOCK_SUPPORT_TICKETS);
+      toast.error("Couldn't load tickets yet", {
+        description: "Showing sample tickets while we reconnect.",
+      });
+    } finally {
+      setIsLoadingTickets(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    void loadTickets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid]);
 
   const stats = useMemo(() => {
     const open = tickets.filter((t) => t.status === "open").length;
@@ -114,35 +153,53 @@ export function ConsumerHelpView() {
       return;
     }
 
-    setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 600));
+    if (!user) {
+      toast.error("Please sign in to submit a ticket.");
+      return;
+    }
 
+    setIsSubmitting(true);
     const categoryLabel =
       SUPPORT_CATEGORIES.find((item) => item.value === form.category)?.label ??
       "Other";
+    try {
+      const idToken = await user.getIdToken();
+      const response = await fetch("/api/support/tickets", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          subject: form.subject.trim(),
+          category: categoryLabel,
+          priority: form.priority,
+          description: form.description.trim(),
+        }),
+      });
 
-    const newTicket: SupportTicket = {
-      id: `TKT-${1100 + tickets.length}`,
-      subject: form.subject.trim(),
-      category: categoryLabel,
-      status: "open",
-      priority: form.priority,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      lastMessagePreview:
-        "Thanks — we've received your request and will respond by email.",
-    };
+      const data = (await response.json()) as { ticket?: SupportTicket; error?: string };
+      if (!response.ok || !data.ticket) {
+        throw new Error(data.error || `Failed to submit ticket (${response.status})`);
+      }
 
-    setTickets((prev) => [newTicket, ...prev]);
-    setSelectedTicketId(newTicket.id);
-    setFilter("open");
-    setIsSubmitting(false);
-    setIsNewTicketOpen(false);
-    setIsDetailOpen(true);
+      setTickets((prev) => [data.ticket!, ...prev]);
+      setSelectedTicketId(data.ticket.id);
+      setFilter("open");
+      setIsNewTicketOpen(false);
+      setIsDetailOpen(true);
 
-    toast.success("Support ticket submitted", {
-      description: `${newTicket.id} is now in your queue.`,
-    });
+      toast.success("Support ticket submitted", {
+        description: `${data.ticket.id} is now in your queue.`,
+      });
+    } catch (error) {
+      console.error("Failed to submit support ticket:", error);
+      toast.error("Couldn't submit your ticket", {
+        description: "Please try again in a moment.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -219,7 +276,9 @@ export function ConsumerHelpView() {
           <div>
             <h2 className="text-lg font-bold text-slate-900">Your tickets</h2>
             <p className="text-[13px] text-slate-500">
-              {filteredTickets.length} ticket{filteredTickets.length === 1 ? "" : "s"}
+              {isLoadingTickets
+                ? "Loading…"
+                : `${filteredTickets.length} ticket${filteredTickets.length === 1 ? "" : "s"}`}
             </p>
           </div>
           <div className="relative w-full sm:max-w-xs">
@@ -233,6 +292,7 @@ export function ConsumerHelpView() {
               placeholder="Search tickets…"
               className="rounded-xl border-slate-200 pl-9"
               aria-label="Search tickets"
+              disabled={isLoadingTickets}
             />
           </div>
         </div>
