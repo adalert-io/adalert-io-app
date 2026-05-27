@@ -85,10 +85,13 @@ export function ConsumerAdsAccountSwitcher({
   const connectedCount = userAdsAccounts.length;
 
   useEffect(() => {
+    if (isSubscriptionExpired) {
+      return;
+    }
     if (userDoc && !loading && connectedCount === 0) {
       void fetchUserAdsAccounts(userDoc);
     }
-  }, [userDoc, loading, connectedCount, fetchUserAdsAccounts]);
+  }, [userDoc, loading, connectedCount, fetchUserAdsAccounts, isSubscriptionExpired]);
 
   const isOnDashboard = isConsumerDashboardPath(pathname);
 
@@ -129,6 +132,23 @@ export function ConsumerAdsAccountSwitcher({
 
   if (!userDoc) {
     return null;
+  }
+
+  if (isSubscriptionExpired && connectedCount === 0) {
+    return (
+      <div
+        className={cn(
+          "flex w-full items-center gap-2 rounded-xl border px-3 py-2.5 text-[13px]",
+          isHeader
+            ? "border-amber-200/80 bg-amber-50 text-amber-800"
+            : "border-amber-300/20 bg-amber-400/10 text-amber-200",
+        )}
+        title="Trial expired. Upgrade on Billing to reconnect and switch ad accounts."
+      >
+        <span className="inline-flex size-2.5 shrink-0 rounded-full bg-amber-500" aria-hidden />
+        <span className="font-medium">Trial expired</span>
+      </div>
+    );
   }
 
   if (loading && connectedCount === 0) {

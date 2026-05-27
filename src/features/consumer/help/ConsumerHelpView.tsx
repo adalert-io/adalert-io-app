@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type ComponentType } from "react";
 import {
+  AlertTriangle,
   CheckCircle2,
   Clock3,
   Headphones,
@@ -50,6 +51,38 @@ const EMPTY_FORM: NewSupportTicketForm = {
   priority: "medium",
   description: "",
 };
+
+const ALERT_SUGGESTIONS: Array<
+  NewSupportTicketForm & { id: string; alertTitle: string }
+> = [
+  {
+    id: "low-ctr",
+    alertTitle: "Low CTR trend",
+    subject: "Low CTR trend in active campaigns",
+    category: "alerts",
+    priority: "medium",
+    description:
+      "I received a low CTR alert. Please review likely causes and suggest campaign-level actions to improve click-through rate.",
+  },
+  {
+    id: "budget-limited",
+    alertTitle: "Budget capped",
+    subject: "Campaign budget limited by spend cap",
+    category: "ads-account",
+    priority: "high",
+    description:
+      "A budget-related alert indicates campaigns are limited. I need guidance on where to increase budget and expected impact.",
+  },
+  {
+    id: "conversion-drop",
+    alertTitle: "Conversion drop",
+    subject: "Sudden conversion drop after recent changes",
+    category: "dashboard",
+    priority: "high",
+    description:
+      "I noticed a conversion drop alert. Please help investigate potential causes and share recommended checks and fixes.",
+  },
+];
 
 function StatCard({
   label,
@@ -148,6 +181,9 @@ export function ConsumerHelpView() {
     MOCK_SUPPORT_TICKETS[0]?.id ?? null,
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedSuggestionId, setSelectedSuggestionId] = useState<string | null>(
+    null,
+  );
 
   const stats = useMemo(() => {
     const open = tickets.filter((t) => t.status === "open").length;
@@ -209,6 +245,19 @@ export function ConsumerHelpView() {
     toast.success("Support ticket submitted", {
       description: `${newTicket.id} is now in your queue.`,
     });
+  };
+
+  const handleApplySuggestion = (
+    suggestion: (typeof ALERT_SUGGESTIONS)[number],
+  ) => {
+    setForm({
+      subject: suggestion.subject,
+      category: suggestion.category,
+      priority: suggestion.priority,
+      description: suggestion.description,
+    });
+    setSelectedSuggestionId(suggestion.id);
+    toast.success(`Applied suggestion from "${suggestion.alertTitle}"`);
   };
 
   return (
@@ -288,6 +337,31 @@ export function ConsumerHelpView() {
           </div>
 
           <form className="space-y-4" onSubmit={handleSubmit}>
+            <div className="space-y-2">
+              <Label>Suggested from alerts</Label>
+              <div className="flex flex-wrap gap-2">
+                {ALERT_SUGGESTIONS.map((suggestion) => (
+                  <button
+                    key={suggestion.id}
+                    type="button"
+                    onClick={() => handleApplySuggestion(suggestion)}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-semibold transition-colors",
+                      selectedSuggestionId === suggestion.id
+                        ? "border-[#015AFD]/30 bg-[#015AFD]/10 text-[#015AFD]"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50",
+                    )}
+                  >
+                    <AlertTriangle className="size-3.5" aria-hidden />
+                    {suggestion.alertTitle}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[12px] text-slate-500">
+                Mockup: clicking a suggestion pre-fills the ticket.
+              </p>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="ticket-subject">Subject</Label>
               <Input
