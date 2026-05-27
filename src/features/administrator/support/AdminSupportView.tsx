@@ -48,6 +48,7 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 import { AdminDashboardDateRangePicker } from "../dashboard/AdminDashboardDateRangePicker";
 
@@ -83,6 +84,29 @@ interface SupportTicketRow {
   notesBody: string;
   historySnippet: string;
   thread: TicketThreadMessage[];
+}
+
+interface AdminSupportApiTicket {
+  id: string;
+  ticketCode: string;
+  subject: string;
+  companyName: string;
+  email: string;
+  status: TicketWorkflowStatus;
+  priority: TicketPriority;
+  categoryLabel: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface AdminTicketMessageDto {
+  id: string;
+  authorType: "customer" | "agent";
+  authorName: string;
+  body: string;
+  visibility: "public" | "internal";
+  createdAt: string;
 }
 
 const COMPANY_POOL = [
@@ -128,6 +152,18 @@ const CATEGORY_ROTATION = [
 ];
 
 const PAGE_SIZE = 10;
+
+function formatDateLabel(value: string): string {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "—";
+  return parsed.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
 
 function initialsFromName(name: string): string {
   const words = name.split(/\s+/).filter(Boolean);
@@ -354,9 +390,23 @@ interface TicketSheetProps {
   row: SupportTicketRow;
   open: boolean;
   onOpenChange: (value: boolean) => void;
+  isUpdating: boolean;
+  onUpdateTicket: (args: {
+    ticketId: string;
+    status: TicketWorkflowStatus;
+    priority: TicketPriority;
+  }) => Promise<void>;
+  onAfterPublicReply: (ticketId: string) => void;
 }
 
-function TicketSheet({ row, open, onOpenChange }: TicketSheetProps) {
+function TicketSheet({
+  row,
+  open,
+  onOpenChange,
+  isUpdating,
+  onUpdateTicket,
+  onAfterPublicReply,
+}: TicketSheetProps) {
   const [panelTab, setPanelTab] = useState<"messages" | "notes" | "history">(
     "messages",
   );
@@ -364,6 +414,67 @@ function TicketSheet({ row, open, onOpenChange }: TicketSheetProps) {
     "reply",
   );
   const [replyDraft, setReplyDraft] = useState("");
+  const [messages, setMessages] = useState<TicketThreadMessage[]>(row.thread);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [nextStatus, setNextStatus] = useState<TicketWorkflowStatus>(row.status);
+  const [nextPriority, setNextPriority] = useState<TicketPriority>(row.priority);
+
+  useEffect(() => {
+    setNextStatus(row.status);
+    setNextPriority(row.priority);
+  }, [row.id, row.status, row.priority]);
+
+  useEffect(() => {
+    let isUnmounted = false;
+
+    async function loadMessages() {
+      setIsLoadingMessages(true);
+      try {
+        const response = await fetch(`/api/admin/support/tickets/${row.id}/messages`, {
+          method: "GET",
+          cache: "no-store",
+        });
+        const payload = (await response.json()) as {
+          messages?: AdminTicketMessageDto[];
+          error?: string;
+        };
+        if (!response.ok) {
+          throw new Error(payload.error || "Failed to load messages");
+        }
+
+        const mapped = (payload.messages ?? []).map((message) => ({
+          id: message.id,
+          author: message.authorType,
+          authorName:
+            message.visibility === "internal"
+              ? `${message.authorName} (Internal)`
+              : message.authorName,
+          timeLabel: formatDateLabel(message.createdAt),
+          body: message.body,
+        })) satisfies TicketThreadMessage[];
+
+        if (!isUnmounted) {
+          setMessages(mapped.length > 0 ? mapped : row.thread);
+        }
+      } catch (error) {
+        console.error("Failed to load ticket messages:", error);
+        if (!isUnmounted) {
+          setMessages(row.thread);
+          toast.error("Couldn't load full conversation yet");
+        }
+      } finally {
+        if (!isUnmounted) setIsLoadingMessages(false);
+      }
+    }
+
+    void loadMessages();
+    return () => {
+      isUnmounted = true;
+    };
+  }, [row.id, row.thread]);
+
+  const hasTicketChanges = nextStatus !== row.status || nextPriority !== row.priority;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -421,6 +532,71 @@ function TicketSheet({ row, open, onOpenChange }: TicketSheetProps) {
             </div>
           </dl>
 
+          <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50/60 p-4">
+            <p className="text-[12px] font-semibold uppercase tracking-wide text-gray-500">
+              Triage controls
+            </p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div className="relative">
+                <Label htmlFor={`status-${row.id}`} className="mb-1 block text-xs text-gray-600">
+                  Status
+                </Label>
+                <select
+                  id={`status-${row.id}`}
+                  className={cn(SELECT_CLASS, "w-full")}
+                  value={nextStatus}
+                  disabled={isUpdating}
+                  onChange={(e) => setNextStatus(e.target.value as TicketWorkflowStatus)}
+                >
+                  <option value="open">Open</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="pending_customer">Pending Customer</option>
+                  <option value="resolved">Resolved</option>
+                </select>
+                <ChevronDown
+                  className="pointer-events-none absolute end-3 top-9 size-4 -translate-y-1/2 text-gray-500"
+                  aria-hidden
+                />
+              </div>
+              <div className="relative">
+                <Label htmlFor={`priority-${row.id}`} className="mb-1 block text-xs text-gray-600">
+                  Priority
+                </Label>
+                <select
+                  id={`priority-${row.id}`}
+                  className={cn(SELECT_CLASS, "w-full")}
+                  value={nextPriority}
+                  disabled={isUpdating}
+                  onChange={(e) => setNextPriority(e.target.value as TicketPriority)}
+                >
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+                <ChevronDown
+                  className="pointer-events-none absolute end-3 top-9 size-4 -translate-y-1/2 text-gray-500"
+                  aria-hidden
+                />
+              </div>
+            </div>
+            <div className="mt-3 flex justify-end">
+              <Button
+                type="button"
+                disabled={!hasTicketChanges || isUpdating}
+                className="rounded-xl bg-[#015AFD] font-semibold shadow-sm hover:bg-[#014bcc]"
+                onClick={() =>
+                  onUpdateTicket({
+                    ticketId: row.id,
+                    status: nextStatus,
+                    priority: nextPriority,
+                  })
+                }
+              >
+                {isUpdating ? "Saving..." : "Save changes"}
+              </Button>
+            </div>
+          </div>
+
           <div className="mt-6 flex gap-2 border-b border-gray-100 pb-0">
             {(
               [
@@ -448,7 +624,11 @@ function TicketSheet({ row, open, onOpenChange }: TicketSheetProps) {
           <div className="mt-6 min-h-[200px]">
             {panelTab === "messages" ? (
               <div className="space-y-4">
-                {row.thread.map((m) => (
+                {isLoadingMessages ? (
+                  <div className="rounded-xl border border-dashed border-gray-200 p-4 text-[13px] text-gray-600">
+                    Loading conversation...
+                  </div>
+                ) : messages.map((m) => (
                   <div
                     key={m.id}
                     className={cn(
@@ -542,9 +722,69 @@ function TicketSheet({ row, open, onOpenChange }: TicketSheetProps) {
               </div>
               <Button
                 type="button"
+                disabled={isSendingMessage || !replyDraft.trim()}
                 className="rounded-xl bg-[#015AFD] font-semibold shadow-sm hover:bg-[#014bcc]"
+                onClick={async () => {
+                  const body = replyDraft.trim();
+                  if (!body) return;
+
+                  const visibility = composerMode === "internal" ? "internal" : "public";
+                  setIsSendingMessage(true);
+                  try {
+                    const response = await fetch(
+                      `/api/admin/support/tickets/${row.id}/messages`,
+                      {
+                        method: "POST",
+                        headers: { "content-type": "application/json" },
+                        body: JSON.stringify({ body, visibility }),
+                      },
+                    );
+                    const payload = (await response.json()) as {
+                      message?: AdminTicketMessageDto;
+                      error?: string;
+                    };
+                    if (!response.ok || !payload.message) {
+                      throw new Error(payload.error || "Failed to send message");
+                    }
+
+                    setMessages((prev) => [
+                      ...prev,
+                      {
+                        id: payload.message!.id,
+                        author: "agent",
+                        authorName:
+                          visibility === "internal"
+                            ? "AdAlert Support (Internal)"
+                            : "AdAlert Support",
+                        timeLabel: formatDateLabel(payload.message!.createdAt),
+                        body: payload.message!.body,
+                      },
+                    ]);
+                    setReplyDraft("");
+                    setPanelTab("messages");
+                    if (visibility === "public") {
+                      onAfterPublicReply(row.id);
+                    }
+                    toast.success(
+                      visibility === "public"
+                        ? "Reply sent to ticket"
+                        : "Internal note saved",
+                    );
+                  } catch (error) {
+                    console.error("Failed to send ticket reply:", error);
+                    toast.error("Couldn't send message", {
+                      description: "Please try again.",
+                    });
+                  } finally {
+                    setIsSendingMessage(false);
+                  }
+                }}
               >
-                Send Reply
+                {isSendingMessage
+                  ? "Sending..."
+                  : composerMode === "internal"
+                    ? "Save Note"
+                    : "Send Reply"}
                 <ChevronDown className="size-4 ms-2" aria-hidden />
               </Button>
             </div>
@@ -576,6 +816,82 @@ export function AdminSupportView() {
   const [newCustomer, setNewCustomer] = useState(COMPANY_POOL[0]);
   const [newPriority, setNewPriority] = useState<TicketPriority>("medium");
   const [newBody, setNewBody] = useState("");
+  const [isLoadingRows, setIsLoadingRows] = useState(false);
+  const [updatingTicketId, setUpdatingTicketId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isUnmounted = false;
+
+    async function loadAdminTickets() {
+      setIsLoadingRows(true);
+      try {
+        const response = await fetch("/api/admin/support/tickets", {
+          method: "GET",
+          cache: "no-store",
+        });
+        const payload = (await response.json()) as {
+          tickets?: AdminSupportApiTicket[];
+          error?: string;
+        };
+        if (!response.ok) {
+          throw new Error(payload.error || "Failed to load admin support tickets");
+        }
+
+        const mappedRows = (payload.tickets ?? []).map((ticket, idx) => {
+          const displayName = ticket.companyName || "Customer";
+          const createdAtLabel = formatDateLabel(ticket.createdAt);
+          const updatedAtLabel = formatDateLabel(ticket.updatedAt);
+
+          return {
+            id: ticket.id,
+            ticketCode: ticket.ticketCode,
+            subject: ticket.subject,
+            companyName: displayName,
+            email: ticket.email || "unknown@customer",
+            initials: initialsFromName(displayName),
+            avatarToneIndex: idx % AVATAR_BG.length,
+            status: ticket.status,
+            priority: ticket.priority,
+            lastUpdatedLabel: updatedAtLabel,
+            categoryLabel: ticket.categoryLabel,
+            createdAtLabel,
+            notesBody:
+              "[Internal]\nNo notes yet. Add triage notes here for the support team.",
+            historySnippet: `${createdAtLabel} → Ticket created\n${updatedAtLabel} → Latest activity`,
+            thread: [
+              {
+                id: `${ticket.id}-init`,
+                author: "customer",
+                authorName: displayName,
+                timeLabel: createdAtLabel,
+                body:
+                  ticket.description.trim() ||
+                  "No description was provided by the customer.",
+              },
+            ],
+          } satisfies SupportTicketRow;
+        });
+
+        if (isUnmounted) return;
+        setRows(mappedRows);
+      } catch (error) {
+        console.error("Failed to load admin support tickets:", error);
+        if (!isUnmounted) {
+          toast.error("Couldn't load live support tickets", {
+            description: "Showing preview data while we reconnect.",
+          });
+        }
+      } finally {
+        if (!isUnmounted) setIsLoadingRows(false);
+      }
+    }
+
+    void loadAdminTickets();
+
+    return () => {
+      isUnmounted = true;
+    };
+  }, []);
 
   const filtered = useMemo(() => {
     let list = rows;
@@ -707,6 +1023,66 @@ export function AdminSupportView() {
     setPage(1);
   };
 
+  const handleUpdateTicket = async ({
+    ticketId,
+    status,
+    priority,
+  }: {
+    ticketId: string;
+    status: TicketWorkflowStatus;
+    priority: TicketPriority;
+  }) => {
+    setUpdatingTicketId(ticketId);
+    try {
+      const response = await fetch(`/api/admin/support/tickets/${ticketId}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ status, priority }),
+      });
+      const payload = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        throw new Error(payload.error || "Failed to update ticket");
+      }
+
+      const nowLabel = formatDateLabel(new Date().toISOString());
+      setRows((prev) =>
+        prev.map((row) =>
+          row.id === ticketId
+            ? {
+                ...row,
+                status,
+                priority,
+                lastUpdatedLabel: nowLabel,
+              }
+            : row,
+        ),
+      );
+      toast.success("Ticket updated");
+    } catch (error) {
+      console.error("Failed to update admin ticket:", error);
+      toast.error("Couldn't update ticket", {
+        description: "Please try again.",
+      });
+    } finally {
+      setUpdatingTicketId(null);
+    }
+  };
+
+  const handleAfterPublicReply = (ticketId: string) => {
+    const nowLabel = formatDateLabel(new Date().toISOString());
+    setRows((prev) =>
+      prev.map((row) =>
+        row.id === ticketId
+          ? {
+              ...row,
+              status: "pending_customer",
+              lastUpdatedLabel: nowLabel,
+            }
+          : row,
+      ),
+    );
+  };
+
   return (
     <div className="mx-auto flex w-full max-w-[1480px] flex-1 flex-col gap-8 pb-16">
       <header className="flex flex-wrap items-start justify-between gap-4">
@@ -715,7 +1091,9 @@ export function AdminSupportView() {
             Support
           </h1>
           <p className="text-[15px] text-[#7A7D9C]">
-            Manage customer support tickets and inquiries
+            {isLoadingRows
+              ? "Loading live support tickets..."
+              : "Manage customer support tickets and inquiries"}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -1184,7 +1562,14 @@ export function AdminSupportView() {
       </div>
 
       {detailRow ? (
-        <TicketSheet row={detailRow} open={detailOpen} onOpenChange={setDetailOpen} />
+        <TicketSheet
+          row={detailRow}
+          open={detailOpen}
+          onOpenChange={setDetailOpen}
+          isUpdating={updatingTicketId === detailRow.id}
+          onUpdateTicket={handleUpdateTicket}
+          onAfterPublicReply={handleAfterPublicReply}
+        />
       ) : null}
     </div>
   );
