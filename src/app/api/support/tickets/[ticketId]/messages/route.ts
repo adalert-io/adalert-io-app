@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import admin from "firebase-admin";
 
+import { sendEmail } from "@/lib/email/sendgrid";
 import { getAdminFirestore, verifyFirebaseIdToken } from "@/lib/firebase/admin";
 
 type MessageAuthorType = "customer" | "agent";
 interface CreateMessageBody {
   body?: string;
 }
+const SUPPORT_ALERT_RECIPIENTS = ["support@adalert.io", "info@webds.com", "mohit@webds.com"];
 
 function timestampToIso(value: admin.firestore.Timestamp | null | undefined): string {
   if (!value) return new Date().toISOString();
@@ -165,6 +167,59 @@ export async function POST(
       status: "in_progress",
       lastMessagePreview: content.length > 140 ? `${content.slice(0, 140)}…` : content,
     });
+
+    try {
+      const ticketSnap = await ticketRef.get();
+      const ticketData = ticketSnap.data() as Record<string, unknown>;
+      const ticketCode =
+        typeof ticketData.ticketCode === "string" && ticketData.ticketCode.trim()
+          ? ticketData.ticketCode
+          : ticketId;
+      const ticketSubject =
+        typeof ticketData.subject === "string" && ticketData.subject.trim()
+          ? ticketData.subject
+          : "Support ticket update";
+      const customerName = decoded.name ?? decoded.email ?? "Customer";
+      const customerEmail = decoded.email ?? "unknown@customer";
+
+      const emailSubject = `Customer replied: ${ticketCode}`;
+      const text = [
+        "A customer has replied on a support ticket.",
+        "",
+        `Ticket: ${ticketCode}`,
+        `Subject: ${ticketSubject}`,
+        `Customer: ${customerName}`,
+        `Email: ${customerEmail}`,
+        "",
+        "Message:",
+        content,
+      ].join("\n");
+
+      const html = `
+        <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height: 1.45;">
+          <h2 style="margin: 0 0 12px;">Customer reply received</h2>
+          <p style="margin: 0 0 12px;">A customer has replied on a support ticket.</p>
+          <p style="margin: 0 0 14px; color: #334155;">
+            <strong>Ticket:</strong> ${ticketCode}<br />
+            <strong>Subject:</strong> ${ticketSubject}<br />
+            <strong>Customer:</strong> ${customerName}<br />
+            <strong>Email:</strong> ${customerEmail}
+          </p>
+          <div style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; white-space: pre-wrap;">
+            ${content}
+          </div>
+        </div>
+      `;
+
+      await sendEmail({
+        to: SUPPORT_ALERT_RECIPIENTS,
+        subject: emailSubject,
+        text,
+        html,
+      });
+    } catch (emailError) {
+      console.error("Failed to send admin alert for customer reply:", emailError);
+    }
 
     const saved = await messageRef.get();
     const savedData = saved.data() as Record<string, unknown>;

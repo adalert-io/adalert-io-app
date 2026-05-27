@@ -348,7 +348,7 @@ function StatusBadge({ status }: { status: TicketWorkflowStatus }) {
   if (status === "pending_customer") {
     return (
       <span className="inline-flex rounded-full bg-orange-400/14 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#c2410c] ring-1 ring-orange-300/55">
-        Pending Customer
+        Awaiting Reply
       </span>
     );
   }
@@ -372,11 +372,11 @@ function PriorityText({ priority }: { priority: TicketPriority }) {
 }
 
 function DetailStatusBadge({ status }: { status: TicketWorkflowStatus }) {
-  /** Panel header uses succinct labels (Pending vs Pending Customer in table). */
+  /** Panel header mirrors consumer status wording. */
   if (status === "pending_customer") {
     return (
       <span className="inline-flex rounded-full bg-orange-400/14 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#c2410c] ring-1 ring-orange-300/55">
-        Pending Customer
+        Awaiting Reply
       </span>
     );
   }
@@ -553,7 +553,7 @@ function TicketSheet({
                 >
                   <option value="open">Open</option>
                   <option value="in_progress">In Progress</option>
-                  <option value="pending_customer">Pending Customer</option>
+                  <option value="pending_customer">Awaiting Reply</option>
                   <option value="resolved">Resolved</option>
                 </select>
                 <ChevronDown
@@ -1229,7 +1229,7 @@ export function AdminSupportView() {
           accentClassName="bg-orange-50 text-orange-700"
         />
         <DashboardMetricCard
-          title="Pending Customer"
+          title="Awaiting Reply"
           value={String(aggregated.pending)}
           trend="↑ 5% vs last 7 days"
           trendTone="positive"
@@ -1287,7 +1287,7 @@ export function AdminSupportView() {
               <option value="all">All Statuses</option>
               <option value="open">Open</option>
               <option value="in_progress">In Progress</option>
-              <option value="pending_customer">Pending Customer</option>
+              <option value="pending_customer">Awaiting Reply</option>
               <option value="resolved">Resolved</option>
             </select>
             <ChevronDown className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-gray-500" aria-hidden />
