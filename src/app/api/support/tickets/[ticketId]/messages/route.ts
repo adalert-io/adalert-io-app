@@ -4,6 +4,9 @@ import admin from "firebase-admin";
 import { getAdminFirestore, verifyFirebaseIdToken } from "@/lib/firebase/admin";
 
 type MessageAuthorType = "customer" | "agent";
+interface CreateMessageBody {
+  body?: string;
+}
 
 function timestampToIso(value: admin.firestore.Timestamp | null | undefined): string {
   if (!value) return new Date().toISOString();
@@ -113,6 +116,74 @@ export async function GET(
         : 500;
     return NextResponse.json(
       { error: (error as Error).message ?? "Failed to load messages" },
+      { status },
+    );
+  }
+}
+
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ ticketId: string }> },
+) {
+  try {
+    const decoded = await verifyFirebaseIdToken(request.headers.get("authorization"));
+    const { ticketId } = await context.params;
+
+    if (!ticketId) {
+      return NextResponse.json({ error: "ticketId is required" }, { status: 400 });
+    }
+
+    const body = (await request.json()) as CreateMessageBody;
+    const content = body.body?.trim() ?? "";
+    if (!content) {
+      return NextResponse.json({ error: "Message body is required" }, { status: 400 });
+    }
+
+    const db = getAdminFirestore();
+    const ticketRef = await findOwnedTicketRef({
+      db,
+      uid: decoded.uid,
+      ticketId: decodeURIComponent(ticketId),
+    });
+
+    if (!ticketRef) {
+      return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
+    }
+
+    const now = admin.firestore.FieldValue.serverTimestamp();
+    const messageRef = ticketRef.collection("messages").doc();
+    await messageRef.set({
+      authorType: "customer",
+      authorName: decoded.name ?? decoded.email ?? "You",
+      body: content,
+      visibility: "public",
+      createdAt: now,
+    });
+
+    await ticketRef.update({
+      updatedAt: now,
+      status: "in_progress",
+      lastMessagePreview: content.length > 140 ? `${content.slice(0, 140)}…` : content,
+    });
+
+    const saved = await messageRef.get();
+    const savedData = saved.data() as Record<string, unknown>;
+    return NextResponse.json({
+      message: {
+        id: saved.id,
+        authorType: "customer" as const,
+        authorName: (savedData.authorName as string) ?? "You",
+        body: (savedData.body as string) ?? content,
+        createdAt: timestampToIso(savedData.createdAt as admin.firestore.Timestamp | undefined),
+      },
+    });
+  } catch (error) {
+    const status =
+      typeof (error as { status?: number }).status === "number"
+        ? (error as { status: number }).status
+        : 500;
+    return NextResponse.json(
+      { error: (error as Error).message ?? "Failed to send message" },
       { status },
     );
   }

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Headphones } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Sheet,
   SheetContent,
@@ -49,6 +51,8 @@ export function ConsumerHelpTicketDetailSheet({
   const { user } = useAuthStore();
   const [messages, setMessages] = useState<SupportTicketMessage[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [replyBody, setReplyBody] = useState("");
+  const [isSendingReply, setIsSendingReply] = useState(false);
 
   useEffect(() => {
     if (!open || !ticket || !user) {
@@ -225,6 +229,67 @@ export function ConsumerHelpTicketDetailSheet({
                     ))}
                   </div>
                 )}
+              </div>
+            </div>
+
+            <div className="border-t border-slate-100 px-6 py-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                Reply to support
+              </p>
+              <div className="mt-2 space-y-3">
+                <Textarea
+                  value={replyBody}
+                  onChange={(event) => setReplyBody(event.target.value)}
+                  rows={3}
+                  className="resize-none rounded-xl border-slate-200"
+                  placeholder="Write your reply..."
+                  disabled={isSendingReply}
+                />
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    className="rounded-xl bg-[#015AFD] font-semibold text-white hover:bg-[#0146ca]"
+                    disabled={!replyBody.trim() || isSendingReply || !ticket || !user}
+                    onClick={async () => {
+                      if (!ticket || !user) return;
+                      const content = replyBody.trim();
+                      if (!content) return;
+
+                      setIsSendingReply(true);
+                      try {
+                        const idToken = await user.getIdToken();
+                        const ticketKey = ticket.documentId || ticket.id;
+                        const response = await fetch(
+                          `/api/support/tickets/${encodeURIComponent(ticketKey)}/messages`,
+                          {
+                            method: "POST",
+                            headers: {
+                              "content-type": "application/json",
+                              authorization: `Bearer ${idToken}`,
+                            },
+                            body: JSON.stringify({ body: content }),
+                          },
+                        );
+                        const payload = (await response.json()) as {
+                          message?: SupportTicketMessage;
+                          error?: string;
+                        };
+                        if (!response.ok || !payload.message) {
+                          throw new Error(payload.error || "Failed to send reply");
+                        }
+
+                        setMessages((prev) => [...prev, payload.message!]);
+                        setReplyBody("");
+                      } catch (error) {
+                        console.error("Failed to send customer reply:", error);
+                      } finally {
+                        setIsSendingReply(false);
+                      }
+                    }}
+                  >
+                    {isSendingReply ? "Sending..." : "Send reply"}
+                  </Button>
+                </div>
               </div>
             </div>
           </>
