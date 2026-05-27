@@ -75,15 +75,15 @@ export function ConsumerHelpNewTicketDialog({
       <DialogContent
         showCloseButton
         overlayClassName="bg-slate-900/40 backdrop-blur-sm"
-        className="max-h-[min(90vh,720px)] gap-0 overflow-y-auto p-0 sm:max-w-lg"
+        className="gap-0 overflow-visible p-0 sm:max-w-lg"
       >
-        <DialogHeader className="border-b border-slate-100 px-6 py-5 text-start">
+        <DialogHeader className="border-b border-slate-100 px-5 py-4 text-start">
           <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-[#015AFD]/10 text-[#015AFD]">
-              <MessageSquarePlus className="size-5" aria-hidden />
+            <div className="flex size-9 items-center justify-center rounded-xl bg-[#015AFD]/10 text-[#015AFD]">
+              <MessageSquarePlus className="size-4" aria-hidden />
             </div>
             <div>
-              <DialogTitle className="text-xl font-bold text-slate-900">
+              <DialogTitle className="text-lg font-bold text-slate-900">
                 Submit a ticket
               </DialogTitle>
               <DialogDescription className="text-[13px] text-slate-500">
@@ -93,7 +93,7 @@ export function ConsumerHelpNewTicketDialog({
           </div>
         </DialogHeader>
 
-        <form className="space-y-4 px-6 py-5" onSubmit={handleSubmit}>
+        <form className="space-y-3 px-5 py-4" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <Label>Suggested from alerts</Label>
             <div className="flex flex-wrap gap-2">
@@ -177,12 +177,12 @@ export function ConsumerHelpNewTicketDialog({
                 setForm((prev) => ({ ...prev, description: event.target.value }))
               }
               placeholder="Include steps to reproduce, account IDs, screenshots, or error messages…"
-              rows={5}
-              className="min-h-[120px] resize-y rounded-xl border-slate-200"
+              rows={4}
+              className="min-h-[96px] resize-none rounded-xl border-slate-200"
             />
           </div>
 
-          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-3 text-[12px] text-slate-500">
+          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-3 py-2 text-[12px] text-slate-500">
             Attachments will be available when support is connected to your
             ticketing system.
           </div>

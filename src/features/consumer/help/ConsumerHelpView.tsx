@@ -7,7 +7,7 @@ import {
   Headphones,
   Inbox,
   LifeBuoy,
-  Plus,
+  HelpCircle,
   Search,
   Sparkles,
 } from "lucide-react";
@@ -168,10 +168,11 @@ export function ConsumerHelpView() {
           <div className="flex shrink-0 flex-col gap-2 sm:items-end">
             <Button
               type="button"
+              size="sm"
               onClick={() => setIsNewTicketOpen(true)}
-              className="h-11 gap-2 rounded-xl bg-[#015AFD] px-5 font-semibold text-white shadow-sm hover:bg-[#0146ca]"
+              className="h-9 gap-1.5 rounded-lg bg-[#015AFD] px-3.5 text-sm font-semibold text-white shadow-sm hover:bg-[#0146ca]"
             >
-              <Plus className="size-4" aria-hidden />
+              <HelpCircle className="size-3.5" aria-hidden />
               Submit a ticket
             </Button>
             <div className="flex items-center gap-2 rounded-xl border border-slate-200/90 bg-white/80 px-4 py-2.5 text-[12px] text-slate-600 backdrop-blur-sm">
