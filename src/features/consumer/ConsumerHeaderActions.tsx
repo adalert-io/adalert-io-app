@@ -12,6 +12,7 @@ import {
 } from "./add-ads-account/ConsumerAddAdsAccountDialog";
 import { useConsumerAddAdsAccountDialog } from "./add-ads-account/use-consumer-add-ads-account-dialog";
 import { CONSUMER_SUBSCRIPTION_EXPIRED_NAV_TITLE } from "./consumer-subscription-access";
+import { CONSUMER_HELP_HREF } from "./help";
 import { CONSUMER_MISSION_CONTROL_HREF } from "./consumer-console-nav";
 
 const ICON_BUTTON_CLASS =
@@ -85,15 +86,15 @@ export function ConsumerHeaderActions({
         )}
 
         <Button
-          type="button"
           variant="ghost"
           size="icon"
-          className={cn(ICON_BUTTON_CLASS, "cursor-default opacity-70")}
-          disabled
-          aria-label="Help"
-          title="Help (coming soon)"
+          className={ICON_BUTTON_CLASS}
+          asChild
+          title="Help center"
         >
-          <HelpCircle className="size-5" strokeWidth={2} aria-hidden />
+          <Link href={CONSUMER_HELP_HREF} aria-label="Help center">
+            <HelpCircle className="size-5" strokeWidth={2} aria-hidden />
+          </Link>
         </Button>
       </div>
 

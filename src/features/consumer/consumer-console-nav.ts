@@ -116,7 +116,8 @@ export function consumerPathsMatchHref(pathname: string, href: string): boolean 
   const exactOnlyHref =
     href === "/consumer/summary" ||
     href === "/consumer/dashboard" ||
-    href === "/consumer/settings/my-profile";
+    href === "/consumer/settings/my-profile" ||
+    href === "/consumer/help";
   if (exactOnlyHref) {
     return false;
   }
@@ -132,6 +133,9 @@ export function consumerBreadcrumbs(pathname: string): Crumb[] {
   }
   if (pathname === "/consumer/dashboard") {
     return [root, { title: "Dashboard" }];
+  }
+  if (pathname === "/consumer/help" || pathname.startsWith("/consumer/help/")) {
+    return [root, { title: "Help center" }];
   }
   if (pathname === "/consumer/settings/my-profile") {
     return [root, { title: "My profile" }];

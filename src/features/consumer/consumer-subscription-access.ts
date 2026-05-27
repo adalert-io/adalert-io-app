@@ -1,3 +1,4 @@
+import { CONSUMER_HELP_HREF } from "./help/helpers";
 import {
   CONSUMER_DASHBOARD_HREF,
   CONSUMER_MISSION_CONTROL_HREF,
@@ -27,9 +28,20 @@ export function isConsumerProfilePath(pathname: string): boolean {
   );
 }
 
-/** Account + profile pages stay reachable when trial is expired. */
+export function isConsumerHelpPath(pathname: string): boolean {
+  return (
+    pathname === CONSUMER_HELP_HREF ||
+    pathname.startsWith(`${CONSUMER_HELP_HREF}/`)
+  );
+}
+
+/** Account, profile, and help stay reachable when trial is expired. */
 export function isConsumerPathAllowedWithoutFullAccess(pathname: string): boolean {
-  return isConsumerAccountSettingsPath(pathname) || isConsumerProfilePath(pathname);
+  return (
+    isConsumerAccountSettingsPath(pathname) ||
+    isConsumerProfilePath(pathname) ||
+    isConsumerHelpPath(pathname)
+  );
 }
 
 export function isConsumerOrgSettingsPath(pathname: string): boolean {
