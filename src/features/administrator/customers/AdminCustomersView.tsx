@@ -99,6 +99,18 @@ function formatMoney(value: number): string {
   return `$${value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 }
 
+function getPlanAmount({
+  plan,
+  monthlyRecurringRevenue,
+}: {
+  plan: string;
+  monthlyRecurringRevenue: number;
+}): number {
+  if (monthlyRecurringRevenue > 0) return monthlyRecurringRevenue;
+  if (plan.toLowerCase().includes("starter")) return 59;
+  return 59;
+}
+
 function statusLabel(status: CustomerStatus): string {
   if (status === "past_due") return "Past Due";
   if (status === "not_connected") return "Not Connected";
@@ -428,9 +440,7 @@ export function AdminCustomersView() {
               <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
                   <th className="px-4 py-4 text-left font-semibold text-gray-700">Customer</th>
-                  <th className="px-4 py-4 text-left font-semibold text-gray-700">Contact</th>
                   <th className="px-4 py-4 text-left font-semibold text-gray-700">Ad Accounts</th>
-                  <th className="px-4 py-4 text-left font-semibold text-gray-700">MRR</th>
                   <th className="px-4 py-4 text-left font-semibold text-gray-700">Status</th>
                   <th className="px-4 py-4 text-center font-semibold text-gray-700">Actions</th>
                 </tr>
@@ -447,9 +457,7 @@ export function AdminCustomersView() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-4">{row.contacts}</td>
                     <td className="px-4 py-4">{row.adAccounts}</td>
-                    <td className="px-4 py-4">{formatMoney(row.mrr)}</td>
                     <td className="px-4 py-4"><CustomerStatusBadge status={row.status} /></td>
                     <td className="px-4 py-4 text-center">
                       <Button variant="ghost" size="icon" onClick={(event) => { event.stopPropagation(); void openView(row); }}><Eye className="size-4" /></Button>
@@ -577,7 +585,18 @@ export function AdminCustomersView() {
                     <p><span className="text-slate-500">Plan:</span> <span className="font-semibold text-slate-900">{selectedDetail.billingSnapshot.plan}</span></p>
                     <p><span className="text-slate-500">Subscription:</span> <span className="font-medium text-slate-800">{selectedDetail.billingSnapshot.subscriptionStatus}</span></p>
                     <p><span className="text-slate-500">Next Billing:</span> <span className="font-medium text-slate-800">{selectedDetail.billingSnapshot.nextBillingDate}</span></p>
-                    <p><span className="text-slate-500">MRR:</span> <span className="font-medium text-slate-800">{formatMoney(selectedDetail.billingSnapshot.monthlyRecurringRevenue)}</span></p>
+                    <p>
+                      <span className="text-slate-500">Plan Amount:</span>{" "}
+                      <span className="font-medium text-slate-800">
+                        {formatMoney(
+                          getPlanAmount({
+                            plan: selectedDetail.billingSnapshot.plan,
+                            monthlyRecurringRevenue:
+                              selectedDetail.billingSnapshot.monthlyRecurringRevenue,
+                          }),
+                        )}
+                      </span>
+                    </p>
                     <p>
                       <span className="text-slate-500">Card:</span>{" "}
                       <span className="font-medium text-slate-800">
