@@ -533,12 +533,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const companyAdminRef = userDoc['Company Admin'];
       const userRef = doc(db, COLLECTIONS.USERS, userDoc.uid);
 
-      const adsAccountQuery = query(
-        adsAccountRef,
-        where('User', '==', companyAdminRef),
-        where('Is Connected', '==', true),
-        where('Selected Users', 'array-contains', userRef),
-      );
+      const isAdmin =
+        userDoc['User Type'] === 'Admin' ||
+        (userDoc?.['Company Admin']?.id && userDoc['Company Admin']?.id === userDoc.uid);
+      const adsAccountQuery = isAdmin
+        ? query(
+            adsAccountRef,
+            where('User', '==', companyAdminRef),
+            where('Is Connected', '==', true),
+          )
+        : query(
+            adsAccountRef,
+            where('User', '==', companyAdminRef),
+            where('Is Connected', '==', true),
+            where('Selected Users', 'array-contains', userRef),
+          );
 
       const adsAccountSnap = await getDocs(adsAccountQuery);
       const adsAccountCount = adsAccountSnap.size;

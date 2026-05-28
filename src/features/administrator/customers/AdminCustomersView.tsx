@@ -7,7 +7,6 @@ import {
   Building2,
   CircleCheckBig,
   Clock,
-  DollarSign,
   Eye,
   FileText,
   Layers3,
@@ -439,7 +438,6 @@ export function AdminCustomersView() {
         <DashboardMetricCard title="Active Customers" value={String(metrics.active)} Icon={CircleCheckBig} accentClassName="bg-[#22c55e]/15 text-[#16a34a]" />
         <DashboardMetricCard title="Trial Customers" value={String(metrics.trial)} Icon={Clock} accentClassName="bg-orange-400/20 text-orange-700" />
         <DashboardMetricCard title="Past Due Customers" value={String(metrics.pastDue)} Icon={TriangleAlert} accentClassName="bg-[#ef4444]/12 text-[#ef4444]" />
-        <DashboardMetricCard title="MRR ($)" value={formatMoney(metrics.mrr)} Icon={DollarSign} accentClassName="bg-emerald-400/16 text-emerald-700" />
       </section>
 
       <div className="space-y-4">
@@ -564,7 +562,7 @@ export function AdminCustomersView() {
       <Sheet open={isViewOpen} onOpenChange={setIsViewOpen}>
         <SheetContent
           side="right"
-          className="flex w-full flex-col gap-0 border-slate-200 bg-slate-50/40 p-0 sm:max-w-xl"
+          className="flex w-full flex-col gap-0 border-slate-200 bg-white p-0 sm:max-w-xl"
         >
           {selectedDetail ? (
             <>
