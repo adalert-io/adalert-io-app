@@ -15,7 +15,12 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-const auth = getAuth(app);
+// Avoid initializing Firebase Auth during server builds/routes, where invalid
+// client API keys can fail at import-time.
+const auth =
+  typeof window !== "undefined"
+    ? getAuth(app)
+    : (undefined as unknown as ReturnType<typeof getAuth>);
 const db = getFirestore(app);
 const storage = getStorage(app);
 

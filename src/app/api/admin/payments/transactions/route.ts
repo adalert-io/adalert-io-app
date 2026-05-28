@@ -44,11 +44,12 @@ export async function GET(request: NextRequest) {
         charge.payment_method_details?.card?.brand ??
         (methodType === "us_bank_account" ? "ach" : "visa");
       const last4 = charge.payment_method_details?.card?.last4 ?? "—";
+      const invoiceValue = (charge as unknown as Record<string, unknown>)["invoice"];
 
       return {
         id: charge.id,
         transactionId: charge.id,
-        invoiceNumber: typeof charge.invoice === "string" ? charge.invoice : "—",
+        invoiceNumber: typeof invoiceValue === "string" ? invoiceValue : "—",
         companyName: customerName,
         initials: customerName
           .split(/\s+/)

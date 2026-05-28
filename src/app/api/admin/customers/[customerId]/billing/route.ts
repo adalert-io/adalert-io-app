@@ -39,6 +39,12 @@ function toMonthlyAmount(amount: number, interval: string | null | undefined): n
   return amount;
 }
 
+function getSubscriptionPeriodEnd(subscription: unknown): number | null {
+  if (!subscription || typeof subscription !== "object") return null;
+  const candidate = (subscription as Record<string, unknown>)["current_period_end"];
+  return typeof candidate === "number" ? candidate : null;
+}
+
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ customerId: string }> },
@@ -150,9 +156,7 @@ export async function GET(
           (typeof subscriptionData["User Status"] === "string" &&
             subscriptionData["User Status"]) ||
           "Unknown",
-        nextBillingDate: activeSubscription
-          ? formatUnixDate(activeSubscription.current_period_end)
-          : "—",
+        nextBillingDate: formatUnixDate(getSubscriptionPeriodEnd(activeSubscription)),
         monthlyRecurringRevenue: Math.round(monthlyRecurringRevenue * 100) / 100,
         paymentMethod:
           cardBrand || cardLast4
