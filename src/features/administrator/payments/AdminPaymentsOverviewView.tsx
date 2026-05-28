@@ -36,6 +36,26 @@ import { cn } from "@/lib/utils";
 
 import { AdminDashboardDateRangePicker } from "../dashboard/AdminDashboardDateRangePicker";
 
+interface OverviewInvoiceRow {
+  id: string;
+  number: string;
+  customer: string;
+  date: string;
+  dueDate: string;
+  amount: number;
+  status: "paid" | "pending" | "past_due";
+}
+
+interface OverviewTransactionRow {
+  id: string;
+  transactionId: string;
+  customer: string;
+  date: string;
+  amount: number;
+  method: "visa" | "mastercard";
+  status: "succeeded" | "pending" | "failed";
+}
+
 const REVENUE_TREND_DATA = [
   { label: "May 9", value: 3100 },
   { label: "May 10", value: 3600 },
@@ -67,7 +87,7 @@ const PLAN_MIX = [
   { name: "Other", pct: 1.4, fill: "#cbd5e1" },
 ] as const;
 
-const INVOICES = [
+const INVOICES: OverviewInvoiceRow[] = [
   {
     id: "inv-1",
     number: "INV-2025-0892",
@@ -115,7 +135,7 @@ const INVOICES = [
   },
 ];
 
-const TRANSACTIONS = [
+const TRANSACTIONS: OverviewTransactionRow[] = [
   {
     id: "txn-1",
     transactionId: "ch_9K2PmL8Qx4",
@@ -310,6 +330,8 @@ export function AdminPaymentsOverviewView() {
     revenueTrend: Array<{ label: string; value: number }>;
     breakdown: Array<{ key: string; name: string; amount: number }>;
     planMix: Array<{ name: string; pct: number }>;
+    invoices: OverviewInvoiceRow[];
+    transactions: OverviewTransactionRow[];
   } | null>(null);
 
   useEffect(() => {
@@ -369,6 +391,10 @@ export function AdminPaymentsOverviewView() {
       fill: fills[index % fills.length] ?? "#cbd5e1",
     }));
   }, [overview]);
+  const invoicesData = overview?.invoices?.length ? overview.invoices : INVOICES;
+  const transactionsData = overview?.transactions?.length
+    ? overview.transactions
+    : TRANSACTIONS;
 
   const piePayload = breakdownSegments.map((s) => ({
     name: s.name,
@@ -666,7 +692,7 @@ export function AdminPaymentsOverviewView() {
           <div className="relative">
             <select className={cn(SELECT_CLASS, "min-w-[168px]")} aria-label="Filter by customer">
               <option value="all">All Customers</option>
-              {Array.from(new Set(INVOICES.map((i) => i.customer))).map((name) => (
+              {Array.from(new Set(invoicesData.map((i) => i.customer))).map((name) => (
                 <option key={name} value={name}>
                   {name}
                 </option>
@@ -727,7 +753,7 @@ export function AdminPaymentsOverviewView() {
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <InvoiceTableShell
-            invoices={INVOICES.filter(
+            invoices={invoicesData.filter(
               (i) =>
                 !search.trim() ||
                 i.customer.toLowerCase().includes(search.toLowerCase()) ||
@@ -735,7 +761,7 @@ export function AdminPaymentsOverviewView() {
             )}
           />
           <TransactionsTableShell
-            transactions={TRANSACTIONS.filter(
+            transactions={transactionsData.filter(
               (t) =>
                 !search.trim() ||
                 t.customer.toLowerCase().includes(search.toLowerCase()) ||
@@ -751,7 +777,7 @@ export function AdminPaymentsOverviewView() {
 function InvoiceTableShell({
   invoices,
 }: {
-  invoices: (typeof INVOICES)[number][];
+  invoices: OverviewInvoiceRow[];
 }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-[#e5e5e5] bg-white shadow-none">
@@ -818,7 +844,7 @@ function InvoiceTableShell({
         <p className="font-medium text-gray-600">
           {invoices.length === 0
             ? "No matching invoices."
-            : `Showing 1 to ${invoices.length} of 28 invoices`}
+            : `Showing 1 to ${invoices.length} invoices`}
         </p>
         <Link
           href="/administrator/billing/invoices"
@@ -834,7 +860,7 @@ function InvoiceTableShell({
 function TransactionsTableShell({
   transactions,
 }: {
-  transactions: (typeof TRANSACTIONS)[number][];
+  transactions: OverviewTransactionRow[];
 }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-[#e5e5e5] bg-white shadow-none">

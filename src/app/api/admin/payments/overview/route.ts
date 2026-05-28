@@ -17,6 +17,30 @@ function monthLabel(value: number): string {
   return new Date(value * 1000).toLocaleDateString("en-US", { month: "short" });
 }
 
+function dateLabel(value: number): string {
+  return new Date(value * 1000).toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  });
+}
+
+function normalizeInvoiceStatus(
+  status: string | null,
+): "paid" | "pending" | "past_due" {
+  if (status === "paid") return "paid";
+  if (status === "open" || status === "draft") return "pending";
+  return "past_due";
+}
+
+function normalizeTransactionStatus(
+  status: string,
+): "succeeded" | "pending" | "failed" {
+  if (status === "succeeded") return "succeeded";
+  if (status === "pending") return "pending";
+  return "failed";
+}
+
 export async function GET(request: NextRequest) {
   const denied = ensureAdminAccess(request);
   if (denied) return denied;
@@ -52,12 +76,15 @@ export async function GET(request: NextRequest) {
           { name: "Professional", pct: 0 },
           { name: "Starter", pct: 0 },
         ],
+        invoices: [],
+        transactions: [],
       });
     }
 
-    const [invoiceList, refundList] = await Promise.all([
+    const [invoiceList, refundList, chargesList] = await Promise.all([
       stripe.invoices.list({ limit: 100 }),
       stripe.refunds.list({ limit: 100 }),
+      stripe.charges.list({ limit: 100, expand: ["data.customer"] }),
     ]);
 
     let totalRevenue = 0;
@@ -98,6 +125,30 @@ export async function GET(request: NextRequest) {
       },
     ];
 
+    const invoices = invoiceList.data.slice(0, 12).map((invoice) => ({
+      id: invoice.id,
+      number: invoice.number ?? invoice.id,
+      customer: invoice.customer_name ?? "Unknown Customer",
+      date: dateLabel(invoice.created),
+      dueDate: invoice.due_date ? dateLabel(invoice.due_date) : "—",
+      amount: (invoice.amount_paid || invoice.amount_due || 0) / 100,
+      status: normalizeInvoiceStatus(invoice.status),
+    }));
+
+    const transactions = chargesList.data.slice(0, 12).map((charge) => {
+      const customerObject = charge.customer as { name?: string } | null;
+      const methodBrand = charge.payment_method_details?.card?.brand ?? "visa";
+      return {
+        id: charge.id,
+        transactionId: charge.id,
+        customer: customerObject?.name?.trim() || "Unknown Customer",
+        date: dateLabel(charge.created),
+        amount: (charge.amount || 0) / 100,
+        method: methodBrand.includes("master") ? "mastercard" : "visa",
+        status: normalizeTransactionStatus(charge.status),
+      };
+    });
+
     return NextResponse.json({
       metrics: {
         totalRevenue: Math.round(totalRevenue),
@@ -114,6 +165,8 @@ export async function GET(request: NextRequest) {
         { key: "refunded", name: "Refunded", amount: Math.round(refunded) },
       ],
       planMix,
+      invoices,
+      transactions,
     });
   } catch (error) {
     return NextResponse.json(
