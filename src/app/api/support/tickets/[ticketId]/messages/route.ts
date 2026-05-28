@@ -15,6 +15,15 @@ function timestampToIso(value: admin.firestore.Timestamp | null | undefined): st
   return value.toDate().toISOString();
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 async function findOwnedTicketRef({
   db,
   uid,
@@ -182,7 +191,7 @@ export async function POST(
       const customerName = decoded.name ?? decoded.email ?? "Customer";
       const customerEmail = decoded.email ?? "unknown@customer";
 
-      const emailSubject = `Customer replied: ${ticketCode}`;
+      const emailSubject = `[AdAlert Support] Customer Reply ${ticketCode}`;
       const text = [
         "A customer has replied on a support ticket.",
         "",
@@ -191,23 +200,28 @@ export async function POST(
         `Customer: ${customerName}`,
         `Email: ${customerEmail}`,
         "",
-        "Message:",
+        "Customer Reply:",
         content,
+        "",
+        "Please review and respond from the Support dashboard.",
       ].join("\n");
 
       const html = `
         <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height: 1.45;">
-          <h2 style="margin: 0 0 12px;">Customer reply received</h2>
-          <p style="margin: 0 0 12px;">A customer has replied on a support ticket.</p>
+          <h2 style="margin: 0 0 12px;">AdAlert Support: Customer Reply Received</h2>
+          <p style="margin: 0 0 12px;">A customer has posted a new message on a support ticket.</p>
           <p style="margin: 0 0 14px; color: #334155;">
-            <strong>Ticket:</strong> ${ticketCode}<br />
-            <strong>Subject:</strong> ${ticketSubject}<br />
-            <strong>Customer:</strong> ${customerName}<br />
-            <strong>Email:</strong> ${customerEmail}
+            <strong>Ticket:</strong> ${escapeHtml(ticketCode)}<br />
+            <strong>Subject:</strong> ${escapeHtml(ticketSubject)}<br />
+            <strong>Customer:</strong> ${escapeHtml(customerName)}<br />
+            <strong>Email:</strong> ${escapeHtml(customerEmail)}
           </p>
           <div style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; white-space: pre-wrap;">
-            ${content}
+            ${escapeHtml(content)}
           </div>
+          <p style="margin: 14px 0 0; color: #475569; font-size: 12px;">
+            Please review and respond from the Support dashboard.
+          </p>
         </div>
       `;
 

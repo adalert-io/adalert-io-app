@@ -799,7 +799,7 @@ function TicketSheet({
 }
 
 export function AdminSupportView() {
-  const [rows, setRows] = useState<SupportTicketRow[]>(ALL_TICKETS);
+  const [rows, setRows] = useState<SupportTicketRow[]>([]);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<
@@ -811,7 +811,7 @@ export function AdminSupportView() {
   const [customerFilter, setCustomerFilter] = useState<string>("all");
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
-  const [detailId, setDetailId] = useState<string | null>(ALL_TICKETS[0]?.id ?? null);
+  const [detailId, setDetailId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [newOpen, setNewOpen] = useState(false);
 

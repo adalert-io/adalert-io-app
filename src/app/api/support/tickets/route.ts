@@ -135,9 +135,9 @@ export async function POST(request: NextRequest) {
 
     try {
       const requester = decoded.email ? `${decoded.email}` : decoded.uid;
-      const emailSubject = `New support ticket: ${createdTicket.id} — ${createdTicket.subject}`;
+      const emailSubject = `[AdAlert Support] New Ticket ${createdTicket.id}`;
       const text = [
-        "A new support ticket was created.",
+        "A new support ticket has been submitted.",
         "",
         `Ticket: ${createdTicket.id}`,
         `Subject: ${createdTicket.subject}`,
@@ -145,14 +145,16 @@ export async function POST(request: NextRequest) {
         `Priority: ${createdTicket.priority}`,
         `Requester: ${requester}`,
         "",
-        "Description:",
+        "Customer Message:",
         description,
+        "",
+        "Please review and respond from the Support dashboard.",
       ].join("\n");
 
       const html = `
         <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height: 1.45;">
-          <h2 style="margin: 0 0 12px;">New support ticket</h2>
-          <p style="margin: 0 0 12px;">A new support ticket was created.</p>
+          <h2 style="margin: 0 0 12px;">AdAlert Support: New Ticket Submitted</h2>
+          <p style="margin: 0 0 12px;">A customer has submitted a new support ticket.</p>
           <table style="border-collapse: collapse; margin: 0 0 16px;">
             <tr><td style="padding: 4px 12px 4px 0; color: #475569;"><strong>Ticket</strong></td><td style="padding: 4px 0;">${createdTicket.id}</td></tr>
             <tr><td style="padding: 4px 12px 4px 0; color: #475569;"><strong>Subject</strong></td><td style="padding: 4px 0;">${escapeHtml(createdTicket.subject)}</td></tr>
@@ -161,9 +163,12 @@ export async function POST(request: NextRequest) {
             <tr><td style="padding: 4px 12px 4px 0; color: #475569;"><strong>Requester</strong></td><td style="padding: 4px 0;">${escapeHtml(requester)}</td></tr>
           </table>
           <div style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc;">
-            <div style="color: #475569; font-size: 12px; font-weight: 600; margin-bottom: 6px;">Description</div>
+            <div style="color: #475569; font-size: 12px; font-weight: 600; margin-bottom: 6px;">Customer Message</div>
             <div style="white-space: pre-wrap;">${escapeHtml(description)}</div>
           </div>
+          <p style="margin: 14px 0 0; color: #475569; font-size: 12px;">
+            Please review and respond from the Support dashboard.
+          </p>
         </div>
       `;
 

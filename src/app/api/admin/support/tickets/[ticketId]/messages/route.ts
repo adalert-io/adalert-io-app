@@ -163,20 +163,22 @@ export async function POST(
 
       if (customerEmail) {
         try {
-          const emailSubject = `Update on your support ticket ${ticketCode}`;
+          const emailSubject = `[AdAlert Support] Reply on Ticket ${ticketCode}`;
           const text = [
-            "Your support ticket has a new reply from AdAlert Support.",
+            "You have a new reply from the AdAlert Support team.",
             "",
             `Ticket: ${ticketCode}`,
             `Subject: ${ticketSubject}`,
             "",
             "Reply:",
             content,
+            "",
+            "If needed, you can continue the conversation from your Help page.",
           ].join("\n");
           const html = `
             <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height: 1.45;">
-              <h2 style="margin: 0 0 12px;">Support reply</h2>
-              <p style="margin: 0 0 10px;">Your support ticket has a new reply from AdAlert Support.</p>
+              <h2 style="margin: 0 0 12px;">AdAlert Support: New Reply</h2>
+              <p style="margin: 0 0 10px;">You have a new reply from our support team.</p>
               <p style="margin: 0 0 14px; color: #334155;">
                 <strong>Ticket:</strong> ${escapeHtml(ticketCode)}<br />
                 <strong>Subject:</strong> ${escapeHtml(ticketSubject)}
@@ -184,6 +186,9 @@ export async function POST(
               <div style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; white-space: pre-wrap;">
                 ${escapeHtml(content)}
               </div>
+              <p style="margin: 14px 0 0; color: #475569; font-size: 12px;">
+                If needed, you can continue the conversation from your Help page.
+              </p>
             </div>
           `;
 
