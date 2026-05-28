@@ -75,7 +75,7 @@ export async function GET(
       return {
         id: doc.id,
         authorType: (data.authorType as MessageAuthorType) ?? "agent",
-        authorName: (data.authorName as string) ?? "AdAlert Support",
+        authorName: (data.authorName as string) ?? "adAlert Support",
         body: (data.body as string) ?? "",
         visibility: (data.visibility as MessageVisibility) ?? "public",
         createdAt: timestampToIso(data.createdAt as admin.firestore.Timestamp | undefined),
@@ -137,7 +137,7 @@ export async function POST(
     const messageRef = ticketRef.collection("messages").doc();
     await messageRef.set({
       authorType: "agent",
-      authorName: "AdAlert Support",
+      authorName: "adAlert Support",
       body: content,
       visibility,
       createdAt: now,
@@ -163,9 +163,9 @@ export async function POST(
 
       if (customerEmail) {
         try {
-          const emailSubject = `[AdAlert Support] Reply on Ticket ${ticketCode}`;
+          const emailSubject = `[adAlert Support] Reply on Ticket ${ticketCode}`;
           const text = [
-            "You have a new reply from the AdAlert Support team.",
+            "You have a new reply from the adAlert Support team.",
             "",
             `Ticket: ${ticketCode}`,
             `Subject: ${ticketSubject}`,
@@ -177,7 +177,7 @@ export async function POST(
           ].join("\n");
           const html = `
             <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height: 1.45;">
-              <h2 style="margin: 0 0 12px;">AdAlert Support: New Reply</h2>
+              <h2 style="margin: 0 0 12px;">adAlert Support: New Reply</h2>
               <p style="margin: 0 0 10px;">You have a new reply from our support team.</p>
               <p style="margin: 0 0 14px; color: #334155;">
                 <strong>Ticket:</strong> ${escapeHtml(ticketCode)}<br />
@@ -210,7 +210,7 @@ export async function POST(
       message: {
         id: saved.id,
         authorType: "agent" as const,
-        authorName: (savedData.authorName as string) ?? "AdAlert Support",
+        authorName: (savedData.authorName as string) ?? "adAlert Support",
         body: (savedData.body as string) ?? content,
         visibility: (savedData.visibility as MessageVisibility) ?? visibility,
         createdAt: timestampToIso(savedData.createdAt as admin.firestore.Timestamp | undefined),

@@ -37,10 +37,11 @@ export async function GET(
     const { customerId } = await context.params;
     const db = getAdminFirestore();
     const userRef = db.collection(COLLECTIONS.USERS).doc(customerId);
-    const [userSnap, subscriptionsSnap, paymentMethodsSnap] = await Promise.all([
+    const [userSnap, subscriptionsSnap, paymentMethodsSnap, adsAccountsSnap] = await Promise.all([
       userRef.get(),
       db.collection(COLLECTIONS.SUBSCRIPTIONS).where("User", "==", userRef).limit(1).get(),
       db.collection("paymentMethods").where("User", "==", userRef).limit(1).get(),
+      db.collection(COLLECTIONS.ADS_ACCOUNTS).where("User", "==", userRef).get(),
     ]);
 
     if (!userSnap.exists) {
@@ -54,6 +55,13 @@ export async function GET(
     const paymentMethod = paymentMethodsSnap.empty
       ? null
       : ((paymentMethodsSnap.docs[0]?.data() ?? {}) as Record<string, unknown>);
+    const adAccounts = adsAccountsSnap.docs
+      .map((doc) => {
+        const data = (doc.data() ?? {}) as Record<string, unknown>;
+        const name = data["Name"] ?? data["Ads Account"] ?? data["Customer ID"];
+        return typeof name === "string" && name.trim() ? name.trim() : doc.id;
+      })
+      .filter((item, index, list) => list.indexOf(item) === index);
 
     return NextResponse.json({
       customer: {
@@ -70,6 +78,8 @@ export async function GET(
           "unknown@example.com",
         phone:
           (typeof userData["Telephone"] === "string" && userData["Telephone"]) || null,
+        adAccounts,
+        adAccountsCount: adAccounts.length,
         status: subscriptionToUiStatus(subscription?.["User Status"]),
         billingSnapshot: {
           plan:

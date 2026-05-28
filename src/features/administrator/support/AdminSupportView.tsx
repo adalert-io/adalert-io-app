@@ -220,7 +220,7 @@ function seedTickets(): SupportTicketRow[] {
             {
               id: "msg-2",
               author: "agent",
-              authorName: "AdAlert Support • Priya Shah",
+              authorName: "adAlert Support • Priya Shah",
               timeLabel: "May 15, 2025 • 10:06 AM",
               body: "Thanks for the detail—can you paste the OAuth error banner text? We’re also resetting the advertiser token on our side.",
             },
@@ -757,8 +757,8 @@ function TicketSheet({
                         author: "agent",
                         authorName:
                           visibility === "internal"
-                            ? "AdAlert Support (Internal)"
-                            : "AdAlert Support",
+                            ? "adAlert Support (Internal)"
+                            : "adAlert Support",
                         timeLabel: formatDateLabel(payload.message!.createdAt),
                         body: payload.message!.body,
                       },

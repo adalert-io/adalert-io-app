@@ -102,7 +102,7 @@ export async function GET(
         return {
           id: doc.id,
           authorType: (data.authorType as MessageAuthorType) ?? "agent",
-          authorName: (data.authorName as string) ?? "AdAlert Support",
+          authorName: (data.authorName as string) ?? "adAlert Support",
           body: (data.body as string) ?? "",
           createdAt: timestampToIso(data.createdAt as admin.firestore.Timestamp | undefined),
         };
@@ -191,7 +191,7 @@ export async function POST(
       const customerName = decoded.name ?? decoded.email ?? "Customer";
       const customerEmail = decoded.email ?? "unknown@customer";
 
-      const emailSubject = `[AdAlert Support] Customer Reply ${ticketCode}`;
+      const emailSubject = `[adAlert Support] Customer Reply ${ticketCode}`;
       const text = [
         "A customer has replied on a support ticket.",
         "",
@@ -208,7 +208,7 @@ export async function POST(
 
       const html = `
         <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height: 1.45;">
-          <h2 style="margin: 0 0 12px;">AdAlert Support: Customer Reply Received</h2>
+          <h2 style="margin: 0 0 12px;">adAlert Support: Customer Reply Received</h2>
           <p style="margin: 0 0 12px;">A customer has posted a new message on a support ticket.</p>
           <p style="margin: 0 0 14px; color: #334155;">
             <strong>Ticket:</strong> ${escapeHtml(ticketCode)}<br />

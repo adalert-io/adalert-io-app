@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
 import { AdminDashboardDateRangePicker } from "../dashboard/AdminDashboardDateRangePicker";
@@ -64,6 +65,8 @@ interface CustomerDetail {
   contactName: string;
   email: string;
   phone: string | null;
+  adAccounts: string[];
+  adAccountsCount: number;
   status: CustomerStatus;
   billingSnapshot: {
     plan: string;
@@ -334,7 +337,7 @@ export function AdminCustomersView() {
         <DashboardMetricCard title="Active Customers" value={String(metrics.active)} Icon={CircleCheckBig} accentClassName="bg-[#22c55e]/15 text-[#16a34a]" />
         <DashboardMetricCard title="Trial Customers" value={String(metrics.trial)} Icon={Clock} accentClassName="bg-orange-400/20 text-orange-700" />
         <DashboardMetricCard title="Past Due Customers" value={String(metrics.pastDue)} Icon={TriangleAlert} accentClassName="bg-[#ef4444]/12 text-[#ef4444]" />
-        <DashboardMetricCard title="MRR" value={formatMoney(metrics.mrr)} Icon={DollarSign} accentClassName="bg-emerald-400/16 text-emerald-700" />
+        <DashboardMetricCard title="MRR ($)" value={formatMoney(metrics.mrr)} Icon={DollarSign} accentClassName="bg-emerald-400/16 text-emerald-700" />
       </section>
 
       <div className="space-y-4">
@@ -364,14 +367,12 @@ export function AdminCustomersView() {
                   <th className="px-4 py-4 text-left font-semibold text-gray-700">Ad Accounts</th>
                   <th className="px-4 py-4 text-left font-semibold text-gray-700">MRR</th>
                   <th className="px-4 py-4 text-left font-semibold text-gray-700">Status</th>
-                  <th className="px-4 py-4 text-left font-semibold text-gray-700">Plan</th>
-                  <th className="px-4 py-4 text-left font-semibold text-gray-700">Next Billing</th>
                   <th className="px-4 py-4 text-center font-semibold text-gray-700">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {pagedRows.map((row) => (
-                  <tr key={row.id}>
+                  <tr key={row.id} className="cursor-pointer hover:bg-gray-50/70" onClick={() => void openView(row)}>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
                         <CustomerAvatar initials={row.initials} avatarToneIndex={row.avatarToneIndex} />
@@ -385,11 +386,9 @@ export function AdminCustomersView() {
                     <td className="px-4 py-4">{row.adAccounts}</td>
                     <td className="px-4 py-4">{formatMoney(row.mrr)}</td>
                     <td className="px-4 py-4"><CustomerStatusBadge status={row.status} /></td>
-                    <td className="px-4 py-4">{row.plan}</td>
-                    <td className="px-4 py-4">{row.nextBillingLabel}</td>
                     <td className="px-4 py-4 text-center">
-                      <Button variant="ghost" size="icon" onClick={() => void openView(row)}><Eye className="size-4" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => void openEdit(row)}><PencilLine className="size-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={(event) => { event.stopPropagation(); void openView(row); }}><Eye className="size-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={(event) => { event.stopPropagation(); void openEdit(row); }}><PencilLine className="size-4" /></Button>
                     </td>
                   </tr>
                 ))}
@@ -464,27 +463,184 @@ export function AdminCustomersView() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{selectedDetail?.companyName ?? "Customer"}</DialogTitle>
-            <DialogDescription>Billing snapshot and account details</DialogDescription>
-          </DialogHeader>
+      <Sheet open={isViewOpen} onOpenChange={setIsViewOpen}>
+        <SheetContent
+          side="right"
+          className="flex w-full flex-col gap-0 border-slate-200 p-0 sm:max-w-xl"
+        >
           {selectedDetail ? (
-            <div className="space-y-2 text-sm">
-              <p><strong>Email:</strong> {selectedDetail.email}</p>
-              <p><strong>Status:</strong> {statusLabel(selectedDetail.status)}</p>
-              <p><strong>Plan:</strong> {selectedDetail.billingSnapshot.plan}</p>
-              <p><strong>Subscription:</strong> {selectedDetail.billingSnapshot.subscriptionStatus}</p>
-              <p><strong>Next Billing:</strong> {selectedDetail.billingSnapshot.nextBillingDate}</p>
-              <p><strong>MRR:</strong> {formatMoney(selectedDetail.billingSnapshot.monthlyRecurringRevenue)}</p>
-              <p><strong>Card:</strong> {selectedDetail.billingSnapshot.cardBrand ?? "N/A"} {selectedDetail.billingSnapshot.cardLast4 ? `•••• ${selectedDetail.billingSnapshot.cardLast4}` : ""}</p>
-            </div>
+            <>
+              <SheetHeader className="border-b border-slate-100 px-6 py-5 text-start">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-mono text-slate-600">
+                    {selectedDetail.id}
+                  </span>
+                  <CustomerStatusBadge status={selectedDetail.status} />
+                </div>
+                <SheetTitle className="mt-3 text-left text-lg font-bold leading-snug text-slate-900">
+                  {selectedDetail.companyName}
+                </SheetTitle>
+                <SheetDescription className="text-left text-[13px] text-slate-500">
+                  {selectedDetail.contactName} · {selectedDetail.email}
+                </SheetDescription>
+              </SheetHeader>
+
+              <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5 text-sm">
+                <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-4">
+                  <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Account Details
+                  </p>
+                  <div className="space-y-2 text-[13px]">
+                    <p><span className="text-slate-500">Phone:</span> <span className="font-medium text-slate-800">{selectedDetail.phone ?? "—"}</span></p>
+                    <p><span className="text-slate-500">Ad Accounts:</span> <span className="font-medium text-slate-800">{selectedDetail.adAccountsCount}</span></p>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-white p-4">
+                  <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Current Plan & Billing
+                  </p>
+                  <div className="space-y-2 text-[13px]">
+                    <p><span className="text-slate-500">Plan:</span> <span className="font-semibold text-slate-900">{selectedDetail.billingSnapshot.plan}</span></p>
+                    <p><span className="text-slate-500">Subscription:</span> <span className="font-medium text-slate-800">{selectedDetail.billingSnapshot.subscriptionStatus}</span></p>
+                    <p><span className="text-slate-500">Next Billing:</span> <span className="font-medium text-slate-800">{selectedDetail.billingSnapshot.nextBillingDate}</span></p>
+                    <p><span className="text-slate-500">MRR:</span> <span className="font-medium text-slate-800">{formatMoney(selectedDetail.billingSnapshot.monthlyRecurringRevenue)}</span></p>
+                    <p>
+                      <span className="text-slate-500">Card:</span>{" "}
+                      <span className="font-medium text-slate-800">
+                        {selectedDetail.billingSnapshot.cardBrand ?? "N/A"}{" "}
+                        {selectedDetail.billingSnapshot.cardLast4
+                          ? `•••• ${selectedDetail.billingSnapshot.cardLast4}`
+                          : ""}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-white p-4">
+                  <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Connected Ad Accounts ({selectedDetail.adAccountsCount})
+                  </p>
+                  {selectedDetail.adAccounts.length === 0 ? (
+                    <p className="text-[13px] text-slate-500">No ad accounts connected.</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {selectedDetail.adAccounts.map((account) => (
+                        <li
+                          key={account}
+                          className="rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 text-[13px] text-slate-700"
+                        >
+                          {account}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+
+              <div className="sticky bottom-0 border-t border-slate-100 bg-white px-6 py-4">
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsViewOpen(false)}
+                  >
+                    Close
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={async () => {
+                      if (!selectedDetail) return;
+                      const nextStatus: CustomerStatus =
+                        selectedDetail.status === "active" ? "paused" : "active";
+                      try {
+                        const response = await fetch(
+                          `/api/admin/customers/${selectedDetail.id}`,
+                          {
+                            method: "PATCH",
+                            headers: { "content-type": "application/json" },
+                            body: JSON.stringify({ status: nextStatus }),
+                          },
+                        );
+                        const payload = (await response.json()) as { error?: string };
+                        if (!response.ok) {
+                          throw new Error(payload.error || "Failed to update status");
+                        }
+                        setSelectedDetail((prev) =>
+                          prev ? { ...prev, status: nextStatus } : prev,
+                        );
+                        setRows((prev) =>
+                          prev.map((row) =>
+                            row.id === selectedDetail.id
+                              ? { ...row, status: nextStatus }
+                              : row,
+                          ),
+                        );
+                        toast.success(
+                          nextStatus === "active"
+                            ? "Customer marked active"
+                            : "Customer paused",
+                        );
+                      } catch (error) {
+                        toast.error("Failed to update customer status");
+                        console.error(error);
+                      }
+                    }}
+                  >
+                    {selectedDetail.status === "active"
+                      ? "Pause Customer"
+                      : "Activate Customer"}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      if (!selectedDetail) return;
+                      setSelected({
+                        id: selectedDetail.id,
+                        companyName: selectedDetail.companyName,
+                        email: selectedDetail.email,
+                        initials: selectedDetail.companyName
+                          .split(/\s+/)
+                          .map((word) => word[0] ?? "")
+                          .join("")
+                          .slice(0, 2)
+                          .toUpperCase(),
+                        avatarKind: "initials",
+                        avatarToneIndex: 0,
+                        contacts: selectedDetail.adAccountsCount,
+                        adAccounts: selectedDetail.adAccountsCount,
+                        mrr: selectedDetail.billingSnapshot.monthlyRecurringRevenue,
+                        status: selectedDetail.status,
+                        plan:
+                          selectedDetail.billingSnapshot.plan === "Starter"
+                            ? "Starter"
+                            : "Professional",
+                        nextBillingLabel: selectedDetail.billingSnapshot.nextBillingDate,
+                      });
+                      setEditForm({
+                        companyName: selectedDetail.companyName,
+                        contactName: selectedDetail.contactName,
+                        status: selectedDetail.status,
+                        plan:
+                          selectedDetail.billingSnapshot.plan === "Starter"
+                            ? "Starter"
+                            : "Professional",
+                      });
+                      setIsViewOpen(false);
+                      setIsEditOpen(true);
+                    }}
+                  >
+                    Edit Customer
+                  </Button>
+                </div>
+              </div>
+            </>
           ) : (
-            <p className="text-sm text-slate-500">Loading details...</p>
+            <div className="px-6 py-6 text-sm text-slate-500">Loading details...</div>
           )}
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

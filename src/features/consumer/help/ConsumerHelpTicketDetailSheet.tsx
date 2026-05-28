@@ -100,7 +100,7 @@ export function ConsumerHelpTicketDetailSheet({
                   {
                     id: "fallback-preview",
                     authorType: "agent",
-                    authorName: "AdAlert Support",
+                    authorName: "adAlert Support",
                     body: activeTicket.lastMessagePreview,
                     createdAt: activeTicket.updatedAt,
                   },
@@ -214,7 +214,7 @@ export function ConsumerHelpTicketDetailSheet({
                               <p className="text-[13px] font-semibold text-slate-900">
                                 {message.authorType === "customer"
                                   ? message.authorName || "You"
-                                  : message.authorName || "AdAlert Support"}
+                                  : message.authorName || "adAlert Support"}
                               </p>
                               <p className="text-[11px] text-slate-500">
                                 {formatMessageTime(message.createdAt)}

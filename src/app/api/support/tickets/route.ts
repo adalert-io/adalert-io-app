@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
 
     try {
       const requester = decoded.email ? `${decoded.email}` : decoded.uid;
-      const emailSubject = `[AdAlert Support] New Ticket ${createdTicket.id}`;
+      const emailSubject = `[adAlert Support] New Ticket ${createdTicket.id}`;
       const text = [
         "A new support ticket has been submitted.",
         "",
@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
 
       const html = `
         <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height: 1.45;">
-          <h2 style="margin: 0 0 12px;">AdAlert Support: New Ticket Submitted</h2>
+          <h2 style="margin: 0 0 12px;">adAlert Support: New Ticket Submitted</h2>
           <p style="margin: 0 0 12px;">A customer has submitted a new support ticket.</p>
           <table style="border-collapse: collapse; margin: 0 0 16px;">
             <tr><td style="padding: 4px 12px 4px 0; color: #475569;"><strong>Ticket</strong></td><td style="padding: 4px 0;">${createdTicket.id}</td></tr>
