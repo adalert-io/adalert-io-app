@@ -7,8 +7,6 @@ import {
   Clock,
   DollarSign,
   Eye,
-  LayoutGrid,
-  List,
   PencilLine,
   Plus,
   Search,
@@ -171,7 +169,6 @@ export function AdminCustomersView() {
   const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -225,6 +222,8 @@ export function AdminCustomersView() {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(Math.max(1, page), totalPages);
+  const sliceStart = (safePage - 1) * PAGE_SIZE;
+  const sliceEnd = Math.min(safePage * PAGE_SIZE, filtered.length);
   const pagedRows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   useEffect(() => {
@@ -350,23 +349,18 @@ export function AdminCustomersView() {
               <ArrowUpFromLine className="size-4 text-gray-700" aria-hidden />
               Export
             </Button>
-            <Button type="button" variant="outline" size="icon" aria-pressed={viewMode === "grid"} onClick={() => setViewMode("grid")} className={cn("size-9 rounded-lg", viewMode === "grid" && "bg-[#0B1426] text-white")}>
-              <LayoutGrid className="size-4" />
-            </Button>
-            <Button type="button" variant="outline" size="icon" aria-pressed={viewMode === "list"} onClick={() => setViewMode("list")} className={cn("size-9 rounded-lg", viewMode === "list" && "bg-[#0B1426] text-white")}>
-              <List className="size-4" />
-            </Button>
           </div>
         </div>
 
         {isLoading ? (
           <div className="rounded-2xl border border-[#e5e5e5] bg-white p-8 text-center text-sm text-gray-500">Loading customers...</div>
-        ) : viewMode === "list" ? (
+        ) : (
           <div className="overflow-hidden rounded-2xl border border-[#e5e5e5] bg-white">
             <table className="min-w-full text-[0.75rem]">
               <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
                   <th className="px-4 py-4 text-left font-semibold text-gray-700">Customer</th>
+                  <th className="px-4 py-4 text-left font-semibold text-gray-700">Contact</th>
                   <th className="px-4 py-4 text-left font-semibold text-gray-700">Ad Accounts</th>
                   <th className="px-4 py-4 text-left font-semibold text-gray-700">MRR</th>
                   <th className="px-4 py-4 text-left font-semibold text-gray-700">Status</th>
@@ -387,6 +381,7 @@ export function AdminCustomersView() {
                         </div>
                       </div>
                     </td>
+                    <td className="px-4 py-4">{row.contacts}</td>
                     <td className="px-4 py-4">{row.adAccounts}</td>
                     <td className="px-4 py-4">{formatMoney(row.mrr)}</td>
                     <td className="px-4 py-4"><CustomerStatusBadge status={row.status} /></td>
@@ -400,28 +395,32 @@ export function AdminCustomersView() {
                 ))}
               </tbody>
             </table>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {pagedRows.map((row) => (
-              <div key={row.id} className="rounded-2xl border border-[#e5e5e5] bg-white p-5">
-                <div className="flex items-start gap-3">
-                  <CustomerAvatar initials={row.initials} avatarToneIndex={row.avatarToneIndex} />
-                  <div>
-                    <p className="font-semibold text-gray-900">{row.companyName}</p>
-                    <p className="text-[12px] text-gray-500">{row.email}</p>
-                  </div>
-                </div>
-                <div className="mt-4 flex items-center justify-between">
-                  <CustomerStatusBadge status={row.status} />
-                  <span className="text-sm font-semibold">{formatMoney(row.mrr)}</span>
-                </div>
-                <div className="mt-3 flex justify-end gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => void openView(row)}><Eye className="size-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => void openEdit(row)}><PencilLine className="size-4" /></Button>
-                </div>
+            <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-4 py-3 text-xs text-gray-600">
+              <span>
+                {filtered.length === 0
+                  ? "No customers to show."
+                  : `Showing ${sliceStart + 1} to ${sliceEnd} of ${filtered.length} customers`}
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={safePage <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  Previous
+                </Button>
+                <span>{`Page ${safePage} / ${totalPages}`}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={safePage >= totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  Next
+                </Button>
               </div>
-            ))}
+            </div>
           </div>
         )}
       </div>
