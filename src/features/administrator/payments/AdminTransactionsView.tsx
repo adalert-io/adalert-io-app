@@ -166,7 +166,21 @@ function seedTransactions(): TransactionDemoRow[] {
   });
 }
 
-const ALL_TRANSACTIONS = seedTransactions();
+const SEEDED_TRANSACTIONS = seedTransactions();
+
+function normalizeMethod(value: string): TransactionDemoMethod {
+  const raw = value.toLowerCase();
+  if (raw.includes("master")) return "mastercard";
+  if (raw.includes("amex") || raw.includes("american")) return "amex";
+  if (raw.includes("ach") || raw.includes("bank")) return "ach";
+  return "visa";
+}
+
+function normalizeStatus(value: string): TransactionDemoStatus {
+  if (value === "succeeded") return "succeeded";
+  if (value === "pending") return "pending";
+  return "failed";
+}
 
 function payoutSlots(currentPage: number, totalPages: number): (number | "ellipsis")[] {
   if (totalPages <= 7) {
@@ -329,6 +343,9 @@ const SELECT_CLASS =
   "min-w-[128px] appearance-none rounded-lg border border-gray-200 bg-white py-2.5 ps-4 pe-9 text-[13px] font-medium text-gray-700 shadow-xs transition-colors focus-visible:border-[#015AFD] focus-visible:ring-2 focus-visible:ring-[#015AFD]/25";
 
 export function AdminTransactionsView() {
+  const [allTransactions, setAllTransactions] = useState<TransactionDemoRow[]>(
+    SEEDED_TRANSACTIONS,
+  );
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
@@ -341,8 +358,59 @@ export function AdminTransactionsView() {
     "all",
   );
 
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadTransactions() {
+      try {
+        const response = await fetch("/api/admin/payments/transactions", {
+          cache: "no-store",
+        });
+        const payload = (await response.json()) as {
+          transactions?: Array<{
+            id: string;
+            transactionId: string;
+            invoiceNumber: string;
+            companyName: string;
+            initials: string;
+            avatarToneIndex: number;
+            dateTimeLabel: string;
+            amount: number;
+            method: string;
+            last4: string;
+            status: string;
+            description: string;
+          }>;
+        };
+
+        if (!response.ok || !payload.transactions) {
+          return;
+        }
+
+        const mappedRows: TransactionDemoRow[] = payload.transactions.map((row, index) => ({
+          ...row,
+          avatarToneIndex: index % AVATAR_BG.length,
+          method: normalizeMethod(row.method),
+          status: normalizeStatus(row.status),
+        }));
+
+        if (!isCancelled && mappedRows.length > 0) {
+          setAllTransactions(mappedRows);
+        }
+      } catch {
+        // Keep seeded rows as fallback for local development.
+      }
+    }
+
+    void loadTransactions();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
   const filtered = useMemo(() => {
-    let rows = ALL_TRANSACTIONS;
+    let rows = allTransactions;
 
     if (search.trim()) {
       const q = search.trim().toLowerCase();
@@ -367,7 +435,7 @@ export function AdminTransactionsView() {
     }
 
     return rows;
-  }, [search, statusFilter, customerFilter, methodFilter]);
+  }, [allTransactions, search, statusFilter, customerFilter, methodFilter]);
 
   const totalRows = filtered.length;
   const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));

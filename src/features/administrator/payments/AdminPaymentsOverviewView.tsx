@@ -2,7 +2,7 @@
 
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -299,8 +299,78 @@ const SELECT_CLASS =
 export function AdminPaymentsOverviewView() {
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [overview, setOverview] = useState<{
+    metrics: {
+      totalRevenue: number;
+      paid: number;
+      pending: number;
+      pastDue: number;
+      refunded: number;
+    };
+    revenueTrend: Array<{ label: string; value: number }>;
+    breakdown: Array<{ key: string; name: string; amount: number }>;
+    planMix: Array<{ name: string; pct: number }>;
+  } | null>(null);
 
-  const piePayload = BREAKDOWN_SEGMENTS.map((s) => ({
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadOverview() {
+      try {
+        const response = await fetch("/api/admin/payments/overview", {
+          cache: "no-store",
+        });
+        const payload = (await response.json()) as typeof overview;
+        if (!response.ok || !payload || isCancelled) return;
+        setOverview(payload);
+      } catch {
+        // Keep existing static payload as fallback.
+      }
+    }
+
+    void loadOverview();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  const metrics = overview?.metrics ?? {
+    totalRevenue: 24350,
+    paid: 19850,
+    pending: 2640,
+    pastDue: 1860,
+    refunded: 340,
+  };
+  const revenueTrendData = overview?.revenueTrend?.length
+    ? overview.revenueTrend
+    : REVENUE_TREND_DATA;
+  const breakdownSegments = useMemo(() => {
+    const source = overview?.breakdown?.length
+      ? overview.breakdown.map((row, index) => ({
+          ...row,
+          fill: BREAKDOWN_ROWS_RAW[index % BREAKDOWN_ROWS_RAW.length]?.fill ?? "#94a3b8",
+        }))
+      : BREAKDOWN_ROWS_RAW;
+    const total = Math.max(
+      1,
+      source.reduce((sum, row) => sum + (row.amount || 0), 0),
+    );
+    return source.map((row) => ({
+      ...row,
+      percentLabel: `${(((row.amount || 0) / total) * 100).toFixed(1)}%`,
+    }));
+  }, [overview]);
+  const planMix = useMemo(() => {
+    if (!overview?.planMix?.length) return PLAN_MIX;
+    const fills = ["#3b82f6", "#64748b", "#eab308", "#cbd5e1"];
+    return overview.planMix.map((row, index) => ({
+      ...row,
+      fill: fills[index % fills.length] ?? "#cbd5e1",
+    }));
+  }, [overview]);
+
+  const piePayload = breakdownSegments.map((s) => ({
     name: s.name,
     value: s.amount,
     fill: s.fill,
@@ -343,7 +413,7 @@ export function AdminPaymentsOverviewView() {
       <section className="grid min-w-0 grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <PaymentsMetricCard
           title="Total Revenue"
-          value="$24,350"
+          value={money(metrics.totalRevenue)}
           trend="↑ 14% vs last 7 days"
           trendTone="positive"
           Icon={DollarSign}
@@ -351,7 +421,7 @@ export function AdminPaymentsOverviewView() {
         />
         <PaymentsMetricCard
           title="Paid"
-          value="$19,850"
+          value={money(metrics.paid)}
           trend="↑ 18% vs last 7 days"
           trendTone="positive"
           Icon={CircleCheckBig}
@@ -359,7 +429,7 @@ export function AdminPaymentsOverviewView() {
         />
         <PaymentsMetricCard
           title="Pending"
-          value="$2,640"
+          value={money(metrics.pending)}
           trend="↓ 5% vs last 7 days"
           trendTone="negative"
           Icon={Clock}
@@ -367,7 +437,7 @@ export function AdminPaymentsOverviewView() {
         />
         <PaymentsMetricCard
           title="Past Due"
-          value="$1,860"
+          value={money(metrics.pastDue)}
           trend="↑ 8% vs last 7 days"
           trendTone="negative"
           Icon={TriangleAlert}
@@ -375,7 +445,7 @@ export function AdminPaymentsOverviewView() {
         />
         <PaymentsMetricCard
           title="Refunded"
-          value="$340"
+          value={money(metrics.refunded)}
           trend="↓ 12% vs last 7 days"
           trendTone="positive"
           Icon={RotateCw}
@@ -405,7 +475,7 @@ export function AdminPaymentsOverviewView() {
             <div className="mt-6 h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
-                  data={REVENUE_TREND_DATA}
+                  data={revenueTrendData}
                   margin={{ left: 4, top: 8, bottom: 0, right: 12 }}
                 >
                   <defs>
@@ -493,7 +563,7 @@ export function AdminPaymentsOverviewView() {
               </ResponsiveContainer>
               <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center pt-4">
                 <p className="text-[21px] font-bold leading-none tracking-tight text-slate-900">
-                  $24,350
+                  {money(metrics.totalRevenue)}
                 </p>
                 <p className="text-muted-foreground mt-1 text-[13px] font-medium">
                   Total
@@ -502,7 +572,7 @@ export function AdminPaymentsOverviewView() {
             </div>
 
             <div className="min-w-0 flex-1 space-y-3">
-              {BREAKDOWN_SEGMENTS.map((row) => (
+              {breakdownSegments.map((row) => (
                 <div
                   key={row.key}
                   className="flex items-center justify-between gap-4 text-[13px]"
@@ -532,7 +602,7 @@ export function AdminPaymentsOverviewView() {
             <div className="w-full shrink-0 border-t border-slate-100 pt-6 lg:w-[200px] lg:border-s lg:border-t-0 lg:ps-8 lg:pt-0 xl:w-[220px]">
               <p className="mb-4 text-[13px] font-semibold text-slate-900">By Plan</p>
               <div className="space-y-4">
-                {PLAN_MIX.map((plan) => (
+                {planMix.map((plan) => (
                   <div key={plan.name} className="space-y-1.5">
                     <div className="flex items-center justify-between text-[12px] text-slate-700">
                       <span className="font-medium">{plan.name}</span>

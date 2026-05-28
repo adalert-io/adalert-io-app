@@ -75,6 +75,14 @@ interface CustomerDetail {
     monthlyRecurringRevenue: number;
     cardBrand: string | null;
     cardLast4: string | null;
+    stripeCustomerId?: string | null;
+    invoices?: Array<{
+      id: string;
+      number: string;
+      status: string;
+      amount: number;
+      createdAt: string;
+    }>;
   };
 }
 
@@ -236,11 +244,68 @@ export function AdminCustomersView() {
   async function openView(row: CustomerRow) {
     setSelected(row);
     setIsViewOpen(true);
+    setSelectedDetail(null);
     try {
-      const response = await fetch(`/api/admin/customers/${row.id}`, { cache: "no-store" });
-      const payload = (await response.json()) as { customer?: CustomerDetail; error?: string };
-      if (!response.ok || !payload.customer) throw new Error(payload.error || "Failed to load customer detail");
-      setSelectedDetail(payload.customer);
+      const [detailResponse, billingResponse] = await Promise.all([
+        fetch(`/api/admin/customers/${row.id}`, { cache: "no-store" }),
+        fetch(`/api/admin/customers/${row.id}/billing`, { cache: "no-store" }),
+      ]);
+      const detailPayload = (await detailResponse.json()) as {
+        customer?: CustomerDetail;
+        error?: string;
+      };
+      const billingPayload = (await billingResponse.json()) as {
+        billing?: {
+          stripeCustomerId?: string | null;
+          plan?: string;
+          subscriptionStatus?: string;
+          nextBillingDate?: string;
+          monthlyRecurringRevenue?: number;
+          paymentMethod?: {
+            brand?: string | null;
+            last4?: string | null;
+          } | null;
+          invoices?: Array<{
+            id: string;
+            number: string;
+            status: string;
+            amount: number;
+            createdAt: string;
+          }>;
+        };
+      };
+
+      if (!detailResponse.ok || !detailPayload.customer) {
+        throw new Error(detailPayload.error || "Failed to load customer detail");
+      }
+
+      const billing = billingResponse.ok ? billingPayload.billing : null;
+      const mergedCustomer: CustomerDetail = {
+        ...detailPayload.customer,
+        billingSnapshot: {
+          ...detailPayload.customer.billingSnapshot,
+          plan: billing?.plan ?? detailPayload.customer.billingSnapshot.plan,
+          subscriptionStatus:
+            billing?.subscriptionStatus ??
+            detailPayload.customer.billingSnapshot.subscriptionStatus,
+          nextBillingDate:
+            billing?.nextBillingDate ??
+            detailPayload.customer.billingSnapshot.nextBillingDate,
+          monthlyRecurringRevenue:
+            billing?.monthlyRecurringRevenue ??
+            detailPayload.customer.billingSnapshot.monthlyRecurringRevenue,
+          cardBrand:
+            billing?.paymentMethod?.brand ??
+            detailPayload.customer.billingSnapshot.cardBrand,
+          cardLast4:
+            billing?.paymentMethod?.last4 ??
+            detailPayload.customer.billingSnapshot.cardLast4,
+          stripeCustomerId: billing?.stripeCustomerId ?? null,
+          invoices: billing?.invoices ?? [],
+        },
+      };
+
+      setSelectedDetail(mergedCustomer);
     } catch (error) {
       toast.error("Failed to load customer detail");
       console.error(error);
@@ -501,6 +566,14 @@ export function AdminCustomersView() {
                     Current Plan & Billing
                   </p>
                   <div className="space-y-2 text-[13px]">
+                    {selectedDetail.billingSnapshot.stripeCustomerId ? (
+                      <p>
+                        <span className="text-slate-500">Stripe Customer:</span>{" "}
+                        <span className="font-mono text-[12px] text-slate-800">
+                          {selectedDetail.billingSnapshot.stripeCustomerId}
+                        </span>
+                      </p>
+                    ) : null}
                     <p><span className="text-slate-500">Plan:</span> <span className="font-semibold text-slate-900">{selectedDetail.billingSnapshot.plan}</span></p>
                     <p><span className="text-slate-500">Subscription:</span> <span className="font-medium text-slate-800">{selectedDetail.billingSnapshot.subscriptionStatus}</span></p>
                     <p><span className="text-slate-500">Next Billing:</span> <span className="font-medium text-slate-800">{selectedDetail.billingSnapshot.nextBillingDate}</span></p>
@@ -515,6 +588,41 @@ export function AdminCustomersView() {
                       </span>
                     </p>
                   </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-white p-4">
+                  <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Recent Invoices
+                  </p>
+                  {selectedDetail.billingSnapshot.invoices?.length ? (
+                    <div className="space-y-2">
+                      {selectedDetail.billingSnapshot.invoices.map((invoice) => (
+                        <div
+                          key={invoice.id}
+                          className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 text-[12px]"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate font-medium text-slate-800">
+                              {invoice.number}
+                            </p>
+                            <p className="text-slate-500">{invoice.createdAt}</p>
+                          </div>
+                          <div className="text-end">
+                            <p className="font-semibold text-slate-900">
+                              {formatMoney(invoice.amount)}
+                            </p>
+                            <p className="uppercase tracking-wide text-slate-500">
+                              {invoice.status}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[13px] text-slate-500">
+                      No invoices available yet.
+                    </p>
+                  )}
                 </div>
 
                 <div className="rounded-xl border border-slate-200 bg-white p-4">
