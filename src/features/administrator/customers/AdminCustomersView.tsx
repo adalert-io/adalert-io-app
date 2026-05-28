@@ -539,11 +539,11 @@ export function AdminCustomersView() {
       <Sheet open={isViewOpen} onOpenChange={setIsViewOpen}>
         <SheetContent
           side="right"
-          className="flex w-full flex-col gap-0 border-slate-200 p-0 sm:max-w-xl"
+          className="flex w-full flex-col gap-0 border-slate-200 bg-slate-50/40 p-0 sm:max-w-xl"
         >
           {selectedDetail ? (
             <>
-              <SheetHeader className="border-b border-slate-100 px-6 py-5 text-start">
+              <SheetHeader className="border-b border-slate-100 bg-white px-6 py-5 text-start shadow-sm">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-mono text-slate-600">
                     {selectedDetail.id}
@@ -559,7 +559,7 @@ export function AdminCustomersView() {
               </SheetHeader>
 
               <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5 text-sm">
-                <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-4">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                   <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                     Account Details
                   </p>
@@ -569,7 +569,7 @@ export function AdminCustomersView() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-slate-200 bg-white p-4">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                   <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                     Current Plan & Billing
                   </p>
@@ -609,7 +609,7 @@ export function AdminCustomersView() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-slate-200 bg-white p-4">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                   <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                     Recent Invoices
                   </p>
@@ -618,7 +618,7 @@ export function AdminCustomersView() {
                       {selectedDetail.billingSnapshot.invoices.map((invoice) => (
                         <div
                           key={invoice.id}
-                          className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 text-[12px]"
+                          className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5 text-[12px]"
                         >
                           <div className="min-w-0">
                             <p className="truncate font-medium text-slate-800">
@@ -644,7 +644,7 @@ export function AdminCustomersView() {
                   )}
                 </div>
 
-                <div className="rounded-xl border border-slate-200 bg-white p-4">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                   <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                     Connected Ad Accounts ({selectedDetail.adAccountsCount})
                   </p>
@@ -655,7 +655,7 @@ export function AdminCustomersView() {
                       {selectedDetail.adAccounts.map((account) => (
                         <li
                           key={account}
-                          className="rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 text-[13px] text-slate-700"
+                          className="rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5 text-[13px] text-slate-700"
                         >
                           {account}
                         </li>
@@ -665,7 +665,7 @@ export function AdminCustomersView() {
                 </div>
               </div>
 
-              <div className="sticky bottom-0 border-t border-slate-100 bg-white px-6 py-4">
+              <div className="sticky bottom-0 border-t border-slate-100 bg-white/95 px-6 py-4 backdrop-blur">
                 <div className="flex flex-wrap items-center justify-end gap-2">
                   <Button
                     type="button"

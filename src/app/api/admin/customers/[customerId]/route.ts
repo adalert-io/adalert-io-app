@@ -3,6 +3,7 @@ import admin from "firebase-admin";
 
 import { COLLECTIONS } from "@/lib/constants";
 import { getAdminFirestore } from "@/lib/firebase/admin";
+import { formatAccountNumber } from "@/lib/utils";
 
 import {
   ADMIN_PREVIEW_COOKIE,
@@ -26,6 +27,22 @@ function ensureAdminAccess(request: NextRequest): NextResponse | null {
   return null;
 }
 
+function isSelectedForUser({
+  selectedUsers,
+  userId,
+}: {
+  selectedUsers: unknown;
+  userId: string;
+}): boolean {
+  if (!Array.isArray(selectedUsers)) return false;
+  return selectedUsers.some((value) => {
+    if (value instanceof admin.firestore.DocumentReference) {
+      return value.id === userId;
+    }
+    return false;
+  });
+}
+
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ customerId: string }> },
@@ -37,18 +54,32 @@ export async function GET(
     const { customerId } = await context.params;
     const db = getAdminFirestore();
     const userRef = db.collection(COLLECTIONS.USERS).doc(customerId);
-    const [userSnap, subscriptionsSnap, paymentMethodsSnap, adsAccountsSnap] = await Promise.all([
-      userRef.get(),
-      db.collection(COLLECTIONS.SUBSCRIPTIONS).where("User", "==", userRef).limit(1).get(),
-      db.collection("paymentMethods").where("User", "==", userRef).limit(1).get(),
-      db.collection(COLLECTIONS.ADS_ACCOUNTS).where("User", "==", userRef).get(),
-    ]);
+    const userSnap = await userRef.get();
 
     if (!userSnap.exists) {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 });
     }
 
     const userData = (userSnap.data() ?? {}) as Record<string, unknown>;
+    const companyAdminRef =
+      userData["Company Admin"] instanceof admin.firestore.DocumentReference
+        ? userData["Company Admin"]
+        : userRef;
+    const userType = typeof userData["User Type"] === "string" ? userData["User Type"] : "";
+    const isAdminUser = userType === "Admin" || companyAdminRef.id === userRef.id;
+
+    const [subscriptionsSnap, paymentMethodsSnap, adsAccountsSnap] = await Promise.all([
+      db.collection(COLLECTIONS.SUBSCRIPTIONS)
+        .where("User", "==", companyAdminRef)
+        .limit(1)
+        .get(),
+      db.collection("paymentMethods").where("User", "==", companyAdminRef).limit(1).get(),
+      db.collection(COLLECTIONS.ADS_ACCOUNTS)
+        .where("User", "==", companyAdminRef)
+        .where("Is Connected", "==", true)
+        .get(),
+    ]);
+
     const subscription = subscriptionsSnap.empty
       ? null
       : ((subscriptionsSnap.docs[0]?.data() ?? {}) as Record<string, unknown>);
@@ -56,20 +87,35 @@ export async function GET(
       ? null
       : ((paymentMethodsSnap.docs[0]?.data() ?? {}) as Record<string, unknown>);
     const adAccounts = adsAccountsSnap.docs
+      .filter((doc) => {
+        if (isAdminUser) return true;
+        const data = (doc.data() ?? {}) as Record<string, unknown>;
+        return isSelectedForUser({
+          selectedUsers: data["Selected Users"],
+          userId: userRef.id,
+        });
+      })
       .map((doc) => {
         const data = (doc.data() ?? {}) as Record<string, unknown>;
-        const nameCandidates = [
-          data["Name"],
-          data["Ads Account Name"],
+        const consumerLikeNameCandidates = [
+          data["Account Name Editable"],
+          data["Account Name Original"],
           data["Account Name"],
+          data["Ads Account Name"],
           data["Google Ads Account Name"],
-          data["Ads Account"],
+          data["Name"],
           data["Display Name"],
         ];
-        const name = nameCandidates.find(
+        const name = consumerLikeNameCandidates.find(
           (value) => typeof value === "string" && value.trim().length > 0,
         );
-        return typeof name === "string" && name.trim() ? name.trim() : doc.id;
+        if (typeof name === "string" && name.trim()) return name.trim();
+        const accountId =
+          typeof data["Id"] === "string" && data["Id"].trim()
+            ? data["Id"].trim()
+            : null;
+        if (accountId) return formatAccountNumber(accountId);
+        return doc.id;
       })
       .filter((item, index, list) => list.indexOf(item) === index);
 

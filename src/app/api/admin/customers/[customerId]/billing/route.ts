@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import admin from "firebase-admin";
 
 import { COLLECTIONS } from "@/lib/constants";
 import { getAdminFirestore } from "@/lib/firebase/admin";
@@ -56,10 +57,16 @@ export async function GET(
     const { customerId } = await context.params;
     const db = getAdminFirestore();
     const userRef = db.collection(COLLECTIONS.USERS).doc(customerId);
+    const userSnap = await userRef.get();
+    const userData = (userSnap.data() ?? {}) as Record<string, unknown>;
+    const billingOwnerRef =
+      userData["Company Admin"] instanceof admin.firestore.DocumentReference
+        ? userData["Company Admin"]
+        : userRef;
 
     const [subscriptionSnap, stripeCompanySnap] = await Promise.all([
-      db.collection(COLLECTIONS.SUBSCRIPTIONS).where("User", "==", userRef).limit(1).get(),
-      db.collection(COLLECTIONS.STRIPE_COMPANIES).where("User", "==", userRef).limit(1).get(),
+      db.collection(COLLECTIONS.SUBSCRIPTIONS).where("User", "==", billingOwnerRef).limit(1).get(),
+      db.collection(COLLECTIONS.STRIPE_COMPANIES).where("User", "==", billingOwnerRef).limit(1).get(),
     ]);
 
     const subscriptionData = subscriptionSnap.empty

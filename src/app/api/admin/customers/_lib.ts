@@ -100,6 +100,22 @@ function mapUserDocToCompanyName(userData: Record<string, unknown>): string {
   return typeof match === "string" ? match.trim() : "Unknown Company";
 }
 
+function isUserInSelectedUsers({
+  selectedUsers,
+  userId,
+}: {
+  selectedUsers: unknown;
+  userId: string;
+}): boolean {
+  if (!Array.isArray(selectedUsers)) return false;
+  return selectedUsers.some((value) => {
+    if (value instanceof admin.firestore.DocumentReference) {
+      return value.id === userId;
+    }
+    return false;
+  });
+}
+
 export interface CustomerListResult {
   rows: CustomerListItem[];
   metrics: {
@@ -116,7 +132,7 @@ export async function loadCustomersList(): Promise<CustomerListResult> {
   const [usersSnap, subscriptionsSnap, adsAccountsSnap] = await Promise.all([
     db.collection(COLLECTIONS.USERS).get(),
     db.collection(COLLECTIONS.SUBSCRIPTIONS).get(),
-    db.collection(COLLECTIONS.ADS_ACCOUNTS).get(),
+    db.collection(COLLECTIONS.ADS_ACCOUNTS).where("Is Connected", "==", true).get(),
   ]);
 
   const subscriptionsByUserId = new Map<string, Record<string, unknown>>();
@@ -128,12 +144,21 @@ export async function loadCustomersList(): Promise<CustomerListResult> {
     }
   });
 
-  const adAccountCountsByUserId = new Map<string, number>();
+  const connectedAccountsByCompanyAdminId = new Map<
+    string,
+    Array<{
+      selectedUsers: unknown;
+    }>
+  >();
   adsAccountsSnap.forEach((doc) => {
     const data = toRecord(doc.data());
     const userRef = data["User"];
     if (userRef instanceof admin.firestore.DocumentReference) {
-      adAccountCountsByUserId.set(userRef.id, (adAccountCountsByUserId.get(userRef.id) ?? 0) + 1);
+      const current = connectedAccountsByCompanyAdminId.get(userRef.id) ?? [];
+      current.push({
+        selectedUsers: data["Selected Users"],
+      });
+      connectedAccountsByCompanyAdminId.set(userRef.id, current);
     }
   });
 
@@ -156,6 +181,18 @@ export async function loadCustomersList(): Promise<CustomerListResult> {
         0,
       );
 
+      const userType = typeof userData["User Type"] === "string" ? userData["User Type"] : "";
+      const isAdminUser = userType === "Admin" || companyAdminId === doc.id;
+      const linkedAccounts = connectedAccountsByCompanyAdminId.get(companyAdminId) ?? [];
+      const adAccountsCount = isAdminUser
+        ? linkedAccounts.length
+        : linkedAccounts.filter((account) =>
+            isUserInSelectedUsers({
+              selectedUsers: account.selectedUsers,
+              userId: doc.id,
+            }),
+          ).length;
+
       const row: CustomerListItem = {
         id: doc.id,
         companyName: mapUserDocToCompanyName(userData),
@@ -167,7 +204,7 @@ export async function loadCustomersList(): Promise<CustomerListResult> {
         avatarKind: idx % 6 === 0 ? "logo" : "initials",
         avatarToneIndex: idx % 5,
         contacts: toNumber(userData["Team Size"] ?? 1, 1),
-        adAccounts: adAccountCountsByUserId.get(doc.id) ?? 0,
+        adAccounts: adAccountsCount,
         mrr,
         status: uiStatus,
         plan,
