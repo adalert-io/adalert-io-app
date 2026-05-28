@@ -22,6 +22,23 @@ function formatUnixDate(unix: number | null | undefined): string {
   });
 }
 
+function toNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value.replace(/[^\d.-]/g, ""));
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return null;
+}
+
+function toMonthlyAmount(amount: number, interval: string | null | undefined): number {
+  if (!interval || interval === "month") return amount;
+  if (interval === "year") return amount / 12;
+  if (interval === "week") return amount * 4.345;
+  if (interval === "day") return amount * 30;
+  return amount;
+}
+
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ customerId: string }> },
@@ -75,12 +92,18 @@ export async function GET(
       });
     }
 
-    const [customer, invoices, paymentMethods] = await Promise.all([
+    const [customer, invoices, paymentMethods, subscriptions] = await Promise.all([
       stripe.customers.retrieve(stripeCustomerId, {
         expand: ["invoice_settings.default_payment_method"],
       }),
       stripe.invoices.list({ customer: stripeCustomerId, limit: 5 }),
       stripe.paymentMethods.list({ customer: stripeCustomerId, type: "card", limit: 1 }),
+      stripe.subscriptions.list({
+        customer: stripeCustomerId,
+        status: "all",
+        limit: 10,
+        expand: ["data.items.data.price"],
+      }),
     ]);
 
     const defaultPm = (customer as { invoice_settings?: { default_payment_method?: unknown } })
@@ -99,9 +122,22 @@ export async function GET(
       createdAt: formatUnixDate(invoice.created),
     }));
 
-    const nextInvoice = invoices.data.find(
-      (invoice) => invoice.status === "open" || invoice.status === "draft",
+    const activeSubscription = subscriptions.data.find((subscription) =>
+      ["active", "trialing", "past_due", "unpaid"].includes(subscription.status),
     );
+
+    const derivedMrr = activeSubscription
+      ? activeSubscription.items.data.reduce((sum, item) => {
+          const unitAmount = (item.price?.unit_amount ?? 0) / 100;
+          const quantity = item.quantity ?? 1;
+          const interval = item.price?.recurring?.interval ?? null;
+          const lineTotal = unitAmount * quantity;
+          return sum + toMonthlyAmount(lineTotal, interval);
+        }, 0)
+      : null;
+
+    const storedMrr = toNumber(subscriptionData["Monthly Recurring Revenue"]);
+    const monthlyRecurringRevenue = storedMrr && storedMrr > 0 ? storedMrr : derivedMrr ?? 0;
 
     return NextResponse.json({
       billing: {
@@ -114,11 +150,10 @@ export async function GET(
           (typeof subscriptionData["User Status"] === "string" &&
             subscriptionData["User Status"]) ||
           "Unknown",
-        nextBillingDate: nextInvoice ? formatUnixDate(nextInvoice.created) : "—",
-        monthlyRecurringRevenue:
-          typeof subscriptionData["Monthly Recurring Revenue"] === "number"
-            ? subscriptionData["Monthly Recurring Revenue"]
-            : 0,
+        nextBillingDate: activeSubscription
+          ? formatUnixDate(activeSubscription.current_period_end)
+          : "—",
+        monthlyRecurringRevenue: Math.round(monthlyRecurringRevenue * 100) / 100,
         paymentMethod:
           cardBrand || cardLast4
             ? {

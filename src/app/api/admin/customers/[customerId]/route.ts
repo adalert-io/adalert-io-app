@@ -58,7 +58,17 @@ export async function GET(
     const adAccounts = adsAccountsSnap.docs
       .map((doc) => {
         const data = (doc.data() ?? {}) as Record<string, unknown>;
-        const name = data["Name"] ?? data["Ads Account"] ?? data["Customer ID"];
+        const nameCandidates = [
+          data["Name"],
+          data["Ads Account Name"],
+          data["Account Name"],
+          data["Google Ads Account Name"],
+          data["Ads Account"],
+          data["Display Name"],
+        ];
+        const name = nameCandidates.find(
+          (value) => typeof value === "string" && value.trim().length > 0,
+        );
         return typeof name === "string" && name.trim() ? name.trim() : doc.id;
       })
       .filter((item, index, list) => list.indexOf(item) === index);
