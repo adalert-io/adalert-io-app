@@ -64,9 +64,10 @@ export async function GET(
         ? userData["Company Admin"]
         : userRef;
 
-    const [subscriptionSnap, stripeCompanySnap] = await Promise.all([
+    const [subscriptionSnap, stripeCompanySnap, paymentMethodsSnap] = await Promise.all([
       db.collection(COLLECTIONS.SUBSCRIPTIONS).where("User", "==", billingOwnerRef).limit(1).get(),
       db.collection(COLLECTIONS.STRIPE_COMPANIES).where("User", "==", billingOwnerRef).limit(1).get(),
+      db.collection("paymentMethods").where("User", "==", billingOwnerRef).limit(1).get(),
     ]);
 
     const subscriptionData = subscriptionSnap.empty
@@ -75,10 +76,17 @@ export async function GET(
     const stripeCompanyData = stripeCompanySnap.empty
       ? ({} as Record<string, unknown>)
       : ((stripeCompanySnap.docs[0]?.data() ?? {}) as Record<string, unknown>);
+    const paymentMethodData = paymentMethodsSnap.empty
+      ? ({} as Record<string, unknown>)
+      : ((paymentMethodsSnap.docs[0]?.data() ?? {}) as Record<string, unknown>);
 
     const stripeCustomerId =
       (typeof stripeCompanyData["Stripe Customer Id"] === "string" &&
         stripeCompanyData["Stripe Customer Id"]) ||
+      (typeof subscriptionData["Stripe Customer Id"] === "string" &&
+        subscriptionData["Stripe Customer Id"]) ||
+      (typeof paymentMethodData["Stripe Customer Id"] === "string" &&
+        paymentMethodData["Stripe Customer Id"]) ||
       null;
 
     const stripe = getStripeServer();

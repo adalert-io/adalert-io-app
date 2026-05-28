@@ -3,10 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowUpFromLine,
+  BadgeDollarSign,
+  Building2,
   CircleCheckBig,
   Clock,
   DollarSign,
   Eye,
+  FileText,
+  Layers3,
   PencilLine,
   Plus,
   Search,
@@ -109,6 +113,27 @@ function getPlanAmount({
   if (monthlyRecurringRevenue > 0) return monthlyRecurringRevenue;
   if (plan.toLowerCase().includes("starter")) return 59;
   return 59;
+}
+
+function SheetSectionHeader({
+  title,
+  Icon,
+  iconClassName,
+}: {
+  title: string;
+  Icon: typeof Users;
+  iconClassName: string;
+}) {
+  return (
+    <div className="mb-3 flex items-center gap-2">
+      <span className={cn("flex size-7 items-center justify-center rounded-lg", iconClassName)}>
+        <Icon className="size-4" aria-hidden />
+      </span>
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+        {title}
+      </p>
+    </div>
+  );
 }
 
 function statusLabel(status: CustomerStatus): string {
@@ -560,9 +585,11 @@ export function AdminCustomersView() {
 
               <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5 text-sm">
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                    Account Details
-                  </p>
+                  <SheetSectionHeader
+                    title="Account Details"
+                    Icon={Building2}
+                    iconClassName="bg-[#3b82f6]/15 text-[#1d4ed8]"
+                  />
                   <div className="space-y-2 text-[13px]">
                     <p><span className="text-slate-500">Phone:</span> <span className="font-medium text-slate-800">{selectedDetail.phone ?? "—"}</span></p>
                     <p><span className="text-slate-500">Ad Accounts:</span> <span className="font-medium text-slate-800">{selectedDetail.adAccountsCount}</span></p>
@@ -570,9 +597,11 @@ export function AdminCustomersView() {
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                    Current Plan & Billing
-                  </p>
+                  <SheetSectionHeader
+                    title="Current Plan & Billing"
+                    Icon={BadgeDollarSign}
+                    iconClassName="bg-emerald-400/15 text-emerald-700"
+                  />
                   <div className="space-y-2 text-[13px]">
                     {selectedDetail.billingSnapshot.stripeCustomerId ? (
                       <p>
@@ -610,9 +639,11 @@ export function AdminCustomersView() {
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                    Recent Invoices
-                  </p>
+                  <SheetSectionHeader
+                    title="Recent Invoices"
+                    Icon={FileText}
+                    iconClassName="bg-violet-400/15 text-violet-700"
+                  />
                   {selectedDetail.billingSnapshot.invoices?.length ? (
                     <div className="space-y-2">
                       {selectedDetail.billingSnapshot.invoices.map((invoice) => (
@@ -645,9 +676,11 @@ export function AdminCustomersView() {
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                    Connected Ad Accounts ({selectedDetail.adAccountsCount})
-                  </p>
+                  <SheetSectionHeader
+                    title={`Connected Ad Accounts (${selectedDetail.adAccountsCount})`}
+                    Icon={Layers3}
+                    iconClassName="bg-orange-400/20 text-orange-700"
+                  />
                   {selectedDetail.adAccounts.length === 0 ? (
                     <p className="text-[13px] text-slate-500">No ad accounts connected.</p>
                   ) : (
