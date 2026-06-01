@@ -43,11 +43,6 @@ export const adminConsoleNavGroups: AdminNavGroup[] = [
         icon: CreditCard,
         items: [
           {
-            title: "Overview",
-            href: "/administrator/payments",
-            matchExact: true,
-          },
-          {
             title: "Transactions",
             href: "/administrator/payments/transactions",
           },

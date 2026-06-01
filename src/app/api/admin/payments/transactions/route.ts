@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import type Stripe from "stripe";
 
 import { getStripeServer } from "@/lib/stripe/get-stripe-server";
 
@@ -21,6 +22,50 @@ function formatDateTime(unix: number): string {
   });
 }
 
+function normalizeMethod(value: string): string {
+  const raw = value.toLowerCase();
+  if (raw.includes("master")) return "mastercard";
+  if (raw.includes("amex") || raw.includes("american")) return "amex";
+  if (raw.includes("ach") || raw.includes("bank")) return "ach";
+  return "visa";
+}
+
+function normalizeStatus(
+  status: string,
+): "succeeded" | "pending" | "failed" {
+  if (status === "succeeded") return "succeeded";
+  if (status === "pending") return "pending";
+  return "failed";
+}
+
+function invoiceLabel(invoice: unknown): string {
+  if (!invoice) return "—";
+  if (typeof invoice === "string") return invoice;
+  if (typeof invoice === "object" && invoice !== null) {
+    const record = invoice as { number?: string | null; id?: string };
+    return record.number ?? record.id ?? "—";
+  }
+  return "—";
+}
+
+async function listAllCharges(stripe: Stripe) {
+  const charges: Stripe.Charge[] = [];
+  let startingAfter: string | undefined;
+
+  while (true) {
+    const page = await stripe.charges.list({
+      limit: 100,
+      expand: ["data.customer", "data.payment_method_details", "data.invoice"],
+      ...(startingAfter ? { starting_after: startingAfter } : {}),
+    });
+    charges.push(...page.data);
+    if (!page.has_more || page.data.length === 0) break;
+    startingAfter = page.data[page.data.length - 1]?.id;
+  }
+
+  return charges;
+}
+
 export async function GET(request: NextRequest) {
   const denied = ensureAdminAccess(request);
   if (denied) return denied;
@@ -28,28 +73,54 @@ export async function GET(request: NextRequest) {
   try {
     const stripe = getStripeServer();
     if (!stripe) {
-      return NextResponse.json({ transactions: [] });
+      return NextResponse.json({
+        transactions: [],
+        metrics: {
+          total: 0,
+          succeeded: 0,
+          pending: 0,
+          failed: 0,
+          totalAmount: 0,
+        },
+      });
     }
 
-    const charges = await stripe.charges.list({
-      limit: 100,
-      expand: ["data.customer", "data.payment_method_details"],
-    });
+    const charges = await listAllCharges(stripe);
 
-    const transactions = charges.data.map((charge) => {
-      const customerObject = charge.customer as { name?: string } | null;
-      const customerName = customerObject?.name?.trim() || "Unknown Customer";
+    let succeeded = 0;
+    let pending = 0;
+    let failed = 0;
+    let totalAmount = 0;
+
+    const transactions = charges.map((charge, index) => {
+      const status = normalizeStatus(charge.status);
+      const amount = (charge.amount || 0) / 100;
+      if (status === "succeeded") {
+        succeeded += 1;
+        totalAmount += amount;
+      } else if (status === "pending") {
+        pending += 1;
+      } else {
+        failed += 1;
+      }
+
+      const customerObject = charge.customer as Stripe.Customer | null;
+      const customerName =
+        customerObject?.name?.trim() ||
+        customerObject?.email?.trim() ||
+        "Unknown Customer";
       const methodType = charge.payment_method_details?.type ?? "card";
       const brand =
         charge.payment_method_details?.card?.brand ??
         (methodType === "us_bank_account" ? "ach" : "visa");
       const last4 = charge.payment_method_details?.card?.last4 ?? "—";
-      const invoiceValue = (charge as unknown as Record<string, unknown>)["invoice"];
 
       return {
         id: charge.id,
         transactionId: charge.id,
-        invoiceNumber: typeof invoiceValue === "string" ? invoiceValue : "—",
+        invoiceNumber: invoiceLabel(
+          (charge as Stripe.Charge & { invoice?: unknown }).invoice,
+        ),
         companyName: customerName,
         initials: customerName
           .split(/\s+/)
@@ -58,17 +129,28 @@ export async function GET(request: NextRequest) {
           .join("")
           .slice(0, 2)
           .toUpperCase(),
-        avatarToneIndex: 0,
+        avatarToneIndex: index % 5,
         dateTimeLabel: formatDateTime(charge.created),
-        amount: (charge.amount || 0) / 100,
-        method: brand,
+        amount,
+        method: normalizeMethod(brand),
         last4,
-        status: charge.status === "succeeded" ? "succeeded" : charge.status === "pending" ? "pending" : "failed",
+        status,
         description: charge.description || "Stripe charge",
+        receiptUrl: charge.receipt_url ?? null,
+        currency: charge.currency?.toUpperCase() ?? "USD",
       };
     });
 
-    return NextResponse.json({ transactions });
+    return NextResponse.json({
+      transactions,
+      metrics: {
+        total: transactions.length,
+        succeeded,
+        pending,
+        failed,
+        totalAmount: Math.round(totalAmount * 100) / 100,
+      },
+    });
   } catch (error) {
     return NextResponse.json(
       { error: (error as Error).message || "Failed to load transactions" },

@@ -13,25 +13,29 @@ import {
   CircleCheckBig,
   Clock,
   DollarSign,
-  Download,
-  Filter,
-  LayoutGrid,
-  List,
   MoreHorizontal,
   Search,
   X,
   XCircle,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
-type TransactionDemoStatus = "succeeded" | "pending" | "failed";
-type TransactionDemoMethod = "visa" | "mastercard" | "amex" | "ach";
+type TransactionStatus = "succeeded" | "pending" | "failed";
+type TransactionMethod = "visa" | "mastercard" | "amex" | "ach";
 
-interface TransactionDemoRow {
+interface TransactionRow {
   id: string;
   transactionId: string;
   invoiceNumber: string;
@@ -40,22 +44,21 @@ interface TransactionDemoRow {
   avatarToneIndex: number;
   dateTimeLabel: string;
   amount: number;
-  method: TransactionDemoMethod;
+  method: TransactionMethod;
   last4: string;
-  status: TransactionDemoStatus;
+  status: TransactionStatus;
   description: string;
+  receiptUrl: string | null;
+  currency: string;
 }
 
-const COMPANY_POOL = [
-  "McGrath Kavinoky LLP",
-  "Lakeside Boutique",
-  "Nexus AI Labs",
-  "Sunrise Catering Co.",
-  "PixelForge Studios",
-  "Acme Diagnostics LLC",
-  "Harbor Media Group",
-  "Northwind Collective",
-];
+interface TransactionMetrics {
+  total: number;
+  succeeded: number;
+  pending: number;
+  failed: number;
+  totalAmount: number;
+}
 
 const AVATAR_BG = [
   "bg-[#3b82f6]",
@@ -67,106 +70,10 @@ const AVATAR_BG = [
 
 const PAGE_SIZE = 10;
 
-function initialsFromName(name: string): string {
-  const words = name
-    .replace(/&/g, " ")
-    .replace(/[^\w\s]/g, " ")
-    .split(/\s+/)
-    .filter(Boolean);
-  const f = words[0]?.[0];
-  const s = words.length > 1 ? words[1]?.[0] : words[0]?.[1];
-  return `${f ?? "?"}${s ?? "?"}`.toUpperCase().slice(0, 2);
-}
+const SELECT_CLASS =
+  "min-w-[128px] appearance-none rounded-lg border border-gray-200 bg-white py-2.5 ps-4 pe-9 text-[13px] font-medium text-gray-700 shadow-xs transition-colors focus-visible:border-[#015AFD] focus-visible:ring-2 focus-visible:ring-[#015AFD]/25";
 
-/** One failed (index 5), three pending — remaining 28 succeeded. */
-function statusForSeedIndex(seedIndex: number): TransactionDemoStatus {
-  if (seedIndex === 5) return "failed";
-  if (seedIndex === 10 || seedIndex === 18 || seedIndex === 29) return "pending";
-  return "succeeded";
-}
-
-const METHOD_ROTATION: TransactionDemoMethod[] = [
-  "visa",
-  "mastercard",
-  "amex",
-  "ach",
-];
-
-const DESCRIPTION_ROTATION = [
-  "Invoice Payment",
-  "Subscription Renewal",
-  "Manual Payment",
-] as const;
-
-const LAST4_POOL = ["4242", "5513", "3782", "6011", "8821", "3094", "1140"];
-
-const DEMO_DATE_TIME_ROTATION = [
-  "May 15, 2025 09:41 AM",
-  "May 15, 2025 11:06 AM",
-  "May 14, 2025 02:18 PM",
-  "May 14, 2025 04:33 PM",
-  "May 14, 2025 06:52 PM",
-  "May 13, 2025 10:12 AM",
-  "May 13, 2025 01:24 PM",
-  "May 13, 2025 03:55 PM",
-  "May 12, 2025 08:17 AM",
-  "May 12, 2025 12:08 PM",
-  "May 12, 2025 02:41 PM",
-  "May 11, 2025 09:50 AM",
-  "May 11, 2025 11:14 AM",
-  "May 11, 2025 03:22 PM",
-  "May 10, 2025 10:01 AM",
-  "May 10, 2025 01:45 PM",
-] as const;
-
-function seedTransactions(): TransactionDemoRow[] {
-  const year = 2025;
-  return Array.from({ length: 32 }, (_, seedIndex) => {
-    if (seedIndex === 0) {
-      return {
-        id: "txn-row-001",
-        transactionId: "TXN-2025-0515-001",
-        invoiceNumber: "INV-2025-0515",
-        companyName: "McGrath Kavinoky LLP",
-        initials: initialsFromName("McGrath Kavinoky LLP"),
-        avatarToneIndex: 0,
-        dateTimeLabel: "May 15, 2025 10:24 AM",
-        amount: 2300,
-        method: "visa",
-        last4: "4242",
-        status: "succeeded",
-        description: "Invoice Payment",
-      };
-    }
-
-    const name = COMPANY_POOL[seedIndex % COMPANY_POOL.length];
-    const monthStr = "05";
-    const dayStr = ((seedIndex % 27) + 1).toString().padStart(2, "0");
-    const seq = String(seedIndex + 1).padStart(3, "0");
-
-    return {
-      id: `txn-row-${String(seedIndex + 1).padStart(3, "0")}`,
-      transactionId: `TXN-${year}-${monthStr}${dayStr}-${seq}`,
-      invoiceNumber: `INV-${year}-${monthStr}${dayStr}-${seq}`,
-      companyName: name,
-      initials: initialsFromName(name),
-      avatarToneIndex: seedIndex % AVATAR_BG.length,
-      dateTimeLabel:
-        DEMO_DATE_TIME_ROTATION[
-          seedIndex % DEMO_DATE_TIME_ROTATION.length
-        ],
-      amount: 189 + ((seedIndex * 337) % 8700) + (seedIndex % 5) * 0.25,
-      method: METHOD_ROTATION[seedIndex % METHOD_ROTATION.length],
-      last4: LAST4_POOL[seedIndex % LAST4_POOL.length],
-      status: statusForSeedIndex(seedIndex),
-      description: DESCRIPTION_ROTATION[seedIndex % DESCRIPTION_ROTATION.length],
-    };
-  });
-}
-
-const SEEDED_TRANSACTIONS = seedTransactions();
-
-function normalizeMethod(value: string): TransactionDemoMethod {
+function normalizeMethod(value: string): TransactionMethod {
   const raw = value.toLowerCase();
   if (raw.includes("master")) return "mastercard";
   if (raw.includes("amex") || raw.includes("american")) return "amex";
@@ -174,7 +81,7 @@ function normalizeMethod(value: string): TransactionDemoMethod {
   return "visa";
 }
 
-function normalizeStatus(value: string): TransactionDemoStatus {
+function normalizeStatus(value: string): TransactionStatus {
   if (value === "succeeded") return "succeeded";
   if (value === "pending") return "pending";
   return "failed";
@@ -184,55 +91,31 @@ function payoutSlots(currentPage: number, totalPages: number): (number | "ellips
   if (totalPages <= 7) {
     return Array.from({ length: totalPages }, (_, idx) => idx + 1);
   }
-
   const last = totalPages;
-
-  if (currentPage <= 4) {
-    return [1, 2, 3, 4, 5, "ellipsis", last];
-  }
-
+  if (currentPage <= 4) return [1, 2, 3, 4, 5, "ellipsis", last];
   if (currentPage >= totalPages - 3) {
     return [1, "ellipsis", last - 4, last - 3, last - 2, last - 1, last];
   }
-
-  return [
-    1,
-    "ellipsis",
-    currentPage - 1,
-    currentPage,
-    currentPage + 1,
-    "ellipsis",
-    last,
-  ];
+  return [1, "ellipsis", currentPage - 1, currentPage, currentPage + 1, "ellipsis", last];
 }
 
 function DashboardMetricCard({
   title,
   value,
-  trend,
-  trendTone,
   Icon,
   accentClassName,
 }: {
   title: ReactNode;
   value: string;
-  trend: string;
-  trendTone: "positive" | "negative";
   Icon: LucideIcon;
   accentClassName?: string;
 }) {
-  const trendCn =
-    trendTone === "positive" ? "text-[#22c55e]" : "text-[#ef4444]";
-
   return (
     <Card className="flex min-h-[140px] justify-center gap-0 rounded-xl border border-slate-200 bg-white py-0 shadow-sm">
       <CardContent className="flex flex-1 items-center justify-between gap-4 px-6 py-6">
         <div className="min-w-0 space-y-1">
           <p className="text-muted-foreground text-sm font-medium">{title}</p>
-          <p className="truncate text-[28px] font-bold tracking-tight text-slate-900">
-            {value}
-          </p>
-          <p className={cn("text-sm font-medium", trendCn)}>{trend}</p>
+          <p className="truncate text-[28px] font-bold tracking-tight text-slate-900">{value}</p>
         </div>
         <span
           className={cn(
@@ -247,7 +130,7 @@ function DashboardMetricCard({
   );
 }
 
-function TransactionStatusBadge({ status }: { status: TransactionDemoStatus }) {
+function TransactionStatusBadge({ status }: { status: TransactionStatus }) {
   if (status === "succeeded") {
     return (
       <span className="inline-flex rounded-full bg-[#22c55e]/14 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#15803d] ring-1 ring-[#22c55e]/28">
@@ -269,7 +152,7 @@ function TransactionStatusBadge({ status }: { status: TransactionDemoStatus }) {
   );
 }
 
-function MethodBrandMark({ method }: { method: TransactionDemoMethod }) {
+function MethodBrandMark({ method }: { method: TransactionMethod }) {
   if (method === "visa") {
     return (
       <span
@@ -308,7 +191,7 @@ function MethodBrandMark({ method }: { method: TransactionDemoMethod }) {
   );
 }
 
-function TransactionMethodCell({ row }: { row: TransactionDemoRow }) {
+function TransactionMethodCell({ row }: { row: TransactionRow }) {
   const label =
     row.method === "visa"
       ? "VISA"
@@ -337,71 +220,129 @@ function money(n: number) {
   })}`;
 }
 
-const SELECT_CLASS =
-  "min-w-[128px] appearance-none rounded-lg border border-gray-200 bg-white py-2.5 ps-4 pe-9 text-[13px] font-medium text-gray-700 shadow-xs transition-colors focus-visible:border-[#015AFD] focus-visible:ring-2 focus-visible:ring-[#015AFD]/25";
+function DetailRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-6 text-[13px]">
+      <span className="shrink-0 font-medium text-gray-500">{label}</span>
+      <span className="min-w-0 text-end font-semibold leading-snug text-gray-900">{children}</span>
+    </div>
+  );
+}
+
+function TransactionDetailSheet({
+  row,
+  open,
+  onOpenChange,
+}: {
+  row: TransactionRow | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  if (!row) return null;
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="flex w-full flex-col gap-0 border-slate-200 bg-white p-0 sm:max-w-md">
+        <SheetHeader className="border-b border-slate-100 px-6 py-5 text-start">
+          <SheetTitle className="text-lg font-bold text-slate-900">Transaction details</SheetTitle>
+          <SheetDescription className="font-mono text-[12px] text-slate-500">
+            {row.transactionId}
+          </SheetDescription>
+        </SheetHeader>
+        <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5">
+          <DetailRow label="Customer">{row.companyName}</DetailRow>
+          <DetailRow label="Invoice #">
+            <span className="font-mono text-[12px]">{row.invoiceNumber}</span>
+          </DetailRow>
+          <DetailRow label="Date & time">{row.dateTimeLabel}</DetailRow>
+          <DetailRow label="Amount">
+            {money(row.amount)} {row.currency}
+          </DetailRow>
+          <div className="flex items-start justify-between gap-6">
+            <span className="shrink-0 text-[13px] font-medium text-gray-500">Method</span>
+            <TransactionMethodCell row={row} />
+          </div>
+          <div className="flex items-start justify-between gap-6">
+            <span className="shrink-0 text-[13px] font-medium text-gray-500">Status</span>
+            <TransactionStatusBadge status={row.status} />
+          </div>
+          <DetailRow label="Description">{row.description}</DetailRow>
+          {row.receiptUrl ? (
+            <DetailRow label="Receipt">
+              <a
+                href={row.receiptUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#015AFD] hover:underline"
+              >
+                View receipt
+              </a>
+            </DetailRow>
+          ) : null}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
 
 export function AdminTransactionsView() {
-  const [allTransactions, setAllTransactions] = useState<TransactionDemoRow[]>(
-    SEEDED_TRANSACTIONS,
-  );
+  const [allTransactions, setAllTransactions] = useState<TransactionRow[]>([]);
+  const [metrics, setMetrics] = useState<TransactionMetrics>({
+    total: 0,
+    succeeded: 0,
+    pending: 0,
+    failed: 0,
+    totalAmount: 0,
+  });
+  const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
-  const [statusFilter, setStatusFilter] = useState<TransactionDemoStatus | "all">(
-    "all",
-  );
-  const [customerFilter, setCustomerFilter] = useState<string>("all");
-  const [methodFilter, setMethodFilter] = useState<TransactionDemoMethod | "all">(
-    "all",
-  );
+  const [statusFilter, setStatusFilter] = useState<TransactionStatus | "all">("all");
+  const [methodFilter, setMethodFilter] = useState<TransactionMethod | "all">("all");
+  const [detailRow, setDetailRow] = useState<TransactionRow | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   useEffect(() => {
     let isCancelled = false;
 
     async function loadTransactions() {
+      setIsLoading(true);
       try {
         const response = await fetch("/api/admin/payments/transactions", {
           cache: "no-store",
         });
         const payload = (await response.json()) as {
-          transactions?: Array<{
-            id: string;
-            transactionId: string;
-            invoiceNumber: string;
-            companyName: string;
-            initials: string;
-            avatarToneIndex: number;
-            dateTimeLabel: string;
-            amount: number;
-            method: string;
-            last4: string;
-            status: string;
-            description: string;
-          }>;
+          transactions?: TransactionRow[];
+          metrics?: TransactionMetrics;
+          error?: string;
         };
 
-        if (!response.ok || !payload.transactions) {
-          return;
+        if (!response.ok) {
+          throw new Error(payload.error || "Failed to load transactions");
         }
 
-        const mappedRows: TransactionDemoRow[] = payload.transactions.map((row, index) => ({
-          ...row,
-          avatarToneIndex: index % AVATAR_BG.length,
-          method: normalizeMethod(row.method),
-          status: normalizeStatus(row.status),
-        }));
-
-        if (!isCancelled && mappedRows.length > 0) {
-          setAllTransactions(mappedRows);
+        if (!isCancelled) {
+          const mapped = (payload.transactions ?? []).map((row, index) => ({
+            ...row,
+            avatarToneIndex: index % AVATAR_BG.length,
+            method: normalizeMethod(row.method),
+            status: normalizeStatus(row.status),
+          }));
+          setAllTransactions(mapped);
+          if (payload.metrics) setMetrics(payload.metrics);
         }
-      } catch {
-        // Keep seeded rows as fallback for local development.
+      } catch (error) {
+        if (!isCancelled) {
+          toast.error("Failed to load transactions");
+          console.error(error);
+        }
+      } finally {
+        if (!isCancelled) setIsLoading(false);
       }
     }
 
     void loadTransactions();
-
     return () => {
       isCancelled = true;
     };
@@ -424,16 +365,12 @@ export function AdminTransactionsView() {
       rows = rows.filter((row) => row.status === statusFilter);
     }
 
-    if (customerFilter !== "all") {
-      rows = rows.filter((row) => row.companyName === customerFilter);
-    }
-
     if (methodFilter !== "all") {
       rows = rows.filter((row) => row.method === methodFilter);
     }
 
     return rows;
-  }, [allTransactions, search, statusFilter, customerFilter, methodFilter]);
+  }, [allTransactions, search, statusFilter, methodFilter]);
 
   const totalRows = filtered.length;
   const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
@@ -479,77 +416,48 @@ export function AdminTransactionsView() {
     });
   }, [allPageSelected, pageIdsOnPage]);
 
-  const handleResetPaging = () => setPage(1);
+  const openDetail = (row: TransactionRow) => {
+    setDetailRow(row);
+    setDetailOpen(true);
+  };
 
   return (
     <div className="mx-auto flex w-full max-w-[1480px] flex-1 flex-col gap-8 pb-16">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div className="max-w-xl space-y-2">
-          <h1 className="text-[28px] font-bold tracking-tight text-gray-900 sm:text-[30px]">
-            Transactions
-          </h1>
-          <p className="text-[15px] text-[#7A7D9C]">
-            View and manage all payment transactions
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <Button
-            variant="outline"
-            type="button"
-            className="gap-2 rounded-xl border-[#e5e5e5] bg-white shadow-sm"
-          >
-            <Filter className="size-4 text-gray-700" aria-hidden />
-            Filters
-          </Button>
-          <Button
-            variant="outline"
-            type="button"
-            className="gap-2 rounded-xl border-[#e5e5e5] bg-white shadow-sm"
-          >
-            <Download className="size-4 text-gray-700" aria-hidden />
-            Export
-          </Button>
-        </div>
+      <header className="max-w-xl space-y-2">
+        <h1 className="text-[28px] font-bold tracking-tight text-gray-900 sm:text-[30px]">
+          Transactions
+        </h1>
+        <p className="text-[15px] text-[#7A7D9C]">View and manage all payment transactions</p>
       </header>
 
-      <section className="grid min-w-0 grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <section className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <DashboardMetricCard
           title="Total Transactions"
-          value="32"
-          trend="↑ 18% vs last 7 days"
-          trendTone="positive"
+          value={isLoading ? "—" : String(metrics.total)}
           Icon={ArrowLeftRight}
           accentClassName="bg-[#3b82f6]/10 text-[#2563eb]"
         />
         <DashboardMetricCard
           title="Successful"
-          value="28"
-          trend="↑ 17% vs last 7 days"
-          trendTone="positive"
+          value={isLoading ? "—" : String(metrics.succeeded)}
           Icon={CircleCheckBig}
           accentClassName="bg-[#22c55e]/15 text-[#16a34a]"
         />
         <DashboardMetricCard
           title="Pending"
-          value="3"
-          trend="↓ 25% vs last 7 days"
-          trendTone="negative"
+          value={isLoading ? "—" : String(metrics.pending)}
           Icon={Clock}
           accentClassName="bg-orange-400/18 text-orange-700"
         />
         <DashboardMetricCard
           title="Failed"
-          value="1"
-          trend="↓ 50% vs last 7 days"
-          trendTone="negative"
+          value={isLoading ? "—" : String(metrics.failed)}
           Icon={XCircle}
           accentClassName="bg-[#ef4444]/12 text-[#ef4444]"
         />
         <DashboardMetricCard
           title="Total Amount"
-          value="$24,350"
-          trend="↑ 14% vs last 7 days"
-          trendTone="positive"
+          value={isLoading ? "—" : money(metrics.totalAmount)}
           Icon={DollarSign}
           accentClassName="bg-emerald-400/18 text-emerald-700"
         />
@@ -566,7 +474,7 @@ export function AdminTransactionsView() {
               aria-label="Search transactions"
               onChange={(e) => {
                 setSearch(e.target.value);
-                handleResetPaging();
+                setPage(1);
               }}
             />
             {search ? (
@@ -576,7 +484,7 @@ export function AdminTransactionsView() {
                 className="shrink-0 rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
                 onClick={() => {
                   setSearch("");
-                  handleResetPaging();
+                  setPage(1);
                 }}
               >
                 <X className="size-4" />
@@ -590,9 +498,8 @@ export function AdminTransactionsView() {
               aria-label="Filter by transaction status"
               value={statusFilter}
               onChange={(e) => {
-                const v = e.target.value as TransactionDemoStatus | "all";
-                setStatusFilter(v);
-                handleResetPaging();
+                setStatusFilter(e.target.value as TransactionStatus | "all");
+                setPage(1);
               }}
             >
               <option value="all">All Status</option>
@@ -609,35 +516,11 @@ export function AdminTransactionsView() {
           <div className="relative">
             <select
               className={SELECT_CLASS}
-              aria-label="Filter by customer"
-              value={customerFilter}
-              onChange={(e) => {
-                setCustomerFilter(e.target.value);
-                handleResetPaging();
-              }}
-            >
-              <option value="all">All Customers</option>
-              {COMPANY_POOL.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
-            <ChevronDown
-              aria-hidden
-              className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-gray-500"
-            />
-          </div>
-
-          <div className="relative">
-            <select
-              className={SELECT_CLASS}
               aria-label="Filter by payment method"
               value={methodFilter}
               onChange={(e) => {
-                const v = e.target.value as TransactionDemoMethod | "all";
-                setMethodFilter(v);
-                handleResetPaging();
+                setMethodFilter(e.target.value as TransactionMethod | "all");
+                setPage(1);
               }}
             >
               <option value="all">All Methods</option>
@@ -651,66 +534,31 @@ export function AdminTransactionsView() {
               className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-gray-500"
             />
           </div>
-
-          <div className="ms-auto flex items-center gap-1">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              aria-pressed={viewMode === "grid"}
-              title="Grid view"
-              onClick={() => setViewMode("grid")}
-              className={cn(
-                "size-9 rounded-lg border-[#e5e5e5] bg-white text-gray-600 shadow-sm",
-                viewMode === "grid" &&
-                  "border-[#0B1426] bg-[#0B1426] text-white hover:bg-[#152542] hover:text-white",
-              )}
-            >
-              <LayoutGrid className="size-4" aria-hidden />
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              aria-pressed={viewMode === "list"}
-              title="List view"
-              onClick={() => setViewMode("list")}
-              className={cn(
-                "size-9 rounded-lg border-[#e5e5e5] bg-white text-gray-600 shadow-sm",
-                viewMode === "list" &&
-                  "border-[#0B1426] bg-[#0B1426] text-white hover:bg-[#152542] hover:text-white",
-              )}
-            >
-              <List className="size-4" aria-hidden />
-            </Button>
-          </div>
         </div>
 
-        {viewMode === "list" ? (
-          filtered.length === 0 ? (
-            <div className="rounded-2xl border border-[#e5e5e5] bg-white py-24 text-center text-[14px] text-gray-600">
-              No transactions match your filters.
-            </div>
-          ) : (
-            <TransactionsTable
-              rows={pagedRows}
-              selected={selected}
-              toggleRow={toggleRow}
-              headerChecked={headerChecked}
-              toggleHeader={toggleHeader}
-            />
-          )
-        ) : (
-          <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-16 text-center text-[15px] text-muted-foreground">
-            Transaction cards in grid layout can mirror this table row-for-row once
-            billing finalizes compact statement fields for exports.
+        {isLoading ? (
+          <div className="rounded-2xl border border-[#e5e5e5] bg-white py-24 text-center text-[14px] text-gray-600">
+            Loading transactions...
           </div>
+        ) : filtered.length === 0 ? (
+          <div className="rounded-2xl border border-[#e5e5e5] bg-white py-24 text-center text-[14px] text-gray-600">
+            No transactions match your filters.
+          </div>
+        ) : (
+          <TransactionsTable
+            rows={pagedRows}
+            selected={selected}
+            toggleRow={toggleRow}
+            headerChecked={headerChecked}
+            toggleHeader={toggleHeader}
+            onViewDetail={openDetail}
+          />
         )}
 
         <footer className="flex flex-col items-center justify-between gap-4 px-2 sm:flex-row">
           <p className="text-[13px] font-medium text-gray-600">
             {totalRows === 0
-              ? "No transactions match your filters."
+              ? "No transactions to show."
               : `Showing ${sliceStart + 1} to ${Math.min(safePage * PAGE_SIZE, totalRows)} of ${totalRows} transactions`}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-2">
@@ -734,14 +582,10 @@ export function AdminTransactionsView() {
             >
               <ChevronLeft className="size-4" />
             </Button>
-
             <div className="flex items-center gap-1">
               {slots.map((item, idx) =>
                 item === "ellipsis" ? (
-                  <span
-                    key={`e-${idx}`}
-                    className="px-1.5 text-[13px] text-gray-400"
-                  >
+                  <span key={`e-${idx}`} className="px-1.5 text-[13px] text-gray-400">
                     …
                   </span>
                 ) : (
@@ -762,7 +606,6 @@ export function AdminTransactionsView() {
                 ),
               )}
             </div>
-
             <Button
               variant="outline"
               size="sm"
@@ -786,6 +629,8 @@ export function AdminTransactionsView() {
           </div>
         </footer>
       </div>
+
+      <TransactionDetailSheet row={detailRow} open={detailOpen} onOpenChange={setDetailOpen} />
     </div>
   );
 }
@@ -796,12 +641,14 @@ function TransactionsTable({
   toggleRow,
   headerChecked,
   toggleHeader,
+  onViewDetail,
 }: {
-  rows: TransactionDemoRow[];
+  rows: TransactionRow[];
   selected: Set<string>;
   toggleRow: (id: string) => void;
   headerChecked: boolean | "indeterminate";
   toggleHeader: () => void;
+  onViewDetail: (row: TransactionRow) => void;
 }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-[#e5e5e5] bg-white shadow-none">
@@ -847,8 +694,7 @@ function TransactionsTable({
           </thead>
           <tbody className="divide-y divide-gray-100">
             {rows.map((row) => {
-              const bg =
-                AVATAR_BG[row.avatarToneIndex % AVATAR_BG.length] ?? "bg-[#3b82f6]";
+              const bg = AVATAR_BG[row.avatarToneIndex % AVATAR_BG.length] ?? "bg-[#3b82f6]";
 
               return (
                 <tr key={row.id} className="hover:bg-gray-50">
@@ -898,8 +744,9 @@ function TransactionsTable({
                   <td className="px-1 py-4 align-middle text-center">
                     <button
                       type="button"
-                      aria-label={`More actions for ${row.transactionId}`}
+                      aria-label={`View ${row.transactionId}`}
                       className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                      onClick={() => onViewDetail(row)}
                     >
                       <MoreHorizontal className="size-4 rotate-90" strokeWidth={1.75} />
                     </button>

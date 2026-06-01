@@ -1,5 +1,5 @@
-import { AdminPaymentsOverviewView } from "@/features/administrator/payments/AdminPaymentsOverviewView";
+import { redirect } from "next/navigation";
 
-export default function AdministratorPaymentsOverviewPage() {
-  return <AdminPaymentsOverviewView />;
+export default function AdministratorPaymentsPage() {
+  redirect("/administrator/payments/transactions");
 }
