@@ -8,6 +8,11 @@ import {
   buildAdminCustomerReplyEmail,
 } from "@/lib/email/support-ticket-emails";
 import {
+  parseSupportAttachment,
+  type SupportMessageAttachmentInput,
+  type SupportMessageAttachmentMeta,
+} from "@/lib/support/attachments";
+import {
   isConversationMessage,
   isCustomerNote,
   normalizeMessageVisibility,
@@ -15,8 +20,26 @@ import {
 import { getAdminFirestore, verifyFirebaseIdToken } from "@/lib/firebase/admin";
 
 type MessageAuthorType = "customer" | "agent";
+
 interface CreateMessageBody {
   body?: string;
+  attachment?: SupportMessageAttachmentInput;
+}
+
+function mapAttachmentMeta(
+  data: Record<string, unknown>,
+): SupportMessageAttachmentMeta | null {
+  const raw = data.attachment;
+  if (!raw || typeof raw !== "object") return null;
+  const attachment = raw as Record<string, unknown>;
+  const fileName = typeof attachment.fileName === "string" ? attachment.fileName : "";
+  if (!fileName) return null;
+  return {
+    fileName,
+    mimeType:
+      typeof attachment.mimeType === "string" ? attachment.mimeType : "application/octet-stream",
+    sizeBytes: typeof attachment.sizeBytes === "number" ? attachment.sizeBytes : 0,
+  };
 }
 function timestampToIso(value: admin.firestore.Timestamp | null | undefined): string {
   if (!value) return new Date().toISOString();
@@ -97,6 +120,7 @@ export async function GET(
       authorType: MessageAuthorType;
       authorName: string;
       body: string;
+      attachment: SupportMessageAttachmentMeta | null;
       createdAt: string;
     }> = [];
     const notes: Array<{
@@ -104,6 +128,7 @@ export async function GET(
       authorType: MessageAuthorType;
       authorName: string;
       body: string;
+      attachment: SupportMessageAttachmentMeta | null;
       createdAt: string;
     }> = [];
 
@@ -117,6 +142,7 @@ export async function GET(
         authorType: (data.authorType as MessageAuthorType) ?? "agent",
         authorName: (data.authorName as string) ?? "adAlert Support",
         body: (data.body as string) ?? "",
+        attachment: mapAttachmentMeta(data),
         createdAt: timestampToIso(data.createdAt as admin.firestore.Timestamp | undefined),
       };
 
@@ -127,12 +153,17 @@ export async function GET(
       }
     }
 
+    const ticketAttachments = Array.isArray(ticketData.attachments)
+      ? (ticketData.attachments as SupportMessageAttachmentMeta[])
+      : [];
+
     if (initialDescription) {
       conversation.unshift({
         id: "initial-description",
         authorType: "customer",
         authorName: createdByName,
         body: initialDescription,
+        attachment: ticketAttachments[0] ?? null,
         createdAt: createdAtIso,
       });
     }
@@ -168,6 +199,16 @@ export async function POST(
       return NextResponse.json({ error: "Message body is required" }, { status: 400 });
     }
 
+    let attachment: ReturnType<typeof parseSupportAttachment> = null;
+    try {
+      attachment = parseSupportAttachment(body.attachment);
+    } catch (attachmentError) {
+      return NextResponse.json(
+        { error: (attachmentError as Error).message || "Invalid attachment" },
+        { status: 400 },
+      );
+    }
+
     const db = getAdminFirestore();
     const ticketRef = await findOwnedTicketRef({
       db,
@@ -181,13 +222,23 @@ export async function POST(
 
     const now = admin.firestore.FieldValue.serverTimestamp();
     const messageRef = ticketRef.collection("messages").doc();
-    await messageRef.set({
+    const messagePayload: Record<string, unknown> = {
       authorType: "customer",
       authorName: decoded.name ?? decoded.email ?? "You",
       body: content,
       visibility: "public",
       createdAt: now,
-    });
+    };
+
+    if (attachment) {
+      messagePayload.attachment = {
+        fileName: attachment.fileName,
+        mimeType: attachment.mimeType,
+        sizeBytes: attachment.sizeBytes,
+      };
+    }
+
+    await messageRef.set(messagePayload);
 
     await ticketRef.update({
       updatedAt: now,
@@ -224,6 +275,16 @@ export async function POST(
         text: adminEmail.text,
         html: adminEmail.html,
         from: SUPPORT_NO_REPLY_EMAIL,
+        attachments: attachment
+          ? [
+              {
+                filename: attachment.fileName,
+                type: attachment.mimeType,
+                disposition: "attachment",
+                content: attachment.contentBase64,
+              },
+            ]
+          : undefined,
       });
     } catch (emailError) {
       console.error("Failed to send admin alert for customer reply:", emailError);
@@ -237,6 +298,7 @@ export async function POST(
         authorType: "customer" as const,
         authorName: (savedData.authorName as string) ?? "You",
         body: (savedData.body as string) ?? content,
+        attachment: mapAttachmentMeta(savedData),
         createdAt: timestampToIso(savedData.createdAt as admin.firestore.Timestamp | undefined),
       },
     });

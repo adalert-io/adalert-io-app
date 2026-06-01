@@ -3,6 +3,12 @@ import type admin from "firebase-admin";
 
 import { getAdminFirestore, verifyFirebaseIdToken } from "@/lib/firebase/admin";
 
+interface SupportTicketAttachmentDto {
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+}
+
 interface SupportTicketApiDto {
   id: string;
   documentId: string;
@@ -13,6 +19,7 @@ interface SupportTicketApiDto {
   createdAt: string;
   updatedAt: string;
   lastMessagePreview: string;
+  attachments?: SupportTicketAttachmentDto[];
 }
 
 function timestampToIso(value: admin.firestore.Timestamp | null | undefined): string {
@@ -40,6 +47,9 @@ function docToDto(
     createdAt: timestampToIso(data.createdAt as admin.firestore.Timestamp | undefined),
     updatedAt: timestampToIso(data.updatedAt as admin.firestore.Timestamp | undefined),
     lastMessagePreview: String(data.lastMessagePreview ?? ""),
+    attachments: Array.isArray(data.attachments)
+      ? (data.attachments as SupportTicketAttachmentDto[])
+      : [],
   };
 }
 

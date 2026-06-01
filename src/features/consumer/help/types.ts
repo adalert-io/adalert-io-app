@@ -8,6 +8,12 @@ export type SupportTicketPriority = "low" | "medium" | "high";
 
 export type SupportTicketFilter = "all" | SupportTicketStatus;
 
+export interface SupportTicketAttachmentMeta {
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+}
+
 export interface SupportTicket {
   id: string;
   documentId: string;
@@ -18,6 +24,7 @@ export interface SupportTicket {
   createdAt: string;
   updatedAt: string;
   lastMessagePreview: string;
+  attachments?: SupportTicketAttachmentMeta[];
 }
 
 export interface SupportTicketMessage {
@@ -26,6 +33,7 @@ export interface SupportTicketMessage {
   authorName: string;
   body: string;
   createdAt: string;
+  attachment?: SupportTicketAttachmentMeta | null;
 }
 
 export interface NewSupportTicketForm {
