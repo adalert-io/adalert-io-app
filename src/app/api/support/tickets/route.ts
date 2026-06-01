@@ -228,8 +228,7 @@ export async function POST(request: NextRequest) {
         "Customer Message:",
         description,
         "",
-        `Support portal thread: ${ticketPortalLink}`,
-        "Use the support portal to view and respond to this ticket.",
+        "Please review and respond from the Support dashboard.",
       ].join("\n");
 
       const html = `
@@ -247,13 +246,8 @@ export async function POST(request: NextRequest) {
             <div style="color: #475569; font-size: 12px; font-weight: 600; margin-bottom: 6px;">Customer Message</div>
             <div style="white-space: pre-wrap;">${escapeHtml(description)}</div>
           </div>
-          <p style="margin: 14px 0 0;">
-            <a href="${ticketPortalLink}" style="color: #015AFD; text-decoration: none; font-weight: 600;">
-              Open this ticket in the support portal
-            </a>
-          </p>
           <p style="margin: 14px 0 0; color: #475569; font-size: 12px;">
-            This mailbox does not accept replies. Please use the support portal to continue the conversation.
+            Please review and respond from the Support dashboard.
           </p>
         </div>
       `;

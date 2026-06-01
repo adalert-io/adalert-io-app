@@ -233,8 +233,7 @@ export async function POST(
             "Reply:",
             content,
             "",
-            `Support portal thread: ${ticketPortalLink}`,
-            "This notification is from a no-reply mailbox.",
+            "Please review from the Support dashboard.",
           ].join("\n");
           const adminHtml = `
             <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height: 1.45;">
@@ -245,10 +244,8 @@ export async function POST(
               <div style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; white-space: pre-wrap;">
                 ${escapeHtml(content)}
               </div>
-              <p style="margin: 14px 0 0;">
-                <a href="${ticketPortalLink}" style="color: #015AFD; text-decoration: none; font-weight: 600;">
-                  Open this ticket in the support portal
-                </a>
+              <p style="margin: 14px 0 0; color: #475569; font-size: 12px;">
+                Please review from the Support dashboard.
               </p>
             </div>
           `;

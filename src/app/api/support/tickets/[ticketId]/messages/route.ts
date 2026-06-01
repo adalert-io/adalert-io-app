@@ -217,7 +217,6 @@ export async function POST(
         "Customer Reply:",
         content,
         "",
-        `Support portal thread: ${ticketPortalLink}`,
         "Please review and respond from the Support dashboard.",
       ].join("\n");
 
@@ -234,13 +233,8 @@ export async function POST(
           <div style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; white-space: pre-wrap;">
             ${escapeHtml(content)}
           </div>
-          <p style="margin: 14px 0 0;">
-            <a href="${ticketPortalLink}" style="color: #015AFD; text-decoration: none; font-weight: 600;">
-              Open this ticket in the support portal
-            </a>
-          </p>
           <p style="margin: 14px 0 0; color: #475569; font-size: 12px;">
-            This mailbox does not accept replies. Please use the support portal.
+            Please review and respond from the Support dashboard.
           </p>
         </div>
       `;
