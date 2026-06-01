@@ -200,6 +200,7 @@ export async function POST(request: NextRequest) {
           sizeBytes: attachment.sizeBytes,
         },
       ],
+      adminUnread: true,
       createdAt: now,
       updatedAt: now,
     });

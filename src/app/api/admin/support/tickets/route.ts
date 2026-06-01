@@ -21,6 +21,7 @@ interface AdminSupportTicketDto {
   description: string;
   createdAt: string;
   updatedAt: string;
+  adminUnread: boolean;
 }
 
 function timestampToIso(value: admin.firestore.Timestamp | null | undefined): string {
@@ -110,6 +111,7 @@ export async function GET(request: NextRequest) {
           description: typeof data.description === "string" ? data.description : "",
           createdAt: timestampToIso(data.createdAt as admin.firestore.Timestamp | undefined),
           updatedAt: timestampToIso(data.updatedAt as admin.firestore.Timestamp | undefined),
+          adminUnread: data.adminUnread === true,
         };
 
         return ticket;

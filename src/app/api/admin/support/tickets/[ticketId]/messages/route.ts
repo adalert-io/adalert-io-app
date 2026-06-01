@@ -5,17 +5,44 @@ import { sendEmail } from "@/lib/email/sendgrid";
 import {
   SUPPORT_NO_REPLY_EMAIL,
   buildConsumerAdminReplyEmail,
+  buildConsumerSupportNoteEmail,
 } from "@/lib/email/support-ticket-emails";
+import {
+  normalizeMessageVisibility,
+  type SupportMessageVisibility,
+} from "@/lib/support/message-visibility";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 
 const ADMIN_PREVIEW_COOKIE = "admin_preview_gate";
 
+const ALLOWED_ATTACHMENT_TYPES = new Set([
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "text/plain",
+  "text/csv",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+]);
+const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
+
 type MessageAuthorType = "customer" | "agent";
-type MessageVisibility = "public" | "internal";
+
+interface MessageAttachmentInput {
+  fileName?: string;
+  mimeType?: string;
+  sizeBytes?: number;
+  contentBase64?: string;
+}
 
 interface CreateMessageBody {
   body?: string;
-  visibility?: MessageVisibility;
+  visibility?: SupportMessageVisibility;
+  attachment?: MessageAttachmentInput;
 }
 
 function timestampToIso(value: admin.firestore.Timestamp | null | undefined): string {
@@ -25,6 +52,30 @@ function timestampToIso(value: admin.firestore.Timestamp | null | undefined): st
 
 function hasAdminAccess(request: NextRequest): boolean {
   return request.cookies.get(ADMIN_PREVIEW_COOKIE)?.value === "1";
+}
+
+function parseAttachment(input: MessageAttachmentInput | undefined) {
+  if (!input?.fileName?.trim() || !input.contentBase64?.trim()) {
+    return null;
+  }
+
+  const fileName = input.fileName.trim();
+  const mimeType = (input.mimeType?.trim() || "application/octet-stream").toLowerCase();
+  const sizeBytes = typeof input.sizeBytes === "number" ? input.sizeBytes : 0;
+
+  if (!ALLOWED_ATTACHMENT_TYPES.has(mimeType)) {
+    throw new Error("Attachment type is not allowed");
+  }
+  if (sizeBytes > MAX_ATTACHMENT_BYTES) {
+    throw new Error("Attachment exceeds maximum size");
+  }
+
+  return {
+    fileName,
+    mimeType,
+    sizeBytes,
+    contentBase64: input.contentBase64.trim(),
+  };
 }
 
 export async function GET(
@@ -62,7 +113,6 @@ export async function GET(
     try {
       messagesSnap = await ticketRef.collection("messages").orderBy("createdAt", "asc").get();
     } catch {
-      // Fallback for older docs that might be missing createdAt.
       messagesSnap = await ticketRef.collection("messages").get();
     }
     const messages = messagesSnap.docs.map((doc) => {
@@ -72,7 +122,8 @@ export async function GET(
         authorType: (data.authorType as MessageAuthorType) ?? "agent",
         authorName: (data.authorName as string) ?? "adAlert Support",
         body: (data.body as string) ?? "",
-        visibility: (data.visibility as MessageVisibility) ?? "public",
+        visibility: normalizeMessageVisibility(data.visibility),
+        attachment: data.attachment ?? null,
         createdAt: timestampToIso(data.createdAt as admin.firestore.Timestamp | undefined),
       };
     });
@@ -84,6 +135,7 @@ export async function GET(
         authorName: createdByName,
         body: initialDescription,
         visibility: "public",
+        attachment: null,
         createdAt: createdAtIso,
       });
     }
@@ -113,11 +165,27 @@ export async function POST(
 
     const body = (await request.json()) as CreateMessageBody;
     const content = body.body?.trim() ?? "";
-    const visibility: MessageVisibility =
-      body.visibility === "internal" ? "internal" : "public";
+    const visibility = normalizeMessageVisibility(body.visibility);
 
     if (!content) {
       return NextResponse.json({ error: "Message body is required" }, { status: 400 });
+    }
+
+    let attachment: ReturnType<typeof parseAttachment> = null;
+    try {
+      attachment = parseAttachment(body.attachment);
+    } catch (attachmentError) {
+      return NextResponse.json(
+        { error: (attachmentError as Error).message || "Invalid attachment" },
+        { status: 400 },
+      );
+    }
+
+    if (attachment && visibility !== "public") {
+      return NextResponse.json(
+        { error: "Attachments are only supported on public replies" },
+        { status: 400 },
+      );
     }
 
     const db = getAdminFirestore();
@@ -130,50 +198,82 @@ export async function POST(
 
     const now = admin.firestore.FieldValue.serverTimestamp();
     const messageRef = ticketRef.collection("messages").doc();
-    await messageRef.set({
+    const messagePayload: Record<string, unknown> = {
       authorType: "agent",
       authorName: "adAlert Support",
       body: content,
       visibility,
       createdAt: now,
-    });
+    };
 
-    await ticketRef.update({
+    if (attachment) {
+      messagePayload.attachment = {
+        fileName: attachment.fileName,
+        mimeType: attachment.mimeType,
+        sizeBytes: attachment.sizeBytes,
+      };
+    }
+
+    await messageRef.set(messagePayload);
+
+    const ticketUpdate: Record<string, unknown> = {
       updatedAt: now,
       lastMessagePreview: content.length > 140 ? `${content.slice(0, 140)}…` : content,
-      ...(visibility === "public" ? { status: "pending_customer" } : {}),
-    });
+    };
 
     if (visibility === "public") {
-      const customerEmail =
-        typeof ticketData.createdByEmail === "string" ? ticketData.createdByEmail.trim() : "";
-      const ticketCode =
-        typeof ticketData.ticketCode === "string" && ticketData.ticketCode.trim()
-          ? ticketData.ticketCode
-          : ticketId;
-      const ticketSubject =
-        typeof ticketData.subject === "string" && ticketData.subject.trim()
-          ? ticketData.subject
-          : "Support ticket update";
-      if (customerEmail) {
-        try {
-          const consumerEmail = buildConsumerAdminReplyEmail({
-            request,
-            ticketCode,
-            subject: ticketSubject,
-            replyBody: content,
-          });
+      ticketUpdate.status = "pending_customer";
+    }
 
-          await sendEmail({
-            to: [customerEmail],
-            subject: consumerEmail.subject,
-            text: consumerEmail.text,
-            html: consumerEmail.html,
-            from: SUPPORT_NO_REPLY_EMAIL,
-          });
-        } catch (emailError) {
-          console.error("Failed to send customer support reply email:", emailError);
-        }
+    await ticketRef.update(ticketUpdate);
+
+    const customerEmail =
+      typeof ticketData.createdByEmail === "string" ? ticketData.createdByEmail.trim() : "";
+    const ticketCode =
+      typeof ticketData.ticketCode === "string" && ticketData.ticketCode.trim()
+        ? ticketData.ticketCode
+        : ticketId;
+    const ticketSubject =
+      typeof ticketData.subject === "string" && ticketData.subject.trim()
+        ? ticketData.subject
+        : "Support ticket update";
+
+    if (customerEmail && (visibility === "public" || visibility === "note")) {
+      try {
+        const emailContent =
+          visibility === "note"
+            ? buildConsumerSupportNoteEmail({
+                request,
+                ticketCode,
+                subject: ticketSubject,
+                noteBody: content,
+              })
+            : buildConsumerAdminReplyEmail({
+                request,
+                ticketCode,
+                subject: ticketSubject,
+                replyBody: content,
+              });
+
+        await sendEmail({
+          to: [customerEmail],
+          subject: emailContent.subject,
+          text: emailContent.text,
+          html: emailContent.html,
+          from: SUPPORT_NO_REPLY_EMAIL,
+          attachments: attachment
+            ? [
+                {
+                  filename: attachment.fileName,
+                  type: attachment.mimeType,
+                  disposition: "attachment",
+                  content: attachment.contentBase64,
+                },
+              ]
+            : undefined,
+        });
+      } catch (emailError) {
+        console.error("Failed to send customer support message email:", emailError);
       }
     }
 
@@ -185,7 +285,8 @@ export async function POST(
         authorType: "agent" as const,
         authorName: (savedData.authorName as string) ?? "adAlert Support",
         body: (savedData.body as string) ?? content,
-        visibility: (savedData.visibility as MessageVisibility) ?? visibility,
+        visibility: normalizeMessageVisibility(savedData.visibility),
+        attachment: savedData.attachment ?? null,
         createdAt: timestampToIso(savedData.createdAt as admin.firestore.Timestamp | undefined),
       },
     });

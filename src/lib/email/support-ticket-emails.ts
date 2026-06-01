@@ -13,6 +13,10 @@ export const SUPPORT_NO_REPLY_EMAIL =
 
 const BRAND_BLUE = "#015AFD";
 const BRAND_NAVY = "#0B1426";
+/** Matches admin sidebar `AdminSidebarAuthBrandLockup` (40×40 logo + wordmark). */
+const EMAIL_LOGO_PX = 40;
+const EMAIL_WORDMARK_PX = 25;
+const EMAIL_BRAND_WORDMARK = APPLICATION_NAME;
 
 export function escapeHtml(value: string): string {
   return value
@@ -52,9 +56,32 @@ interface EmailTemplateOptions {
   footerNote?: string;
 }
 
+function buildEmailBrandHeaderHtml(logoUrl: string): string {
+  return `
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td style="vertical-align: middle; padding-right: 8px;">
+              <img
+                src="${logoUrl}"
+                alt=""
+                width="${EMAIL_LOGO_PX}"
+                height="${EMAIL_LOGO_PX}"
+                style="display: block; width: ${EMAIL_LOGO_PX}px; height: ${EMAIL_LOGO_PX}px; border: 0;"
+              />
+            </td>
+            <td style="vertical-align: middle;">
+              <span style="display: block; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-size: ${EMAIL_WORDMARK_PX}px; font-weight: 700; line-height: 1; letter-spacing: -0.02em; color: #ffffff;">
+                ${escapeHtml(EMAIL_BRAND_WORDMARK)}
+              </span>
+            </td>
+          </tr>
+        </table>`;
+}
+
 function buildSupportEmailHtml(options: EmailTemplateOptions): string {
   const appBaseUrl = getAppBaseUrl(options.request);
   const logoUrl = `${appBaseUrl}/images/adalert-logo.avif`;
+  const brandHeaderHtml = buildEmailBrandHeaderHtml(logoUrl);
   const rowsHtml =
     options.rows && options.rows.length > 0
       ? `
@@ -120,8 +147,8 @@ function buildSupportEmailHtml(options: EmailTemplateOptions): string {
         <td align="center">
           <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 560px; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);">
             <tr>
-              <td style="background: ${BRAND_NAVY}; padding: 24px 28px;">
-                <img src="${logoUrl}" alt="${escapeHtml(APPLICATION_NAME)}" width="140" height="auto" style="display: block; max-width: 140px; height: auto;" />
+              <td style="background: ${BRAND_NAVY}; padding: 20px 28px;">
+                ${brandHeaderHtml}
               </td>
             </tr>
             <tr>
@@ -158,7 +185,7 @@ function buildSupportEmailText(options: {
   messageBlock?: { label: string; body: string };
   cta?: { label: string; href: string };
 }): string {
-  const lines = [options.headline, "", options.intro, ""];
+  const lines = [EMAIL_BRAND_WORDMARK, "", options.headline, "", options.intro, ""];
 
   if (options.rows?.length) {
     for (const row of options.rows) {
@@ -307,6 +334,86 @@ export function buildAdminCustomerReplyEmail({
       messageBlock: template.messageBlock,
       cta: template.cta,
     }),
+    html: buildSupportEmailHtml({ request, ...template }),
+  };
+}
+
+function statusLabelForEmail(status: string): string {
+  switch (status) {
+    case "in_progress":
+      return "In progress";
+    case "pending_customer":
+      return "Awaiting your reply";
+    case "resolved":
+      return "Resolved";
+    default:
+      return "Open";
+  }
+}
+
+/** Consumer: support note on ticket (consumer only). */
+export function buildConsumerSupportNoteEmail({
+  request,
+  ticketCode,
+  subject,
+  noteBody,
+}: {
+  request: NextRequest;
+  ticketCode: string;
+  subject: string;
+  noteBody: string;
+}) {
+  const portalLink = buildConsumerTicketLink(request, ticketCode);
+  const template = {
+    preheader: `New update on your support ticket ${ticketCode}.`,
+    headline: "New note on your support ticket",
+    intro:
+      "Our support team added a note to your ticket. You can read it and continue the conversation from your support portal.",
+    rows: [
+      { label: "Ticket", value: ticketCode },
+      { label: "Subject", value: subject },
+    ],
+    messageBlock: { label: "Support note", body: noteBody },
+    cta: { label: "View ticket", href: portalLink },
+  };
+
+  return {
+    subject: `[adAlert Support] Ticket update — ${ticketCode}`,
+    text: buildSupportEmailText({ ...template, cta: template.cta }),
+    html: buildSupportEmailHtml({ request, ...template }),
+  };
+}
+
+/** Consumer: ticket status changed via admin triage (consumer only). */
+export function buildConsumerStatusUpdateEmail({
+  request,
+  ticketCode,
+  subject,
+  status,
+}: {
+  request: NextRequest;
+  ticketCode: string;
+  subject: string;
+  status: string;
+}) {
+  const portalLink = buildConsumerTicketLink(request, ticketCode);
+  const statusLabel = statusLabelForEmail(status);
+  const template = {
+    preheader: `Ticket ${ticketCode} is now ${statusLabel}.`,
+    headline: "Your ticket status was updated",
+    intro:
+      "We updated the status of your support ticket. Sign in to your support portal for the full conversation and next steps.",
+    rows: [
+      { label: "Ticket", value: ticketCode },
+      { label: "Subject", value: subject },
+      { label: "Status", value: statusLabel },
+    ],
+    cta: { label: "View ticket", href: portalLink },
+  };
+
+  return {
+    subject: `[adAlert Support] Status update — ${ticketCode}`,
+    text: buildSupportEmailText({ ...template, cta: template.cta }),
     html: buildSupportEmailHtml({ request, ...template }),
   };
 }

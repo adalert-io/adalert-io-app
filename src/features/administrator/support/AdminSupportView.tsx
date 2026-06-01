@@ -19,7 +19,6 @@ import {
   Plus,
   RefreshCw,
   Search,
-  Smile,
   Ticket,
   User,
   Eye,
@@ -81,7 +80,7 @@ interface SupportTicketRow {
   lastUpdatedLabel: string;
   categoryLabel: string;
   createdAtLabel: string;
-  notesBody: string;
+  adminUnread: boolean;
   historySnippet: string;
   thread: TicketThreadMessage[];
 }
@@ -98,6 +97,7 @@ interface AdminSupportApiTicket {
   description: string;
   createdAt: string;
   updatedAt: string;
+  adminUnread: boolean;
 }
 
 interface AdminTicketMessageDto {
@@ -105,7 +105,12 @@ interface AdminTicketMessageDto {
   authorType: "customer" | "agent";
   authorName: string;
   body: string;
-  visibility: "public" | "internal";
+  visibility: "public" | "internal" | "note";
+  attachment?: {
+    fileName: string;
+    mimeType: string;
+    sizeBytes: number;
+  } | null;
   createdAt: string;
 }
 
@@ -257,8 +262,7 @@ function seedTickets(): SupportTicketRow[] {
         LAST_UPDATES[0],
       categoryLabel: CATEGORY_ROTATION[idx % CATEGORY_ROTATION.length],
       createdAtLabel: created,
-      notesBody:
-        "[Internal]\nReminder: verify SCIM rollout status before closing.\n\nNext steps for CSAT follow-up scripted on template #44.",
+      adminUnread: idx % 4 === 0,
       historySnippet: `${created} → Ticket logged\n${LAST_UPDATES[(idx + 1) % LAST_UPDATES.length]} → Routed to onboarding pod\n${LAST_UPDATES[(idx + 2) % LAST_UPDATES.length]} → Customer acknowledged`,
       thread: baseThread,
     };
@@ -386,6 +390,13 @@ function DetailStatusBadge({ status }: { status: TicketWorkflowStatus }) {
 const SELECT_CLASS =
   "min-w-[128px] appearance-none rounded-lg border border-gray-200 bg-white py-2.5 ps-4 pe-9 text-[13px] font-medium text-gray-700 shadow-xs transition-colors focus-visible:border-[#015AFD] focus-visible:ring-2 focus-visible:ring-[#015AFD]/25";
 
+interface PendingAttachment {
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  contentBase64: string;
+}
+
 interface TicketSheetProps {
   row: SupportTicketRow;
   open: boolean;
@@ -399,6 +410,23 @@ interface TicketSheetProps {
   onAfterPublicReply: (ticketId: string) => void;
 }
 
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result !== "string") {
+        reject(new Error("Failed to read attachment"));
+        return;
+      }
+      const base64 = result.includes(",") ? result.split(",")[1] : result;
+      resolve(base64 ?? "");
+    };
+    reader.onerror = () => reject(reader.error ?? new Error("Failed to read attachment"));
+    reader.readAsDataURL(file);
+  });
+}
+
 function TicketSheet({
   row,
   open,
@@ -410,15 +438,30 @@ function TicketSheet({
   const [panelTab, setPanelTab] = useState<"messages" | "notes" | "history">(
     "messages",
   );
-  const [composerMode, setComposerMode] = useState<"reply" | "internal">(
+  const [composerMode, setComposerMode] = useState<"reply" | "note" | "internal">(
     "reply",
   );
   const [replyDraft, setReplyDraft] = useState("");
-  const [messages, setMessages] = useState<TicketThreadMessage[]>(row.thread);
+  const [rawMessages, setRawMessages] = useState<AdminTicketMessageDto[]>([]);
+  const [pendingAttachment, setPendingAttachment] = useState<PendingAttachment | null>(
+    null,
+  );
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [nextStatus, setNextStatus] = useState<TicketWorkflowStatus>(row.status);
   const [nextPriority, setNextPriority] = useState<TicketPriority>(row.priority);
+
+  const conversationMessages = useMemo(() => {
+    return rawMessages.filter((message) => message.visibility === "public");
+  }, [rawMessages]);
+
+  const customerNotes = useMemo(() => {
+    return rawMessages.filter((message) => message.visibility === "note");
+  }, [rawMessages]);
+
+  const teamInternalNotes = useMemo(() => {
+    return rawMessages.filter((message) => message.visibility === "internal");
+  }, [rawMessages]);
 
   useEffect(() => {
     setNextStatus(row.status);
@@ -441,30 +484,19 @@ function TicketSheet({
         };
         if (!response.ok) {
           if (response.status === 404) {
-            if (!isUnmounted) setMessages(row.thread);
+            if (!isUnmounted) setRawMessages([]);
             return;
           }
           throw new Error(payload.error || "Failed to load messages");
         }
 
-        const mapped = (payload.messages ?? []).map((message) => ({
-          id: message.id,
-          author: message.authorType,
-          authorName:
-            message.visibility === "internal"
-              ? `${message.authorName} (Internal)`
-              : message.authorName,
-          timeLabel: formatDateLabel(message.createdAt),
-          body: message.body,
-        })) satisfies TicketThreadMessage[];
-
         if (!isUnmounted) {
-          setMessages(mapped.length > 0 ? mapped : row.thread);
+          setRawMessages(payload.messages ?? []);
         }
       } catch (error) {
         console.error("Failed to load ticket messages:", error);
         if (!isUnmounted) {
-          setMessages(row.thread);
+          setRawMessages([]);
         }
       } finally {
         if (!isUnmounted) setIsLoadingMessages(false);
@@ -475,7 +507,7 @@ function TicketSheet({
     return () => {
       isUnmounted = true;
     };
-  }, [row.id, row.thread]);
+  }, [row.id]);
 
   const hasTicketChanges = nextStatus !== row.status || nextPriority !== row.priority;
 
@@ -631,42 +663,106 @@ function TicketSheet({
                   <div className="rounded-xl border border-dashed border-gray-200 p-4 text-[13px] text-gray-600">
                     Loading conversation...
                   </div>
-                ) : messages.map((m) => (
-                  <div
-                    key={m.id}
-                    className={cn(
-                      "rounded-xl border px-4 py-3 shadow-xs",
-                      m.author === "customer"
-                        ? "border-[#bae6fd] bg-[#f0f9ff]"
-                        : "border-[#bbf7d0] bg-[#f0fdf4]",
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span
-                        className={cn(
-                          "flex size-9 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white",
-                          m.author === "customer" ? "bg-[#0369a1]" : "bg-emerald-600",
-                        )}
-                      >
-                        {m.author === "customer" ? row.initials : "SU"}
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-[13px] font-semibold text-gray-900">
-                          {m.authorName}
-                        </p>
-                        <p className="text-[12px] text-gray-600">{m.timeLabel}</p>
-                      </div>
-                    </div>
-                    <p className="mt-3 text-[13px] leading-relaxed text-gray-800">
-                      {m.body}
-                    </p>
+                ) : conversationMessages.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-gray-200 p-4 text-[13px] text-gray-600">
+                    No messages in this thread yet.
                   </div>
-                ))}
+                ) : (
+                  conversationMessages.map((m) => (
+                    <div
+                      key={m.id}
+                      className={cn(
+                        "rounded-xl border px-4 py-3 shadow-xs",
+                        m.authorType === "customer"
+                          ? "border-[#bae6fd] bg-[#f0f9ff]"
+                          : "border-[#bbf7d0] bg-[#f0fdf4]",
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={cn(
+                            "flex size-9 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white",
+                            m.authorType === "customer" ? "bg-[#0369a1]" : "bg-emerald-600",
+                          )}
+                        >
+                          {m.authorType === "customer" ? row.initials : "SU"}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-[13px] font-semibold text-gray-900">
+                            {m.authorName}
+                          </p>
+                          <p className="text-[12px] text-gray-600">
+                            {formatDateLabel(m.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="mt-3 text-[13px] leading-relaxed text-gray-800">
+                        {m.body}
+                      </p>
+                      {m.attachment ? (
+                        <p className="mt-2 text-[12px] font-medium text-[#015AFD]">
+                          Attachment: {m.attachment.fileName}
+                        </p>
+                      ) : null}
+                    </div>
+                  ))
+                )}
               </div>
             ) : panelTab === "notes" ? (
-              <pre className="whitespace-pre-wrap rounded-xl bg-gray-50 p-4 text-[13px] leading-relaxed text-gray-700">
-                {row.notesBody}
-              </pre>
+              <div className="space-y-6">
+                <div>
+                  <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-gray-500">
+                    Customer notes
+                  </p>
+                  {customerNotes.length === 0 ? (
+                    <p className="rounded-xl border border-dashed border-gray-200 p-4 text-[13px] text-gray-600">
+                      No customer-facing notes yet.
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {customerNotes.map((note) => (
+                        <div
+                          key={note.id}
+                          className="rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3"
+                        >
+                          <p className="text-[12px] text-amber-900/70">
+                            {formatDateLabel(note.createdAt)}
+                          </p>
+                          <p className="mt-2 text-[13px] leading-relaxed text-amber-950">
+                            {note.body}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-gray-500">
+                    Team internal
+                  </p>
+                  {teamInternalNotes.length === 0 ? (
+                    <p className="rounded-xl border border-dashed border-gray-200 p-4 text-[13px] text-gray-600">
+                      No internal notes yet.
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {teamInternalNotes.map((note) => (
+                        <div
+                          key={note.id}
+                          className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3"
+                        >
+                          <p className="text-[12px] text-gray-500">
+                            {formatDateLabel(note.createdAt)} · Internal
+                          </p>
+                          <p className="mt-2 text-[13px] leading-relaxed text-gray-800">
+                            {note.body}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             ) : (
               <pre className="whitespace-pre-wrap rounded-xl border border-dashed border-gray-200 p-4 text-[13px] leading-relaxed text-gray-700">
                 {row.historySnippet}
@@ -677,31 +773,31 @@ function TicketSheet({
 
         <SheetFooter className="border-t border-gray-100 bg-white p-4">
           <div className="w-full space-y-3">
-            <div className="flex rounded-lg bg-gray-100 p-1 text-[13px] font-semibold">
-              <button
-                type="button"
-                className={cn(
-                  "flex-1 rounded-md py-1.5",
-                  composerMode === "reply"
-                    ? "bg-white shadow-sm text-gray-900"
-                    : "text-gray-600",
-                )}
-                onClick={() => setComposerMode("reply")}
-              >
-                Reply
-              </button>
-              <button
-                type="button"
-                className={cn(
-                  "flex-1 rounded-md py-1.5",
-                  composerMode === "internal"
-                    ? "bg-white shadow-sm text-gray-900"
-                    : "text-gray-600",
-                )}
-                onClick={() => setComposerMode("internal")}
-              >
-                Internal Note
-              </button>
+            <div className="flex rounded-lg bg-gray-100 p-1 text-[12px] font-semibold">
+              {(
+                [
+                  ["reply", "Reply"],
+                  ["note", "Customer note"],
+                  ["internal", "Team internal"],
+                ] as const
+              ).map(([mode, label]) => (
+                <button
+                  key={mode}
+                  type="button"
+                  className={cn(
+                    "flex-1 rounded-md px-1 py-1.5",
+                    composerMode === mode
+                      ? "bg-white shadow-sm text-gray-900"
+                      : "text-gray-600",
+                  )}
+                  onClick={() => {
+                    setComposerMode(mode);
+                    if (mode !== "reply") setPendingAttachment(null);
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
             <Textarea
               rows={4}
@@ -709,19 +805,67 @@ function TicketSheet({
               placeholder={
                 composerMode === "reply"
                   ? "Type your reply..."
-                  : "Add an internal-only note..."
+                  : composerMode === "note"
+                    ? "Add a note the customer can read (they will be emailed)..."
+                    : "Add a team-only internal note..."
               }
               value={replyDraft}
               onChange={(e) => setReplyDraft(e.target.value)}
             />
+            {pendingAttachment ? (
+              <p className="text-[12px] text-gray-600">
+                Attached: {pendingAttachment.fileName}
+                <button
+                  type="button"
+                  className="ms-2 text-[#015AFD] hover:underline"
+                  onClick={() => setPendingAttachment(null)}
+                >
+                  Remove
+                </button>
+              </p>
+            ) : null}
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" type="button" className="text-gray-500">
-                  <Paperclip className="size-5" aria-hidden />
-                </Button>
-                <Button variant="ghost" size="icon" type="button" className="text-gray-500">
-                  <Smile className="size-5" aria-hidden />
-                </Button>
+                {composerMode === "reply" ? (
+                  <>
+                    <input
+                      id={`attach-${row.id}`}
+                      type="file"
+                      className="sr-only"
+                      accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.doc,.docx,.xls,.xlsx"
+                      onChange={async (event) => {
+                        const file = event.target.files?.[0];
+                        event.target.value = "";
+                        if (!file) return;
+                        if (file.size > 15 * 1024 * 1024) {
+                          toast.error("Attachment must be 15 MB or smaller.");
+                          return;
+                        }
+                        try {
+                          const contentBase64 = await fileToBase64(file);
+                          setPendingAttachment({
+                            fileName: file.name,
+                            mimeType: file.type || "application/octet-stream",
+                            sizeBytes: file.size,
+                            contentBase64,
+                          });
+                        } catch {
+                          toast.error("Couldn't read attachment.");
+                        }
+                      }}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      type="button"
+                      className="text-gray-500"
+                      onClick={() => document.getElementById(`attach-${row.id}`)?.click()}
+                      aria-label="Attach file"
+                    >
+                      <Paperclip className="size-5" aria-hidden />
+                    </Button>
+                  </>
+                ) : null}
               </div>
               <Button
                 type="button"
@@ -731,7 +875,12 @@ function TicketSheet({
                   const body = replyDraft.trim();
                   if (!body) return;
 
-                  const visibility = composerMode === "internal" ? "internal" : "public";
+                  const visibility =
+                    composerMode === "internal"
+                      ? "internal"
+                      : composerMode === "note"
+                        ? "note"
+                        : "public";
                   setIsSendingMessage(true);
                   try {
                     const response = await fetch(
@@ -739,7 +888,14 @@ function TicketSheet({
                       {
                         method: "POST",
                         headers: { "content-type": "application/json" },
-                        body: JSON.stringify({ body, visibility }),
+                        body: JSON.stringify({
+                          body,
+                          visibility,
+                          attachment:
+                            visibility === "public" && pendingAttachment
+                              ? pendingAttachment
+                              : undefined,
+                        }),
                       },
                     );
                     const payload = (await response.json()) as {
@@ -750,28 +906,19 @@ function TicketSheet({
                       throw new Error(payload.error || "Failed to send message");
                     }
 
-                    setMessages((prev) => [
-                      ...prev,
-                      {
-                        id: payload.message!.id,
-                        author: "agent",
-                        authorName:
-                          visibility === "internal"
-                            ? "adAlert Support (Internal)"
-                            : "adAlert Support",
-                        timeLabel: formatDateLabel(payload.message!.createdAt),
-                        body: payload.message!.body,
-                      },
-                    ]);
+                    setRawMessages((prev) => [...prev, payload.message!]);
                     setReplyDraft("");
-                    setPanelTab("messages");
+                    setPendingAttachment(null);
+                    setPanelTab(visibility === "public" ? "messages" : "notes");
                     if (visibility === "public") {
                       onAfterPublicReply(row.id);
                     }
                     toast.success(
                       visibility === "public"
-                        ? "Reply sent to ticket"
-                        : "Internal note saved",
+                        ? "Reply sent to customer"
+                        : visibility === "note"
+                          ? "Customer note saved and emailed"
+                          : "Internal note saved",
                     );
                   } catch (error) {
                     console.error("Failed to send ticket reply:", error);
@@ -785,10 +932,9 @@ function TicketSheet({
               >
                 {isSendingMessage
                   ? "Sending..."
-                  : composerMode === "internal"
-                    ? "Save Note"
-                    : "Send Reply"}
-                <ChevronDown className="size-4 ms-2" aria-hidden />
+                  : composerMode === "reply"
+                    ? "Send Reply"
+                    : "Save Note"}
               </Button>
             </div>
           </div>
@@ -811,8 +957,9 @@ export function AdminSupportView() {
   const [customerFilter, setCustomerFilter] = useState<string>("all");
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
-  const [detailId, setDetailId] = useState<string | null>(null);
+  const [activeTicketId, setActiveTicketId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [isMarkingRead, setIsMarkingRead] = useState(false);
   const [newOpen, setNewOpen] = useState(false);
 
   const [newSubject, setNewSubject] = useState("");
@@ -858,8 +1005,7 @@ export function AdminSupportView() {
             lastUpdatedLabel: updatedAtLabel,
             categoryLabel: ticket.categoryLabel,
             createdAtLabel,
-            notesBody:
-              "[Internal]\nNo notes yet. Add triage notes here for the support team.",
+            adminUnread: ticket.adminUnread,
             historySnippet: `${createdAtLabel} → Ticket created\n${updatedAtLabel} → Latest activity`,
             thread: [
               {
@@ -918,18 +1064,6 @@ export function AdminSupportView() {
     return list;
   }, [rows, search, statusFilter, priorityFilter, customerFilter]);
 
-  useEffect(() => {
-    if (filtered.length === 0) {
-      setDetailId(null);
-      return;
-    }
-    setDetailId((prev) =>
-      prev && filtered.some((x) => x.id === prev)
-        ? prev
-        : (filtered[0]?.id ?? null),
-    );
-  }, [filtered]);
-
   const totalRows = filtered.length;
   const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
   useEffect(() => setPage((p) => Math.min(p, totalPages)), [totalPages]);
@@ -966,13 +1100,40 @@ export function AdminSupportView() {
     });
   }, [allPageSelected, pageIdsOnPage]);
 
-  const handleOpenTicket = useCallback((t: SupportTicketRow) => {
-    setDetailId(t.id);
-    setDetailOpen(true);
+  const markTicketsRead = useCallback(async (ticketIds: string[]) => {
+    if (ticketIds.length === 0) return;
+    setIsMarkingRead(true);
+    try {
+      const response = await fetch("/api/admin/support/tickets/mark-read", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ticketIds }),
+      });
+      const payload = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        throw new Error(payload.error || "Failed to mark tickets as read");
+      }
+      setRows((prev) =>
+        prev.map((row) =>
+          ticketIds.includes(row.id) ? { ...row, adminUnread: false } : row,
+        ),
+      );
+    } catch (error) {
+      console.error("Failed to mark tickets read:", error);
+      toast.error("Couldn't mark tickets as read");
+    } finally {
+      setIsMarkingRead(false);
+    }
   }, []);
 
+  const handleOpenTicket = useCallback((t: SupportTicketRow) => {
+    setActiveTicketId(t.id);
+    setDetailOpen(true);
+    void markTicketsRead([t.id]);
+  }, [markTicketsRead]);
+
   const detailRow =
-    detailId === null ? null : rows.find((r) => r.id === detailId) ?? null;
+    activeTicketId === null ? null : rows.find((r) => r.id === activeTicketId) ?? null;
 
   const aggregated = useMemo(() => ({
     total: rows.length,
@@ -1008,7 +1169,7 @@ export function AdminSupportView() {
       lastUpdatedLabel: LAST_UPDATES[0],
       categoryLabel: CATEGORY_ROTATION[0],
       createdAtLabel: LAST_UPDATES[0],
-      notesBody: newBody.trim().length ? newBody.trim() : "No notes yet.",
+      adminUnread: true,
       historySnippet: `${LAST_UPDATES[0]} → Ticket logged via console`,
       thread: [
         {
@@ -1368,6 +1529,36 @@ export function AdminSupportView() {
           </div>
         </div>
 
+        {selected.size > 0 ? (
+          <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[#015AFD]/25 bg-[#eaf3ff]/60 px-4 py-3">
+            <p className="text-[13px] font-semibold text-gray-800">
+              {selected.size} ticket{selected.size === 1 ? "" : "s"} selected
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="rounded-lg bg-white"
+              disabled={isMarkingRead}
+              onClick={() => {
+                void markTicketsRead(Array.from(selected));
+                setSelected(new Set());
+              }}
+            >
+              {isMarkingRead ? "Updating..." : "Mark as read"}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="rounded-lg"
+              onClick={() => setSelected(new Set())}
+            >
+              Clear selection
+            </Button>
+          </div>
+        ) : null}
+
         {viewMode === "list" ? (
           filtered.length === 0 ? (
             <div className="rounded-2xl border border-[#e5e5e5] bg-white py-24 text-center text-gray-600">
@@ -1411,7 +1602,6 @@ export function AdminSupportView() {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {pageRows.map((t, ri) => {
-                      const isSel = detailId === t.id;
                       const bg =
                         AVATAR_BG[t.avatarToneIndex % AVATAR_BG.length] ??
                         AVATAR_BG[0];
@@ -1420,11 +1610,9 @@ export function AdminSupportView() {
                           key={t.id}
                           className={cn(
                             "cursor-pointer hover:bg-gray-50",
-                            isSel &&
-                              "bg-[#eaf3ff]/92 ring-2 ring-[#015AFD]/38 ring-inset",
-                            ri % 2 === 1 && !isSel && "bg-gray-50/40",
+                            t.adminUnread && "bg-[#f0f7ff]/90",
+                            ri % 2 === 1 && !t.adminUnread && "bg-gray-50/40",
                           )}
-                          aria-selected={isSel ? true : undefined}
                           onClick={(e) => {
                             const tg = e.target as HTMLElement | null;
                             if (tg?.closest("[data-slot='checkbox'],button")) return;
@@ -1446,8 +1634,18 @@ export function AdminSupportView() {
                               {t.ticketCode}
                             </button>
                           </td>
-                          <td className="truncate py-3 pe-4 font-semibold text-gray-900">
-                            {t.subject}
+                          <td className="truncate py-3 pe-4 text-gray-900">
+                            <div className="flex min-w-0 items-center gap-2">
+                              {t.adminUnread ? (
+                                <span
+                                  className="size-2 shrink-0 rounded-full bg-[#015AFD]"
+                                  aria-label="Unread"
+                                />
+                              ) : null}
+                              <span className={cn("truncate", t.adminUnread && "font-bold")}>
+                                {t.subject}
+                              </span>
+                            </div>
                           </td>
                           <td className="px-2 py-3">
                             <div className="flex gap-3">

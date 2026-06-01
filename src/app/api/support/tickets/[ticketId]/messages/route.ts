@@ -7,6 +7,11 @@ import {
   SUPPORT_NO_REPLY_EMAIL,
   buildAdminCustomerReplyEmail,
 } from "@/lib/email/support-ticket-emails";
+import {
+  isConversationMessage,
+  isCustomerNote,
+  normalizeMessageVisibility,
+} from "@/lib/support/message-visibility";
 import { getAdminFirestore, verifyFirebaseIdToken } from "@/lib/firebase/admin";
 
 type MessageAuthorType = "customer" | "agent";
@@ -87,24 +92,43 @@ export async function GET(
       messagesSnap = await ticketRef.collection("messages").get();
     }
 
-    const messages = messagesSnap.docs
-      .map((doc) => {
-        const data = doc.data() as Record<string, unknown>;
-        const visibility = data.visibility === "internal" ? "internal" : "public";
-        if (visibility === "internal") return null;
+    const conversation: Array<{
+      id: string;
+      authorType: MessageAuthorType;
+      authorName: string;
+      body: string;
+      createdAt: string;
+    }> = [];
+    const notes: Array<{
+      id: string;
+      authorType: MessageAuthorType;
+      authorName: string;
+      body: string;
+      createdAt: string;
+    }> = [];
 
-        return {
-          id: doc.id,
-          authorType: (data.authorType as MessageAuthorType) ?? "agent",
-          authorName: (data.authorName as string) ?? "adAlert Support",
-          body: (data.body as string) ?? "",
-          createdAt: timestampToIso(data.createdAt as admin.firestore.Timestamp | undefined),
-        };
-      })
-      .filter((message): message is NonNullable<typeof message> => message !== null);
+    for (const doc of messagesSnap.docs) {
+      const data = doc.data() as Record<string, unknown>;
+      const visibility = normalizeMessageVisibility(data.visibility);
+      if (!isConversationMessage(visibility) && !isCustomerNote(visibility)) continue;
+
+      const item = {
+        id: doc.id,
+        authorType: (data.authorType as MessageAuthorType) ?? "agent",
+        authorName: (data.authorName as string) ?? "adAlert Support",
+        body: (data.body as string) ?? "",
+        createdAt: timestampToIso(data.createdAt as admin.firestore.Timestamp | undefined),
+      };
+
+      if (isCustomerNote(visibility)) {
+        notes.push(item);
+      } else {
+        conversation.push(item);
+      }
+    }
 
     if (initialDescription) {
-      messages.unshift({
+      conversation.unshift({
         id: "initial-description",
         authorType: "customer",
         authorName: createdByName,
@@ -113,7 +137,7 @@ export async function GET(
       });
     }
 
-    return NextResponse.json({ messages });
+    return NextResponse.json({ messages: conversation, notes });
   } catch (error) {
     const status =
       typeof (error as { status?: number }).status === "number"
@@ -168,6 +192,7 @@ export async function POST(
     await ticketRef.update({
       updatedAt: now,
       status: "in_progress",
+      adminUnread: true,
       lastMessagePreview: content.length > 140 ? `${content.slice(0, 140)}…` : content,
     });
 
