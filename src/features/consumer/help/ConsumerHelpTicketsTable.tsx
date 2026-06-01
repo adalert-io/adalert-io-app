@@ -22,13 +22,11 @@ import type { SupportTicket } from "./types";
 
 export interface ConsumerHelpTicketsTableProps {
   tickets: SupportTicket[];
-  selectedTicketId: string | null;
   onSelectTicket: (ticket: SupportTicket) => void;
 }
 
 export function ConsumerHelpTicketsTable({
   tickets,
-  selectedTicketId,
   onSelectTicket,
 }: ConsumerHelpTicketsTableProps) {
   if (tickets.length === 0) {
@@ -62,14 +60,11 @@ export function ConsumerHelpTicketsTable({
       </TableHeader>
       <TableBody>
         {tickets.map((ticket) => {
-          const isSelected = ticket.id === selectedTicketId;
-
           return (
             <TableRow
               key={ticket.id}
               tabIndex={0}
               role="button"
-              aria-selected={isSelected}
               onClick={() => onSelectTicket(ticket)}
               onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
@@ -77,12 +72,7 @@ export function ConsumerHelpTicketsTable({
                   onSelectTicket(ticket);
                 }
               }}
-              className={cn(
-                "cursor-pointer transition-colors",
-                isSelected
-                  ? "bg-[#015AFD]/5 hover:bg-[#015AFD]/8"
-                  : "hover:bg-slate-50/80",
-              )}
+              className={cn("cursor-pointer transition-colors hover:bg-slate-50/80")}
             >
               <TableCell className="max-w-[220px] py-3.5">
                 <p className="font-mono text-[11px] font-medium text-slate-400">

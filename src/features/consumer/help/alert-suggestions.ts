@@ -1,6 +1,8 @@
 import type { NewSupportTicketForm } from "./types";
 
-export interface AlertTicketSuggestion extends NewSupportTicketForm {
+type SuggestedTicketPayload = Omit<NewSupportTicketForm, "attachment">;
+
+export interface AlertTicketSuggestion extends SuggestedTicketPayload {
   id: string;
   alertTitle: string;
 }

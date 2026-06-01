@@ -5,10 +5,17 @@ export interface SendEmailArgs {
   subject: string;
   text: string;
   html?: string;
+  from?: string;
+  attachments?: {
+    filename: string;
+    type?: string;
+    content: string;
+    disposition?: "attachment" | "inline";
+  }[];
 }
 
-export async function sendEmail({ to, subject, text, html }: SendEmailArgs) {
-  const fromEmail = process.env.SENDGRID_VERIFIED_SENDER;
+export async function sendEmail({ to, subject, text, html, from, attachments }: SendEmailArgs) {
+  const fromEmail = from ?? process.env.SENDGRID_VERIFIED_SENDER;
   if (!fromEmail) {
     throw new Error("SENDGRID_VERIFIED_SENDER is not configured");
   }
@@ -26,6 +33,7 @@ export async function sendEmail({ to, subject, text, html }: SendEmailArgs) {
     subject,
     text,
     html,
+    attachments,
     trackingSettings: {
       clickTracking: {
         enable: false,

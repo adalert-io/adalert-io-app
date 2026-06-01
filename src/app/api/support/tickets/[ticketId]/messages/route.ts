@@ -9,6 +9,8 @@ interface CreateMessageBody {
   body?: string;
 }
 const SUPPORT_ALERT_RECIPIENTS = ["support@adalert.io", "info@webds.com", "mohit@webds.com"];
+const SUPPORT_NO_REPLY_EMAIL =
+  process.env.SENDGRID_SUPPORT_NO_REPLY_SENDER ?? "no-reply@adalert.io";
 
 function timestampToIso(value: admin.firestore.Timestamp | null | undefined): string {
   if (!value) return new Date().toISOString();
@@ -22,6 +24,17 @@ function escapeHtml(value: string): string {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function buildPortalTicketLink({
+  request,
+  ticketCode,
+}: {
+  request: NextRequest;
+  ticketCode: string;
+}): string {
+  const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || new URL(request.url).origin;
+  return `${appBaseUrl}/consumer/help/${encodeURIComponent(ticketCode)}`;
 }
 
 async function findOwnedTicketRef({
@@ -190,6 +203,7 @@ export async function POST(
           : "Support ticket update";
       const customerName = decoded.name ?? decoded.email ?? "Customer";
       const customerEmail = decoded.email ?? "unknown@customer";
+      const ticketPortalLink = buildPortalTicketLink({ request, ticketCode });
 
       const emailSubject = `[adAlert Support] Customer Reply ${ticketCode}`;
       const text = [
@@ -203,6 +217,7 @@ export async function POST(
         "Customer Reply:",
         content,
         "",
+        `Support portal thread: ${ticketPortalLink}`,
         "Please review and respond from the Support dashboard.",
       ].join("\n");
 
@@ -219,8 +234,13 @@ export async function POST(
           <div style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; white-space: pre-wrap;">
             ${escapeHtml(content)}
           </div>
+          <p style="margin: 14px 0 0;">
+            <a href="${ticketPortalLink}" style="color: #015AFD; text-decoration: none; font-weight: 600;">
+              Open this ticket in the support portal
+            </a>
+          </p>
           <p style="margin: 14px 0 0; color: #475569; font-size: 12px;">
-            Please review and respond from the Support dashboard.
+            This mailbox does not accept replies. Please use the support portal.
           </p>
         </div>
       `;
@@ -230,7 +250,44 @@ export async function POST(
         subject: emailSubject,
         text,
         html,
+        from: SUPPORT_NO_REPLY_EMAIL,
       });
+
+      if (decoded.email) {
+        const customerSubject = `[adAlert Support] Reply Received ${ticketCode}`;
+        const customerText = [
+          "Your reply has been posted to your support ticket.",
+          "",
+          `Ticket: ${ticketCode}`,
+          `Subject: ${ticketSubject}`,
+          "",
+          "You can track and continue this conversation from the support portal:",
+          ticketPortalLink,
+          "",
+          "This email is sent from a no-reply mailbox.",
+        ].join("\n");
+        const customerHtml = `
+          <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height: 1.45;">
+            <h2 style="margin: 0 0 12px;">adAlert Support: Reply Received</h2>
+            <p style="margin: 0 0 10px;">We've posted your latest ticket reply.</p>
+            <p style="margin: 0 0 8px;">
+              <a href="${ticketPortalLink}" style="color: #015AFD; text-decoration: none; font-weight: 600;">
+                Open ticket thread in support portal
+              </a>
+            </p>
+            <p style="margin: 14px 0 0; color: #475569; font-size: 12px;">
+              This is a no-reply email. Please respond from the support portal.
+            </p>
+          </div>
+        `;
+        await sendEmail({
+          to: [decoded.email],
+          subject: customerSubject,
+          text: customerText,
+          html: customerHtml,
+          from: SUPPORT_NO_REPLY_EMAIL,
+        });
+      }
     } catch (emailError) {
       console.error("Failed to send admin alert for customer reply:", emailError);
     }

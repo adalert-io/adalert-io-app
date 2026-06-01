@@ -33,4 +33,11 @@ export interface NewSupportTicketForm {
   category: string;
   priority: SupportTicketPriority;
   description: string;
+  attachment: File | null;
+}
+
+export interface SupportTicketAttachment {
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
 }

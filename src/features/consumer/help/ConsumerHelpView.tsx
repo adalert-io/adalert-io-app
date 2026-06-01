@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ComponentType } from "react";
+import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
   Clock3,
@@ -19,7 +20,6 @@ import { useAuthStore } from "@/lib/store/auth-store";
 import { cn } from "@/lib/utils";
 
 import { ConsumerHelpNewTicketDialog } from "./ConsumerHelpNewTicketDialog";
-import { ConsumerHelpTicketDetailSheet } from "./ConsumerHelpTicketDetailSheet";
 import { ConsumerHelpTicketsTable } from "./ConsumerHelpTicketsTable";
 import { SUPPORT_CATEGORIES } from "./helpers";
 import { MOCK_SUPPORT_TICKETS } from "./mock-tickets";
@@ -70,13 +70,12 @@ function StatCard({
 }
 
 export function ConsumerHelpView() {
+  const router = useRouter();
   const { user } = useAuthStore();
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [filter, setFilter] = useState<SupportTicketFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [isNewTicketOpen, setIsNewTicketOpen] = useState(false);
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingTickets, setIsLoadingTickets] = useState(false);
 
@@ -139,17 +138,14 @@ export function ConsumerHelpView() {
     });
   }, [tickets, filter, searchQuery]);
 
-  const selectedTicket =
-    tickets.find((ticket) => ticket.id === selectedTicketId) ?? null;
-
   const handleSelectTicket = (ticket: SupportTicket) => {
-    setSelectedTicketId(ticket.id);
-    setIsDetailOpen(true);
+    const ticketRouteId = ticket.documentId || ticket.id;
+    router.push(`/consumer/help/${encodeURIComponent(ticketRouteId)}`);
   };
 
   const handleSubmitTicket = async (form: NewSupportTicketForm) => {
-    if (!form.subject.trim() || !form.description.trim()) {
-      toast.error("Please add a subject and description.");
+    if (!form.subject.trim() || !form.description.trim() || !form.attachment) {
+      toast.error("Please add subject, description, and one attachment.");
       return;
     }
 
@@ -164,18 +160,19 @@ export function ConsumerHelpView() {
       "Other";
     try {
       const idToken = await user.getIdToken();
+      const payload = new FormData();
+      payload.set("subject", form.subject.trim());
+      payload.set("category", categoryLabel);
+      payload.set("priority", form.priority);
+      payload.set("description", form.description.trim());
+      payload.set("attachment", form.attachment);
+
       const response = await fetch("/api/support/tickets", {
         method: "POST",
         headers: {
-          "content-type": "application/json",
           authorization: `Bearer ${idToken}`,
         },
-        body: JSON.stringify({
-          subject: form.subject.trim(),
-          category: categoryLabel,
-          priority: form.priority,
-          description: form.description.trim(),
-        }),
+        body: payload,
       });
 
       const data = (await response.json()) as { ticket?: SupportTicket; error?: string };
@@ -184,14 +181,14 @@ export function ConsumerHelpView() {
       }
 
       setTickets((prev) => [data.ticket!, ...prev]);
-      setSelectedTicketId(data.ticket.id);
       setFilter("open");
       setIsNewTicketOpen(false);
-      setIsDetailOpen(true);
 
       toast.success("Support ticket submitted", {
         description: `${data.ticket.id} is now in your queue.`,
       });
+      const ticketRouteId = data.ticket.documentId || data.ticket.id;
+      router.push(`/consumer/help/${encodeURIComponent(ticketRouteId)}`);
     } catch (error) {
       console.error("Failed to submit support ticket:", error);
       toast.error("Couldn't submit your ticket", {
@@ -318,7 +315,6 @@ export function ConsumerHelpView() {
         <div className="p-4 sm:p-6">
           <ConsumerHelpTicketsTable
             tickets={filteredTickets}
-            selectedTicketId={selectedTicketId}
             onSelectTicket={handleSelectTicket}
           />
         </div>
@@ -329,12 +325,6 @@ export function ConsumerHelpView() {
         onOpenChange={setIsNewTicketOpen}
         onSubmit={handleSubmitTicket}
         isSubmitting={isSubmitting}
-      />
-
-      <ConsumerHelpTicketDetailSheet
-        ticket={selectedTicket}
-        open={isDetailOpen}
-        onOpenChange={setIsDetailOpen}
       />
     </div>
   );

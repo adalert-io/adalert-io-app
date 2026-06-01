@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, MessageSquarePlus, Send } from "lucide-react";
+import { MessageSquarePlus, Paperclip, Send } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -14,9 +14,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
-
-import { ALERT_TICKET_SUGGESTIONS } from "./alert-suggestions";
 import { SUPPORT_CATEGORIES } from "./helpers";
 import type { NewSupportTicketForm } from "./types";
 
@@ -25,6 +22,7 @@ const EMPTY_FORM: NewSupportTicketForm = {
   category: SUPPORT_CATEGORIES[0].value,
   priority: "medium",
   description: "",
+  attachment: null,
 };
 
 export interface ConsumerHelpNewTicketDialogProps {
@@ -41,33 +39,18 @@ export function ConsumerHelpNewTicketDialog({
   isSubmitting = false,
 }: ConsumerHelpNewTicketDialogProps) {
   const [form, setForm] = useState<NewSupportTicketForm>(EMPTY_FORM);
-  const [selectedSuggestionId, setSelectedSuggestionId] = useState<string | null>(
-    null,
-  );
 
   const handleClose = (nextOpen: boolean) => {
     if (!nextOpen && !isSubmitting) {
       setForm(EMPTY_FORM);
-      setSelectedSuggestionId(null);
     }
     onOpenChange(nextOpen);
-  };
-
-  const handleApplySuggestion = (suggestion: (typeof ALERT_TICKET_SUGGESTIONS)[number]) => {
-    setForm({
-      subject: suggestion.subject,
-      category: suggestion.category,
-      priority: suggestion.priority,
-      description: suggestion.description,
-    });
-    setSelectedSuggestionId(suggestion.id);
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     await onSubmit(form);
     setForm(EMPTY_FORM);
-    setSelectedSuggestionId(null);
   };
 
   return (
@@ -94,28 +77,6 @@ export function ConsumerHelpNewTicketDialog({
         </DialogHeader>
 
         <form className="space-y-3 px-5 py-4" onSubmit={handleSubmit}>
-          <div className="space-y-2">
-            <Label>Suggested from alerts</Label>
-            <div className="flex flex-wrap gap-2">
-              {ALERT_TICKET_SUGGESTIONS.map((suggestion) => (
-                <button
-                  key={suggestion.id}
-                  type="button"
-                  onClick={() => handleApplySuggestion(suggestion)}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-semibold transition-colors",
-                    selectedSuggestionId === suggestion.id
-                      ? "border-[#015AFD]/30 bg-[#015AFD]/10 text-[#015AFD]"
-                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50",
-                  )}
-                >
-                  <AlertTriangle className="size-3.5" aria-hidden />
-                  {suggestion.alertTitle}
-                </button>
-              ))}
-            </div>
-          </div>
-
           <div className="space-y-2">
             <Label htmlFor="ticket-subject">Subject</Label>
             <Input
@@ -182,9 +143,24 @@ export function ConsumerHelpNewTicketDialog({
             />
           </div>
 
-          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-3 py-2 text-[12px] text-slate-500">
-            Attachments will be available when support is connected to your
-            ticketing system.
+          <div className="space-y-2">
+            <Label htmlFor="ticket-attachment">Attachment</Label>
+            <Input
+              id="ticket-attachment"
+              type="file"
+              required
+              onChange={(event) =>
+                setForm((prev) => ({
+                  ...prev,
+                  attachment: event.target.files?.[0] ?? null,
+                }))
+              }
+              accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.doc,.docx,.xls,.xlsx"
+              className="rounded-xl border-slate-200 file:mr-4 file:rounded-md file:border-0 file:bg-slate-100 file:px-2.5 file:py-1 file:text-[12px] file:font-semibold file:text-slate-700 hover:file:bg-slate-200"
+            />
+            <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-3 py-2 text-[12px] text-slate-500">
+              Upload a supporting file (PDF, JPG, PNG, DOC, XLS, TXT, CSV, and similar).
+            </div>
           </div>
 
           <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">

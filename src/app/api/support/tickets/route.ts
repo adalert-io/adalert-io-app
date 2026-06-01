@@ -4,11 +4,11 @@ import admin from "firebase-admin";
 import { getAdminFirestore, verifyFirebaseIdToken } from "@/lib/firebase/admin";
 import { sendEmail } from "@/lib/email/sendgrid";
 
-interface CreateTicketRequestBody {
-  subject?: string;
-  category?: string;
-  priority?: "low" | "medium" | "high";
-  description?: string;
+interface TicketAttachment {
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  contentBase64?: string;
 }
 
 interface SupportTicketApiDto {
@@ -21,9 +21,26 @@ interface SupportTicketApiDto {
   createdAt: string;
   updatedAt: string;
   lastMessagePreview: string;
+  attachments?: TicketAttachment[];
 }
 
 const SUPPORT_ALERT_RECIPIENTS = ["support@adalert.io", "info@webds.com", "mohit@webds.com"];
+const SUPPORT_NO_REPLY_EMAIL =
+  process.env.SENDGRID_SUPPORT_NO_REPLY_SENDER ?? "no-reply@adalert.io";
+const ALLOWED_ATTACHMENT_TYPES = new Set([
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "text/plain",
+  "text/csv",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+]);
+const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
 
 function timestampToIso(value: admin.firestore.Timestamp | null | undefined): string {
   if (!value) return new Date(0).toISOString();
@@ -63,7 +80,15 @@ function docToDto(
     createdAt: timestampToIso(data.createdAt as admin.firestore.Timestamp | undefined),
     updatedAt: timestampToIso(data.updatedAt as admin.firestore.Timestamp | undefined),
     lastMessagePreview: String(data.lastMessagePreview ?? ""),
+    attachments: Array.isArray(data.attachments)
+      ? (data.attachments as TicketAttachment[])
+      : [],
   };
+}
+
+function buildPortalTicketLink({ request, ticketId }: { request: NextRequest; ticketId: string }) {
+  const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || new URL(request.url).origin;
+  return `${appBaseUrl}/consumer/help/${encodeURIComponent(ticketId)}`;
 }
 
 export async function GET(request: NextRequest) {
@@ -95,16 +120,60 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const decoded = await verifyFirebaseIdToken(request.headers.get("authorization"));
-    const body = (await request.json()) as CreateTicketRequestBody;
+    const contentType = request.headers.get("content-type") ?? "";
+    let subject = "";
+    let category = "";
+    let priority: "low" | "medium" | "high" = "medium";
+    let description = "";
+    let attachment: TicketAttachment | null = null;
 
-    const subject = body.subject?.trim() ?? "";
-    const category = body.category?.trim() ?? "";
-    const priority = body.priority ?? "medium";
-    const description = body.description?.trim() ?? "";
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await request.formData();
+      subject = String(formData.get("subject") ?? "").trim();
+      category = String(formData.get("category") ?? "").trim();
+      const priorityValue = String(formData.get("priority") ?? "medium").trim();
+      priority = priorityValue === "low" || priorityValue === "high" ? priorityValue : "medium";
+      description = String(formData.get("description") ?? "").trim();
+      const file = formData.get("attachment");
+      if (!(file instanceof File)) {
+        return NextResponse.json({ error: "Attachment is required" }, { status: 400 });
+      }
+      if (!ALLOWED_ATTACHMENT_TYPES.has(file.type)) {
+        return NextResponse.json(
+          { error: `Unsupported attachment type: ${file.type || "unknown"}` },
+          { status: 400 },
+        );
+      }
+      if (file.size <= 0 || file.size > MAX_ATTACHMENT_BYTES) {
+        return NextResponse.json(
+          { error: "Attachment must be between 1 byte and 15 MB" },
+          { status: 400 },
+        );
+      }
 
-    if (!subject || !description) {
+      const arrayBuffer = await file.arrayBuffer();
+      attachment = {
+        fileName: file.name,
+        mimeType: file.type,
+        sizeBytes: file.size,
+        contentBase64: Buffer.from(arrayBuffer).toString("base64"),
+      };
+    } else {
+      const body = (await request.json()) as {
+        subject?: string;
+        category?: string;
+        priority?: "low" | "medium" | "high";
+        description?: string;
+      };
+      subject = body.subject?.trim() ?? "";
+      category = body.category?.trim() ?? "";
+      priority = body.priority ?? "medium";
+      description = body.description?.trim() ?? "";
+    }
+
+    if (!subject || !description || !attachment) {
       return NextResponse.json(
-        { error: "Subject and description are required" },
+        { error: "Subject, description, and one attachment are required" },
         { status: 400 },
       );
     }
@@ -126,6 +195,13 @@ export async function POST(request: NextRequest) {
       createdByUid: decoded.uid,
       createdByEmail: decoded.email ?? null,
       createdByName: decoded.name ?? null,
+      attachments: [
+        {
+          fileName: attachment.fileName,
+          mimeType: attachment.mimeType,
+          sizeBytes: attachment.sizeBytes,
+        },
+      ],
       createdAt: now,
       updatedAt: now,
     });
@@ -136,6 +212,10 @@ export async function POST(request: NextRequest) {
     try {
       const requester = decoded.email ? `${decoded.email}` : decoded.uid;
       const emailSubject = `[adAlert Support] New Ticket ${createdTicket.id}`;
+      const ticketPortalLink = buildPortalTicketLink({
+        request,
+        ticketId: createdTicket.id,
+      });
       const text = [
         "A new support ticket has been submitted.",
         "",
@@ -148,7 +228,8 @@ export async function POST(request: NextRequest) {
         "Customer Message:",
         description,
         "",
-        "Please review and respond from the Support dashboard.",
+        `Support portal thread: ${ticketPortalLink}`,
+        "Use the support portal to view and respond to this ticket.",
       ].join("\n");
 
       const html = `
@@ -166,8 +247,13 @@ export async function POST(request: NextRequest) {
             <div style="color: #475569; font-size: 12px; font-weight: 600; margin-bottom: 6px;">Customer Message</div>
             <div style="white-space: pre-wrap;">${escapeHtml(description)}</div>
           </div>
+          <p style="margin: 14px 0 0;">
+            <a href="${ticketPortalLink}" style="color: #015AFD; text-decoration: none; font-weight: 600;">
+              Open this ticket in the support portal
+            </a>
+          </p>
           <p style="margin: 14px 0 0; color: #475569; font-size: 12px;">
-            Please review and respond from the Support dashboard.
+            This mailbox does not accept replies. Please use the support portal to continue the conversation.
           </p>
         </div>
       `;
@@ -177,7 +263,58 @@ export async function POST(request: NextRequest) {
         subject: emailSubject,
         text,
         html,
+        from: SUPPORT_NO_REPLY_EMAIL,
+        attachments: attachment.contentBase64
+          ? [
+              {
+                filename: attachment.fileName,
+                type: attachment.mimeType,
+                disposition: "attachment",
+                content: attachment.contentBase64,
+              },
+            ]
+          : undefined,
       });
+
+      if (decoded.email) {
+        const customerSubject = `[adAlert Support] Ticket Received ${createdTicket.id}`;
+        const customerText = [
+          "Your support ticket has been received.",
+          "",
+          `Ticket: ${createdTicket.id}`,
+          `Subject: ${createdTicket.subject}`,
+          "",
+          "You can view and reply to this ticket from the support portal:",
+          ticketPortalLink,
+          "",
+          "This email is sent from a no-reply mailbox.",
+        ].join("\n");
+        const customerHtml = `
+          <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height: 1.45;">
+            <h2 style="margin: 0 0 12px;">adAlert Support: Ticket Received</h2>
+            <p style="margin: 0 0 10px;">We've received your support ticket.</p>
+            <p style="margin: 0 0 14px; color: #334155;">
+              <strong>Ticket:</strong> ${escapeHtml(createdTicket.id)}<br />
+              <strong>Subject:</strong> ${escapeHtml(createdTicket.subject)}
+            </p>
+            <p style="margin: 0 0 8px;">
+              <a href="${ticketPortalLink}" style="color: #015AFD; text-decoration: none; font-weight: 600;">
+                Open ticket thread in support portal
+              </a>
+            </p>
+            <p style="margin: 14px 0 0; color: #475569; font-size: 12px;">
+              This is a no-reply email. Please respond from the support portal.
+            </p>
+          </div>
+        `;
+        await sendEmail({
+          to: [decoded.email],
+          subject: customerSubject,
+          text: customerText,
+          html: customerHtml,
+          from: SUPPORT_NO_REPLY_EMAIL,
+        });
+      }
     } catch (emailError) {
       console.error("Failed to send support ticket alert email:", emailError);
     }

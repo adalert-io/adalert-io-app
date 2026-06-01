@@ -5,6 +5,9 @@ import { sendEmail } from "@/lib/email/sendgrid";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 
 const ADMIN_PREVIEW_COOKIE = "admin_preview_gate";
+const SUPPORT_ALERT_RECIPIENTS = ["support@adalert.io", "info@webds.com", "mohit@webds.com"];
+const SUPPORT_NO_REPLY_EMAIL =
+  process.env.SENDGRID_SUPPORT_NO_REPLY_SENDER ?? "no-reply@adalert.io";
 
 type MessageAuthorType = "customer" | "agent";
 type MessageVisibility = "public" | "internal";
@@ -30,6 +33,17 @@ function escapeHtml(value: string): string {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function buildPortalTicketLink({
+  request,
+  ticketCode,
+}: {
+  request: NextRequest;
+  ticketCode: string;
+}): string {
+  const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || new URL(request.url).origin;
+  return `${appBaseUrl}/consumer/help/${encodeURIComponent(ticketCode)}`;
 }
 
 export async function GET(
@@ -160,6 +174,7 @@ export async function POST(
         typeof ticketData.subject === "string" && ticketData.subject.trim()
           ? ticketData.subject
           : "Support ticket update";
+      const ticketPortalLink = buildPortalTicketLink({ request, ticketCode });
 
       if (customerEmail) {
         try {
@@ -173,7 +188,10 @@ export async function POST(
             "Reply:",
             content,
             "",
-            "If needed, you can continue the conversation from your Help page.",
+            "You can view and reply in the support portal:",
+            ticketPortalLink,
+            "",
+            "This mailbox does not accept replies.",
           ].join("\n");
           const html = `
             <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height: 1.45;">
@@ -186,8 +204,13 @@ export async function POST(
               <div style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; white-space: pre-wrap;">
                 ${escapeHtml(content)}
               </div>
+              <p style="margin: 14px 0 0;">
+                <a href="${ticketPortalLink}" style="color: #015AFD; text-decoration: none; font-weight: 600;">
+                  Open this ticket in the support portal
+                </a>
+              </p>
               <p style="margin: 14px 0 0; color: #475569; font-size: 12px;">
-                If needed, you can continue the conversation from your Help page.
+                This is a no-reply email. Please respond from the support portal.
               </p>
             </div>
           `;
@@ -197,6 +220,44 @@ export async function POST(
             subject: emailSubject,
             text,
             html,
+            from: SUPPORT_NO_REPLY_EMAIL,
+          });
+
+          const adminSubject = `[adAlert Support] Agent Reply Sent ${ticketCode}`;
+          const adminText = [
+            "A public reply was sent from the admin support dashboard.",
+            "",
+            `Ticket: ${ticketCode}`,
+            `Subject: ${ticketSubject}`,
+            "",
+            "Reply:",
+            content,
+            "",
+            `Support portal thread: ${ticketPortalLink}`,
+            "This notification is from a no-reply mailbox.",
+          ].join("\n");
+          const adminHtml = `
+            <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height: 1.45;">
+              <h2 style="margin: 0 0 12px;">adAlert Support: Agent Reply Sent</h2>
+              <p style="margin: 0 0 10px;">
+                A public support reply was sent for ticket <strong>${escapeHtml(ticketCode)}</strong>.
+              </p>
+              <div style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; white-space: pre-wrap;">
+                ${escapeHtml(content)}
+              </div>
+              <p style="margin: 14px 0 0;">
+                <a href="${ticketPortalLink}" style="color: #015AFD; text-decoration: none; font-weight: 600;">
+                  Open this ticket in the support portal
+                </a>
+              </p>
+            </div>
+          `;
+          await sendEmail({
+            to: SUPPORT_ALERT_RECIPIENTS,
+            subject: adminSubject,
+            text: adminText,
+            html: adminHtml,
+            from: SUPPORT_NO_REPLY_EMAIL,
           });
         } catch (emailError) {
           console.error("Failed to send customer support reply email:", emailError);
