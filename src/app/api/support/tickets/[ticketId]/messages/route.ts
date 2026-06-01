@@ -2,39 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import admin from "firebase-admin";
 
 import { sendEmail } from "@/lib/email/sendgrid";
+import {
+  SUPPORT_ALERT_RECIPIENTS,
+  SUPPORT_NO_REPLY_EMAIL,
+  buildAdminCustomerReplyEmail,
+} from "@/lib/email/support-ticket-emails";
 import { getAdminFirestore, verifyFirebaseIdToken } from "@/lib/firebase/admin";
 
 type MessageAuthorType = "customer" | "agent";
 interface CreateMessageBody {
   body?: string;
 }
-const SUPPORT_ALERT_RECIPIENTS = ["support@adalert.io", "info@webds.com", "mohit@webds.com"];
-const SUPPORT_NO_REPLY_EMAIL =
-  process.env.SENDGRID_SUPPORT_NO_REPLY_SENDER ?? "no-reply@adalert.io";
-
 function timestampToIso(value: admin.firestore.Timestamp | null | undefined): string {
   if (!value) return new Date().toISOString();
   return value.toDate().toISOString();
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function buildPortalTicketLink({
-  request,
-  ticketCode,
-}: {
-  request: NextRequest;
-  ticketCode: string;
-}): string {
-  const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || new URL(request.url).origin;
-  return `${appBaseUrl}/consumer/help/${encodeURIComponent(ticketCode)}`;
 }
 
 async function findOwnedTicketRef({
@@ -203,85 +184,22 @@ export async function POST(
           : "Support ticket update";
       const customerName = decoded.name ?? decoded.email ?? "Customer";
       const customerEmail = decoded.email ?? "unknown@customer";
-      const ticketPortalLink = buildPortalTicketLink({ request, ticketCode });
-
-      const emailSubject = `[adAlert Support] Customer Reply ${ticketCode}`;
-      const text = [
-        "A customer has replied on a support ticket.",
-        "",
-        `Ticket: ${ticketCode}`,
-        `Subject: ${ticketSubject}`,
-        `Customer: ${customerName}`,
-        `Email: ${customerEmail}`,
-        "",
-        "Customer Reply:",
-        content,
-        "",
-        "Please review and respond from the Support dashboard.",
-      ].join("\n");
-
-      const html = `
-        <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height: 1.45;">
-          <h2 style="margin: 0 0 12px;">adAlert Support: Customer Reply Received</h2>
-          <p style="margin: 0 0 12px;">A customer has posted a new message on a support ticket.</p>
-          <p style="margin: 0 0 14px; color: #334155;">
-            <strong>Ticket:</strong> ${escapeHtml(ticketCode)}<br />
-            <strong>Subject:</strong> ${escapeHtml(ticketSubject)}<br />
-            <strong>Customer:</strong> ${escapeHtml(customerName)}<br />
-            <strong>Email:</strong> ${escapeHtml(customerEmail)}
-          </p>
-          <div style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; white-space: pre-wrap;">
-            ${escapeHtml(content)}
-          </div>
-          <p style="margin: 14px 0 0; color: #475569; font-size: 12px;">
-            Please review and respond from the Support dashboard.
-          </p>
-        </div>
-      `;
+      const adminEmail = buildAdminCustomerReplyEmail({
+        request,
+        ticketCode,
+        subject: ticketSubject,
+        customerName,
+        customerEmail,
+        replyBody: content,
+      });
 
       await sendEmail({
         to: SUPPORT_ALERT_RECIPIENTS,
-        subject: emailSubject,
-        text,
-        html,
+        subject: adminEmail.subject,
+        text: adminEmail.text,
+        html: adminEmail.html,
         from: SUPPORT_NO_REPLY_EMAIL,
       });
-
-      if (decoded.email) {
-        const customerSubject = `[adAlert Support] Reply Received ${ticketCode}`;
-        const customerText = [
-          "Your reply has been posted to your support ticket.",
-          "",
-          `Ticket: ${ticketCode}`,
-          `Subject: ${ticketSubject}`,
-          "",
-          "You can track and continue this conversation from the support portal:",
-          ticketPortalLink,
-          "",
-          "This email is sent from a no-reply mailbox.",
-        ].join("\n");
-        const customerHtml = `
-          <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height: 1.45;">
-            <h2 style="margin: 0 0 12px;">adAlert Support: Reply Received</h2>
-            <p style="margin: 0 0 10px;">We've posted your latest ticket reply.</p>
-            <p style="margin: 0 0 8px;">
-              <a href="${ticketPortalLink}" style="color: #015AFD; text-decoration: none; font-weight: 600;">
-                Open ticket thread in support portal
-              </a>
-            </p>
-            <p style="margin: 14px 0 0; color: #475569; font-size: 12px;">
-              This is a no-reply email. Please respond from the support portal.
-            </p>
-          </div>
-        `;
-        await sendEmail({
-          to: [decoded.email],
-          subject: customerSubject,
-          text: customerText,
-          html: customerHtml,
-          from: SUPPORT_NO_REPLY_EMAIL,
-        });
-      }
     } catch (emailError) {
       console.error("Failed to send admin alert for customer reply:", emailError);
     }
