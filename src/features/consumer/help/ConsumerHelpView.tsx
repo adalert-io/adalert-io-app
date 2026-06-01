@@ -5,9 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
   Clock3,
-  Headphones,
   Inbox,
-  LifeBuoy,
   HelpCircle,
   Search,
   Sparkles,
@@ -201,39 +199,25 @@ export function ConsumerHelpView() {
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-[1480px] space-y-6 pb-8">
-      <section className="relative overflow-hidden rounded-2xl border border-[#015AFD]/15 bg-gradient-to-br from-[#015AFD]/12 via-white to-slate-50 p-6 shadow-sm sm:p-8">
-        <div
-          className="pointer-events-none absolute -right-16 -top-16 size-48 rounded-full bg-[#015AFD]/10 blur-3xl"
-          aria-hidden
-        />
-        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="max-w-2xl space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#015AFD]/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-[#015AFD]">
-              <LifeBuoy className="size-3.5" aria-hidden />
-              Help center
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-              How can we help?
-            </h1>
-            <p className="text-[15px] leading-relaxed text-slate-600">
-              Track support requests and open a new ticket when you need assistance.
-            </p>
-          </div>
-          <div className="flex shrink-0 flex-col gap-2 sm:items-end">
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => setIsNewTicketOpen(true)}
-              className="h-9 gap-1.5 rounded-lg bg-[#015AFD] px-3.5 text-sm font-semibold text-white shadow-sm hover:bg-[#0146ca]"
-            >
-              <HelpCircle className="size-3.5" aria-hidden />
-              Submit a ticket
-            </Button>
-            <div className="flex items-center gap-2 rounded-xl border border-slate-200/90 bg-white/80 px-4 py-2.5 text-[12px] text-slate-600 backdrop-blur-sm">
-              <Headphones className="size-4 shrink-0 text-[#015AFD]" aria-hidden />
-              <span>Mon–Fri, 9am–6pm PT</span>
-            </div>
-          </div>
+      <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="max-w-2xl space-y-2">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            How can we help?
+          </h1>
+          <p className="text-[15px] leading-relaxed text-slate-600">
+            Track support requests and open a new ticket when you need assistance.
+          </p>
+        </div>
+        <div className="flex shrink-0 sm:items-end">
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => setIsNewTicketOpen(true)}
+            className="h-9 gap-1.5 rounded-lg bg-[#015AFD] px-3.5 text-sm font-semibold text-white shadow-sm hover:bg-[#0146ca]"
+          >
+            <HelpCircle className="size-3.5" aria-hidden />
+            Submit a ticket
+          </Button>
         </div>
       </section>
 
