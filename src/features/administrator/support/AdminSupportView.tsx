@@ -47,8 +47,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-import { AdminDashboardDateRangePicker } from "../dashboard/AdminDashboardDateRangePicker";
-
 type TicketWorkflowStatus =
   | "open"
   | "in_progress"
@@ -1254,7 +1252,6 @@ export function AdminSupportView() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <AdminDashboardDateRangePicker />
           <Button
             variant="outline"
             type="button"

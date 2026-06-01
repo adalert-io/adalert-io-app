@@ -28,8 +28,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
-import { AdminDashboardDateRangePicker } from "../dashboard/AdminDashboardDateRangePicker";
-
 type TransactionDemoStatus = "succeeded" | "pending" | "failed";
 type TransactionDemoMethod = "visa" | "mastercard" | "amex" | "ach";
 
@@ -495,7 +493,6 @@ export function AdminTransactionsView() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <AdminDashboardDateRangePicker />
           <Button
             variant="outline"
             type="button"

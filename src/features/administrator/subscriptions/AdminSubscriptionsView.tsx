@@ -37,8 +37,6 @@ import {
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
-import { AdminDashboardDateRangePicker } from "../dashboard/AdminDashboardDateRangePicker";
-
 type SubscriptionDemoPlanKey = "professional" | "starter" | "trial";
 type SubscriptionDemoStatus =
   | "active"
@@ -646,7 +644,6 @@ export function AdminSubscriptionsView() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <AdminDashboardDateRangePicker />
           <Button
             variant="outline"
             type="button"

@@ -39,8 +39,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
-import { AdminDashboardDateRangePicker } from "../dashboard/AdminDashboardDateRangePicker";
-
 type UserStatusKey = "active" | "invited" | "inactive";
 
 interface AdminUserDemoRow {
@@ -425,7 +423,6 @@ export function AdminUsersView() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <AdminDashboardDateRangePicker />
           <Button
             variant="outline"
             type="button"

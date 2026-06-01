@@ -37,8 +37,6 @@ import {
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
-import { AdminDashboardDateRangePicker } from "../dashboard/AdminDashboardDateRangePicker";
-
 type AlertSeverity = "critical" | "warning" | "info";
 type AlertWorkflowStatus =
   | "new"
@@ -664,7 +662,6 @@ export function AdminAlertsView() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <AdminDashboardDateRangePicker />
           <Button
             variant="outline"
             type="button"

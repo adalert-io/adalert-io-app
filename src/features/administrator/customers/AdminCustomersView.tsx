@@ -34,8 +34,6 @@ import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
-import { AdminDashboardDateRangePicker } from "../dashboard/AdminDashboardDateRangePicker";
-
 type CustomerStatus = "active" | "trial" | "past_due" | "paused" | "not_connected";
 type CustomerPlan = "Professional" | "Starter";
 
@@ -62,12 +60,29 @@ interface CustomerMetrics {
   mrr: number;
 }
 
+interface CompanyDetailsForm {
+  companyName: string;
+  contactName: string;
+  email: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  website: string;
+  vat: string;
+  telephone: string;
+  telephoneCountryCode: string;
+  timezone: string;
+}
+
 interface CustomerDetail {
   id: string;
   companyName: string;
   contactName: string;
   email: string;
   phone: string | null;
+  companyDetails?: CompanyDetailsForm;
   adAccounts: string[];
   adAccountsCount: number;
   status: CustomerStatus;
@@ -97,6 +112,22 @@ const AVATAR_BACKGROUNDS = [
   "bg-[#8b5cf6]",
 ];
 const PAGE_SIZE = 8;
+
+const EMPTY_COMPANY_FORM: CompanyDetailsForm = {
+  companyName: "",
+  contactName: "",
+  email: "",
+  address: "",
+  city: "",
+  state: "",
+  zipCode: "",
+  country: "",
+  website: "",
+  vat: "",
+  telephone: "",
+  telephoneCountryCode: "",
+  timezone: "",
+};
 
 function formatMoney(value: number): string {
   return `$${value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
@@ -230,12 +261,9 @@ export function AdminCustomersView() {
     plan: "Starter" as CustomerPlan,
     status: "trial" as CustomerStatus,
   });
-  const [editForm, setEditForm] = useState({
-    companyName: "",
-    contactName: "",
-    status: "active" as CustomerStatus,
-    plan: "Professional" as CustomerPlan,
-  });
+  const [editForm, setEditForm] = useState<CompanyDetailsForm>(EMPTY_COMPANY_FORM);
+  const [isEditLoading, setIsEditLoading] = useState(false);
+  const [isEditSaving, setIsEditSaving] = useState(false);
 
   async function loadCustomers() {
     setIsLoading(true);
@@ -350,13 +378,41 @@ export function AdminCustomersView() {
 
   async function openEdit(row: CustomerRow) {
     setSelected(row);
-    setEditForm({
-      companyName: row.companyName,
-      contactName: row.companyName,
-      status: row.status,
-      plan: row.plan,
-    });
     setIsEditOpen(true);
+    setIsEditLoading(true);
+    setEditForm(EMPTY_COMPANY_FORM);
+    try {
+      const response = await fetch(`/api/admin/customers/${row.id}`, { cache: "no-store" });
+      const payload = (await response.json()) as {
+        customer?: CustomerDetail;
+        error?: string;
+      };
+      if (!response.ok || !payload.customer) {
+        throw new Error(payload.error || "Failed to load customer");
+      }
+      const details = payload.customer.companyDetails;
+      setEditForm({
+        companyName: details?.companyName || payload.customer.companyName,
+        contactName: details?.contactName || payload.customer.contactName,
+        email: details?.email || payload.customer.email,
+        address: details?.address ?? "",
+        city: details?.city ?? "",
+        state: details?.state ?? "",
+        zipCode: details?.zipCode ?? "",
+        country: details?.country ?? "",
+        website: details?.website ?? "",
+        vat: details?.vat ?? "",
+        telephone: details?.telephone || payload.customer.phone || "",
+        telephoneCountryCode: details?.telephoneCountryCode ?? "",
+        timezone: details?.timezone ?? "",
+      });
+    } catch (error) {
+      toast.error("Failed to load company details");
+      console.error(error);
+      setIsEditOpen(false);
+    } finally {
+      setIsEditLoading(false);
+    }
   }
 
   async function handleCreate() {
@@ -380,6 +436,7 @@ export function AdminCustomersView() {
 
   async function handleEditSave() {
     if (!selected) return;
+    setIsEditSaving(true);
     try {
       const response = await fetch(`/api/admin/customers/${selected.id}`, {
         method: "PATCH",
@@ -389,11 +446,20 @@ export function AdminCustomersView() {
       const payload = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(payload.error || "Failed to update customer");
       setIsEditOpen(false);
-      toast.success("Customer updated");
+      toast.success("Company details updated");
       await loadCustomers();
+      if (isViewOpen && selectedDetail?.id === selected.id) {
+        void openView({
+          ...selected,
+          companyName: editForm.companyName,
+          email: editForm.email,
+        });
+      }
     } catch (error) {
       toast.error("Failed to update customer");
       console.error(error);
+    } finally {
+      setIsEditSaving(false);
     }
   }
 
@@ -429,11 +495,10 @@ export function AdminCustomersView() {
             <Plus className="size-4" aria-hidden />
             Add Customer
           </Button>
-          <AdminDashboardDateRangePicker />
         </div>
       </header>
 
-      <section className="grid min-w-0 grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <section className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <DashboardMetricCard title="Total Customers" value={String(metrics.total)} Icon={Users} accentClassName="bg-[#3b82f6]/10 text-[#3b82f6]" />
         <DashboardMetricCard title="Active Customers" value={String(metrics.active)} Icon={CircleCheckBig} accentClassName="bg-[#22c55e]/15 text-[#16a34a]" />
         <DashboardMetricCard title="Trial Customers" value={String(metrics.trial)} Icon={Clock} accentClassName="bg-orange-400/20 text-orange-700" />
@@ -542,19 +607,140 @@ export function AdminCustomersView() {
       </Dialog>
 
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Customer</DialogTitle>
+            <DialogTitle>Edit company details</DialogTitle>
+            <DialogDescription>
+              Same fields as the customer&apos;s Company Details settings.
+            </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-3">
-            <Label>Company Name</Label>
-            <Input value={editForm.companyName} onChange={(e) => setEditForm((p) => ({ ...p, companyName: e.target.value }))} />
-            <Label>Contact Name</Label>
-            <Input value={editForm.contactName} onChange={(e) => setEditForm((p) => ({ ...p, contactName: e.target.value }))} />
-          </div>
+          {isEditLoading ? (
+            <p className="py-8 text-center text-sm text-slate-500">Loading company details...</p>
+          ) : (
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-company-name">Company name</Label>
+                <Input
+                  id="edit-company-name"
+                  value={editForm.companyName}
+                  onChange={(e) => setEditForm((p) => ({ ...p, companyName: e.target.value }))}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-contact-name">Contact name</Label>
+                <Input
+                  id="edit-contact-name"
+                  value={editForm.contactName}
+                  onChange={(e) => setEditForm((p) => ({ ...p, contactName: e.target.value }))}
+                />
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-address">Address</Label>
+                  <Input
+                    id="edit-address"
+                    value={editForm.address}
+                    onChange={(e) => setEditForm((p) => ({ ...p, address: e.target.value }))}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-city">City</Label>
+                  <Input
+                    id="edit-city"
+                    value={editForm.city}
+                    onChange={(e) => setEditForm((p) => ({ ...p, city: e.target.value }))}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-state">State / province</Label>
+                  <Input
+                    id="edit-state"
+                    value={editForm.state}
+                    onChange={(e) => setEditForm((p) => ({ ...p, state: e.target.value }))}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-zip">Zip / postal code</Label>
+                  <Input
+                    id="edit-zip"
+                    value={editForm.zipCode}
+                    onChange={(e) => setEditForm((p) => ({ ...p, zipCode: e.target.value }))}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-country">Country</Label>
+                  <Input
+                    id="edit-country"
+                    value={editForm.country}
+                    onChange={(e) => setEditForm((p) => ({ ...p, country: e.target.value }))}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-website">Website</Label>
+                  <Input
+                    id="edit-website"
+                    value={editForm.website}
+                    onChange={(e) => setEditForm((p) => ({ ...p, website: e.target.value }))}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-vat">VAT</Label>
+                  <Input
+                    id="edit-vat"
+                    type="number"
+                    step="0.01"
+                    value={editForm.vat}
+                    onChange={(e) => setEditForm((p) => ({ ...p, vat: e.target.value }))}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-phone">Phone</Label>
+                  <Input
+                    id="edit-phone"
+                    value={editForm.telephone}
+                    onChange={(e) => setEditForm((p) => ({ ...p, telephone: e.target.value }))}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-phone-code">Phone country code</Label>
+                  <Input
+                    id="edit-phone-code"
+                    value={editForm.telephoneCountryCode}
+                    onChange={(e) =>
+                      setEditForm((p) => ({ ...p, telephoneCountryCode: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-timezone">Timezone</Label>
+                  <Input
+                    id="edit-timezone"
+                    value={editForm.timezone}
+                    onChange={(e) => setEditForm((p) => ({ ...p, timezone: e.target.value }))}
+                  />
+                </div>
+                <div className="grid gap-2 md:col-span-2">
+                  <Label htmlFor="edit-email">Email</Label>
+                  <Input
+                    id="edit-email"
+                    type="email"
+                    value={editForm.email}
+                    onChange={(e) => setEditForm((p) => ({ ...p, email: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
-            <Button onClick={() => void handleEditSave()}>Save</Button>
+            <Button variant="outline" onClick={() => setIsEditOpen(false)} disabled={isEditSaving}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => void handleEditSave()}
+              disabled={isEditLoading || isEditSaving}
+            >
+              {isEditSaving ? "Saving..." : "Save"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -697,99 +883,9 @@ export function AdminCustomersView() {
               </div>
 
               <div className="sticky bottom-0 border-t border-slate-100 bg-white/95 px-6 py-4 backdrop-blur">
-                <div className="flex flex-wrap items-center justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsViewOpen(false)}
-                  >
+                <div className="flex justify-end">
+                  <Button type="button" variant="outline" onClick={() => setIsViewOpen(false)}>
                     Close
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={async () => {
-                      if (!selectedDetail) return;
-                      const nextStatus: CustomerStatus =
-                        selectedDetail.status === "active" ? "paused" : "active";
-                      try {
-                        const response = await fetch(
-                          `/api/admin/customers/${selectedDetail.id}`,
-                          {
-                            method: "PATCH",
-                            headers: { "content-type": "application/json" },
-                            body: JSON.stringify({ status: nextStatus }),
-                          },
-                        );
-                        const payload = (await response.json()) as { error?: string };
-                        if (!response.ok) {
-                          throw new Error(payload.error || "Failed to update status");
-                        }
-                        setSelectedDetail((prev) =>
-                          prev ? { ...prev, status: nextStatus } : prev,
-                        );
-                        setRows((prev) =>
-                          prev.map((row) =>
-                            row.id === selectedDetail.id
-                              ? { ...row, status: nextStatus }
-                              : row,
-                          ),
-                        );
-                        toast.success(
-                          nextStatus === "active"
-                            ? "Customer marked active"
-                            : "Customer paused",
-                        );
-                      } catch (error) {
-                        toast.error("Failed to update customer status");
-                        console.error(error);
-                      }
-                    }}
-                  >
-                    {selectedDetail.status === "active"
-                      ? "Pause Customer"
-                      : "Activate Customer"}
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      if (!selectedDetail) return;
-                      setSelected({
-                        id: selectedDetail.id,
-                        companyName: selectedDetail.companyName,
-                        email: selectedDetail.email,
-                        initials: selectedDetail.companyName
-                          .split(/\s+/)
-                          .map((word) => word[0] ?? "")
-                          .join("")
-                          .slice(0, 2)
-                          .toUpperCase(),
-                        avatarKind: "initials",
-                        avatarToneIndex: 0,
-                        contacts: selectedDetail.adAccountsCount,
-                        adAccounts: selectedDetail.adAccountsCount,
-                        mrr: selectedDetail.billingSnapshot.monthlyRecurringRevenue,
-                        status: selectedDetail.status,
-                        plan:
-                          selectedDetail.billingSnapshot.plan === "Starter"
-                            ? "Starter"
-                            : "Professional",
-                        nextBillingLabel: selectedDetail.billingSnapshot.nextBillingDate,
-                      });
-                      setEditForm({
-                        companyName: selectedDetail.companyName,
-                        contactName: selectedDetail.contactName,
-                        status: selectedDetail.status,
-                        plan:
-                          selectedDetail.billingSnapshot.plan === "Starter"
-                            ? "Starter"
-                            : "Professional",
-                      });
-                      setIsViewOpen(false);
-                      setIsEditOpen(true);
-                    }}
-                  >
-                    Edit Customer
                   </Button>
                 </div>
               </div>

@@ -34,8 +34,6 @@ import {
 import { cn } from "@/lib/utils";
 import { ALERT_SEVERITY_COLORS } from "@/lib/constants";
 
-import { AdminDashboardDateRangePicker } from "../dashboard/AdminDashboardDateRangePicker";
-
 interface AdAccountDemoRow {
   id: string;
   accountName: string;
@@ -346,7 +344,6 @@ export function AdminAdAccountsView() {
             <Plus className="size-4" aria-hidden />
             Add Ad Account
           </Button>
-          <AdminDashboardDateRangePicker />
         </div>
       </header>
 

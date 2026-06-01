@@ -13,11 +13,91 @@ import {
   type CustomerUiStatus,
 } from "../_lib";
 
-interface UpdateCustomerBody {
+export interface AdminCompanyDetailsPayload {
   companyName?: string;
   contactName?: string;
+  email?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  website?: string;
+  vat?: string;
+  telephone?: string;
+  telephoneCountryCode?: string;
+  timezone?: string;
+}
+
+interface UpdateCustomerBody extends AdminCompanyDetailsPayload {
   status?: CustomerUiStatus;
   plan?: "Professional" | "Starter";
+}
+
+function mapStripeCompanyToDetails(data: Record<string, unknown>) {
+  const countryCode = data["Telephone Country Code"];
+  const countryCodeString = Array.isArray(countryCode)
+    ? String(countryCode[0] ?? "")
+    : countryCode != null
+      ? String(countryCode)
+      : "";
+
+  return {
+    companyName: (typeof data["Company Name"] === "string" && data["Company Name"]) || "",
+    email: (typeof data["Email"] === "string" && data["Email"]) || "",
+    address: (typeof data["Street Address"] === "string" && data["Street Address"]) || "",
+    city: (typeof data["City"] === "string" && data["City"]) || "",
+    state: (typeof data["State"] === "string" && data["State"]) || "",
+    zipCode: (typeof data["Zip"] === "string" && data["Zip"]) || "",
+    country: (typeof data["Country"] === "string" && data["Country"]) || "",
+    website: (typeof data["Website"] === "string" && data["Website"]) || "",
+    vat: data["VAT"] != null ? String(data["VAT"]) : "",
+    telephone: (typeof data["Telephone"] === "string" && data["Telephone"]) || "",
+    telephoneCountryCode: countryCodeString,
+    timezone: (typeof data["Time Zone"] === "string" && data["Time Zone"]) || "",
+  };
+}
+
+function buildStripeCompanyUpdates(body: UpdateCustomerBody): Record<string, unknown> {
+  const updates: Record<string, unknown> = {};
+  if (typeof body.companyName === "string") {
+    updates["Company Name"] = body.companyName.trim();
+  }
+  if (typeof body.email === "string") {
+    updates["Email"] = body.email.trim();
+  }
+  if (typeof body.address === "string") {
+    updates["Street Address"] = body.address.trim();
+  }
+  if (typeof body.city === "string") {
+    updates["City"] = body.city.trim();
+  }
+  if (typeof body.state === "string") {
+    updates["State"] = body.state.trim();
+  }
+  if (typeof body.zipCode === "string") {
+    updates["Zip"] = body.zipCode.trim();
+  }
+  if (typeof body.country === "string") {
+    updates["Country"] = body.country.trim();
+  }
+  if (typeof body.website === "string") {
+    updates["Website"] = body.website.trim();
+  }
+  if (typeof body.vat === "string") {
+    const trimmed = body.vat.trim();
+    updates["VAT"] = trimmed ? Number.parseFloat(trimmed) : null;
+  }
+  if (typeof body.telephone === "string") {
+    updates["Telephone"] = body.telephone.trim();
+  }
+  if (typeof body.telephoneCountryCode === "string") {
+    updates["Telephone Country Code"] = body.telephoneCountryCode.trim();
+  }
+  if (typeof body.timezone === "string") {
+    updates["Time Zone"] = body.timezone.trim();
+  }
+  return updates;
 }
 
 function ensureAdminAccess(request: NextRequest): NextResponse | null {
@@ -68,7 +148,8 @@ export async function GET(
     const userType = typeof userData["User Type"] === "string" ? userData["User Type"] : "";
     const isAdminUser = userType === "Admin" || companyAdminRef.id === userRef.id;
 
-    const [subscriptionsSnap, paymentMethodsSnap, adsAccountsSnap] = await Promise.all([
+    const [subscriptionsSnap, paymentMethodsSnap, adsAccountsSnap, stripeCompanySnap] =
+      await Promise.all([
       db.collection(COLLECTIONS.SUBSCRIPTIONS)
         .where("User", "==", companyAdminRef)
         .limit(1)
@@ -77,6 +158,10 @@ export async function GET(
       db.collection(COLLECTIONS.ADS_ACCOUNTS)
         .where("User", "==", companyAdminRef)
         .where("Is Connected", "==", true)
+        .get(),
+      db.collection(COLLECTIONS.STRIPE_COMPANIES)
+        .where("User", "==", companyAdminRef)
+        .limit(1)
         .get(),
     ]);
 
@@ -119,21 +204,40 @@ export async function GET(
       })
       .filter((item, index, list) => list.indexOf(item) === index);
 
+    const stripeCompanyData = stripeCompanySnap.empty
+      ? ({} as Record<string, unknown>)
+      : ((stripeCompanySnap.docs[0]?.data() ?? {}) as Record<string, unknown>);
+    const companyDetails = mapStripeCompanyToDetails(stripeCompanyData);
+    const companyName =
+      companyDetails.companyName ||
+      (typeof userData["Company Name"] === "string" && userData["Company Name"]) ||
+      (typeof userData["Name"] === "string" && userData["Name"]) ||
+      "Unknown Company";
+    const contactName =
+      (typeof userData["Name"] === "string" && userData["Name"]) || "Unknown Contact";
+    const email =
+      companyDetails.email ||
+      (typeof userData["Email"] === "string" && userData["Email"]) ||
+      (typeof userData.email === "string" && userData.email) ||
+      "unknown@example.com";
+    const phone =
+      companyDetails.telephone ||
+      (typeof userData["Telephone"] === "string" && userData["Telephone"]) ||
+      null;
+
     return NextResponse.json({
       customer: {
         id: userSnap.id,
-        companyName:
-          (typeof userData["Company Name"] === "string" && userData["Company Name"]) ||
-          (typeof userData["Name"] === "string" && userData["Name"]) ||
-          "Unknown Company",
-        contactName:
-          (typeof userData["Name"] === "string" && userData["Name"]) || "Unknown Contact",
-        email:
-          (typeof userData["Email"] === "string" && userData["Email"]) ||
-          (typeof userData.email === "string" && userData.email) ||
-          "unknown@example.com",
-        phone:
-          (typeof userData["Telephone"] === "string" && userData["Telephone"]) || null,
+        companyName,
+        contactName,
+        email,
+        phone,
+        companyDetails: {
+          ...companyDetails,
+          companyName: companyName,
+          contactName,
+          email,
+        },
         adAccounts,
         adAccountsCount: adAccounts.length,
         status: subscriptionToUiStatus(subscription?.["User Status"]),
@@ -186,6 +290,12 @@ export async function PATCH(
       return NextResponse.json({ error: "Customer not found" }, { status: 404 });
     }
 
+    const userData = (userSnap.data() ?? {}) as Record<string, unknown>;
+    const companyAdminRef =
+      userData["Company Admin"] instanceof admin.firestore.DocumentReference
+        ? userData["Company Admin"]
+        : userRef;
+
     const userUpdate: Record<string, unknown> = {
       modified_at: admin.firestore.FieldValue.serverTimestamp(),
     };
@@ -195,7 +305,36 @@ export async function PATCH(
     if (typeof body.contactName === "string" && body.contactName.trim()) {
       userUpdate["Name"] = body.contactName.trim();
     }
+    if (typeof body.email === "string" && body.email.trim()) {
+      userUpdate["Email"] = body.email.trim();
+    }
+    if (typeof body.telephone === "string") {
+      userUpdate["Telephone"] = body.telephone.trim();
+    }
     await userRef.update(userUpdate);
+
+    const stripeUpdates = buildStripeCompanyUpdates(body);
+    if (Object.keys(stripeUpdates).length > 0) {
+      const stripeCompanySnap = await db
+        .collection(COLLECTIONS.STRIPE_COMPANIES)
+        .where("User", "==", companyAdminRef)
+        .limit(1)
+        .get();
+
+      if (stripeCompanySnap.empty) {
+        await db.collection(COLLECTIONS.STRIPE_COMPANIES).add({
+          User: companyAdminRef,
+          ...stripeUpdates,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          modified_at: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      } else {
+        await stripeCompanySnap.docs[0]!.ref.update({
+          ...stripeUpdates,
+          modified_at: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+    }
 
     const subSnap = await db
       .collection(COLLECTIONS.SUBSCRIPTIONS)
