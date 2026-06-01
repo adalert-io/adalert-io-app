@@ -1,6 +1,6 @@
 import admin from "firebase-admin";
 
-import { COLLECTIONS, SUBSCRIPTION_STATUS } from "@/lib/constants";
+import { COLLECTIONS, SUBSCRIPTION_PRICES, SUBSCRIPTION_STATUS } from "@/lib/constants";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 
 export const ADMIN_PREVIEW_COOKIE = "admin_preview_gate";
@@ -87,6 +87,36 @@ function toNumber(value: unknown, fallback = 0): number {
     if (Number.isFinite(parsed)) return parsed;
   }
   return fallback;
+}
+
+/** Matches consumer billing when Firestore MRR is not stored. */
+export function estimateMrrFromAdAccountCount(adAccountsCount: number): number {
+  if (adAccountsCount <= 0) return 0;
+  if (adAccountsCount === 1) return SUBSCRIPTION_PRICES.FIRST_ADS_ACCOUNT;
+  return (
+    SUBSCRIPTION_PRICES.FIRST_ADS_ACCOUNT +
+    SUBSCRIPTION_PRICES.ADDITIONAL_ADS_ACCOUNT * (adAccountsCount - 1)
+  );
+}
+
+function resolveCustomerMrr({
+  subscription,
+  adAccountsCount,
+  uiStatus,
+}: {
+  subscription: Record<string, unknown> | undefined;
+  adAccountsCount: number;
+  uiStatus: CustomerUiStatus;
+}): number {
+  const stored = toNumber(
+    subscription?.["Monthly Recurring Revenue"] ?? subscription?.["Monthly Price"],
+    0,
+  );
+  if (stored > 0) return stored;
+  if (uiStatus === "active" || uiStatus === "trial" || uiStatus === "past_due") {
+    return estimateMrrFromAdAccountCount(Math.max(adAccountsCount, 1));
+  }
+  return 0;
 }
 
 function mapUserDocToCompanyName(userData: Record<string, unknown>): string {
@@ -176,10 +206,6 @@ export async function loadCustomersList(): Promise<CustomerListResult> {
       const subscriptionStatus = subscription?.["User Status"];
       const uiStatus = subscriptionToUiStatus(subscriptionStatus);
       const plan = normalizePlan(subscription?.["Subscription Plan"]);
-      const mrr = toNumber(
-        subscription?.["Monthly Recurring Revenue"] ?? subscription?.["Monthly Price"],
-        0,
-      );
 
       const userType = typeof userData["User Type"] === "string" ? userData["User Type"] : "";
       const isAdminUser = userType === "Admin" || companyAdminId === doc.id;
@@ -192,6 +218,12 @@ export async function loadCustomersList(): Promise<CustomerListResult> {
               userId: doc.id,
             }),
           ).length;
+
+      const mrr = resolveCustomerMrr({
+        subscription,
+        adAccountsCount,
+        uiStatus,
+      });
 
       const row: CustomerListItem = {
         id: doc.id,

@@ -16,7 +16,6 @@ import {
 } from "recharts";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { GoogleAdsMark } from "@/components/GoogleAdsMark";
 import { cn } from "@/lib/utils";
@@ -221,7 +220,7 @@ export function AdminDashboardHome() {
           <Card className="rounded-2xl border border-slate-200/90 bg-white py-0 shadow-md">
             <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-6 py-5">
               <p className="text-lg font-semibold text-slate-900">Revenue Overview</p>
-              <span className="text-muted-foreground text-sm font-medium">Stripe charges</span>
+              <span className="text-muted-foreground text-sm font-medium">Paid invoices</span>
             </CardHeader>
             <CardContent className="space-y-3 px-6 pt-6 pb-8">
               <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-50 pb-4">
@@ -303,11 +302,8 @@ export function AdminDashboardHome() {
           </Card>
 
           <Card className="rounded-2xl border border-slate-200/90 bg-white py-0 shadow-md">
-            <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-slate-100 px-6 py-5">
+            <CardHeader className="border-b border-slate-100 px-6 py-5">
               <p className="text-lg font-semibold text-slate-900">Recent Alerts</p>
-              <Button variant="ghost" size="sm" className="text-[#015AFD]" asChild>
-                <a href="/administrator/alerts">View all</a>
-              </Button>
             </CardHeader>
             <CardContent className="max-h-[420px] space-y-0 divide-y divide-slate-100 overflow-auto px-0 py-0">
               {isLoading ? (

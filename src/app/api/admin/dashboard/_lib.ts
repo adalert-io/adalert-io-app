@@ -262,6 +262,35 @@ async function loadAlertsData(range: DashboardDateRange) {
   };
 }
 
+function dayChartLabel(unixSeconds: number): string {
+  return new Date(unixSeconds * 1000).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+async function listAllStripeInvoicesInWindow(
+  stripe: NonNullable<ReturnType<typeof getStripeServer>>,
+  fromUnix: number,
+  toUnix: number,
+) {
+  const invoices: Awaited<ReturnType<typeof stripe.invoices.list>>["data"] = [];
+  let startingAfter: string | undefined;
+
+  while (true) {
+    const page = await stripe.invoices.list({
+      limit: 100,
+      created: { gte: fromUnix, lte: toUnix },
+      ...(startingAfter ? { starting_after: startingAfter } : {}),
+    });
+    invoices.push(...page.data);
+    if (!page.has_more || page.data.length === 0) break;
+    startingAfter = page.data[page.data.length - 1]?.id;
+  }
+
+  return invoices;
+}
+
 async function loadStripeRevenue(range: DashboardDateRange) {
   const previous = previousRange(range);
   const stripe = getStripeServer();
@@ -278,35 +307,38 @@ async function loadStripeRevenue(range: DashboardDateRange) {
   const prevFromUnix = Math.floor(previous.from.getTime() / 1000);
   const prevToUnix = Math.floor(previous.to.getTime() / 1000);
 
-  const charges = await stripe.charges.list({
-    limit: 100,
-    created: { gte: prevFromUnix, lte: toUnix },
-  });
+  const [currentInvoices, previousInvoices] = await Promise.all([
+    listAllStripeInvoicesInWindow(stripe, fromUnix, toUnix),
+    listAllStripeInvoicesInWindow(stripe, prevFromUnix, prevToUnix),
+  ]);
 
   let total = 0;
   let previousTotal = 0;
   const daily = new Map<string, number>();
 
-  for (const charge of charges.data) {
-    if (charge.status !== "succeeded") continue;
-    const amount = (charge.amount || 0) / 100;
-    const created = charge.created;
+  for (const invoice of currentInvoices) {
+    if (invoice.status !== "paid") continue;
+    const amount = (invoice.amount_paid ?? 0) / 100;
+    if (amount <= 0) continue;
+    total += amount;
+    const paidAt =
+      invoice.status_transitions?.paid_at ??
+      invoice.effective_at ??
+      invoice.created;
+    const label = dayChartLabel(paidAt);
+    daily.set(label, (daily.get(label) ?? 0) + amount);
+  }
 
-    if (created >= fromUnix && created <= toUnix) {
-      total += amount;
-      const label = new Date(created * 1000).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
-      daily.set(label, (daily.get(label) ?? 0) + amount);
-    } else if (created >= prevFromUnix && created <= prevToUnix) {
-      previousTotal += amount;
-    }
+  for (const invoice of previousInvoices) {
+    if (invoice.status !== "paid") continue;
+    const amount = (invoice.amount_paid ?? 0) / 100;
+    if (amount <= 0) continue;
+    previousTotal += amount;
   }
 
   return {
-    total: Math.round(total),
-    previousTotal: Math.round(previousTotal),
+    total: Math.round(total * 100) / 100,
+    previousTotal: Math.round(previousTotal * 100) / 100,
     chart: buildDailyChartFromMap(range, daily),
   };
 }
