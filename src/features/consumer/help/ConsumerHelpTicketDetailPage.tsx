@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   ArrowLeft,
   ChevronRight,
-  FileText,
   Paperclip,
   Send,
   StickyNote,
@@ -14,14 +13,12 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  formatAttachmentSize,
-  SUPPORT_MAX_ATTACHMENT_BYTES,
-} from "@/lib/support/attachments";
+import { isImageMimeType, SUPPORT_MAX_ATTACHMENT_BYTES } from "@/lib/support/attachments";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { cn } from "@/lib/utils";
 
 import { FormattedEmailBody } from "./FormattedEmailBody";
+import { SupportMessageAttachment } from "./SupportMessageAttachment";
 import {
   CONSUMER_HELP_HREF,
   formatTicketDate,
@@ -97,18 +94,26 @@ function EmailMetaLine({ label, children }: { label: string; children: ReactNode
   );
 }
 
-function AttachmentChip({ attachment }: { attachment: SupportTicketAttachmentMeta }) {
-  return (
-    <div className="inline-flex max-w-full items-center gap-2.5 rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-[13px] shadow-sm">
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-white ring-1 ring-slate-200">
-        <FileText className="size-4 text-[#015AFD]" aria-hidden />
-      </span>
-      <div className="min-w-0">
-        <p className="truncate font-medium text-slate-900">{attachment.fileName}</p>
-        <p className="text-[12px] text-slate-500">{formatAttachmentSize(attachment.sizeBytes)}</p>
+function PendingAttachmentPreview({ attachment }: { attachment: PendingReplyAttachment }) {
+  const previewSrc = isImageMimeType(attachment.mimeType)
+    ? `data:${attachment.mimeType};base64,${attachment.contentBase64}`
+    : null;
+
+  if (previewSrc) {
+    return (
+      <div className="space-y-2">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={previewSrc}
+          alt={attachment.fileName}
+          className="max-h-48 max-w-full rounded-lg border border-slate-200 object-contain"
+        />
+        <p className="text-[12px] text-slate-500">{attachment.fileName} (not sent yet)</p>
       </div>
-    </div>
-  );
+    );
+  }
+
+  return <SupportMessageAttachment attachment={attachment} />;
 }
 
 function EmailThreadMessage({
@@ -182,7 +187,7 @@ function EmailThreadMessage({
           <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
             1 attachment
           </p>
-          <AttachmentChip attachment={message.attachment} />
+          <SupportMessageAttachment attachment={message.attachment} />
         </div>
       ) : null}
     </article>
@@ -506,7 +511,7 @@ export function ConsumerHelpTicketDetailPage({ ticketId }: ConsumerHelpTicketDet
               </div>
               {pendingAttachment ? (
                 <div className="border-t border-slate-100 px-4 py-3 sm:px-5">
-                  <AttachmentChip attachment={pendingAttachment} />
+                  <PendingAttachmentPreview attachment={pendingAttachment} />
                   <button
                     type="button"
                     className="mt-2 text-[12px] font-medium text-[#015AFD] hover:underline"

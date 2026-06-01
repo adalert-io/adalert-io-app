@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { format } from "date-fns";
+import { format, subDays } from "date-fns";
 import { CalendarDays, ChevronDown } from "lucide-react";
 
 import type { DateRange } from "react-day-picker";
@@ -15,8 +15,11 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-const DEFAULT_RANGE_FROM = new Date(2025, 4, 9);
-const DEFAULT_RANGE_TO = new Date(2025, 4, 15);
+function defaultRange(): DateRange {
+  const to = new Date();
+  const from = subDays(to, 6);
+  return { from, to };
+}
 
 function formatDashboardRangeLabel(range: DateRange | undefined): string {
   if (!range?.from) {
@@ -41,16 +44,27 @@ function formatDashboardRangeLabel(range: DateRange | undefined): string {
 
 export interface AdminDashboardDateRangePickerProps {
   className?: string;
+  value?: DateRange;
+  onChange?: (range: DateRange | undefined) => void;
 }
 
 export function AdminDashboardDateRangePicker({
   className,
+  value,
+  onChange,
 }: AdminDashboardDateRangePickerProps) {
   const [isOpen, setIsOpen] = React.useState(false);
-  const [range, setRange] = React.useState<DateRange | undefined>({
-    from: DEFAULT_RANGE_FROM,
-    to: DEFAULT_RANGE_TO,
-  });
+  const [internalRange, setInternalRange] = React.useState<DateRange | undefined>(defaultRange);
+
+  const range = value ?? internalRange;
+
+  const applyRange = (next: DateRange | undefined) => {
+    if (onChange) {
+      onChange(next);
+    } else {
+      setInternalRange(next);
+    }
+  };
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -66,9 +80,7 @@ export function AdminDashboardDateRangePicker({
           type="button"
         >
           <CalendarDays className="size-4 text-slate-500" aria-hidden />
-          <span className="tabular-nums">
-            {formatDashboardRangeLabel(range)}
-          </span>
+          <span className="tabular-nums">{formatDashboardRangeLabel(range)}</span>
           <ChevronDown className="size-4 text-slate-500" aria-hidden />
         </Button>
       </PopoverTrigger>
@@ -78,13 +90,16 @@ export function AdminDashboardDateRangePicker({
           defaultMonth={range?.from}
           selected={range}
           onSelect={(next) => {
-            setRange(next);
+            applyRange(next);
+            if (next?.from && next?.to) {
+              setIsOpen(false);
+            }
           }}
-          numberOfMonths={1}
-          className="p-3"
-          autoFocus
+          numberOfMonths={2}
         />
       </PopoverContent>
     </Popover>
   );
 }
+
+export { defaultRange as defaultAdminDashboardRange };

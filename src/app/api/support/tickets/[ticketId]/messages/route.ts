@@ -9,6 +9,7 @@ import {
 } from "@/lib/email/support-ticket-emails";
 import {
   parseSupportAttachment,
+  type SupportMessageAttachmentDto,
   type SupportMessageAttachmentInput,
   type SupportMessageAttachmentMeta,
 } from "@/lib/support/attachments";
@@ -17,6 +18,11 @@ import {
   isCustomerNote,
   normalizeMessageVisibility,
 } from "@/lib/support/message-visibility";
+import {
+  buildSupportAttachmentStoragePath,
+  enrichAttachmentWithUrls,
+  uploadSupportAttachment,
+} from "@/lib/support/storage-attachments";
 import { getAdminFirestore, verifyFirebaseIdToken } from "@/lib/firebase/admin";
 
 type MessageAuthorType = "customer" | "agent";
@@ -34,11 +40,40 @@ function mapAttachmentMeta(
   const attachment = raw as Record<string, unknown>;
   const fileName = typeof attachment.fileName === "string" ? attachment.fileName : "";
   if (!fileName) return null;
+  const storagePath =
+    typeof attachment.storagePath === "string" && attachment.storagePath.trim()
+      ? attachment.storagePath.trim()
+      : undefined;
+
   return {
     fileName,
     mimeType:
       typeof attachment.mimeType === "string" ? attachment.mimeType : "application/octet-stream",
     sizeBytes: typeof attachment.sizeBytes === "number" ? attachment.sizeBytes : 0,
+    storagePath,
+  };
+}
+
+type ThreadMessageDto = {
+  id: string;
+  authorType: MessageAuthorType;
+  authorName: string;
+  body: string;
+  attachment: SupportMessageAttachmentDto | null;
+  createdAt: string;
+};
+
+async function enrichThreadMessage(message: {
+  id: string;
+  authorType: MessageAuthorType;
+  authorName: string;
+  body: string;
+  attachment: SupportMessageAttachmentMeta | null;
+  createdAt: string;
+}): Promise<ThreadMessageDto> {
+  return {
+    ...message,
+    attachment: await enrichAttachmentWithUrls(message.attachment),
   };
 }
 function timestampToIso(value: admin.firestore.Timestamp | null | undefined): string {
@@ -168,7 +203,12 @@ export async function GET(
       });
     }
 
-    return NextResponse.json({ messages: conversation, notes });
+    const [enrichedMessages, enrichedNotes] = await Promise.all([
+      Promise.all(conversation.map((message) => enrichThreadMessage(message))),
+      Promise.all(notes.map((message) => enrichThreadMessage(message))),
+    ]);
+
+    return NextResponse.json({ messages: enrichedMessages, notes: enrichedNotes });
   } catch (error) {
     const status =
       typeof (error as { status?: number }).status === "number"
@@ -231,10 +271,21 @@ export async function POST(
     };
 
     if (attachment) {
+      const storagePath = buildSupportAttachmentStoragePath({
+        ticketId: ticketRef.id,
+        scopeId: messageRef.id,
+        fileName: attachment.fileName,
+      });
+      await uploadSupportAttachment({
+        storagePath,
+        buffer: Buffer.from(attachment.contentBase64, "base64"),
+        mimeType: attachment.mimeType,
+      });
       messagePayload.attachment = {
         fileName: attachment.fileName,
         mimeType: attachment.mimeType,
         sizeBytes: attachment.sizeBytes,
+        storagePath,
       };
     }
 
@@ -292,16 +343,16 @@ export async function POST(
 
     const saved = await messageRef.get();
     const savedData = saved.data() as Record<string, unknown>;
-    return NextResponse.json({
-      message: {
-        id: saved.id,
-        authorType: "customer" as const,
-        authorName: (savedData.authorName as string) ?? "You",
-        body: (savedData.body as string) ?? content,
-        attachment: mapAttachmentMeta(savedData),
-        createdAt: timestampToIso(savedData.createdAt as admin.firestore.Timestamp | undefined),
-      },
+    const savedMessage = await enrichThreadMessage({
+      id: saved.id,
+      authorType: "customer",
+      authorName: (savedData.authorName as string) ?? "You",
+      body: (savedData.body as string) ?? content,
+      attachment: mapAttachmentMeta(savedData),
+      createdAt: timestampToIso(savedData.createdAt as admin.firestore.Timestamp | undefined),
     });
+
+    return NextResponse.json({ message: savedMessage });
   } catch (error) {
     const status =
       typeof (error as { status?: number }).status === "number"

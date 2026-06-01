@@ -8,41 +8,28 @@ import {
   buildConsumerSupportNoteEmail,
 } from "@/lib/email/support-ticket-emails";
 import {
+  parseSupportAttachment,
+  type SupportMessageAttachmentInput,
+} from "@/lib/support/attachments";
+import {
   normalizeMessageVisibility,
   type SupportMessageVisibility,
 } from "@/lib/support/message-visibility";
+import {
+  buildSupportAttachmentStoragePath,
+  enrichAttachmentWithUrls,
+  uploadSupportAttachment,
+} from "@/lib/support/storage-attachments";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 
 const ADMIN_PREVIEW_COOKIE = "admin_preview_gate";
 
-const ALLOWED_ATTACHMENT_TYPES = new Set([
-  "application/pdf",
-  "image/jpeg",
-  "image/png",
-  "image/gif",
-  "image/webp",
-  "text/plain",
-  "text/csv",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/vnd.ms-excel",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-]);
-const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
-
 type MessageAuthorType = "customer" | "agent";
-
-interface MessageAttachmentInput {
-  fileName?: string;
-  mimeType?: string;
-  sizeBytes?: number;
-  contentBase64?: string;
-}
 
 interface CreateMessageBody {
   body?: string;
   visibility?: SupportMessageVisibility;
-  attachment?: MessageAttachmentInput;
+  attachment?: SupportMessageAttachmentInput;
 }
 
 function timestampToIso(value: admin.firestore.Timestamp | null | undefined): string {
@@ -52,30 +39,6 @@ function timestampToIso(value: admin.firestore.Timestamp | null | undefined): st
 
 function hasAdminAccess(request: NextRequest): boolean {
   return request.cookies.get(ADMIN_PREVIEW_COOKIE)?.value === "1";
-}
-
-function parseAttachment(input: MessageAttachmentInput | undefined) {
-  if (!input?.fileName?.trim() || !input.contentBase64?.trim()) {
-    return null;
-  }
-
-  const fileName = input.fileName.trim();
-  const mimeType = (input.mimeType?.trim() || "application/octet-stream").toLowerCase();
-  const sizeBytes = typeof input.sizeBytes === "number" ? input.sizeBytes : 0;
-
-  if (!ALLOWED_ATTACHMENT_TYPES.has(mimeType)) {
-    throw new Error("Attachment type is not allowed");
-  }
-  if (sizeBytes > MAX_ATTACHMENT_BYTES) {
-    throw new Error("Attachment exceeds maximum size");
-  }
-
-  return {
-    fileName,
-    mimeType,
-    sizeBytes,
-    contentBase64: input.contentBase64.trim(),
-  };
 }
 
 export async function GET(
@@ -115,27 +78,53 @@ export async function GET(
     } catch {
       messagesSnap = await ticketRef.collection("messages").get();
     }
-    const messages = messagesSnap.docs.map((doc) => {
-      const data = doc.data() as Record<string, unknown>;
-      return {
-        id: doc.id,
-        authorType: (data.authorType as MessageAuthorType) ?? "agent",
-        authorName: (data.authorName as string) ?? "adAlert Support",
-        body: (data.body as string) ?? "",
-        visibility: normalizeMessageVisibility(data.visibility),
-        attachment: data.attachment ?? null,
-        createdAt: timestampToIso(data.createdAt as admin.firestore.Timestamp | undefined),
-      };
-    });
+    const ticketAttachments = Array.isArray(ticketData.attachments)
+      ? ticketData.attachments
+      : [];
+
+    const messages = await Promise.all(
+      messagesSnap.docs.map(async (doc) => {
+        const data = doc.data() as Record<string, unknown>;
+        const rawAttachment = data.attachment;
+        return {
+          id: doc.id,
+          authorType: (data.authorType as MessageAuthorType) ?? "agent",
+          authorName: (data.authorName as string) ?? "adAlert Support",
+          body: (data.body as string) ?? "",
+          visibility: normalizeMessageVisibility(data.visibility),
+          attachment: await enrichAttachmentWithUrls(
+            rawAttachment && typeof rawAttachment === "object"
+              ? (rawAttachment as {
+                  fileName: string;
+                  mimeType: string;
+                  sizeBytes: number;
+                  storagePath?: string;
+                })
+              : null,
+          ),
+          createdAt: timestampToIso(data.createdAt as admin.firestore.Timestamp | undefined),
+        };
+      }),
+    );
 
     if (initialDescription) {
+      const initialAttachment = ticketAttachments[0];
       messages.unshift({
         id: "initial-description",
         authorType: "customer",
         authorName: createdByName,
         body: initialDescription,
         visibility: "public",
-        attachment: null,
+        attachment: await enrichAttachmentWithUrls(
+          initialAttachment && typeof initialAttachment === "object"
+            ? (initialAttachment as {
+                fileName: string;
+                mimeType: string;
+                sizeBytes: number;
+                storagePath?: string;
+              })
+            : null,
+        ),
         createdAt: createdAtIso,
       });
     }
@@ -171,9 +160,9 @@ export async function POST(
       return NextResponse.json({ error: "Message body is required" }, { status: 400 });
     }
 
-    let attachment: ReturnType<typeof parseAttachment> = null;
+    let attachment: ReturnType<typeof parseSupportAttachment> = null;
     try {
-      attachment = parseAttachment(body.attachment);
+      attachment = parseSupportAttachment(body.attachment);
     } catch (attachmentError) {
       return NextResponse.json(
         { error: (attachmentError as Error).message || "Invalid attachment" },
@@ -207,10 +196,21 @@ export async function POST(
     };
 
     if (attachment) {
+      const storagePath = buildSupportAttachmentStoragePath({
+        ticketId,
+        scopeId: messageRef.id,
+        fileName: attachment.fileName,
+      });
+      await uploadSupportAttachment({
+        storagePath,
+        buffer: Buffer.from(attachment.contentBase64, "base64"),
+        mimeType: attachment.mimeType,
+      });
       messagePayload.attachment = {
         fileName: attachment.fileName,
         mimeType: attachment.mimeType,
         sizeBytes: attachment.sizeBytes,
+        storagePath,
       };
     }
 
@@ -279,6 +279,7 @@ export async function POST(
 
     const saved = await messageRef.get();
     const savedData = saved.data() as Record<string, unknown>;
+    const rawAttachment = savedData.attachment;
     return NextResponse.json({
       message: {
         id: saved.id,
@@ -286,7 +287,16 @@ export async function POST(
         authorName: (savedData.authorName as string) ?? "adAlert Support",
         body: (savedData.body as string) ?? content,
         visibility: normalizeMessageVisibility(savedData.visibility),
-        attachment: savedData.attachment ?? null,
+        attachment: await enrichAttachmentWithUrls(
+          rawAttachment && typeof rawAttachment === "object"
+            ? (rawAttachment as {
+                fileName: string;
+                mimeType: string;
+                sizeBytes: number;
+                storagePath?: string;
+              })
+            : null,
+        ),
         createdAt: timestampToIso(savedData.createdAt as admin.firestore.Timestamp | undefined),
       },
     });

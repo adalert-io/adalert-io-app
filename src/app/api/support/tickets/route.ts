@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import admin from "firebase-admin";
 
 import { getAdminFirestore, verifyFirebaseIdToken } from "@/lib/firebase/admin";
+import {
+  buildSupportAttachmentStoragePath,
+  uploadSupportAttachment,
+} from "@/lib/support/storage-attachments";
 import { sendEmail } from "@/lib/email/sendgrid";
 import {
   SUPPORT_ALERT_RECIPIENTS,
@@ -181,6 +185,17 @@ export async function POST(request: NextRequest) {
 
     const db = getAdminFirestore();
     const docRef = db.collection("supportTickets").doc();
+    const initialStoragePath = buildSupportAttachmentStoragePath({
+      ticketId: docRef.id,
+      scopeId: "initial",
+      fileName: attachment.fileName,
+    });
+
+    await uploadSupportAttachment({
+      storagePath: initialStoragePath,
+      buffer: Buffer.from(attachment.contentBase64 ?? "", "base64"),
+      mimeType: attachment.mimeType,
+    });
 
     await docRef.set({
       ticketCode,
@@ -198,6 +213,7 @@ export async function POST(request: NextRequest) {
           fileName: attachment.fileName,
           mimeType: attachment.mimeType,
           sizeBytes: attachment.sizeBytes,
+          storagePath: initialStoragePath,
         },
       ],
       adminUnread: true,

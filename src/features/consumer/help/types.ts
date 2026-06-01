@@ -12,6 +12,9 @@ export interface SupportTicketAttachmentMeta {
   fileName: string;
   mimeType: string;
   sizeBytes: number;
+  storagePath?: string;
+  previewUrl?: string | null;
+  downloadUrl?: string | null;
 }
 
 export interface SupportTicket {

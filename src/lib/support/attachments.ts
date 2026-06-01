@@ -18,6 +18,17 @@ export interface SupportMessageAttachmentMeta {
   fileName: string;
   mimeType: string;
   sizeBytes: number;
+  storagePath?: string;
+}
+
+/** Attachment metadata returned to clients (includes short-lived signed URLs). */
+export interface SupportMessageAttachmentDto extends SupportMessageAttachmentMeta {
+  previewUrl?: string | null;
+  downloadUrl?: string | null;
+}
+
+export function isImageMimeType(mimeType: string): boolean {
+  return mimeType.toLowerCase().startsWith("image/");
 }
 
 export interface SupportMessageAttachmentInput extends SupportMessageAttachmentMeta {
