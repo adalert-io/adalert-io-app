@@ -4,14 +4,11 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
-  Clock,
+  ChevronRight,
   FileText,
-  Headphones,
-  Mail,
   Paperclip,
   Send,
   StickyNote,
-  Tag,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -24,6 +21,7 @@ import {
 import { useAuthStore } from "@/lib/store/auth-store";
 import { cn } from "@/lib/utils";
 
+import { FormattedEmailBody } from "./FormattedEmailBody";
 import {
   CONSUMER_HELP_HREF,
   formatTicketDate,
@@ -39,6 +37,7 @@ import type {
 } from "./types";
 
 const SUPPORT_INBOX_LABEL = "adAlert Support";
+const SUPPORT_INBOX_EMAIL = "support@adalert.io";
 
 interface PendingReplyAttachment extends SupportTicketAttachmentMeta {
   contentBase64: string;
@@ -74,23 +73,40 @@ function formatMessageTime(iso: string): string {
   });
 }
 
-function EmailMetaRow({ label, children }: { label: string; children: ReactNode }) {
+function EmailAddress({ name, email }: { name: string; email?: string }) {
+  if (email) {
+    return (
+      <span>
+        <span className="font-semibold text-slate-900">{name}</span>
+        <span className="text-slate-500">
+          {" "}
+          &lt;{email}&gt;
+        </span>
+      </span>
+    );
+  }
+  return <span className="font-semibold text-slate-900">{name}</span>;
+}
+
+function EmailMetaLine({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="grid grid-cols-[56px_1fr] gap-x-3 gap-y-0.5 text-[13px]">
-      <span className="pt-0.5 text-slate-500">{label}</span>
-      <div className="min-w-0 text-slate-900">{children}</div>
+    <div className="grid grid-cols-[3.5rem_1fr] gap-x-2 text-[13px] leading-snug sm:grid-cols-[4.5rem_1fr]">
+      <span className="pt-0.5 font-medium text-slate-500">{label}</span>
+      <div className="min-w-0 text-slate-800">{children}</div>
     </div>
   );
 }
 
 function AttachmentChip({ attachment }: { attachment: SupportTicketAttachmentMeta }) {
   return (
-    <div className="inline-flex max-w-full items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[12px] text-slate-700">
-      <FileText className="size-4 shrink-0 text-[#015AFD]" aria-hidden />
-      <span className="truncate font-medium">{attachment.fileName}</span>
-      <span className="shrink-0 text-slate-400">
-        {formatAttachmentSize(attachment.sizeBytes)}
+    <div className="inline-flex max-w-full items-center gap-2.5 rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-[13px] shadow-sm">
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-white ring-1 ring-slate-200">
+        <FileText className="size-4 text-[#015AFD]" aria-hidden />
       </span>
+      <div className="min-w-0">
+        <p className="truncate font-medium text-slate-900">{attachment.fileName}</p>
+        <p className="text-[12px] text-slate-500">{formatAttachmentSize(attachment.sizeBytes)}</p>
+      </div>
     </div>
   );
 }
@@ -99,69 +115,72 @@ function EmailThreadMessage({
   message,
   customerDisplayName,
   customerEmail,
+  threadSubject,
   isOriginal,
 }: {
   message: SupportTicketMessage;
   customerDisplayName: string;
   customerEmail: string;
+  threadSubject: string;
   isOriginal?: boolean;
 }) {
   const isCustomer = message.authorType === "customer";
-  const fromLabel = isCustomer
-    ? `${customerDisplayName}${customerEmail ? ` <${customerEmail}>` : ""}`
-    : `${message.authorName || SUPPORT_INBOX_LABEL} <support@adalert.io>`;
-  const toLabel = isCustomer ? SUPPORT_INBOX_LABEL : customerDisplayName;
+  const fromName = isCustomer
+    ? customerDisplayName
+    : message.authorName || SUPPORT_INBOX_LABEL;
+  const fromEmail = isCustomer ? customerEmail : SUPPORT_INBOX_EMAIL;
 
   return (
     <article
       className={cn(
-        "border-b border-slate-200/90 bg-white px-5 py-5 last:border-b-0 sm:px-6",
-        isOriginal && "bg-slate-50/40",
+        "border-b border-slate-200 px-5 py-6 last:border-b-0 sm:px-8 lg:px-10",
+        isOriginal ? "bg-slate-50/50" : "bg-white",
       )}
     >
-      <div className="mb-4 space-y-1.5 border-b border-slate-100 pb-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2">
-            <span
-              className={cn(
-                "flex size-9 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white",
-                isCustomer ? "bg-[#015AFD]" : "bg-slate-700",
-              )}
-            >
-              {isCustomer ? (
-                customerDisplayName.slice(0, 1).toUpperCase() || "Y"
-              ) : (
-                <Headphones className="size-4" aria-hidden />
-              )}
-            </span>
-            <div>
-              {isOriginal ? (
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-[#015AFD]">
-                  Original message
-                </p>
-              ) : null}
-              <p className="text-[14px] font-semibold text-slate-900">
-                {isCustomer ? customerDisplayName : message.authorName || SUPPORT_INBOX_LABEL}
-              </p>
-            </div>
-          </div>
-          <time
-            className="shrink-0 text-[12px] text-slate-500 tabular-nums"
-            dateTime={message.createdAt}
-          >
-            {formatMessageTime(message.createdAt)}
-          </time>
+      {isOriginal ? (
+        <p className="mb-4 text-[11px] font-bold uppercase tracking-wider text-[#015AFD]">
+          Original message
+        </p>
+      ) : null}
+
+      <div className="mb-4 flex flex-col gap-3 border-b border-slate-100 pb-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <EmailMetaLine label="From">
+            <EmailAddress name={fromName} email={fromEmail || undefined} />
+          </EmailMetaLine>
+          <EmailMetaLine label="To">
+            {isCustomer ? (
+              <EmailAddress name={SUPPORT_INBOX_LABEL} email={SUPPORT_INBOX_EMAIL} />
+            ) : (
+              <EmailAddress name={customerDisplayName} email={customerEmail || undefined} />
+            )}
+          </EmailMetaLine>
+          {isOriginal ? (
+            <EmailMetaLine label="Subject">
+              <span className="font-medium text-slate-900">{threadSubject}</span>
+            </EmailMetaLine>
+          ) : (
+            <EmailMetaLine label="Subject">
+              <span className="text-slate-700">Re: {threadSubject}</span>
+            </EmailMetaLine>
+          )}
         </div>
-        <EmailMetaRow label="From">{fromLabel}</EmailMetaRow>
-        <EmailMetaRow label="To">{toLabel}</EmailMetaRow>
+        <time
+          className="shrink-0 text-[12px] font-medium text-slate-500 tabular-nums sm:text-end"
+          dateTime={message.createdAt}
+        >
+          {formatMessageTime(message.createdAt)}
+        </time>
       </div>
-      <div className="whitespace-pre-wrap text-[14px] leading-[1.65] text-slate-800">
-        {message.body}
+
+      <div className="max-w-none">
+        <FormattedEmailBody body={message.body} />
       </div>
+
       {message.attachment ? (
-        <div className="mt-4">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-            Attachment
+        <div className="mt-5 border-t border-slate-100 pt-4">
+          <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+            1 attachment
           </p>
           <AttachmentChip attachment={message.attachment} />
         </div>
@@ -331,190 +350,174 @@ export function ConsumerHelpTicketDetailPage({ ticketId }: ConsumerHelpTicketDet
   };
 
   return (
-    <div className="min-h-full bg-slate-100/90 pb-12">
-      <div className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3 sm:px-6">
+    <div className="-mx-4 -mt-6 flex w-[calc(100%+2rem)] min-w-0 flex-col bg-white md:-mx-6 md:w-[calc(100%+3rem)] lg:-mx-8 lg:w-[calc(100%+4rem)]">
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 px-5 py-3 backdrop-blur-sm sm:px-8 lg:px-10">
+        <div className="flex flex-wrap items-center gap-2 text-[13px] text-slate-500">
           <Button
             asChild
             variant="ghost"
             size="sm"
-            className="h-9 rounded-lg px-2 text-slate-600 hover:text-slate-900"
+            className="-ms-2 h-8 rounded-md px-2 text-slate-600 hover:text-slate-900"
           >
             <Link href={CONSUMER_HELP_HREF}>
-              <ArrowLeft className="mr-1.5 size-4" aria-hidden />
+              <ArrowLeft className="mr-1 size-4" aria-hidden />
               All tickets
             </Link>
           </Button>
-          <div className="hidden h-5 w-px bg-slate-200 sm:block" aria-hidden />
-          <div className="flex min-w-0 items-center gap-2 text-[13px] text-slate-600">
-            <Mail className="size-4 shrink-0 text-[#015AFD]" aria-hidden />
-            <span className="truncate font-medium text-slate-800">Support ticket thread</span>
-          </div>
+          <ChevronRight className="size-3.5 text-slate-300" aria-hidden />
+          <span className="truncate font-medium text-slate-700">Ticket thread</span>
         </div>
-      </div>
+      </header>
 
-      <div className="mx-auto max-w-5xl space-y-4 px-4 py-6 sm:px-6">
-        {isLoadingTicket ? (
-          <div className="rounded-xl border border-slate-200 bg-white px-6 py-10 text-center text-[13px] text-slate-500 shadow-sm">
-            Loading ticket...
+      {isLoadingTicket ? (
+        <div className="px-8 py-16 text-center text-[14px] text-slate-500">Loading ticket...</div>
+      ) : !ticket ? (
+        <div className="px-8 py-16 text-center text-[14px] text-slate-500">
+          This ticket could not be found.
+        </div>
+      ) : (
+        <>
+          <div className="border-b border-slate-200 bg-white px-5 py-6 sm:px-8 lg:px-10">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono text-[12px] font-semibold tracking-wide text-[#015AFD]">
+                {ticket.id}
+              </span>
+              <span
+                className={cn(
+                  "inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset",
+                  statusBadgeClass(ticket.status),
+                )}
+              >
+                {statusLabel(ticket.status)}
+              </span>
+              <span className="text-[12px] text-slate-400">·</span>
+              <span className="text-[12px] text-slate-600">{priorityLabel(ticket.priority)} priority</span>
+            </div>
+            <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-[1.65rem] sm:leading-tight">
+              {ticket.subject}
+            </h1>
+            <dl className="mt-4 flex flex-wrap gap-x-8 gap-y-2 text-[13px]">
+              <div>
+                <dt className="text-slate-500">Category</dt>
+                <dd className="font-medium text-slate-800">{ticket.category}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Last updated</dt>
+                <dd className="font-medium text-slate-800">{formatTicketRelative(ticket.updatedAt)}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Opened</dt>
+                <dd className="font-medium text-slate-800">{formatTicketDate(ticket.createdAt)}</dd>
+              </div>
+            </dl>
           </div>
-        ) : !ticket ? (
-          <div className="rounded-xl border border-slate-200 bg-white px-6 py-10 text-center text-[13px] text-slate-500 shadow-sm">
-            This ticket could not be found.
+
+          <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-2.5 sm:px-8 lg:px-10">
+            <h2 className="text-[12px] font-semibold uppercase tracking-wide text-slate-600">
+              Conversation
+              {!isLoadingMessages && messages.length > 0 ? (
+                <span className="ms-1.5 font-normal normal-case text-slate-500">
+                  ({messages.length})
+                </span>
+              ) : null}
+            </h2>
           </div>
-        ) : (
-          <>
-            <header className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-              <div className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-5 py-4 sm:px-6">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono text-[12px] font-semibold text-[#015AFD]">
-                    {ticket.id}
-                  </span>
-                  <span
-                    className={cn(
-                      "inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset",
-                      statusBadgeClass(ticket.status),
-                    )}
-                  >
-                    {statusLabel(ticket.status)}
-                  </span>
+
+          {isLoadingMessages ? (
+            <p className="border-b border-slate-200 px-8 py-12 text-center text-[14px] text-slate-500">
+              Loading messages...
+            </p>
+          ) : messages.length === 0 ? (
+            <p className="border-b border-slate-200 px-8 py-12 text-center text-[14px] text-slate-500">
+              No messages yet. Our team will respond in this thread.
+            </p>
+          ) : (
+            <div className="border-b border-slate-200">
+              {messages.map((message, index) => (
+                <EmailThreadMessage
+                  key={message.id}
+                  message={message}
+                  customerDisplayName={customerDisplayName}
+                  customerEmail={customerEmail}
+                  threadSubject={ticket.subject}
+                  isOriginal={index === 0}
+                />
+              ))}
+            </div>
+          )}
+
+          {notes.length > 0 ? (
+            <>
+              <div className="border-b border-amber-200/80 bg-amber-50/90 px-5 py-2.5 sm:px-8 lg:px-10">
+                <div className="flex items-center gap-2">
+                  <StickyNote className="size-4 text-amber-800" aria-hidden />
+                  <h2 className="text-[12px] font-semibold uppercase tracking-wide text-amber-950">
+                    Updates from support
+                  </h2>
                 </div>
-                <h1 className="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-                  {ticket.subject}
-                </h1>
               </div>
-              <dl className="grid gap-3 px-5 py-4 sm:grid-cols-3 sm:px-6">
-                <div className="flex items-start gap-2 text-[13px]">
-                  <Tag className="mt-0.5 size-4 shrink-0 text-slate-400" aria-hidden />
-                  <div>
-                    <dt className="text-slate-500">Category</dt>
-                    <dd className="font-medium text-slate-900">{ticket.category}</dd>
+              {notes.map((note) => (
+                <article
+                  key={note.id}
+                  className="border-b border-amber-100 bg-amber-50/30 px-5 py-5 sm:px-8 lg:px-10"
+                >
+                  <div className="mb-3 flex flex-wrap items-start justify-between gap-2 border-b border-amber-100/80 pb-3">
+                    <EmailMetaLine label="From">
+                      <EmailAddress
+                        name={note.authorName || SUPPORT_INBOX_LABEL}
+                        email={SUPPORT_INBOX_EMAIL}
+                      />
+                    </EmailMetaLine>
+                    <time
+                      className="text-[12px] text-amber-900/60 tabular-nums"
+                      dateTime={note.createdAt}
+                    >
+                      {formatMessageTime(note.createdAt)}
+                    </time>
                   </div>
-                </div>
-                <div className="flex items-start gap-2 text-[13px]">
-                  <Clock className="mt-0.5 size-4 shrink-0 text-slate-400" aria-hidden />
-                  <div>
-                    <dt className="text-slate-500">Last updated</dt>
-                    <dd className="font-medium text-slate-900">
-                      {formatTicketRelative(ticket.updatedAt)}
-                    </dd>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2 text-[13px]">
-                  <Mail className="mt-0.5 size-4 shrink-0 text-slate-400" aria-hidden />
-                  <div>
-                    <dt className="text-slate-500">Opened</dt>
-                    <dd className="font-medium text-slate-900">
-                      {formatTicketDate(ticket.createdAt)}
-                    </dd>
-                  </div>
-                </div>
-              </dl>
-            </header>
+                  <FormattedEmailBody body={note.body} />
+                </article>
+              ))}
+            </>
+          ) : null}
 
-            <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-              <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/80 px-5 py-3 sm:px-6">
-                <h2 className="text-[13px] font-semibold text-slate-800">
-                  Message thread
-                  {!isLoadingMessages && messages.length > 0 ? (
-                    <span className="ms-2 font-normal text-slate-500">
-                      ({messages.length} {messages.length === 1 ? "message" : "messages"})
-                    </span>
-                  ) : null}
-                </h2>
-                <span className="text-[12px] text-slate-500">{priorityLabel(ticket.priority)} priority</span>
+          <section className="bg-slate-50/80 px-5 py-6 sm:px-8 lg:px-10">
+            <h2 className="mb-4 text-[12px] font-semibold uppercase tracking-wide text-slate-600">
+              Reply
+            </h2>
+            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+              <div className="space-y-1.5 border-b border-slate-100 px-4 py-3 sm:px-5">
+                <EmailMetaLine label="To">
+                  <EmailAddress name={SUPPORT_INBOX_LABEL} email={SUPPORT_INBOX_EMAIL} />
+                </EmailMetaLine>
+                <EmailMetaLine label="Subject">
+                  <span className="text-slate-800">Re: {ticket.subject}</span>
+                </EmailMetaLine>
               </div>
-
-              {isLoadingMessages ? (
-                <p className="px-6 py-10 text-center text-[13px] text-slate-500">
-                  Loading messages...
-                </p>
-              ) : messages.length === 0 ? (
-                <p className="px-6 py-10 text-center text-[13px] text-slate-500">
-                  No messages yet. Our team will respond by email and here in this thread.
-                </p>
-              ) : (
-                <div>
-                  {messages.map((message, index) => (
-                    <EmailThreadMessage
-                      key={message.id}
-                      message={message}
-                      customerDisplayName={customerDisplayName}
-                      customerEmail={customerEmail}
-                      isOriginal={index === 0}
-                    />
-                  ))}
-                </div>
-              )}
-            </section>
-
-            {notes.length > 0 ? (
-              <section className="overflow-hidden rounded-xl border border-amber-200/80 bg-white shadow-sm">
-                <div className="flex items-center gap-2 border-b border-amber-100 bg-amber-50/80 px-5 py-3 sm:px-6">
-                  <StickyNote className="size-4 text-amber-700" aria-hidden />
-                  <h2 className="text-[13px] font-semibold text-amber-950">Updates from support</h2>
-                </div>
-                <div className="divide-y divide-amber-100/80">
-                  {notes.map((note) => (
-                    <article key={note.id} className="px-5 py-4 sm:px-6">
-                      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                        <p className="text-[13px] font-semibold text-amber-950">
-                          {note.authorName || SUPPORT_INBOX_LABEL}
-                        </p>
-                        <time
-                          className="text-[12px] text-amber-800/70 tabular-nums"
-                          dateTime={note.createdAt}
-                        >
-                          {formatMessageTime(note.createdAt)}
-                        </time>
-                      </div>
-                      <p className="whitespace-pre-wrap text-[14px] leading-relaxed text-amber-950/90">
-                        {note.body}
-                      </p>
-                    </article>
-                  ))}
-                </div>
-              </section>
-            ) : null}
-
-            <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-              <div className="border-b border-slate-200 bg-slate-50/80 px-5 py-3 sm:px-6">
-                <h2 className="text-[13px] font-semibold text-slate-800">Compose reply</h2>
-              </div>
-              <div className="space-y-0 border-b border-slate-100 px-5 py-4 sm:px-6">
-                <EmailMetaRow label="To">
-                  <span className="font-medium">{SUPPORT_INBOX_LABEL}</span>
-                </EmailMetaRow>
-                <div className="mt-2">
-                  <EmailMetaRow label="Subject">
-                    <span className="text-slate-700">Re: {ticket.subject}</span>
-                  </EmailMetaRow>
-                </div>
-              </div>
-              <div className="px-5 py-4 sm:px-6">
+              <div className="px-4 py-3 sm:px-5">
                 <Textarea
                   value={replyBody}
                   onChange={(event) => setReplyBody(event.target.value)}
-                  rows={6}
-                  className="min-h-[140px] resize-y rounded-lg border-slate-200 bg-white text-[14px] leading-relaxed shadow-none focus-visible:ring-[#015AFD]/25"
-                  placeholder="Write your reply to the support team..."
+                  rows={8}
+                  className="min-h-[160px] resize-y border-0 bg-transparent p-0 text-[15px] leading-[1.75] shadow-none focus-visible:ring-0"
+                  placeholder="Type your reply..."
                   disabled={isSendingReply}
                 />
-                {pendingAttachment ? (
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <AttachmentChip attachment={pendingAttachment} />
-                    <button
-                      type="button"
-                      className="text-[12px] font-medium text-[#015AFD] hover:underline"
-                      onClick={() => setPendingAttachment(null)}
-                    >
-                      Remove attachment
-                    </button>
-                  </div>
-                ) : null}
               </div>
-              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/50 px-5 py-3 sm:px-6">
-                <div className="flex items-center gap-2">
+              {pendingAttachment ? (
+                <div className="border-t border-slate-100 px-4 py-3 sm:px-5">
+                  <AttachmentChip attachment={pendingAttachment} />
+                  <button
+                    type="button"
+                    className="mt-2 text-[12px] font-medium text-[#015AFD] hover:underline"
+                    onClick={() => setPendingAttachment(null)}
+                  >
+                    Remove attachment
+                  </button>
+                </div>
+              ) : null}
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-slate-50 px-4 py-3 sm:px-5">
+                <div className="flex flex-wrap items-center gap-2">
                   <input
                     id="consumer-reply-attachment"
                     type="file"
@@ -546,33 +549,31 @@ export function ConsumerHelpTicketDetailPage({ ticketId }: ConsumerHelpTicketDet
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="rounded-lg border-slate-200 bg-white"
+                    className="rounded-md border-slate-200 bg-white"
                     disabled={isSendingReply}
                     onClick={() =>
                       document.getElementById("consumer-reply-attachment")?.click()
                     }
                   >
                     <Paperclip className="mr-1.5 size-4" aria-hidden />
-                    Attach file
+                    Attach
                   </Button>
-                  <span className="hidden text-[12px] text-slate-500 sm:inline">
-                    PDF, images, or documents up to 15 MB
-                  </span>
+                  <span className="text-[12px] text-slate-500">Up to 15 MB</span>
                 </div>
                 <Button
                   type="button"
-                  className="rounded-lg bg-[#015AFD] px-5 font-semibold text-white hover:bg-[#0146ca]"
+                  className="rounded-md bg-[#015AFD] px-6 font-semibold text-white hover:bg-[#0146ca]"
                   disabled={!canSendReply}
                   onClick={() => void sendReply()}
                 >
                   <Send className="mr-1.5 size-4" aria-hidden />
-                  {isSendingReply ? "Sending..." : "Send reply"}
+                  {isSendingReply ? "Sending..." : "Send"}
                 </Button>
               </div>
-            </section>
-          </>
-        )}
-      </div>
+            </div>
+          </section>
+        </>
+      )}
     </div>
   );
 }

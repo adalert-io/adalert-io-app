@@ -12,8 +12,6 @@ import {
   CircleCheckBig,
   Clock,
   Filter,
-  LayoutGrid,
-  List,
   MoreHorizontal,
   Paperclip,
   Plus,
@@ -954,9 +952,7 @@ export function AdminSupportView() {
   const [priorityFilter, setPriorityFilter] = useState<TicketPriority | "all">(
     "all",
   );
-  const [customerFilter, setCustomerFilter] = useState<string>("all");
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
-  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [activeTicketId, setActiveTicketId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [isMarkingRead, setIsMarkingRead] = useState(false);
@@ -1058,11 +1054,8 @@ export function AdminSupportView() {
     if (priorityFilter !== "all") {
       list = list.filter((t) => t.priority === priorityFilter);
     }
-    if (customerFilter !== "all") {
-      list = list.filter((t) => t.companyName === customerFilter);
-    }
     return list;
-  }, [rows, search, statusFilter, priorityFilter, customerFilter]);
+  }, [rows, search, statusFilter, priorityFilter]);
 
   const totalRows = filtered.length;
   const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
@@ -1470,63 +1463,6 @@ export function AdminSupportView() {
             </select>
             <ChevronDown className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-gray-500" aria-hidden />
           </div>
-
-          <div className="relative">
-            <select
-              className={cn(SELECT_CLASS, "min-w-[160px]")}
-              value={customerFilter}
-              onChange={(e) => {
-                setCustomerFilter(e.target.value);
-                setPage(1);
-              }}
-            >
-              <option value="all">All Customers</option>
-              {COMPANY_POOL.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-gray-500" aria-hidden />
-          </div>
-
-          <Button variant="outline" size="sm" type="button" className="gap-2">
-            <Filter className="size-4 text-gray-700" aria-hidden />
-            More Filters
-          </Button>
-
-          <div className="ms-auto flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="icon"
-              aria-pressed={viewMode === "list"}
-              onClick={() => setViewMode("list")}
-              className={cn(
-                "size-9 rounded-lg shadow-sm",
-                viewMode === "list" &&
-                  "border-[#0B1426] bg-[#0B1426] text-white hover:bg-[#152542]",
-              )}
-              title="List view"
-              type="button"
-            >
-              <List className="size-4" aria-hidden />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              aria-pressed={viewMode === "grid"}
-              className={cn(
-                "size-9 rounded-lg shadow-sm",
-                viewMode === "grid" &&
-                  "border-[#0B1426] bg-[#0B1426] text-white hover:bg-[#152542]",
-              )}
-              title="Grid view"
-              type="button"
-              onClick={() => setViewMode("grid")}
-            >
-              <LayoutGrid className="size-4" aria-hidden />
-            </Button>
-          </div>
         </div>
 
         {selected.size > 0 ? (
@@ -1559,8 +1495,7 @@ export function AdminSupportView() {
           </div>
         ) : null}
 
-        {viewMode === "list" ? (
-          filtered.length === 0 ? (
+        {filtered.length === 0 ? (
             <div className="rounded-2xl border border-[#e5e5e5] bg-white py-24 text-center text-gray-600">
               No tickets match filters.
             </div>
@@ -1704,13 +1639,7 @@ export function AdminSupportView() {
                 </table>
               </div>
             </div>
-          )
-        ) : (
-          <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-16 text-center text-[15px] text-muted-foreground">
-            Compact ticket summaries for grid browsing will reuse this row data
-            after operations signs off condensed cards.
-          </div>
-        )}
+          )}
 
         <footer className="flex flex-col gap-4 px-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-[13px] font-medium text-gray-600">
