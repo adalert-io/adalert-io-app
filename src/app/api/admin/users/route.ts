@@ -5,7 +5,7 @@ import { ADMIN_PREVIEW_COOKIE } from "@/app/api/admin/customers/_lib";
 import { COLLECTIONS } from "@/lib/constants";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 
-type ManagementRole = "Master Admin" | "Admin";
+type ManagementRole = "Master Admin" | "Admin" | "IT Support";
 type UserStatus = "active" | "inactive";
 type AuthType = "sso" | "password";
 
@@ -27,7 +27,7 @@ interface CreateAdminUserBody {
   lastName?: string;
   email?: string;
   username?: string;
-  role?: "Admin";
+  role?: "Admin" | "IT Support";
 }
 
 interface UpdateAdminUserBody {
@@ -73,6 +73,14 @@ function toUserRow(
   id: string,
   data: Record<string, unknown>,
 ): ManagedUserRow {
+  const rawRole = typeof data.role === "string" ? data.role.trim() : "";
+  const role: ManagementRole =
+    rawRole === "Master Admin"
+      ? "Master Admin"
+      : rawRole === "IT Support"
+        ? "IT Support"
+        : "Admin";
+
   return {
     uid: id,
     fullName:
@@ -85,7 +93,7 @@ function toUserRow(
       typeof data.notificationEmail === "string" && data.notificationEmail.trim()
         ? data.notificationEmail.trim()
         : null,
-    role: data.role === "Master Admin" ? "Master Admin" : "Admin",
+    role,
     status: data.status === "inactive" ? "inactive" : "active",
     isMasterAdmin: data.isMasterAdmin === true,
     authType: data.authType === "password" ? "password" : "sso",

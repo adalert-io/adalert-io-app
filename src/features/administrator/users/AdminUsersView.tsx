@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
-type Role = "Master Admin" | "Admin";
+type Role = "Master Admin" | "Admin" | "IT Support";
 type UserStatus = "active" | "inactive";
 type AuthType = "sso" | "password";
 
@@ -39,7 +39,7 @@ interface CreateUserFormState {
   lastName: string;
   email: string;
   username: string;
-  role: "Admin";
+  role: "Admin" | "IT Support";
 }
 
 const SELECT_CLASS =
@@ -55,6 +55,7 @@ const INITIAL_FORM: CreateUserFormState = {
 
 function roleBadgeClass(role: Role): string {
   if (role === "Master Admin") return "bg-violet-100 text-violet-700";
+  if (role === "IT Support") return "bg-amber-100 text-amber-700";
   return "bg-blue-100 text-blue-700";
 }
 
@@ -239,10 +240,13 @@ export function AdminUsersView() {
           Role Permissions
         </p>
         <p className="mt-2 text-sm text-slate-700">
-          <strong>Master Admin:</strong> full access, can manage Admin users, cannot be deleted.
+          <strong>Master Admin:</strong> full access, can manage Admin and IT Support users, cannot be deleted.
         </p>
         <p className="mt-1 text-sm text-slate-700">
           <strong>Admin:</strong> standard administrator account with platform access.
+        </p>
+        <p className="mt-1 text-sm text-slate-700">
+          <strong>IT Support:</strong> support-focused account with restricted operational scope.
         </p>
       </div>
 
@@ -253,6 +257,8 @@ export function AdminUsersView() {
             className="min-w-0 flex-1 border-none bg-transparent text-[13px] text-gray-700 outline-none placeholder:text-gray-400"
             placeholder="Search by name, username, or login email"
             value={search}
+            name="admin-users-search"
+            autoComplete="off"
             onChange={(event) => setSearch(event.target.value)}
           />
         </div>
@@ -267,6 +273,7 @@ export function AdminUsersView() {
             <option value="all">All Roles</option>
             <option value="Master Admin">Master Admin</option>
             <option value="Admin">Admin</option>
+            <option value="IT Support">IT Support</option>
           </select>
           <ChevronDown className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-gray-500" />
         </div>
@@ -407,9 +414,12 @@ export function AdminUsersView() {
                   id="role"
                   className={cn(SELECT_CLASS, "min-w-full")}
                   value={form.role}
-                  onChange={(event) => setForm((prev) => ({ ...prev, role: event.target.value as "Admin" }))}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, role: event.target.value as "Admin" | "IT Support" }))
+                  }
                 >
                   <option value="Admin">Admin</option>
+                  <option value="IT Support">IT Support</option>
                 </select>
                 <ChevronDown className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-gray-500" />
               </div>
