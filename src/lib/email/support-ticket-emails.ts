@@ -13,8 +13,8 @@ export const SUPPORT_NO_REPLY_EMAIL =
 
 const BRAND_BLUE = "#015AFD";
 const BRAND_NAVY = "#0B1426";
-/** Matches admin sidebar `AdminSidebarAuthBrandLockup` (40×40 logo + wordmark). */
-const EMAIL_LOGO_PX = 40;
+/** Slightly smaller email lockup for better visual balance. */
+const EMAIL_LOGO_PX = 20;
 const EMAIL_WORDMARK_PX = 25;
 const EMAIL_BRAND_WORDMARK = APPLICATION_NAME;
 

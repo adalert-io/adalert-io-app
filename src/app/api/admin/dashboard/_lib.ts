@@ -118,14 +118,15 @@ export function parseDashboardRange(
   fromParam: string | null,
   toParam: string | null,
 ): DashboardDateRange {
+  const defaultAllTimeFrom = startOfDay(new Date("2000-01-01T00:00:00.000Z"));
   const to = toParam ? endOfDay(new Date(toParam)) : endOfDay(new Date());
   const from = fromParam
     ? startOfDay(new Date(fromParam))
-    : startOfDay(new Date(to.getTime() - 6 * 24 * 60 * 60 * 1000));
+    : defaultAllTimeFrom;
 
   if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || from > to) {
     const fallbackTo = endOfDay(new Date());
-    const fallbackFrom = startOfDay(new Date(fallbackTo.getTime() - 6 * 24 * 60 * 60 * 1000));
+    const fallbackFrom = defaultAllTimeFrom;
     return { from: fallbackFrom, to: fallbackTo };
   }
 

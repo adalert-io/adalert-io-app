@@ -30,7 +30,6 @@ import { cn } from "@/lib/utils";
 
 import {
   AdminDashboardDateRangePicker,
-  defaultAdminDashboardRange,
 } from "./AdminDashboardDateRangePicker";
 
 interface DashboardKpiDto {
@@ -136,14 +135,14 @@ function DashboardMetricCard({
   accentClassName?: string;
 }) {
   return (
-    <Card className="flex min-h-[140px] justify-center gap-0 rounded-xl border border-slate-200 bg-white py-0 shadow-sm">
-      <CardContent className="flex flex-1 items-center justify-between gap-4 px-6 py-6">
-        <div className="min-w-0 space-y-1">
-          <p className="text-muted-foreground text-sm font-medium">{title}</p>
-          <p className="truncate text-[28px] font-bold tracking-tight text-slate-900">{value}</p>
+    <Card className="flex min-h-[112px] justify-center gap-0 rounded-lg border border-slate-200 bg-white py-0 shadow-sm">
+      <CardContent className="flex flex-1 items-center justify-between gap-3 px-4 py-4">
+        <div className="min-w-0 space-y-0.5">
+          <p className="text-muted-foreground text-xs font-medium">{title}</p>
+          <p className="truncate text-[34px] leading-none font-bold tracking-tight text-slate-900">{value}</p>
           <p
             className={cn(
-              "text-sm font-medium",
+              "text-xs font-medium",
               trendPositive ? "text-[#22c55e]" : "text-[#ef4444]",
             )}
           >
@@ -152,7 +151,7 @@ function DashboardMetricCard({
         </div>
         <span
           className={cn(
-            "flex size-14 shrink-0 items-center justify-center rounded-full text-[#3b82f6]",
+            "flex size-10 shrink-0 items-center justify-center rounded-full text-[#3b82f6]",
             accentClassName ?? "bg-[#3b82f6]/10",
           )}
         >
@@ -185,6 +184,14 @@ function SectionShell({
   );
 }
 
+function EmptyStateMessage() {
+  return (
+    <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-8 text-center text-sm text-slate-600">
+      No data available for the selected period.
+    </div>
+  );
+}
+
 function rangeToQuery(range: DateRange | undefined): string {
   if (!range?.from || !range?.to) return "";
   const from = format(range.from, "yyyy-MM-dd");
@@ -193,7 +200,7 @@ function rangeToQuery(range: DateRange | undefined): string {
 }
 
 export function AdminDashboardHome() {
-  const [range, setRange] = useState<DateRange | undefined>(defaultAdminDashboardRange);
+  const [range, setRange] = useState<DateRange | undefined>(undefined);
   const [data, setData] = useState<DashboardOverviewDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -288,21 +295,21 @@ export function AdminDashboardHome() {
 
   return (
     <div className="flex min-h-full flex-col bg-[#f8fafc]">
-      <div className="mx-auto w-full max-w-[1480px] flex-1 space-y-8 px-4 py-8 pb-16 sm:px-6 lg:px-10">
-        <section className="space-y-6">
-          <header className="flex flex-wrap items-start justify-between gap-4 pb-6">
-            <div className="space-y-2">
+      <div className="mx-auto w-full max-w-[1480px] flex-1 space-y-6 px-4 py-6 pb-12 sm:px-6 lg:px-10">
+        <section className="space-y-4">
+          <header className="flex flex-wrap items-center justify-between gap-3 pb-2">
+            <div className="space-y-1">
               <h1 className="text-[28px] font-bold tracking-tight text-slate-900 sm:text-[32px]">
                 Admin Dashboard
               </h1>
-              <p className="text-muted-foreground max-w-xl text-[15px]">
+              <p className="text-muted-foreground max-w-xl text-[13px]">
                 Executive overview of revenue, billing health, subscribers, and trial funnel
               </p>
             </div>
-            <AdminDashboardDateRangePicker className="-mt-1" value={range} onChange={setRange} />
+            <AdminDashboardDateRangePicker value={range} onChange={setRange} />
           </header>
 
-          <div className="grid min-w-0 grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {metricCards.map((metric) => (
               <DashboardMetricCard
                 key={metric.title}
@@ -425,6 +432,10 @@ export function AdminDashboardHome() {
                     </tbody>
                   </table>
                 </div>
+              ) : !isLoading ? (
+                <div className="mt-2">
+                  <EmptyStateMessage />
+                </div>
               ) : null}
             </div>
           </SectionShell>
@@ -448,34 +459,40 @@ export function AdminDashboardHome() {
                 <p className="mt-1 text-xl font-bold text-rose-600">{data?.subscribers.pastDue ?? 0}</p>
               </div>
             </div>
-            <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
-              <table className="min-w-[980px] w-full text-left text-sm">
-                <thead className="bg-slate-50 text-slate-600">
-                  <tr>
-                    <th className="px-4 py-2.5 font-semibold">Name</th>
-                    <th className="px-4 py-2.5 font-semibold">Email</th>
-                    <th className="px-4 py-2.5 font-semibold">Subscription Plan</th>
-                    <th className="px-4 py-2.5 font-semibold">Payment Status</th>
-                    <th className="px-4 py-2.5 font-semibold">Last Login</th>
-                    <th className="px-4 py-2.5 font-semibold">Join Date</th>
-                    <th className="px-4 py-2.5 font-semibold">Account Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {(data?.subscribers.rows ?? []).map((row) => (
-                    <tr key={row.id} className="hover:bg-slate-50/80">
-                      <td className="px-4 py-2.5 font-medium text-slate-900">{row.name}</td>
-                      <td className="px-4 py-2.5 text-slate-700">{row.email}</td>
-                      <td className="px-4 py-2.5 text-slate-700">{row.subscriptionPlan}</td>
-                      <td className="px-4 py-2.5 text-slate-700">{row.paymentStatus}</td>
-                      <td className="px-4 py-2.5 text-slate-700">{row.lastLogin}</td>
-                      <td className="px-4 py-2.5 text-slate-700">{row.joinDate}</td>
-                      <td className="px-4 py-2.5 text-slate-700">{row.accountStatus}</td>
+            {(data?.subscribers.rows?.length ?? 0) > 0 ? (
+              <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
+                <table className="min-w-[980px] w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-slate-600">
+                    <tr>
+                      <th className="px-4 py-2.5 font-semibold">Name</th>
+                      <th className="px-4 py-2.5 font-semibold">Email</th>
+                      <th className="px-4 py-2.5 font-semibold">Subscription Plan</th>
+                      <th className="px-4 py-2.5 font-semibold">Payment Status</th>
+                      <th className="px-4 py-2.5 font-semibold">Last Login</th>
+                      <th className="px-4 py-2.5 font-semibold">Join Date</th>
+                      <th className="px-4 py-2.5 font-semibold">Account Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {(data?.subscribers.rows ?? []).map((row) => (
+                      <tr key={row.id} className="hover:bg-slate-50/80">
+                        <td className="px-4 py-2.5 font-medium text-slate-900">{row.name}</td>
+                        <td className="px-4 py-2.5 text-slate-700">{row.email}</td>
+                        <td className="px-4 py-2.5 text-slate-700">{row.subscriptionPlan}</td>
+                        <td className="px-4 py-2.5 text-slate-700">{row.paymentStatus}</td>
+                        <td className="px-4 py-2.5 text-slate-700">{row.lastLogin}</td>
+                        <td className="px-4 py-2.5 text-slate-700">{row.joinDate}</td>
+                        <td className="px-4 py-2.5 text-slate-700">{row.accountStatus}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : !isLoading ? (
+              <div className="mt-4">
+                <EmptyStateMessage />
+              </div>
+            ) : null}
           </SectionShell>
         </section>
 
@@ -484,60 +501,68 @@ export function AdminDashboardHome() {
             <div className="mb-3 rounded-xl bg-violet-50 px-3 py-2 text-sm text-violet-700">
               Total users currently on trial: <span className="font-semibold">{data?.trialUsers.total ?? 0}</span>
             </div>
-            <div className="overflow-x-auto rounded-xl border border-slate-200">
-              <table className="min-w-[700px] w-full text-left text-sm">
-                <thead className="bg-slate-50 text-slate-600">
-                  <tr>
-                    <th className="px-4 py-2.5 font-semibold">Name</th>
-                    <th className="px-4 py-2.5 font-semibold">Email</th>
-                    <th className="px-4 py-2.5 font-semibold">Trial Start Date</th>
-                    <th className="px-4 py-2.5 font-semibold">Days Remaining</th>
-                    <th className="px-4 py-2.5 font-semibold">Conversion Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {(data?.trialUsers.rows ?? []).map((row) => (
-                    <tr key={row.id} className="hover:bg-slate-50/80">
-                      <td className="px-4 py-2.5 font-medium text-slate-900">{row.name}</td>
-                      <td className="px-4 py-2.5 text-slate-700">{row.email}</td>
-                      <td className="px-4 py-2.5 text-slate-700">{row.trialStartDate}</td>
-                      <td className="px-4 py-2.5 text-slate-700">{row.daysRemaining}</td>
-                      <td className="px-4 py-2.5 text-slate-700">{row.conversionStatus}</td>
+            {(data?.trialUsers.rows?.length ?? 0) > 0 ? (
+              <div className="overflow-x-auto rounded-xl border border-slate-200">
+                <table className="min-w-[700px] w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-slate-600">
+                    <tr>
+                      <th className="px-4 py-2.5 font-semibold">Name</th>
+                      <th className="px-4 py-2.5 font-semibold">Email</th>
+                      <th className="px-4 py-2.5 font-semibold">Trial Start Date</th>
+                      <th className="px-4 py-2.5 font-semibold">Days Remaining</th>
+                      <th className="px-4 py-2.5 font-semibold">Conversion Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {(data?.trialUsers.rows ?? []).map((row) => (
+                      <tr key={row.id} className="hover:bg-slate-50/80">
+                        <td className="px-4 py-2.5 font-medium text-slate-900">{row.name}</td>
+                        <td className="px-4 py-2.5 text-slate-700">{row.email}</td>
+                        <td className="px-4 py-2.5 text-slate-700">{row.trialStartDate}</td>
+                        <td className="px-4 py-2.5 text-slate-700">{row.daysRemaining}</td>
+                        <td className="px-4 py-2.5 text-slate-700">{row.conversionStatus}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : !isLoading ? (
+              <EmptyStateMessage />
+            ) : null}
           </SectionShell>
 
           <SectionShell title="Expired Trial Users" subtitle="Users requiring re-engagement">
             <div className="mb-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-700">
               Expired trials in range: <span className="font-semibold">{data?.expiredTrialUsers.total ?? 0}</span>
             </div>
-            <div className="overflow-x-auto rounded-xl border border-slate-200">
-              <table className="min-w-[760px] w-full text-left text-sm">
-                <thead className="bg-slate-50 text-slate-600">
-                  <tr>
-                    <th className="px-4 py-2.5 font-semibold">Name</th>
-                    <th className="px-4 py-2.5 font-semibold">Email</th>
-                    <th className="px-4 py-2.5 font-semibold">Trial Expiration Date</th>
-                    <th className="px-4 py-2.5 font-semibold">Days Since Expiration</th>
-                    <th className="px-4 py-2.5 font-semibold">Re-engagement Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {(data?.expiredTrialUsers.rows ?? []).map((row) => (
-                    <tr key={row.id} className="hover:bg-slate-50/80">
-                      <td className="px-4 py-2.5 font-medium text-slate-900">{row.name}</td>
-                      <td className="px-4 py-2.5 text-slate-700">{row.email}</td>
-                      <td className="px-4 py-2.5 text-slate-700">{row.trialExpirationDate}</td>
-                      <td className="px-4 py-2.5 text-slate-700">{row.daysSinceExpiration}</td>
-                      <td className="px-4 py-2.5 text-slate-700">{row.reengagementStatus}</td>
+            {(data?.expiredTrialUsers.rows?.length ?? 0) > 0 ? (
+              <div className="overflow-x-auto rounded-xl border border-slate-200">
+                <table className="min-w-[760px] w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-slate-600">
+                    <tr>
+                      <th className="px-4 py-2.5 font-semibold">Name</th>
+                      <th className="px-4 py-2.5 font-semibold">Email</th>
+                      <th className="px-4 py-2.5 font-semibold">Trial Expiration Date</th>
+                      <th className="px-4 py-2.5 font-semibold">Days Since Expiration</th>
+                      <th className="px-4 py-2.5 font-semibold">Re-engagement Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {(data?.expiredTrialUsers.rows ?? []).map((row) => (
+                      <tr key={row.id} className="hover:bg-slate-50/80">
+                        <td className="px-4 py-2.5 font-medium text-slate-900">{row.name}</td>
+                        <td className="px-4 py-2.5 text-slate-700">{row.email}</td>
+                        <td className="px-4 py-2.5 text-slate-700">{row.trialExpirationDate}</td>
+                        <td className="px-4 py-2.5 text-slate-700">{row.daysSinceExpiration}</td>
+                        <td className="px-4 py-2.5 text-slate-700">{row.reengagementStatus}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : !isLoading ? (
+              <EmptyStateMessage />
+            ) : null}
           </SectionShell>
         </section>
 
@@ -547,37 +572,41 @@ export function AdminDashboardHome() {
               <span>Total failed payments in range</span>
               <span className="font-semibold">{data?.failedPayments.total ?? 0}</span>
             </div>
-            <div className="overflow-x-auto rounded-xl border border-slate-200">
-              <table className="min-w-[980px] w-full text-left text-sm">
-                <thead className="bg-slate-50 text-slate-600">
-                  <tr>
-                    <th className="px-4 py-2.5 font-semibold">Customer Name</th>
-                    <th className="px-4 py-2.5 font-semibold">Email</th>
-                    <th className="px-4 py-2.5 font-semibold">Failed Payment Date</th>
-                    <th className="px-4 py-2.5 font-semibold">Amount</th>
-                    <th className="px-4 py-2.5 font-semibold">Failure Reason</th>
-                    <th className="px-4 py-2.5 font-semibold">Retry Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {(data?.failedPayments.rows ?? []).map((row) => (
-                    <tr key={row.id} className="hover:bg-slate-50/80">
-                      <td className="px-4 py-2.5 font-medium text-slate-900">{row.customerName}</td>
-                      <td className="px-4 py-2.5 text-slate-700">{row.email}</td>
-                      <td className="px-4 py-2.5 text-slate-700">{row.failedPaymentDate}</td>
-                      <td className="px-4 py-2.5 font-semibold text-slate-900">{row.displayAmount}</td>
-                      <td className="px-4 py-2.5 text-slate-700">{row.failureReason}</td>
-                      <td className="px-4 py-2.5">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
-                          {row.retryStatus === "Recovered" ? <CheckCircle2 className="size-3.5 text-emerald-600" /> : <CreditCard className="size-3.5 text-rose-500" />}
-                          {row.retryStatus}
-                        </span>
-                      </td>
+            {(data?.failedPayments.rows?.length ?? 0) > 0 ? (
+              <div className="overflow-x-auto rounded-xl border border-slate-200">
+                <table className="min-w-[980px] w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-slate-600">
+                    <tr>
+                      <th className="px-4 py-2.5 font-semibold">Customer Name</th>
+                      <th className="px-4 py-2.5 font-semibold">Email</th>
+                      <th className="px-4 py-2.5 font-semibold">Failed Payment Date</th>
+                      <th className="px-4 py-2.5 font-semibold">Amount</th>
+                      <th className="px-4 py-2.5 font-semibold">Failure Reason</th>
+                      <th className="px-4 py-2.5 font-semibold">Retry Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {(data?.failedPayments.rows ?? []).map((row) => (
+                      <tr key={row.id} className="hover:bg-slate-50/80">
+                        <td className="px-4 py-2.5 font-medium text-slate-900">{row.customerName}</td>
+                        <td className="px-4 py-2.5 text-slate-700">{row.email}</td>
+                        <td className="px-4 py-2.5 text-slate-700">{row.failedPaymentDate}</td>
+                        <td className="px-4 py-2.5 font-semibold text-slate-900">{row.displayAmount}</td>
+                        <td className="px-4 py-2.5 text-slate-700">{row.failureReason}</td>
+                        <td className="px-4 py-2.5">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+                            {row.retryStatus === "Recovered" ? <CheckCircle2 className="size-3.5 text-emerald-600" /> : <CreditCard className="size-3.5 text-rose-500" />}
+                            {row.retryStatus}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : !isLoading ? (
+              <EmptyStateMessage />
+            ) : null}
           </SectionShell>
         </section>
       </div>
