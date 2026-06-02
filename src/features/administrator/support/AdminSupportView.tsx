@@ -1313,7 +1313,10 @@ export function AdminSupportView() {
           <Button
             type="button"
             variant={isArchivedView ? "default" : "outline"}
-            className="gap-2 rounded-xl border-[#e5e5e5] bg-white shadow-sm"
+            className={cn(
+              "gap-2 rounded-xl border-[#e5e5e5] bg-white shadow-sm",
+              isArchivedView && "text-black hover:text-black",
+            )}
             onClick={() => {
               setIsArchivedView((prev) => !prev);
               setPage(1);
@@ -1591,7 +1594,12 @@ export function AdminSupportView() {
           ) : (
             <div className="overflow-hidden rounded-2xl border border-[#e5e5e5] bg-white">
               <div className="overflow-x-auto">
-                <table className="min-w-[1080px] w-full table-fixed text-[13px]">
+                <table
+                  className={cn(
+                    "w-full table-fixed text-[13px]",
+                    isArchivedView ? "min-w-[880px]" : "min-w-[1080px]",
+                  )}
+                >
                   <thead className="border-b bg-gray-50">
                     <tr>
                       <th className="w-12 px-3 py-3">
@@ -1610,12 +1618,16 @@ export function AdminSupportView() {
                       <th className="min-w-[230px] py-3 text-start font-semibold">
                         Customer
                       </th>
-                      <th className="w-[130px] py-3 text-start font-semibold">
-                        Status
-                      </th>
-                      <th className="w-[100px] py-3 text-start font-semibold">
-                        Priority
-                      </th>
+                      {!isArchivedView ? (
+                        <th className="w-[130px] py-3 text-start font-semibold">
+                          Status
+                        </th>
+                      ) : null}
+                      {!isArchivedView ? (
+                        <th className="w-[100px] py-3 text-start font-semibold">
+                          Priority
+                        </th>
+                      ) : null}
                       <th className="w-[160px] py-3 text-start font-semibold">
                         Last Updated
                       </th>
@@ -1691,12 +1703,16 @@ export function AdminSupportView() {
                               </div>
                             </div>
                           </td>
-                          <td className="py-3">
-                            <StatusBadge status={t.status} />
-                          </td>
-                          <td className="py-3">
-                            <PriorityText priority={t.priority} />
-                          </td>
+                          {!isArchivedView ? (
+                            <td className="py-3">
+                              <StatusBadge status={t.status} />
+                            </td>
+                          ) : null}
+                          {!isArchivedView ? (
+                            <td className="py-3">
+                              <PriorityText priority={t.priority} />
+                            </td>
+                          ) : null}
                           <td className="truncate py-3 text-gray-700 tabular-nums">
                             {t.lastUpdatedLabel}
                           </td>
