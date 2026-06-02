@@ -374,7 +374,7 @@ export function AdminUsersView() {
           <DialogHeader className="space-y-2 text-start">
             <DialogTitle className="text-xl font-bold text-gray-900">Add New User</DialogTitle>
             <DialogDescription className="text-[14px] text-[#64748b]">
-              Create a real system user with direct credentials. No invitation flow required.
+              Add a new administrator account to the admin user directory.
             </DialogDescription>
           </DialogHeader>
 
