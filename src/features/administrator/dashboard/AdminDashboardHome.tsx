@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 
 import {
   AdminDashboardDateRangePicker,
+  defaultAdminDashboardRange,
 } from "./AdminDashboardDateRangePicker";
 
 interface DashboardKpiDto {
@@ -192,6 +193,20 @@ function EmptyStateMessage() {
   );
 }
 
+function statusBadgeClass(status: string): string {
+  const normalized = status.toLowerCase();
+  if (normalized.includes("active") || normalized.includes("paid") || normalized.includes("resolved") || normalized.includes("recovered")) {
+    return "bg-emerald-100 text-emerald-700";
+  }
+  if (normalized.includes("trial") || normalized.includes("pending")) {
+    return "bg-violet-100 text-violet-700";
+  }
+  if (normalized.includes("past due") || normalized.includes("retry")) {
+    return "bg-amber-100 text-amber-700";
+  }
+  return "bg-rose-100 text-rose-700";
+}
+
 function rangeToQuery(range: DateRange | undefined): string {
   if (!range?.from || !range?.to) return "";
   const from = format(range.from, "yyyy-MM-dd");
@@ -200,7 +215,7 @@ function rangeToQuery(range: DateRange | undefined): string {
 }
 
 export function AdminDashboardHome() {
-  const [range, setRange] = useState<DateRange | undefined>(undefined);
+  const [range, setRange] = useState<DateRange | undefined>(defaultAdminDashboardRange);
   const [data, setData] = useState<DashboardOverviewDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -408,25 +423,30 @@ export function AdminDashboardHome() {
                 )}
               </div>
               {data?.invoices.recent?.length ? (
-                <div className="mt-2 overflow-x-auto rounded-xl border border-slate-200">
-                  <table className="min-w-[620px] w-full text-left text-sm">
+                <div className="mt-2 rounded-xl border border-slate-200">
+                  <table className="w-full table-fixed text-left text-sm">
                     <thead className="bg-slate-50 text-slate-600">
                       <tr>
-                        <th className="px-4 py-2.5 font-semibold">Invoice ID</th>
-                        <th className="px-4 py-2.5 font-semibold">Customer Name</th>
-                        <th className="px-4 py-2.5 font-semibold">Amount</th>
-                        <th className="px-4 py-2.5 font-semibold">Status</th>
-                        <th className="px-4 py-2.5 font-semibold">Date</th>
+                        <th className="w-[45%] px-4 py-2.5 font-semibold">Invoice / Customer</th>
+                        <th className="w-[18%] px-4 py-2.5 font-semibold">Amount</th>
+                        <th className="w-[17%] px-4 py-2.5 font-semibold">Status</th>
+                        <th className="w-[20%] px-4 py-2.5 font-semibold">Date</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {data.invoices.recent.map((row) => (
                         <tr key={row.id} className="hover:bg-slate-50/80">
-                          <td className="px-4 py-2.5 font-mono text-xs text-slate-700">{row.id}</td>
-                          <td className="px-4 py-2.5 text-slate-800">{row.customerName}</td>
+                          <td className="px-4 py-2.5">
+                            <p className="truncate font-mono text-xs text-slate-700">{row.id}</p>
+                            <p className="truncate text-slate-800">{row.customerName}</p>
+                          </td>
                           <td className="px-4 py-2.5 font-semibold text-slate-900">{row.displayAmount}</td>
-                          <td className="px-4 py-2.5 text-slate-700">{row.status}</td>
-                          <td className="px-4 py-2.5 text-slate-700">{row.date}</td>
+                          <td className="px-4 py-2.5">
+                            <span className={cn("inline-flex rounded-full px-2 py-0.5 text-xs font-semibold", statusBadgeClass(row.status))}>
+                              {row.status}
+                            </span>
+                          </td>
+                          <td className="truncate px-4 py-2.5 text-slate-700">{row.date.split(",")[0]}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -460,29 +480,36 @@ export function AdminDashboardHome() {
               </div>
             </div>
             {(data?.subscribers.rows?.length ?? 0) > 0 ? (
-              <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
-                <table className="min-w-[980px] w-full text-left text-sm">
+              <div className="mt-4 rounded-xl border border-slate-200">
+                <table className="w-full table-fixed text-left text-sm">
                   <thead className="bg-slate-50 text-slate-600">
                     <tr>
-                      <th className="px-4 py-2.5 font-semibold">Name</th>
-                      <th className="px-4 py-2.5 font-semibold">Email</th>
-                      <th className="px-4 py-2.5 font-semibold">Subscription Plan</th>
-                      <th className="px-4 py-2.5 font-semibold">Payment Status</th>
-                      <th className="px-4 py-2.5 font-semibold">Last Login</th>
-                      <th className="px-4 py-2.5 font-semibold">Join Date</th>
-                      <th className="px-4 py-2.5 font-semibold">Account Status</th>
+                      <th className="w-[38%] px-4 py-2.5 font-semibold">Name / Email</th>
+                      <th className="w-[20%] px-4 py-2.5 font-semibold">Plan</th>
+                      <th className="w-[16%] px-4 py-2.5 font-semibold">Payment</th>
+                      <th className="w-[14%] px-4 py-2.5 font-semibold">Status</th>
+                      <th className="w-[12%] px-4 py-2.5 font-semibold">Last Login</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {(data?.subscribers.rows ?? []).map((row) => (
                       <tr key={row.id} className="hover:bg-slate-50/80">
-                        <td className="px-4 py-2.5 font-medium text-slate-900">{row.name}</td>
-                        <td className="px-4 py-2.5 text-slate-700">{row.email}</td>
-                        <td className="px-4 py-2.5 text-slate-700">{row.subscriptionPlan}</td>
-                        <td className="px-4 py-2.5 text-slate-700">{row.paymentStatus}</td>
-                        <td className="px-4 py-2.5 text-slate-700">{row.lastLogin}</td>
-                        <td className="px-4 py-2.5 text-slate-700">{row.joinDate}</td>
-                        <td className="px-4 py-2.5 text-slate-700">{row.accountStatus}</td>
+                        <td className="px-4 py-2.5">
+                          <p className="truncate font-medium text-slate-900">{row.name}</p>
+                          <p className="truncate text-xs text-slate-500">{row.email}</p>
+                        </td>
+                        <td className="truncate px-4 py-2.5 text-slate-700">{row.subscriptionPlan}</td>
+                        <td className="px-4 py-2.5">
+                          <span className={cn("inline-flex rounded-full px-2 py-0.5 text-xs font-semibold", statusBadgeClass(row.paymentStatus))}>
+                            {row.paymentStatus}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <span className={cn("inline-flex rounded-full px-2 py-0.5 text-xs font-semibold", statusBadgeClass(row.accountStatus))}>
+                            {row.accountStatus}
+                          </span>
+                        </td>
+                        <td className="truncate px-4 py-2.5 text-slate-700">{row.lastLogin.split(",")[0]}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -502,25 +529,30 @@ export function AdminDashboardHome() {
               Total users currently on trial: <span className="font-semibold">{data?.trialUsers.total ?? 0}</span>
             </div>
             {(data?.trialUsers.rows?.length ?? 0) > 0 ? (
-              <div className="overflow-x-auto rounded-xl border border-slate-200">
-                <table className="min-w-[700px] w-full text-left text-sm">
+              <div className="rounded-xl border border-slate-200">
+                <table className="w-full table-fixed text-left text-sm">
                   <thead className="bg-slate-50 text-slate-600">
                     <tr>
-                      <th className="px-4 py-2.5 font-semibold">Name</th>
-                      <th className="px-4 py-2.5 font-semibold">Email</th>
-                      <th className="px-4 py-2.5 font-semibold">Trial Start Date</th>
-                      <th className="px-4 py-2.5 font-semibold">Days Remaining</th>
-                      <th className="px-4 py-2.5 font-semibold">Conversion Status</th>
+                      <th className="w-[45%] px-4 py-2.5 font-semibold">Name / Email</th>
+                      <th className="w-[22%] px-4 py-2.5 font-semibold">Trial Start</th>
+                      <th className="w-[13%] px-4 py-2.5 font-semibold">Days Left</th>
+                      <th className="w-[20%] px-4 py-2.5 font-semibold">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {(data?.trialUsers.rows ?? []).map((row) => (
                       <tr key={row.id} className="hover:bg-slate-50/80">
-                        <td className="px-4 py-2.5 font-medium text-slate-900">{row.name}</td>
-                        <td className="px-4 py-2.5 text-slate-700">{row.email}</td>
-                        <td className="px-4 py-2.5 text-slate-700">{row.trialStartDate}</td>
+                        <td className="px-4 py-2.5">
+                          <p className="truncate font-medium text-slate-900">{row.name}</p>
+                          <p className="truncate text-xs text-slate-500">{row.email}</p>
+                        </td>
+                        <td className="truncate px-4 py-2.5 text-slate-700">{row.trialStartDate}</td>
                         <td className="px-4 py-2.5 text-slate-700">{row.daysRemaining}</td>
-                        <td className="px-4 py-2.5 text-slate-700">{row.conversionStatus}</td>
+                        <td className="px-4 py-2.5">
+                          <span className={cn("inline-flex rounded-full px-2 py-0.5 text-xs font-semibold", statusBadgeClass(row.conversionStatus))}>
+                            {row.conversionStatus}
+                          </span>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -536,25 +568,30 @@ export function AdminDashboardHome() {
               Expired trials in range: <span className="font-semibold">{data?.expiredTrialUsers.total ?? 0}</span>
             </div>
             {(data?.expiredTrialUsers.rows?.length ?? 0) > 0 ? (
-              <div className="overflow-x-auto rounded-xl border border-slate-200">
-                <table className="min-w-[760px] w-full text-left text-sm">
+              <div className="rounded-xl border border-slate-200">
+                <table className="w-full table-fixed text-left text-sm">
                   <thead className="bg-slate-50 text-slate-600">
                     <tr>
-                      <th className="px-4 py-2.5 font-semibold">Name</th>
-                      <th className="px-4 py-2.5 font-semibold">Email</th>
-                      <th className="px-4 py-2.5 font-semibold">Trial Expiration Date</th>
-                      <th className="px-4 py-2.5 font-semibold">Days Since Expiration</th>
-                      <th className="px-4 py-2.5 font-semibold">Re-engagement Status</th>
+                      <th className="w-[42%] px-4 py-2.5 font-semibold">Name / Email</th>
+                      <th className="w-[22%] px-4 py-2.5 font-semibold">Expired On</th>
+                      <th className="w-[14%] px-4 py-2.5 font-semibold">Days</th>
+                      <th className="w-[22%] px-4 py-2.5 font-semibold">Re-engagement</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {(data?.expiredTrialUsers.rows ?? []).map((row) => (
                       <tr key={row.id} className="hover:bg-slate-50/80">
-                        <td className="px-4 py-2.5 font-medium text-slate-900">{row.name}</td>
-                        <td className="px-4 py-2.5 text-slate-700">{row.email}</td>
-                        <td className="px-4 py-2.5 text-slate-700">{row.trialExpirationDate}</td>
+                        <td className="px-4 py-2.5">
+                          <p className="truncate font-medium text-slate-900">{row.name}</p>
+                          <p className="truncate text-xs text-slate-500">{row.email}</p>
+                        </td>
+                        <td className="truncate px-4 py-2.5 text-slate-700">{row.trialExpirationDate}</td>
                         <td className="px-4 py-2.5 text-slate-700">{row.daysSinceExpiration}</td>
-                        <td className="px-4 py-2.5 text-slate-700">{row.reengagementStatus}</td>
+                        <td className="px-4 py-2.5">
+                          <span className={cn("inline-flex rounded-full px-2 py-0.5 text-xs font-semibold", statusBadgeClass(row.reengagementStatus))}>
+                            {row.reengagementStatus}
+                          </span>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -573,28 +610,29 @@ export function AdminDashboardHome() {
               <span className="font-semibold">{data?.failedPayments.total ?? 0}</span>
             </div>
             {(data?.failedPayments.rows?.length ?? 0) > 0 ? (
-              <div className="overflow-x-auto rounded-xl border border-slate-200">
-                <table className="min-w-[980px] w-full text-left text-sm">
+              <div className="rounded-xl border border-slate-200">
+                <table className="w-full table-fixed text-left text-sm">
                   <thead className="bg-slate-50 text-slate-600">
                     <tr>
-                      <th className="px-4 py-2.5 font-semibold">Customer Name</th>
-                      <th className="px-4 py-2.5 font-semibold">Email</th>
-                      <th className="px-4 py-2.5 font-semibold">Failed Payment Date</th>
-                      <th className="px-4 py-2.5 font-semibold">Amount</th>
-                      <th className="px-4 py-2.5 font-semibold">Failure Reason</th>
-                      <th className="px-4 py-2.5 font-semibold">Retry Status</th>
+                      <th className="w-[32%] px-4 py-2.5 font-semibold">Name / Email</th>
+                      <th className="w-[18%] px-4 py-2.5 font-semibold">Failed On</th>
+                      <th className="w-[12%] px-4 py-2.5 font-semibold">Amount</th>
+                      <th className="w-[23%] px-4 py-2.5 font-semibold">Reason</th>
+                      <th className="w-[15%] px-4 py-2.5 font-semibold">Retry</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {(data?.failedPayments.rows ?? []).map((row) => (
                       <tr key={row.id} className="hover:bg-slate-50/80">
-                        <td className="px-4 py-2.5 font-medium text-slate-900">{row.customerName}</td>
-                        <td className="px-4 py-2.5 text-slate-700">{row.email}</td>
-                        <td className="px-4 py-2.5 text-slate-700">{row.failedPaymentDate}</td>
-                        <td className="px-4 py-2.5 font-semibold text-slate-900">{row.displayAmount}</td>
-                        <td className="px-4 py-2.5 text-slate-700">{row.failureReason}</td>
                         <td className="px-4 py-2.5">
-                          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+                          <p className="truncate font-medium text-slate-900">{row.customerName}</p>
+                          <p className="truncate text-xs text-slate-500">{row.email}</p>
+                        </td>
+                        <td className="truncate px-4 py-2.5 text-slate-700">{row.failedPaymentDate}</td>
+                        <td className="px-4 py-2.5 font-semibold text-slate-900">{row.displayAmount}</td>
+                        <td className="truncate px-4 py-2.5 text-slate-700">{row.failureReason}</td>
+                        <td className="px-4 py-2.5">
+                          <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold", statusBadgeClass(row.retryStatus))}>
                             {row.retryStatus === "Recovered" ? <CheckCircle2 className="size-3.5 text-emerald-600" /> : <CreditCard className="size-3.5 text-rose-500" />}
                             {row.retryStatus}
                           </span>

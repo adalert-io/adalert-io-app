@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { endOfDay, format, startOfDay, subDays } from "date-fns";
+import { endOfDay, format, startOfDay, subDays, subMonths } from "date-fns";
 import { CalendarDays, ChevronDown } from "lucide-react";
 
 import type { DateRange } from "react-day-picker";
@@ -17,16 +17,17 @@ import { cn } from "@/lib/utils";
 
 function defaultRange(): DateRange {
   const to = endOfDay(new Date());
-  const from = startOfDay(subDays(to, 6));
+  const from = startOfDay(subMonths(to, 7));
   return { from, to };
 }
 
 const PRESETS: Array<{ label: string; days: number | "all" }> = [
-  { label: "All Time", days: "all" },
+  { label: "Last 7 months", days: 210 },
   { label: "Last 7 days", days: 7 },
   { label: "Last 14 days", days: 14 },
   { label: "Last 30 days", days: 30 },
   { label: "Last 90 days", days: 90 },
+  { label: "All Time", days: "all" },
 ];
 
 function formatDashboardRangeLabel(range: DateRange | undefined): string {
@@ -62,7 +63,7 @@ export function AdminDashboardDateRangePicker({
   onChange,
 }: AdminDashboardDateRangePickerProps) {
   const [isOpen, setIsOpen] = React.useState(false);
-  const [internalRange, setInternalRange] = React.useState<DateRange | undefined>(undefined);
+  const [internalRange, setInternalRange] = React.useState<DateRange | undefined>(defaultRange);
 
   const range = value ?? internalRange;
 
