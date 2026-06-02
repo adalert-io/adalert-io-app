@@ -168,7 +168,7 @@ function SectionShell({
   children: ReactNode;
 }) {
   return (
-    <Card className="h-fit self-start rounded-2xl border border-slate-200/90 bg-white py-0 shadow-md">
+    <Card className="h-full rounded-2xl border border-slate-200/90 bg-white py-0 shadow-md">
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-6 py-5">
         <div>
           <p className="text-lg font-semibold text-slate-900">{title}</p>
