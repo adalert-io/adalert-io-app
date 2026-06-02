@@ -372,60 +372,6 @@ export function AdminDashboardHome() {
         <section>
           <SectionShell title="Revenue & Invoices" subtitle="Revenue summary and paid invoice performance">
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
-                  <p className="text-xs text-slate-500">Total Revenue</p>
-                  <p className="mt-1 text-lg font-semibold text-slate-900">
-                    {isLoading ? "—" : (data?.revenue.displayTotal ?? "$0")}
-                  </p>
-                </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
-                  <p className="text-xs text-slate-500">Paid Invoices</p>
-                  <p className="mt-1 text-lg font-semibold text-slate-900">
-                    {isLoading ? "—" : String(data?.revenue.paidInvoices ?? 0)}
-                  </p>
-                </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
-                  <p className="text-xs text-slate-500">Average Invoice Value</p>
-                  <p className="mt-1 text-lg font-semibold text-slate-900">
-                    {isLoading ? "—" : (data?.revenue.displayAverageInvoiceValue ?? "$0")}
-                  </p>
-                </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
-                  <p className="text-xs text-slate-500">Best Month Revenue</p>
-                  <p className="mt-1 text-lg font-semibold text-slate-900">
-                    {isLoading ? "—" : (data?.revenue.displayBestMonthRevenue ?? "$0")}
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <div className="rounded-lg border border-slate-200 p-2.5">
-                  <p className="text-[11px] text-slate-500">Highest Revenue Month</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-900">
-                    {revenueInsights.highestLabel} · {revenueInsights.highestValue}
-                  </p>
-                </div>
-                <div className="rounded-lg border border-slate-200 p-2.5">
-                  <p className="text-[11px] text-slate-500">Lowest Revenue Month</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-900">
-                    {revenueInsights.lowestLabel} · {revenueInsights.lowestValue}
-                  </p>
-                </div>
-                <div className="rounded-lg border border-slate-200 p-2.5">
-                  <p className="text-[11px] text-slate-500">Revenue Trend</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-900">
-                    {revenueInsights.trendLabel}
-                  </p>
-                </div>
-                <div className="rounded-lg border border-slate-200 p-2.5">
-                  <p className="text-[11px] text-slate-500">Collection Rate</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-900">
-                    {isLoading ? "—" : `${data?.revenue.collectionRatePct ?? 0}%`}
-                  </p>
-                </div>
-              </div>
-
               <div className="h-[340px] w-full rounded-xl border border-slate-200 bg-white p-3">
                 {isLoading ? (
                   <div className="flex h-full items-center justify-center text-sm text-slate-500">
