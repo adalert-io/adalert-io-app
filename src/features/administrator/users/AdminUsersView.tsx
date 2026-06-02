@@ -17,8 +17,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
-type Role = "Master Admin" | "Admin" | "IT Support";
+type Role = "Master Admin" | "Admin";
 type UserStatus = "active" | "inactive";
+type AuthType = "sso" | "password";
 
 interface AdminUserRow {
   uid: string;
@@ -29,6 +30,7 @@ interface AdminUserRow {
   role: Role;
   status: UserStatus;
   isMasterAdmin: boolean;
+  authType: AuthType;
   lastSignInLabel: string;
 }
 
@@ -37,9 +39,7 @@ interface CreateUserFormState {
   lastName: string;
   email: string;
   username: string;
-  password: string;
-  confirmPassword: string;
-  role: "Admin" | "IT Support";
+  role: "Admin";
 }
 
 const SELECT_CLASS =
@@ -50,15 +50,12 @@ const INITIAL_FORM: CreateUserFormState = {
   lastName: "",
   email: "",
   username: "",
-  password: "",
-  confirmPassword: "",
   role: "Admin",
 };
 
 function roleBadgeClass(role: Role): string {
   if (role === "Master Admin") return "bg-violet-100 text-violet-700";
-  if (role === "Admin") return "bg-blue-100 text-blue-700";
-  return "bg-amber-100 text-amber-700";
+  return "bg-blue-100 text-blue-700";
 }
 
 function statusBadgeClass(status: UserStatus): string {
@@ -67,14 +64,18 @@ function statusBadgeClass(status: UserStatus): string {
     : "bg-rose-100 text-rose-700";
 }
 
+function authBadgeClass(authType: AuthType): string {
+  return authType === "sso"
+    ? "bg-sky-100 text-sky-700"
+    : "bg-slate-100 text-slate-700";
+}
+
 export function AdminUsersView() {
   const [rows, setRows] = useState<AdminUserRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<Role | "all">("all");
   const [statusFilter, setStatusFilter] = useState<UserStatus | "all">("all");
-  const [actorRole, setActorRole] = useState<Role>("Master Admin");
-  const [actorUid, setActorUid] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState<CreateUserFormState>(INITIAL_FORM);
@@ -85,16 +86,12 @@ export function AdminUsersView() {
       const response = await fetch("/api/admin/users", { cache: "no-store" });
       const payload = (await response.json()) as {
         users?: AdminUserRow[];
-        actorRole?: Role;
-        actorUid?: string | null;
         error?: string;
       };
       if (!response.ok) {
         throw new Error(payload.error || "Failed to load users");
       }
       setRows(payload.users ?? []);
-      setActorRole(payload.actorRole ?? "Master Admin");
-      setActorUid(payload.actorUid ?? null);
     } catch (error) {
       toast.error("Failed to load users");
       console.error(error);
@@ -128,16 +125,8 @@ export function AdminUsersView() {
   }, [rows, roleFilter, search, statusFilter]);
 
   const handleCreateUser = async () => {
-    if (!form.firstName.trim() || !form.lastName.trim() || !form.username.trim() || !form.password.trim()) {
+    if (!form.firstName.trim() || !form.lastName.trim() || !form.username.trim()) {
       toast.error("Please complete all required fields");
-      return;
-    }
-    if (form.password.length < 8) {
-      toast.error("Password must be at least 8 characters");
-      return;
-    }
-    if (form.password !== form.confirmPassword) {
-      toast.error("Password and confirm password do not match");
       return;
     }
 
@@ -147,15 +136,12 @@ export function AdminUsersView() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-admin-role": actorRole,
-          ...(actorUid ? { "x-admin-uid": actorUid } : {}),
         },
         body: JSON.stringify({
           firstName: form.firstName.trim(),
           lastName: form.lastName.trim(),
           email: form.email.trim(),
           username: form.username.trim(),
-          password: form.password,
           role: form.role,
         }),
       });
@@ -182,8 +168,6 @@ export function AdminUsersView() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "x-admin-role": actorRole,
-          ...(actorUid ? { "x-admin-uid": actorUid } : {}),
         },
         body: JSON.stringify({ uid: row.uid, action: nextAction }),
       });
@@ -210,8 +194,6 @@ export function AdminUsersView() {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          "x-admin-role": actorRole,
-          ...(actorUid ? { "x-admin-uid": actorUid } : {}),
         },
         body: JSON.stringify({ uid: row.uid }),
       });
@@ -257,13 +239,10 @@ export function AdminUsersView() {
           Role Permissions
         </p>
         <p className="mt-2 text-sm text-slate-700">
-          <strong>Master Admin:</strong> full access, can manage Admin and IT Support, cannot be deleted.
+          <strong>Master Admin:</strong> full access, can manage Admin users, cannot be deleted.
         </p>
         <p className="mt-1 text-sm text-slate-700">
-          <strong>Admin:</strong> can create Admin/IT Support, can manage IT Support, cannot modify Master Admin.
-        </p>
-        <p className="mt-1 text-sm text-slate-700">
-          <strong>IT Support:</strong> support ticket access only, no user-management controls.
+          <strong>Admin:</strong> standard administrator account with platform access.
         </p>
       </div>
 
@@ -288,7 +267,6 @@ export function AdminUsersView() {
             <option value="all">All Roles</option>
             <option value="Master Admin">Master Admin</option>
             <option value="Admin">Admin</option>
-            <option value="IT Support">IT Support</option>
           </select>
           <ChevronDown className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-gray-500" />
         </div>
@@ -327,6 +305,7 @@ export function AdminUsersView() {
                   <th className="px-4 py-3 font-semibold text-gray-700">Login Email</th>
                   <th className="px-4 py-3 font-semibold text-gray-700">Notification Email</th>
                   <th className="px-4 py-3 font-semibold text-gray-700">Role</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700">Auth</th>
                   <th className="px-4 py-3 font-semibold text-gray-700">Status</th>
                   <th className="px-4 py-3 font-semibold text-gray-700">Last Login</th>
                   <th className="px-4 py-3 text-center font-semibold text-gray-700">Actions</th>
@@ -334,7 +313,7 @@ export function AdminUsersView() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filtered.map((row) => {
-                  const canManage = actorRole !== "IT Support" && !row.isMasterAdmin && actorUid !== row.uid;
+                  const canManage = !row.isMasterAdmin;
                   return (
                     <tr key={row.uid} className="hover:bg-gray-50">
                       <td className="px-4 py-3.5 font-medium text-gray-900">{row.fullName}</td>
@@ -344,6 +323,11 @@ export function AdminUsersView() {
                       <td className="px-4 py-3.5">
                         <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", roleBadgeClass(row.role))}>
                           {row.role}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", authBadgeClass(row.authType))}>
+                          {row.authType === "sso" ? "SSO" : "Password"}
                         </span>
                       </td>
                       <td className="px-4 py-3.5">
@@ -416,24 +400,6 @@ export function AdminUsersView() {
               <Label htmlFor="username">Username</Label>
               <Input id="username" value={form.username} onChange={(event) => setForm((prev) => ({ ...prev, username: event.target.value }))} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={form.password}
-                onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirm-password">Confirm Password</Label>
-              <Input
-                id="confirm-password"
-                type="password"
-                value={form.confirmPassword}
-                onChange={(event) => setForm((prev) => ({ ...prev, confirmPassword: event.target.value }))}
-              />
-            </div>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="role">Role</Label>
               <div className="relative">
@@ -441,10 +407,9 @@ export function AdminUsersView() {
                   id="role"
                   className={cn(SELECT_CLASS, "min-w-full")}
                   value={form.role}
-                  onChange={(event) => setForm((prev) => ({ ...prev, role: event.target.value as "Admin" | "IT Support" }))}
+                  onChange={(event) => setForm((prev) => ({ ...prev, role: event.target.value as "Admin" }))}
                 >
                   <option value="Admin">Admin</option>
-                  <option value="IT Support">IT Support</option>
                 </select>
                 <ChevronDown className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-gray-500" />
               </div>
