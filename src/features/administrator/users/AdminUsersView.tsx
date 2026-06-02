@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronDown, Plus, Search } from "lucide-react";
+import { ChevronDown, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,8 @@ interface CreateUserFormState {
   lastName: string;
   email: string;
   username: string;
+  password: string;
+  confirmPassword: string;
   role: "Admin" | "IT Support";
 }
 
@@ -50,6 +52,8 @@ const INITIAL_FORM: CreateUserFormState = {
   lastName: "",
   email: "",
   username: "",
+  password: "",
+  confirmPassword: "",
   role: "Admin",
 };
 
@@ -74,9 +78,6 @@ function authBadgeClass(authType: AuthType): string {
 export function AdminUsersView() {
   const [rows, setRows] = useState<AdminUserRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState<Role | "all">("all");
-  const [statusFilter, setStatusFilter] = useState<UserStatus | "all">("all");
   const [addOpen, setAddOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState<CreateUserFormState>(INITIAL_FORM);
@@ -105,29 +106,19 @@ export function AdminUsersView() {
     void loadUsers();
   }, [loadUsers]);
 
-  const filtered = useMemo(() => {
-    let list = rows;
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      list = list.filter(
-        (row) =>
-          row.fullName.toLowerCase().includes(q) ||
-          row.username.toLowerCase().includes(q) ||
-          row.loginEmail.toLowerCase().includes(q),
-      );
-    }
-    if (roleFilter !== "all") {
-      list = list.filter((row) => row.role === roleFilter);
-    }
-    if (statusFilter !== "all") {
-      list = list.filter((row) => row.status === statusFilter);
-    }
-    return list;
-  }, [rows, roleFilter, search, statusFilter]);
+  const filtered = useMemo(() => rows, [rows]);
 
   const handleCreateUser = async () => {
-    if (!form.firstName.trim() || !form.lastName.trim() || !form.username.trim()) {
+    if (!form.firstName.trim() || !form.lastName.trim() || !form.username.trim() || !form.password.trim()) {
       toast.error("Please complete all required fields");
+      return;
+    }
+    if (form.password.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+    if (form.password !== form.confirmPassword) {
+      toast.error("Password and confirm password do not match");
       return;
     }
 
@@ -143,6 +134,7 @@ export function AdminUsersView() {
           lastName: form.lastName.trim(),
           email: form.email.trim(),
           username: form.username.trim(),
+          password: form.password,
           role: form.role,
         }),
       });
@@ -248,49 +240,6 @@ export function AdminUsersView() {
         <p className="mt-1 text-sm text-slate-700">
           <strong>IT Support:</strong> support-focused account with restricted operational scope.
         </p>
-      </div>
-
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-        <div className="flex min-w-[260px] flex-1 items-center gap-2 rounded-lg border border-[#e5e5e5] bg-white px-3 py-2 shadow-sm">
-          <Search className="size-4 shrink-0 text-[#015AFD]" aria-hidden />
-          <input
-            className="min-w-0 flex-1 border-none bg-transparent text-[13px] text-gray-700 outline-none placeholder:text-gray-400"
-            placeholder="Search by name, username, or login email"
-            value={search}
-            name="admin-users-search"
-            autoComplete="off"
-            onChange={(event) => setSearch(event.target.value)}
-          />
-        </div>
-
-        <div className="relative">
-          <select
-            className={cn(SELECT_CLASS, "min-w-[160px]")}
-            value={roleFilter}
-            onChange={(event) => setRoleFilter(event.target.value as Role | "all")}
-            aria-label="Filter users by role"
-          >
-            <option value="all">All Roles</option>
-            <option value="Master Admin">Master Admin</option>
-            <option value="Admin">Admin</option>
-            <option value="IT Support">IT Support</option>
-          </select>
-          <ChevronDown className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-gray-500" />
-        </div>
-
-        <div className="relative">
-          <select
-            className={cn(SELECT_CLASS, "min-w-[140px]")}
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value as UserStatus | "all")}
-            aria-label="Filter users by status"
-          >
-            <option value="all">All Statuses</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-          <ChevronDown className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-gray-500" />
-        </div>
       </div>
 
       {isLoading ? (
@@ -406,6 +355,24 @@ export function AdminUsersView() {
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <Input id="username" value={form.username} onChange={(event) => setForm((prev) => ({ ...prev, username: event.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={form.password}
+                onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                value={form.confirmPassword}
+                onChange={(event) => setForm((prev) => ({ ...prev, confirmPassword: event.target.value }))}
+              />
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="role">Role</Label>

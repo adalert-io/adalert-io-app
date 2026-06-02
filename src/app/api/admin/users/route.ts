@@ -3,7 +3,8 @@ import admin from "firebase-admin";
 
 import { ADMIN_PREVIEW_COOKIE } from "@/app/api/admin/customers/_lib";
 import { COLLECTIONS } from "@/lib/constants";
-import { getAdminFirestore } from "@/lib/firebase/admin";
+import { sendEmail } from "@/lib/email/sendgrid";
+import { getAdminAuth, getAdminFirestore } from "@/lib/firebase/admin";
 
 type ManagementRole = "Master Admin" | "Admin" | "IT Support";
 type UserStatus = "active" | "inactive";
@@ -27,6 +28,7 @@ interface CreateAdminUserBody {
   lastName?: string;
   email?: string;
   username?: string;
+  password?: string;
   role?: "Admin" | "IT Support";
 }
 
@@ -67,6 +69,58 @@ function buildLoginEmail(username: string): string {
   const normalized = normalizeUsername(username);
   if (normalized.includes("@")) return normalized;
   return `${normalized}@admin.adalert.io`;
+}
+
+async function sendAdminInviteEmail({
+  toEmail,
+  fullName,
+  loginEmail,
+  password,
+  role,
+}: {
+  toEmail: string;
+  fullName: string;
+  loginEmail: string;
+  password: string;
+  role: string;
+}) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://adalert.io";
+  const loginUrl = `${appUrl}/administrator/login`;
+  const subject = "Your adAlert.io admin account details";
+  const text = [
+    `Hi ${fullName},`,
+    "",
+    "Your administrator account has been created.",
+    "",
+    `Role: ${role}`,
+    `Login Email: ${loginEmail}`,
+    `Temporary Password: ${password}`,
+    "",
+    `Login here: ${loginUrl}`,
+    "",
+    "Please change your password after your first login.",
+  ].join("\n");
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.5;">
+      <p>Hi ${fullName},</p>
+      <p>Your administrator account has been created.</p>
+      <ul>
+        <li><strong>Role:</strong> ${role}</li>
+        <li><strong>Login Email:</strong> ${loginEmail}</li>
+        <li><strong>Temporary Password:</strong> ${password}</li>
+      </ul>
+      <p><a href="${loginUrl}">Login to adAlert.io Admin</a></p>
+      <p>Please change your password after your first login.</p>
+    </div>
+  `;
+
+  await sendEmail({
+    to: [toEmail],
+    subject,
+    text,
+    html,
+  });
 }
 
 function toUserRow(
@@ -168,15 +222,26 @@ export async function POST(request: NextRequest) {
     const firstName = body.firstName?.trim() || "";
     const lastName = body.lastName?.trim() || "";
     const username = body.username?.trim() || "";
+    const password = body.password?.trim() || "";
     const notificationEmail = body.email?.trim().toLowerCase() || "";
     const role = body.role;
 
-    if (!firstName || !lastName || !username || !role) {
+    if (!firstName || !lastName || !username || !password || !role) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+    if (password.length < 8) {
+      return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
     }
 
     const loginEmail = buildLoginEmail(username);
-    const uid = `${normalizeUsername(username)}-${Date.now().toString(36)}`;
+    const createdAuthUser = await getAdminAuth().createUser({
+      email: loginEmail,
+      password,
+      displayName: `${firstName} ${lastName}`.trim(),
+      emailVerified: false,
+      disabled: false,
+    });
+    const uid = createdAuthUser.uid;
     const now = admin.firestore.FieldValue.serverTimestamp();
     await getAdminFirestore().collection(COLLECTIONS.ADMIN_USERS).doc(uid).set({
       fullName: `${firstName} ${lastName}`.trim(),
@@ -191,6 +256,20 @@ export async function POST(request: NextRequest) {
       updatedAt: now,
       lastSignInAt: null,
     });
+
+    if (notificationEmail) {
+      try {
+        await sendAdminInviteEmail({
+          toEmail: notificationEmail,
+          fullName: `${firstName} ${lastName}`.trim(),
+          loginEmail,
+          password,
+          role,
+        });
+      } catch (emailError) {
+        console.error("Failed to send admin credentials email:", emailError);
+      }
+    }
 
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {
@@ -223,6 +302,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Master Admin cannot be modified" }, { status: 400 });
     }
 
+    await getAdminAuth().updateUser(uid, { disabled: action === "disable" });
     await userRef.update({
       status: action === "disable" ? "inactive" : "active",
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -257,7 +337,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Master Admin cannot be deleted" }, { status: 400 });
     }
 
-    await userRef.delete();
+    await Promise.all([getAdminAuth().deleteUser(uid), userRef.delete()]);
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(
