@@ -15,10 +15,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-/** Preview-only — must match `src/app/api/admin-preview-gate/route.ts` */
-const PREVIEW_ADMIN_EMAIL = "admin@adalert.io";
-const PREVIEW_ADMIN_PASSWORD = "eyJhbGciOiJIUzI1N12@";
-
 function PreviewLoginInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -42,14 +38,6 @@ function PreviewLoginInner() {
       return;
     }
 
-    if (
-      trimmedEmail !== PREVIEW_ADMIN_EMAIL.toLowerCase() ||
-      password !== PREVIEW_ADMIN_PASSWORD
-    ) {
-      toast.error("Incorrect email or password.");
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -64,7 +52,12 @@ function PreviewLoginInner() {
       });
 
       if (!response.ok) {
-        toast.error("Could not open the console. Try again.");
+        const payload = (await response.json().catch(() => ({}))) as { error?: string };
+        if (payload.error === "invalid_credentials") {
+          toast.error("Incorrect email or password.");
+        } else {
+          toast.error("Could not open the console. Try again.");
+        }
         setIsSubmitting(false);
         return;
       }
