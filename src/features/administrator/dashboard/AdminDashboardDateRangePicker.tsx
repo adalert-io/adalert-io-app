@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { format, subDays } from "date-fns";
+import { endOfDay, format, startOfDay, subDays } from "date-fns";
 import { CalendarDays, ChevronDown } from "lucide-react";
 
 import type { DateRange } from "react-day-picker";
@@ -16,10 +16,17 @@ import {
 import { cn } from "@/lib/utils";
 
 function defaultRange(): DateRange {
-  const to = new Date();
-  const from = subDays(to, 6);
+  const to = endOfDay(new Date());
+  const from = startOfDay(subDays(to, 6));
   return { from, to };
 }
+
+const PRESETS: Array<{ label: string; days: number }> = [
+  { label: "Last 7 days", days: 7 },
+  { label: "Last 14 days", days: 14 },
+  { label: "Last 30 days", days: 30 },
+  { label: "Last 90 days", days: 90 },
+];
 
 function formatDashboardRangeLabel(range: DateRange | undefined): string {
   if (!range?.from) {
@@ -58,6 +65,13 @@ export function AdminDashboardDateRangePicker({
 
   const range = value ?? internalRange;
 
+  const applyPreset = (days: number) => {
+    const to = endOfDay(new Date());
+    const from = startOfDay(subDays(to, days - 1));
+    applyRange({ from, to });
+    setIsOpen(false);
+  };
+
   const applyRange = (next: DateRange | undefined) => {
     if (onChange) {
       onChange(next);
@@ -84,19 +98,41 @@ export function AdminDashboardDateRangePicker({
           <ChevronDown className="size-4 text-slate-500" aria-hidden />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-auto p-0" sideOffset={8}>
-        <Calendar
-          mode="range"
-          defaultMonth={range?.from}
-          selected={range}
-          onSelect={(next) => {
-            applyRange(next);
-            if (next?.from && next?.to) {
-              setIsOpen(false);
-            }
-          }}
-          numberOfMonths={2}
-        />
+      <PopoverContent align="end" className="w-[min(96vw,760px)] p-0" sideOffset={8}>
+        <div className="flex flex-col gap-0 lg:flex-row">
+          <div className="border-b border-slate-200 p-3 lg:w-[180px] lg:border-r lg:border-b-0">
+            <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Quick ranges
+            </p>
+            <div className="grid grid-cols-2 gap-2 lg:grid-cols-1">
+              {PRESETS.map((preset) => (
+                <Button
+                  key={preset.label}
+                  type="button"
+                  variant="outline"
+                  className="h-9 justify-start rounded-lg border-slate-200 px-3 text-xs font-semibold"
+                  onClick={() => applyPreset(preset.days)}
+                >
+                  {preset.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+          <div className="p-2">
+            <Calendar
+              mode="range"
+              defaultMonth={range?.from}
+              selected={range}
+              onSelect={(next) => {
+                applyRange(next);
+                if (next?.from && next?.to) {
+                  setIsOpen(false);
+                }
+              }}
+              numberOfMonths={2}
+            />
+          </div>
+        </div>
       </PopoverContent>
     </Popover>
   );

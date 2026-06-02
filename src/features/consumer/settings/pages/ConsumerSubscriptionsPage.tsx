@@ -110,7 +110,7 @@ export default function SubscriptionsSubtab({
       statusBg = '#ffebee';
     } else if (status === SUBSCRIPTION_STATUS.PAYMENT_FAILED) {
       statusText = 'Payment Failed';
-      statusColor = '#ee1b23';
+      statusColor = '#ee1b23';  
       statusBg = '#ffebee';
     }
   }

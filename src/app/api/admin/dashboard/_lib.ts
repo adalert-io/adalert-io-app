@@ -1,11 +1,10 @@
 import admin from "firebase-admin";
+import type Stripe from "stripe";
 
-import { loadCustomersList } from "@/app/api/admin/customers/_lib";
-import { COLLECTIONS } from "@/lib/constants";
+import { formatDateLabel, loadCustomersList } from "@/app/api/admin/customers/_lib";
+import { COLLECTIONS, SUBSCRIPTION_PERIODS, SUBSCRIPTION_STATUS } from "@/lib/constants";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { getStripeServer } from "@/lib/stripe/get-stripe-server";
-
-export type AlertTone = "red" | "amber" | "yellow";
 
 export interface DashboardDateRange {
   from: Date;
@@ -19,21 +18,15 @@ export interface DashboardKpi {
   trendPositive: boolean;
 }
 
-export interface DashboardRecentAlert {
-  id: string;
-  company: string;
-  message: string;
-  date: string;
-  tone: AlertTone;
-}
-
 export interface DashboardOverview {
   range: { from: string; to: string };
   kpis: {
-    totalCustomers: DashboardKpi;
-    activeAdAccounts: DashboardKpi;
-    monthlyRecurringRevenue: DashboardKpi;
-    openAlerts: DashboardKpi;
+    totalRevenue: DashboardKpi;
+    paidInvoices: DashboardKpi;
+    activeSubscribers: DashboardKpi;
+    usersOnFreeTrial: DashboardKpi;
+    expiredTrialUsers: DashboardKpi;
+    failedPayments: DashboardKpi;
   };
   revenue: {
     total: number;
@@ -42,7 +35,71 @@ export interface DashboardOverview {
     trendPositive: boolean;
     chart: Array<{ label: string; value: number }>;
   };
-  recentAlerts: DashboardRecentAlert[];
+  invoices: {
+    totalPaidCount: number;
+    totalPaidAmount: number;
+    displayTotalPaidAmount: string;
+    recent: Array<{
+      id: string;
+      customerName: string;
+      amount: number;
+      displayAmount: string;
+      status: string;
+      date: string;
+    }>;
+  };
+  subscribers: {
+    total: number;
+    active: number;
+    trial: number;
+    canceled: number;
+    pastDue: number;
+    rows: Array<{
+      id: string;
+      name: string;
+      email: string;
+      subscriptionPlan: string;
+      paymentStatus: string;
+      lastLogin: string;
+      joinDate: string;
+      accountStatus: string;
+    }>;
+  };
+  trialUsers: {
+    total: number;
+    rows: Array<{
+      id: string;
+      name: string;
+      email: string;
+      trialStartDate: string;
+      daysRemaining: number;
+      conversionStatus: string;
+    }>;
+  };
+  expiredTrialUsers: {
+    total: number;
+    rows: Array<{
+      id: string;
+      name: string;
+      email: string;
+      trialExpirationDate: string;
+      daysSinceExpiration: number;
+      reengagementStatus: string;
+    }>;
+  };
+  failedPayments: {
+    total: number;
+    rows: Array<{
+      id: string;
+      customerName: string;
+      email: string;
+      failedPaymentDate: string;
+      amount: number;
+      displayAmount: string;
+      failureReason: string;
+      retryStatus: string;
+    }>;
+  };
 }
 
 function startOfDay(date: Date): Date {
@@ -111,155 +168,8 @@ function formatTrend(current: number, previous: number): { label: string; positi
   };
 }
 
-function severityToTone(severity: unknown): AlertTone {
-  const raw = typeof severity === "string" ? severity.toLowerCase() : "";
-  if (raw.includes("critical")) return "red";
-  if (raw.includes("medium")) return "amber";
-  return "yellow";
-}
-
-function formatAlertDate(value: unknown): string {
-  if (value instanceof admin.firestore.Timestamp) {
-    return value.toDate().toLocaleDateString("en-US", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  }
-  return "—";
-}
-
 function isInRange(date: Date, range: DashboardDateRange): boolean {
   return date.getTime() >= range.from.getTime() && date.getTime() <= range.to.getTime();
-}
-
-async function resolveCompanyNameByAdsAccountRef(
-  adsAccountRef: admin.firestore.DocumentReference,
-  cache: Map<string, string>,
-): Promise<string> {
-  if (cache.has(adsAccountRef.id)) {
-    return cache.get(adsAccountRef.id)!;
-  }
-
-  const db = getAdminFirestore();
-  try {
-    const adsAccountSnap = await adsAccountRef.get();
-    if (!adsAccountSnap.exists) {
-      cache.set(adsAccountRef.id, "Unknown company");
-      return "Unknown company";
-    }
-
-    const adsData = adsAccountSnap.data() as Record<string, unknown>;
-    const userRef = adsData["User"];
-    if (!(userRef instanceof admin.firestore.DocumentReference)) {
-      cache.set(adsAccountRef.id, "Unknown company");
-      return "Unknown company";
-    }
-
-    const userSnap = await userRef.get();
-    if (!userSnap.exists) {
-      cache.set(adsAccountRef.id, "Unknown company");
-      return "Unknown company";
-    }
-
-    const userData = userSnap.data() as Record<string, unknown>;
-    const company =
-      (typeof userData["Company Name"] === "string" && userData["Company Name"].trim()) ||
-      (typeof userData["Company"] === "string" && userData["Company"].trim()) ||
-      (typeof userData["Name"] === "string" && userData["Name"].trim()) ||
-      "Unknown company";
-    cache.set(adsAccountRef.id, company);
-    return company;
-  } catch {
-    cache.set(adsAccountRef.id, "Unknown company");
-    return "Unknown company";
-  }
-}
-
-async function loadAlertsSnapshot(limit = 1200) {
-  const db = getAdminFirestore();
-  try {
-    return await db
-      .collection(COLLECTIONS.ALERTS)
-      .orderBy("Date Found", "desc")
-      .limit(limit)
-      .get();
-  } catch {
-    return await db.collection(COLLECTIONS.ALERTS).limit(limit).get();
-  }
-}
-
-async function loadAlertsData(range: DashboardDateRange) {
-  const previous = previousRange(range);
-  const snap = await loadAlertsSnapshot();
-  const companyCache = new Map<string, string>();
-
-  let openInRange = 0;
-  let openInPrevious = 0;
-  let openTotal = 0;
-
-  const candidates: Array<{
-    id: string;
-    company: string;
-    message: string;
-    date: string;
-    tone: AlertTone;
-    foundAt: Date;
-    isOpen: boolean;
-  }> = [];
-
-  for (const doc of snap.docs) {
-    const data = doc.data() as Record<string, unknown>;
-    const isArchived = data["Is Archived"] === true;
-    if (!isArchived) {
-      openTotal += 1;
-    }
-
-    const foundAt =
-      data["Date Found"] instanceof admin.firestore.Timestamp
-        ? data["Date Found"].toDate()
-        : null;
-    if (!foundAt) continue;
-
-    if (!isArchived && isInRange(foundAt, range)) openInRange += 1;
-    if (!isArchived && isInRange(foundAt, previous)) openInPrevious += 1;
-
-    const adsAccountRef = data["Ads Account"];
-    const company =
-      adsAccountRef instanceof admin.firestore.DocumentReference
-        ? await resolveCompanyNameByAdsAccountRef(adsAccountRef, companyCache)
-        : "Unknown company";
-
-    const message =
-      (typeof data["Long Description Plain Text"] === "string" &&
-        data["Long Description Plain Text"].trim()) ||
-      (typeof data.Alert === "string" && data.Alert.trim()) ||
-      (typeof data["Long Description"] === "string" && data["Long Description"].trim()) ||
-      "Alert detected";
-
-    candidates.push({
-      id: doc.id,
-      company,
-      message,
-      date: formatAlertDate(data["Date Found"]),
-      tone: severityToTone(data.Severity),
-      foundAt,
-      isOpen: !isArchived,
-    });
-  }
-
-  const recentAlerts = candidates
-    .filter((row) => row.isOpen)
-    .sort((a, b) => b.foundAt.getTime() - a.foundAt.getTime())
-    .slice(0, 8)
-    .map(({ id, company, message, date, tone }) => ({ id, company, message, date, tone }));
-
-  return {
-    openTotal,
-    openInRange,
-    openInPrevious,
-    recentAlerts,
-  };
 }
 
 function dayChartLabel(unixSeconds: number): string {
@@ -343,7 +253,7 @@ async function loadStripeRevenue(range: DashboardDateRange) {
   };
 }
 
-function buildEmptyDailyChart(range: DashboardDateRange) {
+function buildEmptyDailyChart(range: DashboardDateRange): Array<{ label: string; value: number }> {
   return buildDailyChartFromMap(range, new Map());
 }
 
@@ -361,84 +271,321 @@ function buildDailyChartFromMap(range: DashboardDateRange, daily: Map<string, nu
   return points;
 }
 
-async function countCustomersCreatedInRange(range: DashboardDateRange): Promise<number> {
-  const db = getAdminFirestore();
-  const snap = await db.collection(COLLECTIONS.USERS).get();
-  let count = 0;
-
-  for (const doc of snap.docs) {
-    const data = doc.data() as Record<string, unknown>;
-    const companyAdmin = data["Company Admin"];
-    const isCompanyAdmin =
-      companyAdmin instanceof admin.firestore.DocumentReference
-        ? companyAdmin.id === doc.id
-        : true;
-    if (!isCompanyAdmin) continue;
-
-    const created =
-      data["Created Date"] instanceof admin.firestore.Timestamp
-        ? data["Created Date"].toDate()
-        : data.createdAt instanceof admin.firestore.Timestamp
-          ? data.createdAt.toDate()
-          : null;
-    if (created && isInRange(created, range)) {
-      count += 1;
-    }
-  }
-
-  return count;
+function formatDateTime(value: Date): string {
+  return value.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
-async function countAdAccountsConnectedInRange(range: DashboardDateRange): Promise<number> {
-  const db = getAdminFirestore();
-  const snap = await db.collection(COLLECTIONS.ADS_ACCOUNTS).where("Is Connected", "==", true).get();
-  let count = 0;
+function statusLabel(value: string): string {
+  return value
+    .replace(/_/g, " ")
+    .split(" ")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
 
-  for (const doc of snap.docs) {
-    const data = doc.data() as Record<string, unknown>;
-    const created =
-      data["Created Date"] instanceof admin.firestore.Timestamp
-        ? data["Created Date"].toDate()
+type StripeInvoicesList = Awaited<ReturnType<NonNullable<ReturnType<typeof getStripeServer>>["invoices"]["list"]>>["data"];
+
+async function listAllStripeInvoices(stripe: NonNullable<ReturnType<typeof getStripeServer>>): Promise<StripeInvoicesList> {
+  const invoices: StripeInvoicesList = [];
+  let startingAfter: string | undefined;
+  while (true) {
+    const page = await stripe.invoices.list({
+      limit: 100,
+      ...(startingAfter ? { starting_after: startingAfter } : {}),
+    });
+    invoices.push(...page.data);
+    if (!page.has_more || page.data.length === 0) break;
+    startingAfter = page.data[page.data.length - 1]?.id;
+  }
+  return invoices;
+}
+
+async function listAllStripeCharges(stripe: NonNullable<ReturnType<typeof getStripeServer>>): Promise<Stripe.Charge[]> {
+  const charges: Stripe.Charge[] = [];
+  let startingAfter: string | undefined;
+  while (true) {
+    const page = await stripe.charges.list({
+      limit: 100,
+      expand: ["data.customer"],
+      ...(startingAfter ? { starting_after: startingAfter } : {}),
+    });
+    charges.push(...page.data);
+    if (!page.has_more || page.data.length === 0) break;
+    startingAfter = page.data[page.data.length - 1]?.id;
+  }
+  return charges;
+}
+
+function inRangeFromUnix(unixSeconds: number | null | undefined, range: DashboardDateRange): boolean {
+  if (!unixSeconds) return false;
+  const at = unixSeconds * 1000;
+  return at >= range.from.getTime() && at <= range.to.getTime();
+}
+
+async function loadPaidInvoicesSummary(range: DashboardDateRange) {
+  const previous = previousRange(range);
+  const stripe = getStripeServer();
+  if (!stripe) {
+    return {
+      countInRange: 0,
+      countInPrevious: 0,
+      totalPaidAmountInRange: 0,
+      recent: [] as DashboardOverview["invoices"]["recent"],
+    };
+  }
+
+  const invoices = await listAllStripeInvoices(stripe);
+  const paidInvoices = invoices.filter((invoice) => invoice.status === "paid");
+  const paidInRange = paidInvoices.filter((invoice) =>
+    inRangeFromUnix(
+      invoice.status_transitions?.paid_at ?? invoice.effective_at ?? invoice.created,
+      range,
+    ),
+  );
+  const paidInPrevious = paidInvoices.filter((invoice) =>
+    inRangeFromUnix(
+      invoice.status_transitions?.paid_at ?? invoice.effective_at ?? invoice.created,
+      previous,
+    ),
+  );
+
+  const recent = paidInRange
+    .sort(
+      (a, b) =>
+        (b.status_transitions?.paid_at ?? b.effective_at ?? b.created) -
+        (a.status_transitions?.paid_at ?? a.effective_at ?? a.created),
+    )
+    .slice(0, 6)
+    .map((invoice) => {
+      const paidAtUnix =
+        invoice.status_transitions?.paid_at ?? invoice.effective_at ?? invoice.created;
+      const customerName =
+        typeof invoice.customer_name === "string" && invoice.customer_name.trim()
+          ? invoice.customer_name.trim()
+          : typeof invoice.customer_email === "string" && invoice.customer_email.trim()
+            ? invoice.customer_email.trim()
+            : "Unknown customer";
+      const amount = (invoice.amount_paid ?? 0) / 100;
+      return {
+        id: invoice.number ?? invoice.id ?? "—",
+        customerName,
+        amount,
+        displayAmount: formatCurrency(amount),
+        status: statusLabel(invoice.status ?? "unknown"),
+        date: formatDateTime(new Date(paidAtUnix * 1000)),
+      };
+    });
+
+  const totalPaidAmountInRange = paidInRange.reduce((sum, invoice) => sum + (invoice.amount_paid ?? 0) / 100, 0);
+
+  return {
+    countInRange: paidInRange.length,
+    countInPrevious: paidInPrevious.length,
+    totalPaidAmountInRange: Math.round(totalPaidAmountInRange * 100) / 100,
+    recent,
+  };
+}
+
+async function loadSubscriberData(range: DashboardDateRange) {
+  const db = getAdminFirestore();
+  const [usersSnap, subscriptionsSnap, trackersSnap] = await Promise.all([
+    db.collection(COLLECTIONS.USERS).get(),
+    db.collection(COLLECTIONS.SUBSCRIPTIONS).get(),
+    db.collection(COLLECTIONS.AUTH_TRACKERS).get(),
+  ]);
+
+  const usersById = new Map<string, Record<string, unknown>>();
+  usersSnap.docs.forEach((doc) => usersById.set(doc.id, (doc.data() ?? {}) as Record<string, unknown>));
+
+  const lastLoginByUserId = new Map<string, Date>();
+  trackersSnap.docs.forEach((doc) => {
+    const data = (doc.data() ?? {}) as Record<string, unknown>;
+    const userRef = data["User"];
+    const modified = data["Modified Date"];
+    if (!(userRef instanceof admin.firestore.DocumentReference)) return;
+    if (!(modified instanceof admin.firestore.Timestamp)) return;
+    lastLoginByUserId.set(userRef.id, modified.toDate());
+  });
+
+  const now = new Date();
+  const rows: DashboardOverview["subscribers"]["rows"] = [];
+  const trialRows: DashboardOverview["trialUsers"]["rows"] = [];
+  const expiredTrialRows: DashboardOverview["expiredTrialUsers"]["rows"] = [];
+
+  let active = 0;
+  let trial = 0;
+  let canceled = 0;
+  let pastDue = 0;
+
+  subscriptionsSnap.docs.forEach((doc) => {
+    const data = (doc.data() ?? {}) as Record<string, unknown>;
+    const userRef = data["User"];
+    if (!(userRef instanceof admin.firestore.DocumentReference)) return;
+    const userData = usersById.get(userRef.id) ?? {};
+    const statusRaw = typeof data["User Status"] === "string" ? data["User Status"] : "Unknown";
+    const statusLower = statusRaw.toLowerCase();
+    const planRaw = typeof data["Subscription Plan"] === "string" ? data["Subscription Plan"] : "Professional";
+    const createdTimestamp = data["Created Date"] instanceof admin.firestore.Timestamp
+      ? data["Created Date"]
+      : data.createdAt instanceof admin.firestore.Timestamp
+        ? data.createdAt
         : null;
-    if (!created || isInRange(created, range)) {
-      count += 1;
+    const joinDate = createdTimestamp?.toDate() ?? null;
+    const name =
+      (typeof userData["Company Name"] === "string" && userData["Company Name"].trim()) ||
+      (typeof userData["Company"] === "string" && userData["Company"].trim()) ||
+      (typeof userData["Name"] === "string" && userData["Name"].trim()) ||
+      "Unknown customer";
+    const email =
+      (typeof userData["Email"] === "string" && userData["Email"].trim()) ||
+      (typeof userData.email === "string" && userData.email.trim()) ||
+      "unknown@example.com";
+
+    if (statusRaw === SUBSCRIPTION_STATUS.ACTIVE || statusRaw === SUBSCRIPTION_STATUS.PAYING) {
+      active += 1;
+    } else if (statusRaw === SUBSCRIPTION_STATUS.TRIAL_NEW) {
+      trial += 1;
+    } else if (statusRaw === SUBSCRIPTION_STATUS.PAYMENT_FAILED) {
+      pastDue += 1;
+    } else if (statusRaw === SUBSCRIPTION_STATUS.CANCELED || statusRaw === SUBSCRIPTION_STATUS.TRIAL_ENDED) {
+      canceled += 1;
     }
+
+    rows.push({
+      id: doc.id,
+      name,
+      email,
+      subscriptionPlan: planRaw,
+      paymentStatus: statusLabel(statusLower.replace(/\s+/g, "_")),
+      lastLogin: lastLoginByUserId.get(userRef.id) ? formatDateTime(lastLoginByUserId.get(userRef.id) as Date) : "—",
+      joinDate: joinDate ? formatDateLabel(joinDate) : "—",
+      accountStatus: statusLabel(statusLower.replace(/\s+/g, "_")),
+    });
+
+    const trialStart = data["Free Trial Start Date"] instanceof admin.firestore.Timestamp
+      ? data["Free Trial Start Date"].toDate()
+      : null;
+    if (!trialStart) return;
+
+    const trialEnd = new Date(trialStart);
+    trialEnd.setDate(trialEnd.getDate() + SUBSCRIPTION_PERIODS.TRIAL_DAYS);
+    if (!isInRange(trialStart, range) && !isInRange(trialEnd, range)) return;
+
+    const diffDays = Math.ceil((trialEnd.getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
+    if (statusRaw === SUBSCRIPTION_STATUS.TRIAL_NEW && diffDays >= 0) {
+      trialRows.push({
+        id: doc.id,
+        name,
+        email,
+        trialStartDate: formatDateLabel(trialStart),
+        daysRemaining: diffDays,
+        conversionStatus: "In trial",
+      });
+    }
+    if (statusRaw === SUBSCRIPTION_STATUS.TRIAL_ENDED || diffDays < 0) {
+      expiredTrialRows.push({
+        id: doc.id,
+        name,
+        email,
+        trialExpirationDate: formatDateLabel(trialEnd),
+        daysSinceExpiration: Math.max(Math.abs(diffDays), 0),
+        reengagementStatus:
+          statusRaw === SUBSCRIPTION_STATUS.ACTIVE || statusRaw === SUBSCRIPTION_STATUS.PAYING
+            ? "Converted"
+            : "Needs outreach",
+      });
+    }
+  });
+
+  return {
+    subscribers: {
+      total: rows.length,
+      active,
+      trial,
+      canceled,
+      pastDue,
+      rows: rows.slice(0, 8),
+    },
+    trialUsers: {
+      total: trialRows.length,
+      rows: trialRows.slice(0, 8),
+    },
+    expiredTrialUsers: {
+      total: expiredTrialRows.length,
+      rows: expiredTrialRows.slice(0, 8),
+    },
+  };
+}
+
+async function loadFailedPayments(range: DashboardDateRange) {
+  const stripe = getStripeServer();
+  if (!stripe) {
+    return { total: 0, previousTotal: 0, rows: [] as DashboardOverview["failedPayments"]["rows"] };
   }
 
-  return count;
+  const previous = previousRange(range);
+  const charges = await listAllStripeCharges(stripe);
+  const failedCharges = charges.filter((charge) => charge.status === "failed");
+
+  const currentRows = failedCharges.filter((charge) => inRangeFromUnix(charge.created, range));
+  const previousRows = failedCharges.filter((charge) => inRangeFromUnix(charge.created, previous));
+
+  const rows = currentRows
+    .sort((a, b) => b.created - a.created)
+    .slice(0, 8)
+    .map((charge) => {
+      const customer = charge.customer as Stripe.Customer | null;
+      const customerName =
+        customer?.name?.trim() || customer?.email?.trim() || charge.billing_details?.name || "Unknown customer";
+      const email = customer?.email?.trim() || charge.billing_details?.email || "—";
+      const amount = (charge.amount ?? 0) / 100;
+      return {
+        id: charge.id,
+        customerName,
+        email,
+        failedPaymentDate: formatDateTime(new Date(charge.created * 1000)),
+        amount,
+        displayAmount: formatCurrency(amount),
+        failureReason: charge.failure_message || "Payment could not be processed",
+        retryStatus: charge.paid ? "Recovered" : "Retry required",
+      };
+    });
+
+  return {
+    total: currentRows.length,
+    previousTotal: previousRows.length,
+    rows,
+  };
 }
+
 
 export async function loadAdminDashboardOverview(
   range: DashboardDateRange,
 ): Promise<DashboardOverview> {
-  const previous = previousRange(range);
-
-  const [customers, alertsData, revenue, customersInRange, customersInPrevious, accountsInRange, accountsInPrevious] =
+  const [
+    customers,
+    revenue,
+    paidInvoices,
+    subscriberData,
+    failedPaymentsData,
+  ] =
     await Promise.all([
       loadCustomersList(),
-      loadAlertsData(range),
       loadStripeRevenue(range),
-      countCustomersCreatedInRange(range),
-      countCustomersCreatedInRange(previous),
-      countAdAccountsConnectedInRange(range),
-      countAdAccountsConnectedInRange(previous),
+      loadPaidInvoicesSummary(range),
+      loadSubscriberData(range),
+      loadFailedPayments(range),
     ]);
 
-  const [connectedAdAccounts] = await Promise.all([
-    (async () => {
-      const db = getAdminFirestore();
-      const snap = await db
-        .collection(COLLECTIONS.ADS_ACCOUNTS)
-        .where("Is Connected", "==", true)
-        .get();
-      return snap.size;
-    })(),
-  ]);
-
-  const customerTrend = formatTrend(customersInRange, customersInPrevious);
-  const adAccountTrend = formatTrend(accountsInRange, accountsInPrevious);
-  const alertTrend = formatTrend(alertsData.openInRange, alertsData.openInPrevious);
+  const paidInvoiceTrend = formatTrend(paidInvoices.countInRange, paidInvoices.countInPrevious);
   const revenueTrend = formatTrend(revenue.total, revenue.previousTotal);
+  const failedPaymentsTrend = formatTrend(failedPaymentsData.total, failedPaymentsData.previousTotal);
 
   return {
     range: {
@@ -446,29 +593,41 @@ export async function loadAdminDashboardOverview(
       to: range.to.toISOString(),
     },
     kpis: {
-      totalCustomers: {
-        value: customers.metrics.total,
-        displayValue: formatCount(customers.metrics.total),
-        trendLabel: customerTrend.label,
-        trendPositive: customerTrend.positive,
+      totalRevenue: {
+        value: revenue.total,
+        displayValue: formatCurrency(revenue.total),
+        trendLabel: revenueTrend.label,
+        trendPositive: revenueTrend.positive,
       },
-      activeAdAccounts: {
-        value: connectedAdAccounts,
-        displayValue: formatCount(connectedAdAccounts),
-        trendLabel: adAccountTrend.label,
-        trendPositive: adAccountTrend.positive,
+      paidInvoices: {
+        value: paidInvoices.countInRange,
+        displayValue: formatCount(paidInvoices.countInRange),
+        trendLabel: paidInvoiceTrend.label,
+        trendPositive: paidInvoiceTrend.positive,
       },
-      monthlyRecurringRevenue: {
-        value: customers.metrics.mrr,
-        displayValue: formatCurrency(customers.metrics.mrr),
-        trendLabel: `${formatCount(customers.metrics.active)} active · ${formatCount(customers.metrics.pastDue)} past due`,
-        trendPositive: customers.metrics.pastDue === 0,
+      activeSubscribers: {
+        value: subscriberData.subscribers.active,
+        displayValue: formatCount(subscriberData.subscribers.active),
+        trendLabel: `${formatCount(subscriberData.subscribers.total)} total subscribers`,
+        trendPositive: subscriberData.subscribers.active >= subscriberData.subscribers.pastDue,
       },
-      openAlerts: {
-        value: alertsData.openTotal,
-        displayValue: formatCount(alertsData.openTotal),
-        trendLabel: alertTrend.label,
-        trendPositive: alertsData.openInRange <= alertsData.openInPrevious,
+      usersOnFreeTrial: {
+        value: subscriberData.trialUsers.total,
+        displayValue: formatCount(subscriberData.trialUsers.total),
+        trendLabel: `${formatCount(subscriberData.subscribers.trial)} trial subscriptions`,
+        trendPositive: true,
+      },
+      expiredTrialUsers: {
+        value: subscriberData.expiredTrialUsers.total,
+        displayValue: formatCount(subscriberData.expiredTrialUsers.total),
+        trendLabel: "Needs re-engagement",
+        trendPositive: false,
+      },
+      failedPayments: {
+        value: failedPaymentsData.total,
+        displayValue: formatCount(failedPaymentsData.total),
+        trendLabel: failedPaymentsTrend.label,
+        trendPositive: failedPaymentsData.total <= failedPaymentsData.previousTotal,
       },
     },
     revenue: {
@@ -478,6 +637,18 @@ export async function loadAdminDashboardOverview(
       trendPositive: revenueTrend.positive,
       chart: revenue.chart,
     },
-    recentAlerts: alertsData.recentAlerts,
+    invoices: {
+      totalPaidCount: paidInvoices.countInRange,
+      totalPaidAmount: paidInvoices.totalPaidAmountInRange,
+      displayTotalPaidAmount: formatCurrency(paidInvoices.totalPaidAmountInRange),
+      recent: paidInvoices.recent,
+    },
+    subscribers: subscriberData.subscribers,
+    trialUsers: subscriberData.trialUsers,
+    expiredTrialUsers: subscriberData.expiredTrialUsers,
+    failedPayments: {
+      total: failedPaymentsData.total,
+      rows: failedPaymentsData.rows,
+    },
   };
 }
