@@ -2,7 +2,7 @@
 
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeftRight,
   ChevronDown,
@@ -13,7 +13,6 @@ import {
   CircleCheckBig,
   Clock,
   DollarSign,
-  MoreHorizontal,
   Search,
   X,
   XCircle,
@@ -22,7 +21,6 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Sheet,
   SheetContent,
@@ -297,7 +295,6 @@ export function AdminTransactionsView() {
   const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [statusFilter, setStatusFilter] = useState<TransactionStatus | "all">("all");
   const [methodFilter, setMethodFilter] = useState<TransactionMethod | "all">("all");
   const [detailRow, setDetailRow] = useState<TransactionRow | null>(null);
@@ -383,38 +380,7 @@ export function AdminTransactionsView() {
   const sliceStart = (safePage - 1) * PAGE_SIZE;
   const pagedRows = filtered.slice(sliceStart, sliceStart + PAGE_SIZE);
 
-  const pageIdsOnPage = useMemo(() => pagedRows.map((r) => r.id), [pagedRows]);
-  const allPageSelected =
-    pageIdsOnPage.length > 0 && pageIdsOnPage.every((id) => selected.has(id));
-  const somePageSelected = pageIdsOnPage.some((id) => selected.has(id));
-  const headerChecked: boolean | "indeterminate" = allPageSelected
-    ? true
-    : somePageSelected
-      ? "indeterminate"
-      : false;
-
   const slots = payoutSlots(safePage, totalPages);
-
-  const toggleRow = useCallback((id: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
-
-  const toggleHeader = useCallback(() => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (allPageSelected) {
-        for (const id of pageIdsOnPage) next.delete(id);
-      } else {
-        for (const id of pageIdsOnPage) next.add(id);
-      }
-      return next;
-    });
-  }, [allPageSelected, pageIdsOnPage]);
 
   const openDetail = (row: TransactionRow) => {
     setDetailRow(row);
@@ -547,10 +513,6 @@ export function AdminTransactionsView() {
         ) : (
           <TransactionsTable
             rows={pagedRows}
-            selected={selected}
-            toggleRow={toggleRow}
-            headerChecked={headerChecked}
-            toggleHeader={toggleHeader}
             onViewDetail={openDetail}
           />
         )}
@@ -637,17 +599,9 @@ export function AdminTransactionsView() {
 
 function TransactionsTable({
   rows,
-  selected,
-  toggleRow,
-  headerChecked,
-  toggleHeader,
   onViewDetail,
 }: {
   rows: TransactionRow[];
-  selected: Set<string>;
-  toggleRow: (id: string) => void;
-  headerChecked: boolean | "indeterminate";
-  toggleHeader: () => void;
   onViewDetail: (row: TransactionRow) => void;
 }) {
   return (
@@ -656,13 +610,6 @@ function TransactionsTable({
         <table className="min-w-[1240px] w-full table-fixed text-[13px]">
           <thead className="border-b border-gray-200 bg-gray-50">
             <tr>
-              <th className="w-[48px] px-3 py-3 text-start">
-                <Checkbox
-                  checked={headerChecked}
-                  aria-label="Select all on this page"
-                  onCheckedChange={() => toggleHeader()}
-                />
-              </th>
               <th className="w-[164px] ps-2 pe-4 py-3 text-start font-semibold text-gray-700">
                 Transaction ID
               </th>
@@ -687,7 +634,7 @@ function TransactionsTable({
               <th className="min-w-[140px] py-3 pe-4 text-start font-semibold text-gray-700">
                 Description
               </th>
-              <th className="w-[76px] py-3 px-3 text-center font-semibold text-gray-700">
+              <th className="w-[96px] py-3 px-3 text-center font-semibold text-gray-700">
                 Actions
               </th>
             </tr>
@@ -698,13 +645,6 @@ function TransactionsTable({
 
               return (
                 <tr key={row.id} className="hover:bg-gray-50">
-                  <td className="px-3 py-4 align-middle">
-                    <Checkbox
-                      checked={selected.has(row.id)}
-                      aria-label={`Select ${row.transactionId}`}
-                      onCheckedChange={() => toggleRow(row.id)}
-                    />
-                  </td>
                   <td className="truncate px-2 py-4 align-middle font-mono font-semibold text-gray-900">
                     {row.transactionId}
                   </td>
@@ -742,14 +682,16 @@ function TransactionsTable({
                     {row.description}
                   </td>
                   <td className="px-1 py-4 align-middle text-center">
-                    <button
+                    <Button
                       type="button"
                       aria-label={`View ${row.transactionId}`}
-                      className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
                       onClick={() => onViewDetail(row)}
+                      variant="outline"
+                      size="sm"
+                      className="h-8 rounded-lg"
                     >
-                      <MoreHorizontal className="size-4 rotate-90" strokeWidth={1.75} />
-                    </button>
+                      View
+                    </Button>
                   </td>
                 </tr>
               );
