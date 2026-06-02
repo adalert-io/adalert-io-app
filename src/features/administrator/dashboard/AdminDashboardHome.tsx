@@ -123,15 +123,11 @@ interface DashboardOverviewDto {
 function DashboardMetricCard({
   title,
   value,
-  trend,
-  trendPositive,
   icon,
   accentClassName,
 }: {
   title: string;
   value: string;
-  trend: string;
-  trendPositive: boolean;
   icon: ReactNode;
   accentClassName?: string;
 }) {
@@ -141,14 +137,6 @@ function DashboardMetricCard({
         <div className="min-w-0 space-y-0.5">
           <p className="text-muted-foreground text-xs font-medium">{title}</p>
           <p className="truncate text-[34px] leading-none font-bold tracking-tight text-slate-900">{value}</p>
-          <p
-            className={cn(
-              "text-xs font-medium",
-              trendPositive ? "text-[#22c55e]" : "text-[#ef4444]",
-            )}
-          >
-            {trend}
-          </p>
         </div>
         <span
           className={cn(
@@ -180,7 +168,7 @@ function SectionShell({
           {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}
         </div>
       </CardHeader>
-      <CardContent className="px-6 py-6">{children}</CardContent>
+      <CardContent className="px-6 pt-3 pb-6">{children}</CardContent>
     </Card>
   );
 }
@@ -330,8 +318,6 @@ export function AdminDashboardHome() {
                 key={metric.title}
                 title={metric.title}
                 value={metric.value}
-                trend={metric.trend}
-                trendPositive={metric.trendPositive}
                 icon={metric.icon}
                 accentClassName={metric.accentClassName}
               />
@@ -339,7 +325,7 @@ export function AdminDashboardHome() {
           </div>
         </section>
 
-        <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_minmax(0,0.9fr)] xl:gap-8">
+        <section>
           <SectionShell title="Revenue & Invoices" subtitle="Revenue summary and paid invoice performance">
             <div className="space-y-3">
               <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-50 pb-4">
@@ -459,7 +445,9 @@ export function AdminDashboardHome() {
               ) : null}
             </div>
           </SectionShell>
+        </section>
 
+        <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           <SectionShell title="Subscribers Overview" subtitle="Plan, payment, and account health">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <div className="rounded-xl border border-slate-200 p-3">
@@ -484,11 +472,9 @@ export function AdminDashboardHome() {
                 <table className="w-full table-fixed text-left text-sm">
                   <thead className="bg-slate-50 text-slate-600">
                     <tr>
-                      <th className="w-[38%] px-4 py-2.5 font-semibold">Name / Email</th>
-                      <th className="w-[20%] px-4 py-2.5 font-semibold">Plan</th>
-                      <th className="w-[16%] px-4 py-2.5 font-semibold">Payment</th>
-                      <th className="w-[14%] px-4 py-2.5 font-semibold">Status</th>
-                      <th className="w-[12%] px-4 py-2.5 font-semibold">Last Login</th>
+                      <th className="w-[45%] px-4 py-2.5 font-semibold">Name / Email</th>
+                      <th className="w-[30%] px-4 py-2.5 font-semibold">Plan</th>
+                      <th className="w-[25%] px-4 py-2.5 font-semibold">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -500,16 +486,10 @@ export function AdminDashboardHome() {
                         </td>
                         <td className="truncate px-4 py-2.5 text-slate-700">{row.subscriptionPlan}</td>
                         <td className="px-4 py-2.5">
-                          <span className={cn("inline-flex rounded-full px-2 py-0.5 text-xs font-semibold", statusBadgeClass(row.paymentStatus))}>
-                            {row.paymentStatus}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2.5">
                           <span className={cn("inline-flex rounded-full px-2 py-0.5 text-xs font-semibold", statusBadgeClass(row.accountStatus))}>
                             {row.accountStatus}
                           </span>
                         </td>
-                        <td className="truncate px-4 py-2.5 text-slate-700">{row.lastLogin.split(",")[0]}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -521,9 +501,52 @@ export function AdminDashboardHome() {
               </div>
             ) : null}
           </SectionShell>
+
+          <SectionShell title="Failed Payments" subtitle="Payment failures and retry status">
+            <div className="mb-3 flex items-center justify-between rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">
+              <span>Total failed payments in range</span>
+              <span className="font-semibold">{data?.failedPayments.total ?? 0}</span>
+            </div>
+            {(data?.failedPayments.rows?.length ?? 0) > 0 ? (
+              <div className="rounded-xl border border-slate-200">
+                <table className="w-full table-fixed text-left text-sm">
+                  <thead className="bg-slate-50 text-slate-600">
+                    <tr>
+                      <th className="w-[32%] px-4 py-2.5 font-semibold">Name / Email</th>
+                      <th className="w-[18%] px-4 py-2.5 font-semibold">Failed On</th>
+                      <th className="w-[12%] px-4 py-2.5 font-semibold">Amount</th>
+                      <th className="w-[23%] px-4 py-2.5 font-semibold">Reason</th>
+                      <th className="w-[15%] px-4 py-2.5 font-semibold">Retry</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {(data?.failedPayments.rows ?? []).map((row) => (
+                      <tr key={row.id} className="hover:bg-slate-50/80">
+                        <td className="px-4 py-2.5">
+                          <p className="truncate font-medium text-slate-900">{row.customerName}</p>
+                          <p className="truncate text-xs text-slate-500">{row.email}</p>
+                        </td>
+                        <td className="truncate px-4 py-2.5 text-slate-700">{row.failedPaymentDate}</td>
+                        <td className="px-4 py-2.5 font-semibold text-slate-900">{row.displayAmount}</td>
+                        <td className="truncate px-4 py-2.5 text-slate-700">{row.failureReason}</td>
+                        <td className="px-4 py-2.5">
+                          <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold", statusBadgeClass(row.retryStatus))}>
+                            {row.retryStatus === "Recovered" ? <CheckCircle2 className="size-3.5 text-emerald-600" /> : <CreditCard className="size-3.5 text-rose-500" />}
+                            {row.retryStatus}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : !isLoading ? (
+              <EmptyStateMessage />
+            ) : null}
+          </SectionShell>
         </section>
 
-        <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           <SectionShell title="Free Trial Users" subtitle="Users currently in trial period">
             <div className="mb-3 rounded-xl bg-violet-50 px-3 py-2 text-sm text-violet-700">
               Total users currently on trial: <span className="font-semibold">{data?.trialUsers.total ?? 0}</span>
@@ -603,50 +626,6 @@ export function AdminDashboardHome() {
           </SectionShell>
         </section>
 
-        <section>
-          <SectionShell title="Failed Payments" subtitle="Payment failures and retry status">
-            <div className="mb-3 flex items-center justify-between rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">
-              <span>Total failed payments in range</span>
-              <span className="font-semibold">{data?.failedPayments.total ?? 0}</span>
-            </div>
-            {(data?.failedPayments.rows?.length ?? 0) > 0 ? (
-              <div className="rounded-xl border border-slate-200">
-                <table className="w-full table-fixed text-left text-sm">
-                  <thead className="bg-slate-50 text-slate-600">
-                    <tr>
-                      <th className="w-[32%] px-4 py-2.5 font-semibold">Name / Email</th>
-                      <th className="w-[18%] px-4 py-2.5 font-semibold">Failed On</th>
-                      <th className="w-[12%] px-4 py-2.5 font-semibold">Amount</th>
-                      <th className="w-[23%] px-4 py-2.5 font-semibold">Reason</th>
-                      <th className="w-[15%] px-4 py-2.5 font-semibold">Retry</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {(data?.failedPayments.rows ?? []).map((row) => (
-                      <tr key={row.id} className="hover:bg-slate-50/80">
-                        <td className="px-4 py-2.5">
-                          <p className="truncate font-medium text-slate-900">{row.customerName}</p>
-                          <p className="truncate text-xs text-slate-500">{row.email}</p>
-                        </td>
-                        <td className="truncate px-4 py-2.5 text-slate-700">{row.failedPaymentDate}</td>
-                        <td className="px-4 py-2.5 font-semibold text-slate-900">{row.displayAmount}</td>
-                        <td className="truncate px-4 py-2.5 text-slate-700">{row.failureReason}</td>
-                        <td className="px-4 py-2.5">
-                          <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold", statusBadgeClass(row.retryStatus))}>
-                            {row.retryStatus === "Recovered" ? <CheckCircle2 className="size-3.5 text-emerald-600" /> : <CreditCard className="size-3.5 text-rose-500" />}
-                            {row.retryStatus}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : !isLoading ? (
-              <EmptyStateMessage />
-            ) : null}
-          </SectionShell>
-        </section>
       </div>
 
       <footer className="border-t border-slate-200/90 bg-[#f8fafc] py-6 text-center">

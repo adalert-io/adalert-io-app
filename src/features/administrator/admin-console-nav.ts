@@ -3,7 +3,6 @@ import {
   CircleHelp,
   CreditCard,
   LayoutDashboard,
-  Settings,
   UserCircle2,
   UsersRound,
 } from "lucide-react";
@@ -56,11 +55,6 @@ export const adminConsoleNavGroups: AdminNavGroup[] = [
         title: "Users",
         href: "/administrator/users",
         icon: UsersRound,
-      },
-      {
-        title: "Settings",
-        href: "/administrator/settings/general",
-        icon: Settings,
       },
       { title: "Support", href: "/administrator/support", icon: CircleHelp },
     ],
