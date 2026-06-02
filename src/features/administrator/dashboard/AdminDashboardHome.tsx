@@ -15,9 +15,10 @@ import {
   UserRoundPlus,
 } from "lucide-react";
 import {
-  Area,
-  AreaChart,
+  Bar,
+  BarChart,
   CartesianGrid,
+  LabelList,
   ResponsiveContainer,
   Tooltip as RechartsTooltip,
   XAxis,
@@ -54,7 +55,13 @@ interface DashboardOverviewDto {
     displayTotal: string;
     trendLabel: string;
     trendPositive: boolean;
-    chart: Array<{ label: string; value: number }>;
+    paidInvoices: number;
+    averageInvoiceValue: number;
+    displayAverageInvoiceValue: string;
+    collectionRatePct: number;
+    bestMonthRevenue: number;
+    displayBestMonthRevenue: string;
+    chart: Array<{ label: string; value: number; invoiceCount: number }>;
   };
   invoices: {
     totalPaidCount: number;
@@ -136,7 +143,7 @@ function DashboardMetricCard({
       <CardContent className="flex flex-1 items-center justify-between gap-3 px-4 py-4">
         <div className="min-w-0 space-y-0.5">
           <p className="text-muted-foreground text-xs font-medium">{title}</p>
-          <p className="truncate text-[34px] leading-none font-bold tracking-tight text-slate-900">{value}</p>
+          <p className="truncate text-[30px] leading-none font-semibold tracking-tight text-slate-900">{value}</p>
         </div>
         <span
           className={cn(
@@ -195,6 +202,16 @@ function statusBadgeClass(status: string): string {
   return "bg-rose-100 text-rose-700";
 }
 
+function compactCurrency(value: number): string {
+  if (!Number.isFinite(value)) return "$0";
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
 function rangeToQuery(range: DateRange | undefined): string {
   if (!range?.from || !range?.to) return "";
   const from = format(range.from, "yyyy-MM-dd");
@@ -235,14 +252,41 @@ export function AdminDashboardHome() {
     void loadDashboard(range);
   }, [loadDashboard, range]);
 
-  const chartData = useMemo(
-    () => (data?.revenue.chart ?? []).map((point) => ({ label: point.label, v: point.value })),
-    [data],
-  );
+  const chartData = useMemo(() => data?.revenue.chart ?? [], [data]);
 
   const chartMax = useMemo(() => {
-    const max = Math.max(...chartData.map((point) => point.v), 0);
-    return Math.max(max * 1.15, 100);
+    const max = Math.max(...chartData.map((point) => point.value), 0);
+    return Math.max(max * 1.2, 10);
+  }, [chartData]);
+
+  const revenueInsights = useMemo(() => {
+    if (!chartData.length) {
+      return {
+        highestLabel: "—",
+        highestValue: "$0",
+        lowestLabel: "—",
+        lowestValue: "$0",
+        trendLabel: "Flat",
+      };
+    }
+    const highest = chartData.reduce((best, current) =>
+      current.value > best.value ? current : best,
+    );
+    const nonZero = chartData.filter((point) => point.value > 0);
+    const lowestPool = nonZero.length ? nonZero : chartData;
+    const lowest = lowestPool.reduce((best, current) =>
+      current.value < best.value ? current : best,
+    );
+    const first = chartData[0]?.value ?? 0;
+    const last = chartData[chartData.length - 1]?.value ?? 0;
+    const trendLabel = last > first ? "Up" : last < first ? "Down" : "Flat";
+    return {
+      highestLabel: highest.label,
+      highestValue: compactCurrency(highest.value),
+      lowestLabel: lowest.label,
+      lowestValue: compactCurrency(lowest.value),
+      trendLabel,
+    };
   }, [chartData]);
 
   const metricCards = [
@@ -327,84 +371,107 @@ export function AdminDashboardHome() {
 
         <section>
           <SectionShell title="Revenue & Invoices" subtitle="Revenue summary and paid invoice performance">
-            <div className="space-y-3">
-              <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-50 pb-4">
-                <div>
-                  <p className="text-muted-foreground text-sm font-medium">Revenue in selected date range</p>
-                  <p className="text-[34px] font-bold tracking-tight text-slate-900">
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+                  <p className="text-xs text-slate-500">Total Revenue</p>
+                  <p className="mt-1 text-lg font-semibold text-slate-900">
                     {isLoading ? "—" : (data?.revenue.displayTotal ?? "$0")}
                   </p>
                 </div>
-                <p
-                  className={cn(
-                    "text-sm font-semibold",
-                    data?.revenue.trendPositive ? "text-[#22c55e]" : "text-[#ef4444]",
-                  )}
-                >
-                  {isLoading ? "" : (data?.revenue.trendLabel ?? "")}
-                </p>
+                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+                  <p className="text-xs text-slate-500">Paid Invoices</p>
+                  <p className="mt-1 text-lg font-semibold text-slate-900">
+                    {isLoading ? "—" : String(data?.revenue.paidInvoices ?? 0)}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+                  <p className="text-xs text-slate-500">Average Invoice Value</p>
+                  <p className="mt-1 text-lg font-semibold text-slate-900">
+                    {isLoading ? "—" : (data?.revenue.displayAverageInvoiceValue ?? "$0")}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+                  <p className="text-xs text-slate-500">Best Month Revenue</p>
+                  <p className="mt-1 text-lg font-semibold text-slate-900">
+                    {isLoading ? "—" : (data?.revenue.displayBestMonthRevenue ?? "$0")}
+                  </p>
+                </div>
               </div>
-              <div className="rounded-xl bg-slate-50/70 p-3 text-sm text-slate-600">
-                {isLoading
-                  ? "Loading paid invoices..."
-                  : `${data?.invoices.totalPaidCount ?? 0} paid invoices · ${data?.invoices.displayTotalPaidAmount ?? "$0"}`}
+
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <div className="rounded-lg border border-slate-200 p-2.5">
+                  <p className="text-[11px] text-slate-500">Highest Revenue Month</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
+                    {revenueInsights.highestLabel} · {revenueInsights.highestValue}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-slate-200 p-2.5">
+                  <p className="text-[11px] text-slate-500">Lowest Revenue Month</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
+                    {revenueInsights.lowestLabel} · {revenueInsights.lowestValue}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-slate-200 p-2.5">
+                  <p className="text-[11px] text-slate-500">Revenue Trend</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
+                    {revenueInsights.trendLabel}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-slate-200 p-2.5">
+                  <p className="text-[11px] text-slate-500">Collection Rate</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
+                    {isLoading ? "—" : `${data?.revenue.collectionRatePct ?? 0}%`}
+                  </p>
+                </div>
               </div>
-              <div className="mt-4 h-[280px] w-full">
+
+              <div className="h-[340px] w-full rounded-xl border border-slate-200 bg-white p-3">
                 {isLoading ? (
                   <div className="flex h-full items-center justify-center text-sm text-slate-500">
                     Loading chart...
                   </div>
-                ) : chartData.length === 0 ? (
-                  <div className="flex h-full items-center justify-center text-sm text-slate-500">
-                    No revenue in this date range
+                ) : chartData.every((point) => point.value <= 0) ? (
+                  <div className="flex h-full flex-col items-center justify-center gap-3 text-slate-500">
+                    <div className="rounded-full bg-slate-100 p-3 text-xl">📉</div>
+                    <p className="text-sm font-medium">No revenue data available for the selected period.</p>
                   </div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart
-                      data={chartData}
-                      margin={{ left: -10, top: 6, bottom: 0, right: 8 }}
-                    >
-                      <defs>
-                        <linearGradient id="dashRevenueFill" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.35} />
-                          <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
+                    <BarChart data={chartData} margin={{ left: 0, right: 10, top: 12, bottom: 2 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                       <XAxis
                         dataKey="label"
-                        tick={{ fontSize: 12, fill: "#64748b" }}
+                        tick={{ fontSize: 11, fill: "#64748b" }}
                         stroke="#cbd5f5"
                         axisLine={{ stroke: "#e2e8f0" }}
                         tickLine={false}
                       />
                       <YAxis
-                        tickFormatter={(v: number) =>
-                          v >= 1000 ? `$${Math.round(v / 1000)}k` : `$${v}`
-                        }
-                        tick={{ fontSize: 12, fill: "#64748b" }}
+                        tickFormatter={(value: number) => compactCurrency(value)}
+                        tick={{ fontSize: 11, fill: "#64748b" }}
                         axisLine={{ stroke: "#e2e8f0" }}
                         tickLine={false}
                         domain={[0, chartMax]}
                       />
                       <RechartsTooltip
-                        cursor={{ stroke: "#e2e8f0", strokeDasharray: "4 4" }}
+                        cursor={{ fill: "rgba(59,130,246,0.06)" }}
                         contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0" }}
-                        labelStyle={{ color: "#475569", fontWeight: 600 }}
-                        formatter={(value) => [
-                          `$${Number(value ?? 0).toLocaleString()}`,
+                        labelStyle={{ color: "#0f172a", fontWeight: 600 }}
+                        formatter={(value, _name, item) => [
+                          `${new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(Number(value ?? 0))} (${(item?.payload as { invoiceCount?: number })?.invoiceCount ?? 0} invoices)`,
                           "Revenue",
                         ]}
                       />
-                      <Area
-                        type="monotone"
-                        dataKey="v"
-                        stroke="#3b82f6"
-                        strokeWidth={2}
-                        fill="url(#dashRevenueFill)"
-                        dot={{ r: 3, strokeWidth: 2, fill: "#fff", stroke: "#3b82f6" }}
-                      />
-                    </AreaChart>
+                      <Bar dataKey="value" radius={[8, 8, 0, 0]} fill="#3b82f6" maxBarSize={56}>
+                        <LabelList
+                          dataKey="value"
+                          position="top"
+                          formatter={(value) => (Number(value ?? 0) > 0 ? compactCurrency(Number(value ?? 0)) : "")}
+                          style={{ fill: "#475569", fontSize: 10, fontWeight: 600 }}
+                        />
+                      </Bar>
+                    </BarChart>
                   </ResponsiveContainer>
                 )}
               </div>
@@ -452,19 +519,19 @@ export function AdminDashboardHome() {
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <div className="rounded-xl border border-slate-200 p-3">
                 <p className="text-xs text-slate-500">Total</p>
-                <p className="mt-1 text-xl font-bold text-slate-900">{data?.subscribers.total ?? 0}</p>
+                <p className="mt-1 text-lg font-semibold text-slate-900">{data?.subscribers.total ?? 0}</p>
               </div>
               <div className="rounded-xl border border-slate-200 p-3">
                 <p className="text-xs text-slate-500">Active</p>
-                <p className="mt-1 text-xl font-bold text-emerald-600">{data?.subscribers.active ?? 0}</p>
+                <p className="mt-1 text-lg font-semibold text-emerald-600">{data?.subscribers.active ?? 0}</p>
               </div>
               <div className="rounded-xl border border-slate-200 p-3">
                 <p className="text-xs text-slate-500">Trial</p>
-                <p className="mt-1 text-xl font-bold text-violet-600">{data?.subscribers.trial ?? 0}</p>
+                <p className="mt-1 text-lg font-semibold text-violet-600">{data?.subscribers.trial ?? 0}</p>
               </div>
               <div className="rounded-xl border border-slate-200 p-3">
                 <p className="text-xs text-slate-500">Past Due</p>
-                <p className="mt-1 text-xl font-bold text-rose-600">{data?.subscribers.pastDue ?? 0}</p>
+                <p className="mt-1 text-lg font-semibold text-rose-600">{data?.subscribers.pastDue ?? 0}</p>
               </div>
             </div>
             {(data?.subscribers.rows?.length ?? 0) > 0 ? (

@@ -33,7 +33,13 @@ export interface DashboardOverview {
     displayTotal: string;
     trendLabel: string;
     trendPositive: boolean;
-    chart: Array<{ label: string; value: number }>;
+    paidInvoices: number;
+    averageInvoiceValue: number;
+    displayAverageInvoiceValue: string;
+    collectionRatePct: number;
+    bestMonthRevenue: number;
+    displayBestMonthRevenue: string;
+    chart: Array<{ label: string; value: number; invoiceCount: number }>;
   };
   invoices: {
     totalPaidCount: number;
@@ -174,11 +180,27 @@ function isInRange(date: Date, range: DashboardDateRange): boolean {
   return date.getTime() >= range.from.getTime() && date.getTime() <= range.to.getTime();
 }
 
-function dayChartLabel(unixSeconds: number): string {
-  return new Date(unixSeconds * 1000).toLocaleDateString("en-US", {
+function monthKey(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${date.getFullYear()}-${month}`;
+}
+
+function formatMonthLabel(date: Date): string {
+  return date.toLocaleDateString("en-US", {
     month: "short",
-    day: "numeric",
+    year: "numeric",
   });
+}
+
+function monthlyRangeLabels(range: DashboardDateRange): Array<{ key: string; label: string }> {
+  const cursor = new Date(range.from.getFullYear(), range.from.getMonth(), 1);
+  const end = new Date(range.to.getFullYear(), range.to.getMonth(), 1);
+  const out: Array<{ key: string; label: string }> = [];
+  while (cursor.getTime() <= end.getTime()) {
+    out.push({ key: monthKey(cursor), label: formatMonthLabel(cursor) });
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+  return out;
 }
 
 async function listAllStripeInvoicesInWindow(
@@ -210,7 +232,11 @@ async function loadStripeRevenue(range: DashboardDateRange) {
     return {
       total: 0,
       previousTotal: 0,
-      chart: buildEmptyDailyChart(range),
+      paidInvoices: 0,
+      averageInvoiceValue: 0,
+      collectionRatePct: 0,
+      bestMonthRevenue: 0,
+      chart: buildEmptyMonthlyChart(range),
     };
   }
 
@@ -226,19 +252,26 @@ async function loadStripeRevenue(range: DashboardDateRange) {
 
   let total = 0;
   let previousTotal = 0;
-  const daily = new Map<string, number>();
+  let paidInvoices = 0;
+  let totalInvoices = 0;
+  const monthlyRevenue = new Map<string, number>();
+  const monthlyPaidInvoices = new Map<string, number>();
 
   for (const invoice of currentInvoices) {
+    totalInvoices += 1;
     if (invoice.status !== "paid") continue;
     const amount = (invoice.amount_paid ?? 0) / 100;
-    if (amount <= 0) continue;
-    total += amount;
+    paidInvoices += 1;
     const paidAt =
       invoice.status_transitions?.paid_at ??
       invoice.effective_at ??
       invoice.created;
-    const label = dayChartLabel(paidAt);
-    daily.set(label, (daily.get(label) ?? 0) + amount);
+    const paidDate = new Date(paidAt * 1000);
+    const key = monthKey(paidDate);
+    monthlyPaidInvoices.set(key, (monthlyPaidInvoices.get(key) ?? 0) + 1);
+    if (amount <= 0) continue;
+    total += amount;
+    monthlyRevenue.set(key, (monthlyRevenue.get(key) ?? 0) + amount);
   }
 
   for (const invoice of previousInvoices) {
@@ -251,26 +284,32 @@ async function loadStripeRevenue(range: DashboardDateRange) {
   return {
     total: Math.round(total * 100) / 100,
     previousTotal: Math.round(previousTotal * 100) / 100,
-    chart: buildDailyChartFromMap(range, daily),
+    paidInvoices,
+    averageInvoiceValue: paidInvoices > 0 ? Math.round((total / paidInvoices) * 100) / 100 : 0,
+    collectionRatePct:
+      totalInvoices > 0 ? Math.round((paidInvoices / totalInvoices) * 1000) / 10 : 0,
+    bestMonthRevenue: Math.max(...Array.from(monthlyRevenue.values()), 0),
+    chart: buildMonthlyChartFromMaps(range, monthlyRevenue, monthlyPaidInvoices),
   };
 }
 
-function buildEmptyDailyChart(range: DashboardDateRange): Array<{ label: string; value: number }> {
-  return buildDailyChartFromMap(range, new Map());
+function buildEmptyMonthlyChart(
+  range: DashboardDateRange,
+): Array<{ label: string; value: number; invoiceCount: number }> {
+  return buildMonthlyChartFromMaps(range, new Map(), new Map());
 }
 
-function buildDailyChartFromMap(range: DashboardDateRange, daily: Map<string, number>) {
-  const points: Array<{ label: string; value: number }> = [];
-  const cursor = startOfDay(range.from);
-  const end = startOfDay(range.to);
-
-  while (cursor.getTime() <= end.getTime()) {
-    const label = cursor.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-    points.push({ label, value: Math.round(daily.get(label) ?? 0) });
-    cursor.setDate(cursor.getDate() + 1);
-  }
-
-  return points;
+function buildMonthlyChartFromMaps(
+  range: DashboardDateRange,
+  monthlyRevenue: Map<string, number>,
+  monthlyInvoices: Map<string, number>,
+) {
+  const labels = monthlyRangeLabels(range);
+  return labels.map(({ key, label }) => ({
+    label,
+    value: Math.round((monthlyRevenue.get(key) ?? 0) * 100) / 100,
+    invoiceCount: monthlyInvoices.get(key) ?? 0,
+  }));
 }
 
 function formatDateTime(value: Date): string {
@@ -637,6 +676,12 @@ export async function loadAdminDashboardOverview(
       displayTotal: formatCurrency(revenue.total),
       trendLabel: revenueTrend.label,
       trendPositive: revenueTrend.positive,
+      paidInvoices: revenue.paidInvoices,
+      averageInvoiceValue: revenue.averageInvoiceValue,
+      displayAverageInvoiceValue: formatCurrency(revenue.averageInvoiceValue),
+      collectionRatePct: revenue.collectionRatePct,
+      bestMonthRevenue: revenue.bestMonthRevenue,
+      displayBestMonthRevenue: formatCurrency(revenue.bestMonthRevenue),
       chart: revenue.chart,
     },
     invoices: {
