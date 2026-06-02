@@ -17,6 +17,7 @@ interface UpdateTicketBody {
   status?: AdminTicketStatus;
   priority?: AdminTicketPriority;
   markRead?: boolean;
+  archived?: boolean;
 }
 
 function isValidStatus(value: unknown): value is AdminTicketStatus {
@@ -87,8 +88,19 @@ export async function PATCH(
       updateData.adminReadAt = admin.firestore.FieldValue.serverTimestamp();
     }
 
+    if (body.archived !== undefined) {
+      updateData.isArchived = body.archived === true;
+      updateData.archivedAt =
+        body.archived === true
+          ? admin.firestore.FieldValue.serverTimestamp()
+          : null;
+    }
+
     const hasFieldUpdates =
-      body.status !== undefined || body.priority !== undefined || body.markRead === true;
+      body.status !== undefined ||
+      body.priority !== undefined ||
+      body.markRead === true ||
+      body.archived !== undefined;
 
     if (!hasFieldUpdates) {
       return NextResponse.json(
@@ -142,6 +154,42 @@ export async function PATCH(
   } catch (error) {
     return NextResponse.json(
       { error: (error as Error).message || "Failed to update ticket" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ ticketId: string }> },
+) {
+  if (request.cookies.get(ADMIN_PREVIEW_COOKIE)?.value !== "1") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const { ticketId } = await context.params;
+    if (!ticketId) {
+      return NextResponse.json({ error: "ticketId is required" }, { status: 400 });
+    }
+
+    const db = getAdminFirestore();
+    const ticketRef = db.collection("supportTickets").doc(ticketId);
+    const ticketSnap = await ticketRef.get();
+    if (!ticketSnap.exists) {
+      return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
+    }
+
+    const messagesSnap = await ticketRef.collection("messages").get();
+    const batch = db.batch();
+    messagesSnap.docs.forEach((doc) => batch.delete(doc.ref));
+    batch.delete(ticketRef);
+    await batch.commit();
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json(
+      { error: (error as Error).message || "Failed to delete ticket" },
       { status: 500 },
     );
   }

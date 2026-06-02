@@ -11,15 +11,12 @@ import {
   ChevronsRight,
   CircleCheckBig,
   Clock,
-  Filter,
-  MoreHorizontal,
   Paperclip,
   Plus,
   RefreshCw,
   Search,
   Ticket,
   User,
-  Eye,
   X,
 } from "lucide-react";
 
@@ -942,6 +939,7 @@ function TicketSheet({
 
 export function AdminSupportView() {
   const [rows, setRows] = useState<SupportTicketRow[]>([]);
+  const [isArchivedView, setIsArchivedView] = useState(false);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<
@@ -962,14 +960,14 @@ export function AdminSupportView() {
   const [newBody, setNewBody] = useState("");
   const [isLoadingRows, setIsLoadingRows] = useState(false);
   const [updatingTicketId, setUpdatingTicketId] = useState<string | null>(null);
+  const [deleteTicketId, setDeleteTicketId] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadAdminTickets = useCallback(async () => {
     let isUnmounted = false;
-
-    async function loadAdminTickets() {
+    async function load() {
       setIsLoadingRows(true);
       try {
-        const response = await fetch("/api/admin/support/tickets", {
+        const response = await fetch(`/api/admin/support/tickets?archived=${isArchivedView ? "1" : "0"}`, {
           method: "GET",
           cache: "no-store",
         });
@@ -1017,6 +1015,7 @@ export function AdminSupportView() {
 
         if (isUnmounted) return;
         setRows(mappedRows);
+        setSelected(new Set());
       } catch (error) {
         console.error("Failed to load admin support tickets:", error);
         if (!isUnmounted) {
@@ -1028,13 +1027,15 @@ export function AdminSupportView() {
         if (!isUnmounted) setIsLoadingRows(false);
       }
     }
-
-    void loadAdminTickets();
-
+    await load();
     return () => {
       isUnmounted = true;
     };
-  }, []);
+  }, [isArchivedView]);
+
+  useEffect(() => {
+    void loadAdminTickets();
+  }, [loadAdminTickets]);
 
   const filtered = useMemo(() => {
     let list = rows;
@@ -1117,6 +1118,59 @@ export function AdminSupportView() {
     }
   }, []);
 
+  const updateArchiveState = useCallback(
+    async (ticketIds: string[], archived: boolean) => {
+      if (ticketIds.length === 0) return;
+      setIsMarkingRead(true);
+      try {
+        await Promise.all(
+          ticketIds.map(async (ticketId) => {
+            const response = await fetch(`/api/admin/support/tickets/${ticketId}`, {
+              method: "PATCH",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ archived }),
+            });
+            const payload = (await response.json()) as { error?: string };
+            if (!response.ok) {
+              throw new Error(payload.error || "Failed to update archive state");
+            }
+          }),
+        );
+        toast.success(archived ? "Tickets archived" : "Tickets restored");
+        setSelected(new Set());
+        await loadAdminTickets();
+      } catch (error) {
+        toast.error((error as Error).message || "Couldn't update archive state");
+      } finally {
+        setIsMarkingRead(false);
+      }
+    },
+    [loadAdminTickets],
+  );
+
+  const deleteTicketPermanently = useCallback(
+    async (ticketId: string) => {
+      setIsMarkingRead(true);
+      try {
+        const response = await fetch(`/api/admin/support/tickets/${ticketId}`, {
+          method: "DELETE",
+        });
+        const payload = (await response.json()) as { error?: string };
+        if (!response.ok) {
+          throw new Error(payload.error || "Failed to delete ticket");
+        }
+        toast.success("Ticket deleted permanently");
+        setDeleteTicketId(null);
+        await loadAdminTickets();
+      } catch (error) {
+        toast.error((error as Error).message || "Couldn't delete ticket");
+      } finally {
+        setIsMarkingRead(false);
+      }
+    },
+    [loadAdminTickets],
+  );
+
   const handleOpenTicket = useCallback((t: SupportTicketRow) => {
     setActiveTicketId(t.id);
     setDetailOpen(true);
@@ -1125,6 +1179,8 @@ export function AdminSupportView() {
 
   const detailRow =
     activeTicketId === null ? null : rows.find((r) => r.id === activeTicketId) ?? null;
+  const deleteTicketRow =
+    deleteTicketId === null ? null : rows.find((r) => r.id === deleteTicketId) ?? null;
 
   const aggregated = useMemo(() => ({
     total: rows.length,
@@ -1248,17 +1304,22 @@ export function AdminSupportView() {
           <p className="text-[15px] text-[#7A7D9C]">
             {isLoadingRows
               ? "Loading live support tickets..."
-              : "Manage customer support tickets and inquiries"}
+              : isArchivedView
+                ? "Review archived tickets, restore them, or delete permanently"
+                : "Manage customer support tickets and inquiries"}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Button
-            variant="outline"
             type="button"
+            variant={isArchivedView ? "default" : "outline"}
             className="gap-2 rounded-xl border-[#e5e5e5] bg-white shadow-sm"
+            onClick={() => {
+              setIsArchivedView((prev) => !prev);
+              setPage(1);
+            }}
           >
-            <Filter className="size-4 text-gray-700" aria-hidden />
-            Filters
+            {isArchivedView ? "See Active" : "See Archived"}
           </Button>
           <Button
             type="button"
@@ -1349,6 +1410,34 @@ export function AdminSupportView() {
               onClick={submitNewTicket}
             >
               Create ticket
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteTicketId !== null} onOpenChange={(open) => !open && setDeleteTicketId(null)}>
+        <DialogContent className="max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle>Delete archived ticket permanently?</DialogTitle>
+            <DialogDescription>
+              {deleteTicketRow
+                ? `This will permanently delete ${deleteTicketRow.ticketCode} and its messages. This action cannot be undone.`
+                : "This action cannot be undone."}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setDeleteTicketId(null)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-rose-600 hover:bg-rose-700"
+              disabled={!deleteTicketId || isMarkingRead}
+              onClick={() => {
+                if (!deleteTicketId) return;
+                void deleteTicketPermanently(deleteTicketId);
+              }}
+            >
+              {isMarkingRead ? "Deleting..." : "Delete Permanently"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1474,11 +1563,14 @@ export function AdminSupportView() {
               className="rounded-lg bg-white"
               disabled={isMarkingRead}
               onClick={() => {
-                void markTicketsRead(Array.from(selected));
-                setSelected(new Set());
+                void updateArchiveState(Array.from(selected), !isArchivedView);
               }}
             >
-              {isMarkingRead ? "Updating..." : "Mark as read"}
+              {isMarkingRead
+                ? "Updating..."
+                : isArchivedView
+                  ? "Restore Selected"
+                  : "Archive Selected"}
             </Button>
             <Button
               type="button"
@@ -1541,7 +1633,7 @@ export function AdminSupportView() {
                         <tr
                           key={t.id}
                           className={cn(
-                            "cursor-pointer hover:bg-gray-50",
+                            "group cursor-pointer hover:bg-gray-50",
                             t.adminUnread && "bg-[#f0f7ff]/90",
                             ri % 2 === 1 && !t.adminUnread && "bg-gray-50/40",
                           )}
@@ -1612,21 +1704,33 @@ export function AdminSupportView() {
                             className="py-3 text-center"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <div className="flex items-center justify-center gap-1">
-                              <button
-                                type="button"
-                                className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
-                                onClick={() => handleOpenTicket(t)}
-                                aria-label="View ticket"
-                              >
-                                <Eye className="size-4" />
-                              </button>
-                              <button
-                                type="button"
-                                className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
-                              >
-                                <MoreHorizontal className="size-4 rotate-90" />
-                              </button>
+                            <div className="flex items-center justify-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                              {!isArchivedView ? (
+                                <button
+                                  type="button"
+                                  className="rounded-lg px-2 py-1 text-[12px] font-semibold text-amber-700 hover:bg-amber-100"
+                                  onClick={() => void updateArchiveState([t.id], true)}
+                                >
+                                  Archive
+                                </button>
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    className="rounded-lg px-2 py-1 text-[12px] font-semibold text-blue-700 hover:bg-blue-100"
+                                    onClick={() => void updateArchiveState([t.id], false)}
+                                  >
+                                    Unarchive
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="rounded-lg px-2 py-1 text-[12px] font-semibold text-rose-700 hover:bg-rose-100"
+                                    onClick={() => setDeleteTicketId(t.id)}
+                                  >
+                                    Delete
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </td>
                         </tr>

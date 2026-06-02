@@ -72,11 +72,16 @@ export async function GET(request: NextRequest) {
 
   try {
     const db = getAdminFirestore();
+    const { searchParams } = new URL(request.url);
+    const archivedParam = searchParams.get("archived");
+    const shouldLoadArchived = archivedParam === "1" || archivedParam === "true";
     const snap = await db.collection("supportTickets").orderBy("updatedAt", "desc").get();
 
     const tickets = await Promise.all(
       snap.docs.map(async (doc) => {
         const data = doc.data() as Record<string, unknown>;
+        const isArchived = data.isArchived === true;
+        if (isArchived !== shouldLoadArchived) return null;
         const createdByEmail =
           typeof data.createdByEmail === "string" ? data.createdByEmail : "";
         const createdByName =
@@ -117,8 +122,7 @@ export async function GET(request: NextRequest) {
         return ticket;
       }),
     );
-
-    return NextResponse.json({ tickets });
+    return NextResponse.json({ tickets: tickets.filter((ticket): ticket is AdminSupportTicketDto => ticket !== null) });
   } catch (error) {
     return NextResponse.json(
       { error: (error as Error).message || "Failed to load admin tickets" },
