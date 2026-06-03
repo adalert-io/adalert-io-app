@@ -248,9 +248,16 @@ export function ConsumerAdsAccountSwitcher({
             : "border-[#3b82f6]/50 bg-[#152542] ring-2 ring-[#3b82f6]/30"),
       )}
     >
-          {!isHeader ? (
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/[0.06]">
-              <GoogleAdsMark className="size-5" />
+          {activeAccount ? (
+            <span
+              className={cn(
+                "flex shrink-0 items-center justify-center rounded-lg",
+                isHeader
+                  ? "size-8 bg-slate-50"
+                  : "size-9 bg-white/[0.06]",
+              )}
+            >
+              <GoogleAdsMark className={isHeader ? "size-6" : "size-5"} />
             </span>
           ) : null}
           <span className="min-w-0 flex-1">
