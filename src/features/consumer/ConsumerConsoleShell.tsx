@@ -7,7 +7,6 @@ import { ChevronDown, LogOut, User } from "lucide-react";
 import type { ReactNode } from "react";
 import * as React from "react";
 
-import { GoogleAdsMark } from "@/components/GoogleAdsMark";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -306,8 +305,10 @@ function displayInitials(name: string | undefined, email: string | undefined): s
 export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
   const pathname = usePathname() ?? "/consumer/summary";
   const router = useRouter();
-  const isOnConsumerDashboard = isConsumerDashboardPath(pathname);
   const crumbs = consumerBreadcrumbs(pathname);
+  const mobileBrandHref = isSubscriptionExpired
+    ? CONSUMER_BILLING_HREF
+    : (crumbs[0]?.href ?? CONSUMER_MISSION_CONTROL_HREF);
   const { user, userDoc, logout, isFullAccess } = useAuthStore();
   const isSubscriptionExpired = !isFullAccess;
   const {
@@ -501,6 +502,7 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
         <ConsumerFreeTrialBanner upgradeHref="/consumer/settings/account/billing?show=payment-form" />
         <div className="sticky top-0 z-30 flex shrink-0 flex-col border-b border-slate-200/90 bg-[#f8fafc]/90 backdrop-blur-md">
           <div className="flex items-center gap-2 px-4 py-2">
+          <ConsumerMobileHeaderBrand href={mobileBrandHref} />
           <nav
             aria-label="Breadcrumb"
             className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground text-xs sm:text-sm"
@@ -511,13 +513,13 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
                 const isLast = index === crumbs.length - 1;
                 const isLink = Boolean(crumb.href) && !isLast;
 
-                if (isOnConsumerDashboard && isRoot) {
+                if (isRoot) {
                   return (
                     <li
                       key={`${crumb.title}-${index}`}
                       className="hidden items-center gap-2 lg:flex"
                     >
-                      {isLink && crumb.href ? (
+                      {crumb.href ? (
                         <Link
                           href={
                             isSubscriptionExpired ? CONSUMER_BILLING_HREF : crumb.href
@@ -535,24 +537,8 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
 
                 return (
                   <li key={`${crumb.title}-${index}`} className="flex items-center gap-2">
-                    {index > 0 ? (
-                      <>
-                        {index === 1 && isOnConsumerDashboard ? (
-                          <GoogleAdsMark className="size-5 shrink-0 lg:hidden" />
-                        ) : null}
-                        <span className="text-muted-foreground/70">/</span>
-                      </>
-                    ) : null}
-                    {isRoot && crumb.href ? (
-                      <Link
-                        href={
-                          isSubscriptionExpired ? CONSUMER_BILLING_HREF : crumb.href
-                        }
-                        className="hidden text-slate-800 hover:text-[#3b82f6] hover:underline lg:inline"
-                      >
-                        {crumb.title}
-                      </Link>
-                    ) : isLink && crumb.href ? (
+                    <span className="text-muted-foreground/70">/</span>
+                    {isLink && crumb.href ? (
                       <Link
                         href={
                           isSubscriptionExpired &&
@@ -577,14 +563,6 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
             </ol>
           </nav>
 
-          <ConsumerMobileHeaderBrand
-            href={
-              isSubscriptionExpired
-                ? CONSUMER_BILLING_HREF
-                : (crumbs[0]?.href ?? CONSUMER_MISSION_CONTROL_HREF)
-            }
-            className={cn(isOnConsumerDashboard && "hidden lg:flex")}
-          />
           <ConsumerHeaderActions isSubscriptionExpired={isSubscriptionExpired} />
           </div>
 
