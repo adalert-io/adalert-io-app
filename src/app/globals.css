@@ -119,6 +119,29 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /*
+   * iOS Safari (and some mobile browsers) auto-zoom focused fields when
+   * font-size is under 16px. Keep layout scale stable on tap/focus.
+   */
+  @media screen and (max-width: 767px) {
+    input:not(
+        [type="checkbox"],
+        [type="radio"],
+        [type="range"],
+        [type="color"],
+        [type="file"],
+        [type="hidden"],
+        [type="button"],
+        [type="submit"],
+        [type="reset"],
+        [type="image"]
+      ),
+    select,
+    textarea {
+      font-size: 1rem !important;
+    }
+  }
 }
 
 @media(max-width:1023px){
