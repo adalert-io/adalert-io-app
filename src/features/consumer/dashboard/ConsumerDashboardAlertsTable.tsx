@@ -340,19 +340,6 @@ export function ConsumerDashboardAlertsTable({
                         </span>
                       </div>
                     </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-8 shrink-0 text-[#015AFD] hover:bg-[#015AFD]/10"
-                      aria-label="View alert details"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openAlert(row.original);
-                      }}
-                    >
-                      <Eye className="size-4" />
-                    </Button>
                   </div>
                 </div>
               );
