@@ -58,10 +58,14 @@ export function ConsumerDashboardMetricCard({
           ) : null}
         </div>
         <span
-          className={cn("hidden size-12 shrink-0 sm:flex", iconClass)}
+          className={cn("flex size-7 shrink-0 sm:size-9", iconClass)}
           style={iconStyle}
         >
-          <Icon className="size-6" strokeWidth={1.85} aria-hidden />
+          <Icon
+            className="size-3.5 sm:size-4"
+            strokeWidth={1.85}
+            aria-hidden
+          />
         </span>
       </CardContent>
     </Card>
