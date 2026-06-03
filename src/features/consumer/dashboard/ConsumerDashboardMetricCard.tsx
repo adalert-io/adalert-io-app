@@ -23,61 +23,51 @@ export function ConsumerDashboardMetricCard({
   accentClassName,
   bottomBorderColor,
 }: ConsumerDashboardMetricCardProps) {
+  const iconStyle = bottomBorderColor
+    ? {
+        color: bottomBorderColor,
+        backgroundColor: `${bottomBorderColor}22`,
+      }
+    : undefined;
+
+  const iconClass = cn(
+    "flex shrink-0 items-center justify-center rounded-full",
+    !bottomBorderColor && (accentClassName ?? "bg-[#3b82f6]/10 text-[#3b82f6]"),
+  );
+
   return (
     <Card
       className={cn(
-        "flex min-h-[108px] justify-center gap-0 rounded-xl border border-slate-200 bg-white py-0 shadow-sm sm:min-h-[132px]",
+        "gap-0 rounded-xl border border-slate-200 bg-white py-0 shadow-sm",
         bottomBorderColor && "border-b-2",
       )}
       style={bottomBorderColor ? { borderBottomColor: bottomBorderColor } : undefined}
     >
-      <CardContent className="flex flex-1 flex-col justify-between gap-2 px-2.5 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-6 sm:py-5">
-        <div className="min-w-0 flex-1 space-y-0.5 sm:space-y-1">
+      <CardContent className="px-2.5 py-2.5 sm:flex sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6 sm:py-5">
+        <div className="min-w-0 flex-1">
           <p className="text-[10px] font-medium leading-tight text-muted-foreground sm:text-sm">
             {title}
           </p>
-          <div className="flex items-center gap-2 sm:block">
+          <div className="mt-1 flex items-center justify-between gap-2 sm:mt-0.5">
             <p className="truncate text-[22px] font-bold leading-none tracking-tight text-slate-900 sm:text-[28px]">
               {value}
             </p>
             <span
-              className={cn(
-                "flex size-7 shrink-0 items-center justify-center rounded-full sm:hidden",
-                !bottomBorderColor &&
-                  (accentClassName ?? "bg-[#3b82f6]/10 text-[#3b82f6]"),
-              )}
-              style={
-                bottomBorderColor
-                  ? {
-                      color: bottomBorderColor,
-                      backgroundColor: `${bottomBorderColor}22`,
-                    }
-                  : undefined
-              }
+              className={cn("size-8 sm:hidden", iconClass)}
+              style={iconStyle}
             >
-              <Icon className="size-3.5" strokeWidth={1.85} aria-hidden />
+              <Icon className="size-4" strokeWidth={1.85} aria-hidden />
             </span>
           </div>
           {subtitle ? (
-            <p className="hidden text-[13px] font-medium leading-snug text-slate-500 sm:line-clamp-none sm:block">
+            <p className="mt-1 hidden text-[13px] font-medium leading-snug text-slate-500 sm:block">
               {subtitle}
             </p>
           ) : null}
         </div>
         <span
-          className={cn(
-            "hidden size-12 shrink-0 items-center justify-center rounded-full sm:flex",
-            !bottomBorderColor &&
-              (accentClassName ?? "bg-[#3b82f6]/10 text-[#3b82f6]"),
-          )}
-          style={
-            bottomBorderColor
-              ? {
-                  color: bottomBorderColor,
-                  backgroundColor: `${bottomBorderColor}22`,
-                }
-              : undefined
-          }
+          className={cn("hidden size-12 sm:flex", iconClass)}
+          style={iconStyle}
         >
           <Icon className="size-6" strokeWidth={1.85} aria-hidden />
         </span>
