@@ -19,7 +19,12 @@ import {
 import { useConsumerAddAdsAccountDialog } from "@/features/consumer/add-ads-account/use-consumer-add-ads-account-dialog";
 import { isConsumerDashboardPath } from "@/features/consumer/consumer-console-nav";
 import { consumerPathForClassicRoute } from "@/lib/consumer-shell-preference";
+import {
+  ConsumerShowingAdsBadge,
+  showingAdsStatusFromLabel,
+} from "@/features/consumer/ConsumerShowingAdsBadge";
 import { useAuthStore } from "@/lib/store/auth-store";
+import { useDashboardStore } from "@/lib/store/dashboard-store";
 import type { AdsAccount } from "@/lib/store/user-ads-accounts-store";
 import { useUserAdsAccountsStore } from "@/lib/store/user-ads-accounts-store";
 import { cn, formatAccountNumber } from "@/lib/utils";
@@ -94,6 +99,10 @@ export function ConsumerAdsAccountSwitcher({
   }, [userDoc, loading, connectedCount, fetchUserAdsAccounts, isSubscriptionExpired]);
 
   const isOnDashboard = isConsumerDashboardPath(pathname);
+  const adsLabel = useDashboardStore((s) => s.adsLabel);
+  const selectedShowingAdsStatus = isOnDashboard
+    ? showingAdsStatusFromLabel(adsLabel)
+    : null;
 
   const activeAccount = useMemo(() => {
     if (!isOnDashboard) {
@@ -256,6 +265,14 @@ export function ConsumerAdsAccountSwitcher({
                 {triggerSub}
               </span>
             ) : null}
+            {isOnDashboard && selectedShowingAdsStatus && isHeader ? (
+              <span className="mt-1.5 flex">
+                <ConsumerShowingAdsBadge
+                  status={selectedShowingAdsStatus}
+                  compact
+                />
+              </span>
+            ) : null}
           </span>
           <ChevronDown
             aria-hidden
@@ -350,6 +367,14 @@ export function ConsumerAdsAccountSwitcher({
                   <span className="mt-0.5 block truncate text-[11px] tabular-nums text-slate-500">
                     {number}
                   </span>
+                  {isOnDashboard && isSelected && selectedShowingAdsStatus ? (
+                    <span className="mt-1.5">
+                      <ConsumerShowingAdsBadge
+                        status={selectedShowingAdsStatus}
+                        compact
+                      />
+                    </span>
+                  ) : null}
                 </span>
                 {isSelected ? (
                   <Check className="size-4 shrink-0 text-[#015AFD]" aria-hidden />

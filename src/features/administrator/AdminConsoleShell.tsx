@@ -32,6 +32,9 @@ import {
   type AdminNavLeaf,
 } from "./admin-console-nav";
 
+/** Mobile header / drawer logo (~25% smaller than prior 40px sidebar mark). */
+const ADMIN_MOBILE_LOGO_PX = 30;
+
 /** Logo + wordmark — same asset as LoginForm (`/images/adalert-logo.avif`); sidebar uses white text on `#0B1426`. */
 function AdminSidebarAuthBrandLockup({ className }: { className?: string }) {
   return (
@@ -46,10 +49,31 @@ function AdminSidebarAuthBrandLockup({ className }: { className?: string }) {
           width={40}
           height={40}
           priority
-          className="size-10 shrink-0"
+          className="size-[30px] shrink-0 lg:size-10"
         />
-        <span className="truncate text-[25px] font-bold leading-none tracking-tight text-white">adAlert.io</span>
+        <span className="truncate text-[22px] font-bold leading-none tracking-tight text-white lg:text-[25px]">
+          adAlert.io
+        </span>
       </span>
+    </Link>
+  );
+}
+
+function AdminMobileHeaderBrand() {
+  return (
+    <Link
+      href="https://adalert.io/"
+      className="ms-auto flex shrink-0 items-center rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#3b82f6]/40 lg:hidden"
+      aria-label="adAlert.io home"
+    >
+      <Image
+        src="/images/adalert-logo.avif"
+        alt=""
+        width={ADMIN_MOBILE_LOGO_PX}
+        height={ADMIN_MOBILE_LOGO_PX}
+        priority
+        className="size-[30px] shrink-0"
+      />
     </Link>
   );
 }
@@ -307,7 +331,11 @@ export function AdminConsoleShell({ children }: AdminConsoleShellProps) {
       </aside>
 
       <div className="flex min-h-svh min-w-0 flex-1 flex-col lg:pl-[264px]">
-        <div className={cn(isDashboardHome ? "hidden" : "sticky top-0 z-30 flex shrink-0 items-center gap-2 border-b border-slate-200/90 bg-[#f8fafc]/90 px-4 py-2 backdrop-blur-md")}>
+        <div
+          className={cn(
+            isDashboardHome ? "hidden" : "sticky top-0 z-30 flex shrink-0 items-center gap-2 border-b border-slate-200/90 bg-[#f8fafc]/90 px-4 py-2 backdrop-blur-md lg:px-6",
+          )}
+        >
           <Button
             type="button"
             variant="outline"
@@ -321,7 +349,7 @@ export function AdminConsoleShell({ children }: AdminConsoleShellProps) {
 
           <div className="hidden h-4 w-px bg-slate-200 lg:block" />
 
-          <nav aria-label="Breadcrumb" className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground text-xs sm:text-sm">
+          <nav aria-label="Breadcrumb" className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 pe-2 text-muted-foreground text-xs sm:text-sm">
             <ol className="flex flex-wrap items-center gap-x-2 gap-y-1">
               {crumbs.map((crumb, index) => (
                 <li key={`${crumb.title}-${index}`} className="flex items-center gap-2">
@@ -339,9 +367,17 @@ export function AdminConsoleShell({ children }: AdminConsoleShellProps) {
               ))}
             </ol>
           </nav>
+
+          <AdminMobileHeaderBrand />
         </div>
 
-        <div className={cn(isDashboardHome ? "sticky top-0 z-30 flex items-center border-b border-slate-200/80 bg-[#f8fafc]/90 px-3 py-2 backdrop-blur-sm lg:hidden" : "hidden")}>
+        <div
+          className={cn(
+            isDashboardHome
+              ? "sticky top-0 z-30 flex items-center gap-2 border-b border-slate-200/80 bg-[#f8fafc]/90 px-4 py-2 backdrop-blur-sm lg:hidden"
+              : "hidden",
+          )}
+        >
           <Button
             type="button"
             variant="outline"
@@ -352,6 +388,10 @@ export function AdminConsoleShell({ children }: AdminConsoleShellProps) {
           >
             <Menu className="size-5" />
           </Button>
+          <span className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900">
+            Admin Dashboard
+          </span>
+          <AdminMobileHeaderBrand />
         </div>
 
         <main className="relative flex min-w-0 flex-1 flex-col">

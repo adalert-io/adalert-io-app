@@ -123,17 +123,6 @@ function SummaryAccountMobileCard({
         <ShowingAdsBadge account={account} />
       </div>
 
-      <div className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-1">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-          Impact
-        </span>
-        <ImpactCounts account={account} />
-
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-          Pacing
-        </span>
-        <BudgetPacingBar account={account} compact />
-      </div>
     </button>
   );
 }
@@ -409,7 +398,7 @@ export function ConsumerSummaryView() {
             ) : null}
           </div>
 
-          <div className="relative">
+          <div className="relative hidden md:block">
             <select
               className={SELECT_CLASS}
               aria-label="Rows per page"

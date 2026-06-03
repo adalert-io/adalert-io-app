@@ -495,7 +495,7 @@ export function ConsumerDashboardView() {
   return (
     <div className="min-h-0 flex-1">
       <main className="mx-auto flex w-full max-w-[1480px] flex-1 flex-col gap-8 pb-8">
-        <Card className="rounded-2xl border border-slate-200/90 bg-white py-0 shadow-md">
+        <Card className="hidden rounded-2xl border border-slate-200/90 bg-white py-0 shadow-md md:block">
           <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-3">
               <GoogleAdsMark className="size-8 shrink-0" />
@@ -858,7 +858,7 @@ export function ConsumerDashboardView() {
                   </span>
                 </Button>
 
-                <div className="relative">
+                <div className="relative hidden md:block">
                   <select
                     className="min-w-[120px] cursor-pointer appearance-none rounded-lg border border-slate-200 bg-white py-2.5 pe-9 ps-4 text-[13px] font-medium text-slate-700 shadow-sm transition-colors focus-visible:border-[#015AFD] focus-visible:ring-2 focus-visible:ring-[#015AFD]/25"
                     value={pageSize}
@@ -871,18 +871,18 @@ export function ConsumerDashboardView() {
                     <option value={100}>100 rows</option>
                   </select>
 
-                  {/* Custom dropdown chevron */}
                   <svg
-                    className='absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
+                    className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-gray-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden
                   >
                     <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                       strokeWidth={2}
-                      d='M19 9l-7 7-7-7'
+                      d="M19 9l-7 7-7-7"
                     />
                   </svg>
                 </div>

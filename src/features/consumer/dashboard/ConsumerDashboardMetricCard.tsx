@@ -32,22 +32,41 @@ export function ConsumerDashboardMetricCard({
       style={bottomBorderColor ? { borderBottomColor: bottomBorderColor } : undefined}
     >
       <CardContent className="flex flex-1 flex-col justify-between gap-2 px-2.5 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-6 sm:py-5">
-        <div className="min-w-0 space-y-0.5 sm:space-y-1">
+        <div className="min-w-0 flex-1 space-y-0.5 sm:space-y-1">
           <p className="text-[10px] font-medium leading-tight text-muted-foreground sm:text-sm">
             {title}
           </p>
-          <p className="truncate text-[22px] font-bold leading-none tracking-tight text-slate-900 sm:text-[28px]">
-            {value}
-          </p>
+          <div className="flex items-center gap-2 sm:block">
+            <p className="truncate text-[22px] font-bold leading-none tracking-tight text-slate-900 sm:text-[28px]">
+              {value}
+            </p>
+            <span
+              className={cn(
+                "flex size-7 shrink-0 items-center justify-center rounded-full sm:hidden",
+                !bottomBorderColor &&
+                  (accentClassName ?? "bg-[#3b82f6]/10 text-[#3b82f6]"),
+              )}
+              style={
+                bottomBorderColor
+                  ? {
+                      color: bottomBorderColor,
+                      backgroundColor: `${bottomBorderColor}22`,
+                    }
+                  : undefined
+              }
+            >
+              <Icon className="size-3.5" strokeWidth={1.85} aria-hidden />
+            </span>
+          </div>
           {subtitle ? (
-            <p className="line-clamp-2 text-[9px] font-medium leading-snug text-slate-500 sm:line-clamp-none sm:text-[13px]">
+            <p className="hidden text-[13px] font-medium leading-snug text-slate-500 sm:line-clamp-none sm:block">
               {subtitle}
             </p>
           ) : null}
         </div>
         <span
           className={cn(
-            "flex size-8 shrink-0 items-center justify-center self-end rounded-full sm:size-12 sm:self-auto",
+            "hidden size-12 shrink-0 items-center justify-center rounded-full sm:flex",
             !bottomBorderColor &&
               (accentClassName ?? "bg-[#3b82f6]/10 text-[#3b82f6]"),
           )}
@@ -60,7 +79,7 @@ export function ConsumerDashboardMetricCard({
               : undefined
           }
         >
-          <Icon className="size-4 sm:size-6" strokeWidth={1.85} aria-hidden />
+          <Icon className="size-6" strokeWidth={1.85} aria-hidden />
         </span>
       </CardContent>
     </Card>

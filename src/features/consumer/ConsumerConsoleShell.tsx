@@ -30,6 +30,7 @@ import {
   isConsumerNavHrefDisabledWhenExpired,
 } from "./consumer-subscription-access";
 import {
+  CONSUMER_MISSION_CONTROL_HREF,
   consumerBreadcrumbs,
   consumerLeafMatches,
   consumerNavGroupsForUser,
@@ -77,14 +78,20 @@ function ConsumerSidebarBrand({ className }: { className?: string }) {
   );
 }
 
-function ConsumerMobileBreadcrumbBrand({ href }: { href: string }) {
+/** Mobile header logo (~25% smaller than prior 32px). */
+const CONSUMER_MOBILE_HEADER_LOGO_PX = 24;
+
+function ConsumerMobileHeaderBrand({ href }: { href: string }) {
   return (
     <Link
       href={href}
       className="flex shrink-0 items-center rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#015AFD]/40 lg:hidden"
       aria-label="adAlert.io home"
     >
-      <ConsumerBrandLogo size={32} className="size-8" />
+      <ConsumerBrandLogo
+        size={CONSUMER_MOBILE_HEADER_LOGO_PX}
+        className="size-6"
+      />
     </Link>
   );
 }
@@ -497,21 +504,14 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
                   <li key={`${crumb.title}-${index}`} className="flex items-center gap-2">
                     {index > 0 ? <span className="text-muted-foreground/70">/</span> : null}
                     {isRoot && crumb.href ? (
-                      <>
-                        <ConsumerMobileBreadcrumbBrand
-                          href={
-                            isSubscriptionExpired ? CONSUMER_BILLING_HREF : crumb.href
-                          }
-                        />
-                        <Link
-                          href={
-                            isSubscriptionExpired ? CONSUMER_BILLING_HREF : crumb.href
-                          }
-                          className="hidden text-slate-800 hover:text-[#3b82f6] hover:underline lg:inline"
-                        >
-                          {crumb.title}
-                        </Link>
-                      </>
+                      <Link
+                        href={
+                          isSubscriptionExpired ? CONSUMER_BILLING_HREF : crumb.href
+                        }
+                        className="hidden text-slate-800 hover:text-[#3b82f6] hover:underline lg:inline"
+                      >
+                        {crumb.title}
+                      </Link>
                     ) : isLink && crumb.href ? (
                       <Link
                         href={
@@ -537,6 +537,13 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
             </ol>
           </nav>
 
+          <ConsumerMobileHeaderBrand
+            href={
+              isSubscriptionExpired
+                ? CONSUMER_BILLING_HREF
+                : (crumbs[0]?.href ?? CONSUMER_MISSION_CONTROL_HREF)
+            }
+          />
           <ConsumerHeaderActions isSubscriptionExpired={isSubscriptionExpired} />
           </div>
 
