@@ -3,7 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BarChart2, Check, ChevronDown, Loader2, Plus, Search } from "lucide-react";
+import {
+  ArrowLeft,
+  BarChart2,
+  Check,
+  ChevronDown,
+  Loader2,
+  Plus,
+  Search,
+} from "lucide-react";
 
 import { GoogleAdsMark } from "@/components/GoogleAdsMark";
 import {
@@ -17,7 +25,11 @@ import {
   ConsumerAddAdsAccountDialog,
 } from "@/features/consumer/add-ads-account/ConsumerAddAdsAccountDialog";
 import { useConsumerAddAdsAccountDialog } from "@/features/consumer/add-ads-account/use-consumer-add-ads-account-dialog";
-import { isConsumerDashboardPath } from "@/features/consumer/consumer-console-nav";
+import {
+  CONSUMER_MISSION_CONTROL_HREF,
+  isConsumerDashboardPath,
+} from "@/features/consumer/consumer-console-nav";
+import { CONSUMER_BILLING_HREF } from "@/features/consumer/consumer-subscription-access";
 import { consumerPathForClassicRoute } from "@/lib/consumer-shell-preference";
 import {
   ConsumerShowingAdsBadge,
@@ -286,13 +298,38 @@ export function ConsumerAdsAccountSwitcher({
         </button>
   );
 
+  const showMobileDashboardBack = isOnDashboard && isHeader;
+  const mobileBackHref = isSubscriptionExpired
+    ? CONSUMER_BILLING_HREF
+    : CONSUMER_MISSION_CONTROL_HREF;
+
   return (
-    <DropdownMenu
-      open={isSubscriptionExpired ? false : open}
-      onOpenChange={(next) => {
-        if (!isSubscriptionExpired) handleOpenChange(next);
-      }}
+    <div
+      className={cn(
+        showMobileDashboardBack && "flex w-full items-stretch gap-2 lg:block",
+      )}
     >
+      {showMobileDashboardBack ? (
+        <Link
+          href={mobileBackHref}
+          className="flex size-10 shrink-0 items-center justify-center self-center rounded-xl border border-slate-200 bg-white text-[#015AFD] shadow-sm transition-colors hover:border-[#015AFD]/30 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#015AFD]/25 lg:hidden"
+          aria-label={
+            isSubscriptionExpired
+              ? "Back to billing"
+              : "Back to Mission Control"
+          }
+        >
+          <ArrowLeft className="size-5" strokeWidth={2} aria-hidden />
+        </Link>
+      ) : null}
+
+      <div className={cn(showMobileDashboardBack && "min-w-0 flex-1")}>
+      <DropdownMenu
+        open={isSubscriptionExpired ? false : open}
+        onOpenChange={(next) => {
+          if (!isSubscriptionExpired) handleOpenChange(next);
+        }}
+      >
       <DropdownMenuTrigger asChild>{triggerButton}</DropdownMenuTrigger>
 
       <DropdownMenuContent
@@ -431,5 +468,7 @@ export function ConsumerAdsAccountSwitcher({
         />
       ) : null}
     </DropdownMenu>
+      </div>
+    </div>
   );
 }
