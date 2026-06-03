@@ -7,6 +7,7 @@ import { ChevronDown, LogOut, User } from "lucide-react";
 import type { ReactNode } from "react";
 import * as React from "react";
 
+import { GoogleAdsMark } from "@/components/GoogleAdsMark";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -81,11 +82,20 @@ function ConsumerSidebarBrand({ className }: { className?: string }) {
 /** Mobile header logo (~25% smaller than prior 32px). */
 const CONSUMER_MOBILE_HEADER_LOGO_PX = 24;
 
-function ConsumerMobileHeaderBrand({ href }: { href: string }) {
+function ConsumerMobileHeaderBrand({
+  href,
+  className,
+}: {
+  href: string;
+  className?: string;
+}) {
   return (
     <Link
       href={href}
-      className="flex shrink-0 items-center rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#015AFD]/40 lg:hidden"
+      className={cn(
+        "flex shrink-0 items-center rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#015AFD]/40 lg:hidden",
+        className,
+      )}
       aria-label="adAlert.io home"
     >
       <ConsumerBrandLogo
@@ -296,6 +306,7 @@ function displayInitials(name: string | undefined, email: string | undefined): s
 export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
   const pathname = usePathname() ?? "/consumer/summary";
   const router = useRouter();
+  const isOnConsumerDashboard = isConsumerDashboardPath(pathname);
   const crumbs = consumerBreadcrumbs(pathname);
   const { user, userDoc, logout, isFullAccess } = useAuthStore();
   const isSubscriptionExpired = !isFullAccess;
@@ -500,9 +511,38 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
                 const isLast = index === crumbs.length - 1;
                 const isLink = Boolean(crumb.href) && !isLast;
 
+                if (isOnConsumerDashboard && isRoot) {
+                  return (
+                    <li
+                      key={`${crumb.title}-${index}`}
+                      className="hidden items-center gap-2 lg:flex"
+                    >
+                      {isLink && crumb.href ? (
+                        <Link
+                          href={
+                            isSubscriptionExpired ? CONSUMER_BILLING_HREF : crumb.href
+                          }
+                          className="text-slate-800 hover:text-[#3b82f6] hover:underline"
+                        >
+                          {crumb.title}
+                        </Link>
+                      ) : (
+                        <span>{crumb.title}</span>
+                      )}
+                    </li>
+                  );
+                }
+
                 return (
                   <li key={`${crumb.title}-${index}`} className="flex items-center gap-2">
-                    {index > 0 ? <span className="text-muted-foreground/70">/</span> : null}
+                    {index > 0 ? (
+                      <>
+                        {index === 1 && isOnConsumerDashboard ? (
+                          <GoogleAdsMark className="size-5 shrink-0 lg:hidden" />
+                        ) : null}
+                        <span className="text-muted-foreground/70">/</span>
+                      </>
+                    ) : null}
                     {isRoot && crumb.href ? (
                       <Link
                         href={
@@ -543,6 +583,7 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
                 ? CONSUMER_BILLING_HREF
                 : (crumbs[0]?.href ?? CONSUMER_MISSION_CONTROL_HREF)
             }
+            className={cn(isOnConsumerDashboard && "hidden lg:flex")}
           />
           <ConsumerHeaderActions isSubscriptionExpired={isSubscriptionExpired} />
           </div>

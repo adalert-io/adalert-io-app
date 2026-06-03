@@ -236,7 +236,7 @@ export function ConsumerAdsAccountSwitcher({
       }
       className={cn(
         "group flex w-full items-center gap-2.5 rounded-xl border px-3 text-left outline-none transition-colors",
-        isHeader ? "py-2" : "py-2.5",
+        isHeader ? (isOnDashboard ? "py-1.5" : "py-2") : "py-2.5",
         isSubscriptionExpired && "cursor-not-allowed opacity-50",
         isHeader
           ? "border-slate-200 bg-white shadow-sm hover:border-[#015AFD]/30 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#015AFD]/25"
@@ -248,14 +248,11 @@ export function ConsumerAdsAccountSwitcher({
             : "border-[#3b82f6]/50 bg-[#152542] ring-2 ring-[#3b82f6]/30"),
       )}
     >
-          <span
-            className={cn(
-              "flex size-9 shrink-0 items-center justify-center rounded-lg",
-              isHeader ? "bg-slate-100" : "bg-white/[0.06]",
-            )}
-          >
-            <GoogleAdsMark className="size-5" />
-          </span>
+          {!isHeader ? (
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/[0.06]">
+              <GoogleAdsMark className="size-5" />
+            </span>
+          ) : null}
           <span className="min-w-0 flex-1">
             <span
               className={cn(
@@ -266,24 +263,33 @@ export function ConsumerAdsAccountSwitcher({
               {triggerLabel}
             </span>
             {triggerSub ? (
-              <span
-                className={cn(
-                  "mt-0.5 block truncate text-[11px] font-medium tabular-nums",
-                  isHeader
-                    ? "text-slate-500 group-hover:text-slate-600"
-                    : "text-[#64748b] group-hover:text-[#94a3b8]",
-                )}
-              >
-                {triggerSub}
-              </span>
-            ) : null}
-            {isOnDashboard && selectedShowingAdsStatus && isHeader ? (
-              <span className="mt-1.5 flex">
-                <ConsumerShowingAdsBadge
-                  status={selectedShowingAdsStatus}
-                  compact
-                />
-              </span>
+              isOnDashboard && selectedShowingAdsStatus && isHeader ? (
+                <span className="mt-0.5 flex min-w-0 flex-wrap items-center gap-1.5">
+                  <span
+                    className={cn(
+                      "truncate text-[11px] font-medium tabular-nums text-slate-500 group-hover:text-slate-600",
+                    )}
+                  >
+                    {triggerSub}
+                  </span>
+                  <ConsumerShowingAdsBadge
+                    status={selectedShowingAdsStatus}
+                    compact
+                    className="shrink-0"
+                  />
+                </span>
+              ) : (
+                <span
+                  className={cn(
+                    "mt-0.5 block truncate text-[11px] font-medium tabular-nums",
+                    isHeader
+                      ? "text-slate-500 group-hover:text-slate-600"
+                      : "text-[#64748b] group-hover:text-[#94a3b8]",
+                  )}
+                >
+                  {triggerSub}
+                </span>
+              )
             ) : null}
           </span>
           <ChevronDown
