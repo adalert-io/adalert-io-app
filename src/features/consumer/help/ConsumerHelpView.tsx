@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { cn } from "@/lib/utils";
 
+import { ConsumerHelpAppGuide } from "./ConsumerHelpAppGuide";
 import { ConsumerHelpNewTicketDialog } from "./ConsumerHelpNewTicketDialog";
 import { ConsumerHelpTicketsTable } from "./ConsumerHelpTicketsTable";
 import { SUPPORT_CATEGORIES } from "./helpers";
@@ -156,40 +157,37 @@ export function ConsumerHelpView() {
   };
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-[1480px] space-y-6 pb-8">
-      <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mx-auto w-full min-w-0 max-w-[1480px] space-y-6 pb-6 lg:space-y-10 lg:pb-10">
+      <section className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between md:gap-6">
         <div className="max-w-2xl space-y-2">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+          <h1 className="text-[26px] font-bold leading-tight tracking-tight text-slate-900 md:text-[32px]">
             How can we help?
           </h1>
-          <p className="text-[15px] leading-relaxed text-slate-600">
-            Track support requests and open a new ticket when you need assistance.
+          <p className="text-[15px] leading-relaxed text-slate-600 md:text-base">
+            Track support requests, submit a ticket, or read the app guide below.
           </p>
         </div>
-        <div className="flex shrink-0 sm:items-end">
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => setIsNewTicketOpen(true)}
-            className="h-9 gap-1.5 rounded-lg bg-[#015AFD] px-3.5 text-sm font-semibold text-white shadow-sm hover:bg-[#0146ca]"
-          >
-            <HelpCircle className="size-3.5" aria-hidden />
-            Submit a ticket
-          </Button>
-        </div>
+        <Button
+          type="button"
+          onClick={() => setIsNewTicketOpen(true)}
+          className="h-11 w-full shrink-0 gap-2 rounded-xl bg-[#015AFD] px-5 text-[15px] font-semibold text-white shadow-sm hover:bg-[#0146ca] md:h-10 md:w-auto md:rounded-lg md:text-sm"
+        >
+          <HelpCircle className="size-4" aria-hidden />
+          Submit a ticket
+        </Button>
       </section>
 
-      <section className="rounded-2xl border border-slate-200/90 bg-white shadow-sm">
-        <div className="flex flex-col gap-4 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900">Your tickets</h2>
-            <p className="text-[13px] text-slate-500">
+      <section className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm">
+        <div className="flex flex-col gap-4 border-b border-slate-100 p-4 md:flex-row md:items-center md:justify-between md:gap-6 md:p-6 lg:p-7">
+          <div className="shrink-0">
+            <h2 className="text-lg font-bold text-slate-900 md:text-xl">Your tickets</h2>
+            <p className="mt-0.5 text-[13px] text-slate-500 md:text-sm">
               {isLoadingTickets
                 ? "Loading…"
                 : `${filteredTickets.length} ticket${filteredTickets.length === 1 ? "" : "s"}`}
             </p>
           </div>
-          <div className="relative w-full sm:max-w-xs">
+          <div className="relative w-full md:max-w-sm lg:max-w-md">
             <Search
               className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400"
               aria-hidden
@@ -198,38 +196,42 @@ export function ConsumerHelpView() {
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Search tickets…"
-              className="rounded-xl border-slate-200 pl-9"
+              className="h-11 rounded-xl border-slate-200 pl-9 md:h-9"
               aria-label="Search tickets"
               disabled={isLoadingTickets}
             />
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 border-b border-slate-100 px-5 pb-4 sm:px-6">
-          {FILTER_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => setFilter(option.value)}
-              className={cn(
-                "rounded-full px-3 py-1.5 text-[12px] font-semibold transition-colors",
-                filter === option.value
-                  ? "bg-[#015AFD] text-white shadow-sm"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200/80",
-              )}
-            >
-              {option.label} ({filterCounts[option.value]})
-            </button>
-          ))}
+        <div className="border-b border-slate-100 px-4 pb-3 md:overflow-visible md:px-6 md:pb-4 lg:px-7">
+          <div className="flex gap-2 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible md:pb-0">
+            {FILTER_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setFilter(option.value)}
+                className={cn(
+                  "shrink-0 rounded-full px-3.5 py-2 text-[13px] font-semibold transition-colors md:px-3 md:py-1.5 md:text-[12px]",
+                  filter === option.value
+                    ? "bg-[#015AFD] text-white shadow-sm"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200/80",
+                )}
+              >
+                {option.label} ({filterCounts[option.value]})
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="p-4 sm:p-6">
+        <div className="p-4 md:p-6 lg:p-7">
           <ConsumerHelpTicketsTable
             tickets={filteredTickets}
             onSelectTicket={handleSelectTicket}
           />
         </div>
       </section>
+
+      <ConsumerHelpAppGuide />
 
       <ConsumerHelpNewTicketDialog
         open={isNewTicketOpen}

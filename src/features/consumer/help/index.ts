@@ -1,3 +1,4 @@
+export { ConsumerHelpAppGuide } from "./ConsumerHelpAppGuide";
 export { ConsumerHelpView } from "./ConsumerHelpView";
 export { ConsumerHelpNewTicketDialog } from "./ConsumerHelpNewTicketDialog";
 export { ConsumerHelpTicketDetailPage } from "./ConsumerHelpTicketDetailPage";
