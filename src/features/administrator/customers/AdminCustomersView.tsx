@@ -169,6 +169,7 @@ function SheetSectionHeader({
 function statusLabel(status: CustomerStatus): string {
   if (status === "past_due") return "Past Due";
   if (status === "not_connected") return "Not Connected";
+  if (status === "paused") return "Trial Expired";
   return status.charAt(0).toUpperCase() + status.slice(1);
 }
 

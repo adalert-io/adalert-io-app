@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
 
+import { parseDashboardRange } from "@/app/api/admin/dashboard/_lib";
 import { getStripeServer } from "@/lib/stripe/get-stripe-server";
 
 const ADMIN_PREVIEW_COOKIE = "admin_preview_gate";
@@ -85,6 +86,13 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    const { searchParams } = new URL(request.url);
+    const hasRangeFilter =
+      searchParams.has("from") || searchParams.has("to");
+    const range = hasRangeFilter
+      ? parseDashboardRange(searchParams.get("from"), searchParams.get("to"))
+      : null;
+
     const charges = await listAllCharges(stripe);
 
     let succeeded = 0;
@@ -92,7 +100,15 @@ export async function GET(request: NextRequest) {
     let failed = 0;
     let totalAmount = 0;
 
-    const transactions = charges.map((charge, index) => {
+    const inRange = (unixSeconds: number) => {
+      if (!range) return true;
+      const at = unixSeconds * 1000;
+      return at >= range.from.getTime() && at <= range.to.getTime();
+    };
+
+    const transactions = charges
+      .filter((charge) => inRange(charge.created))
+      .map((charge, index) => {
       const status = normalizeStatus(charge.status);
       const amount = (charge.amount || 0) / 100;
       if (status === "succeeded") {
@@ -150,6 +166,11 @@ export async function GET(request: NextRequest) {
         failed,
         totalAmount: Math.round(totalAmount * 100) / 100,
       },
+      range: range
+        ? { from: range.from.toISOString(), to: range.to.toISOString() }
+        : null,
+      revenueNote:
+        "Total Amount sums succeeded Stripe charges by charge date. The admin dashboard Total Revenue uses paid Stripe invoices by payment date—the two can differ for refunds, retries, or non-invoice charges.",
     });
   } catch (error) {
     return NextResponse.json(

@@ -1,7 +1,7 @@
 import admin from "firebase-admin";
 import type Stripe from "stripe";
 
-import { formatDateLabel, loadCustomersList } from "@/app/api/admin/customers/_lib";
+import { formatDateLabel } from "@/app/api/admin/customers/_lib";
 import { COLLECTIONS, SUBSCRIPTION_PERIODS, SUBSCRIPTION_STATUS } from "@/lib/constants";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { getStripeServer } from "@/lib/stripe/get-stripe-server";
@@ -106,6 +106,21 @@ export interface DashboardOverview {
       retryStatus: string;
     }>;
   };
+  revenueReconciliation: {
+    rangeLabel: string;
+    invoiceRevenue: number;
+    displayInvoiceRevenue: string;
+    paidInvoiceCount: number;
+    chartSeriesTotal: number;
+    displayChartSeriesTotal: string;
+    totalsAligned: boolean;
+    transactionsSucceededAmount: number;
+    displayTransactionsSucceededAmount: string;
+    transactionsSucceededCount: number;
+    amountsAligned: boolean;
+    summary: string;
+    detailPoints: string[];
+  };
 }
 
 function startOfDay(date: Date): Date {
@@ -126,8 +141,8 @@ export function parseDashboardRange(
 ): DashboardDateRange {
   const fallbackTo = endOfDay(new Date());
   const defaultFrom = startOfDay(new Date(fallbackTo));
-  defaultFrom.setMonth(defaultFrom.getMonth() - 7);
-  const to = toParam ? endOfDay(new Date(toParam)) : endOfDay(new Date());
+  defaultFrom.setDate(defaultFrom.getDate() - 29);
+  const to = toParam ? endOfDay(new Date(toParam)) : fallbackTo;
   const from = fromParam
     ? startOfDay(new Date(fromParam))
     : defaultFrom;
@@ -203,31 +218,18 @@ function monthlyRangeLabels(range: DashboardDateRange): Array<{ key: string; lab
   return out;
 }
 
-async function listAllStripeInvoicesInWindow(
-  stripe: NonNullable<ReturnType<typeof getStripeServer>>,
-  fromUnix: number,
-  toUnix: number,
-) {
-  const invoices: Awaited<ReturnType<typeof stripe.invoices.list>>["data"] = [];
-  let startingAfter: string | undefined;
-
-  while (true) {
-    const page = await stripe.invoices.list({
-      limit: 100,
-      created: { gte: fromUnix, lte: toUnix },
-      ...(startingAfter ? { starting_after: startingAfter } : {}),
-    });
-    invoices.push(...page.data);
-    if (!page.has_more || page.data.length === 0) break;
-    startingAfter = page.data[page.data.length - 1]?.id;
-  }
-
-  return invoices;
+function invoicePaidAtUnix(invoice: Stripe.Invoice): number {
+  return (
+    invoice.status_transitions?.paid_at ??
+    invoice.effective_at ??
+    invoice.created
+  );
 }
 
-async function loadStripeRevenue(range: DashboardDateRange) {
+async function loadPaidInvoiceMetrics(range: DashboardDateRange) {
   const previous = previousRange(range);
   const stripe = getStripeServer();
+  const emptyChart = buildEmptyMonthlyChart(range);
   if (!stripe) {
     return {
       total: 0,
@@ -236,37 +238,36 @@ async function loadStripeRevenue(range: DashboardDateRange) {
       averageInvoiceValue: 0,
       collectionRatePct: 0,
       bestMonthRevenue: 0,
-      chart: buildEmptyMonthlyChart(range),
+      chart: emptyChart,
+      countInRange: 0,
+      countInPrevious: 0,
+      totalPaidAmountInRange: 0,
+      recent: [] as DashboardOverview["invoices"]["recent"],
     };
   }
 
-  const fromUnix = Math.floor(range.from.getTime() / 1000);
-  const toUnix = Math.floor(range.to.getTime() / 1000);
-  const prevFromUnix = Math.floor(previous.from.getTime() / 1000);
-  const prevToUnix = Math.floor(previous.to.getTime() / 1000);
+  const invoices = await listAllStripeInvoices(stripe);
+  const paidInvoicesAll = invoices.filter((invoice) => invoice.status === "paid");
 
-  const [currentInvoices, previousInvoices] = await Promise.all([
-    listAllStripeInvoicesInWindow(stripe, fromUnix, toUnix),
-    listAllStripeInvoicesInWindow(stripe, prevFromUnix, prevToUnix),
-  ]);
+  const paidInRange = paidInvoicesAll.filter((invoice) =>
+    inRangeFromUnix(invoicePaidAtUnix(invoice), range),
+  );
+  const paidInPrevious = paidInvoicesAll.filter((invoice) =>
+    inRangeFromUnix(invoicePaidAtUnix(invoice), previous),
+  );
+
+  const invoicesCreatedInRange = invoices.filter((invoice) =>
+    inRangeFromUnix(invoice.created, range),
+  );
 
   let total = 0;
   let previousTotal = 0;
-  let paidInvoices = 0;
-  let totalInvoices = 0;
   const monthlyRevenue = new Map<string, number>();
   const monthlyPaidInvoices = new Map<string, number>();
 
-  for (const invoice of currentInvoices) {
-    totalInvoices += 1;
-    if (invoice.status !== "paid") continue;
+  for (const invoice of paidInRange) {
     const amount = (invoice.amount_paid ?? 0) / 100;
-    paidInvoices += 1;
-    const paidAt =
-      invoice.status_transitions?.paid_at ??
-      invoice.effective_at ??
-      invoice.created;
-    const paidDate = new Date(paidAt * 1000);
+    const paidDate = new Date(invoicePaidAtUnix(invoice) * 1000);
     const key = monthKey(paidDate);
     monthlyPaidInvoices.set(key, (monthlyPaidInvoices.get(key) ?? 0) + 1);
     if (amount <= 0) continue;
@@ -274,22 +275,135 @@ async function loadStripeRevenue(range: DashboardDateRange) {
     monthlyRevenue.set(key, (monthlyRevenue.get(key) ?? 0) + amount);
   }
 
-  for (const invoice of previousInvoices) {
-    if (invoice.status !== "paid") continue;
+  for (const invoice of paidInPrevious) {
     const amount = (invoice.amount_paid ?? 0) / 100;
     if (amount <= 0) continue;
     previousTotal += amount;
   }
 
+  const paidCreatedInRange = invoicesCreatedInRange.filter(
+    (invoice) => invoice.status === "paid",
+  ).length;
+
+  const recent = paidInRange
+    .sort((a, b) => invoicePaidAtUnix(b) - invoicePaidAtUnix(a))
+    .slice(0, 6)
+    .map((invoice) => {
+      const customerName =
+        typeof invoice.customer_name === "string" && invoice.customer_name.trim()
+          ? invoice.customer_name.trim()
+          : typeof invoice.customer_email === "string" && invoice.customer_email.trim()
+            ? invoice.customer_email.trim()
+            : "Unknown customer";
+      const amount = (invoice.amount_paid ?? 0) / 100;
+      return {
+        id: invoice.number ?? invoice.id ?? "—",
+        customerName,
+        amount,
+        displayAmount: formatCurrency(amount),
+        status: statusLabel(invoice.status ?? "unknown"),
+        date: formatDateTime(new Date(invoicePaidAtUnix(invoice) * 1000)),
+      };
+    });
+
+  const roundedTotal = Math.round(total * 100) / 100;
+
   return {
-    total: Math.round(total * 100) / 100,
+    total: roundedTotal,
     previousTotal: Math.round(previousTotal * 100) / 100,
-    paidInvoices,
-    averageInvoiceValue: paidInvoices > 0 ? Math.round((total / paidInvoices) * 100) / 100 : 0,
+    paidInvoices: paidInRange.length,
+    averageInvoiceValue:
+      paidInRange.length > 0 ? Math.round((total / paidInRange.length) * 100) / 100 : 0,
     collectionRatePct:
-      totalInvoices > 0 ? Math.round((paidInvoices / totalInvoices) * 1000) / 10 : 0,
+      invoicesCreatedInRange.length > 0
+        ? Math.round((paidCreatedInRange / invoicesCreatedInRange.length) * 1000) / 10
+        : 0,
     bestMonthRevenue: Math.max(...Array.from(monthlyRevenue.values()), 0),
     chart: buildMonthlyChartFromMaps(range, monthlyRevenue, monthlyPaidInvoices),
+    countInRange: paidInRange.length,
+    countInPrevious: paidInPrevious.length,
+    totalPaidAmountInRange: roundedTotal,
+    recent,
+  };
+}
+
+async function loadSucceededChargesInRange(range: DashboardDateRange) {
+  const stripe = getStripeServer();
+  if (!stripe) {
+    return { amount: 0, count: 0 };
+  }
+
+  const charges = await listAllStripeCharges(stripe);
+  let amount = 0;
+  let count = 0;
+
+  for (const charge of charges) {
+    if (charge.status !== "succeeded") continue;
+    if (!inRangeFromUnix(charge.created, range)) continue;
+    const chargeAmount = (charge.amount ?? 0) / 100;
+    if (chargeAmount <= 0) continue;
+    count += 1;
+    amount += chargeAmount;
+  }
+
+  return {
+    amount: Math.round(amount * 100) / 100,
+    count,
+  };
+}
+
+function formatDashboardRangeLabel(range: DashboardDateRange): string {
+  const from = range.from.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  const to = range.to.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  return `${from} – ${to}`;
+}
+
+function buildRevenueReconciliation(
+  range: DashboardDateRange,
+  invoiceMetrics: Awaited<ReturnType<typeof loadPaidInvoiceMetrics>>,
+  chargesInRange: Awaited<ReturnType<typeof loadSucceededChargesInRange>>,
+): DashboardOverview["revenueReconciliation"] {
+  const chartSeriesTotal = Math.round(
+    invoiceMetrics.chart.reduce((sum, point) => sum + point.value, 0) * 100,
+  ) / 100;
+  const totalsAligned = invoiceMetrics.total === invoiceMetrics.totalPaidAmountInRange
+    && invoiceMetrics.total === chartSeriesTotal;
+  const amountsAligned = invoiceMetrics.total === chargesInRange.amount;
+
+  const summary = totalsAligned
+    ? "Dashboard revenue figures use one Stripe source: paid invoices by payment date in the selected range."
+    : "Review the reconciliation details below—figures should align when Stripe data is complete.";
+
+  const detailPoints = [
+    "Total Revenue (top KPI), the revenue chart, and Paid Invoices in this section all use paid Stripe invoices where the payment date falls inside your selected range.",
+    `Invoice revenue in range: ${formatCurrency(invoiceMetrics.total)} across ${invoiceMetrics.paidInvoices} paid invoice(s). Chart bars sum to ${formatCurrency(chartSeriesTotal)} (monthly buckets use the same payment dates).`,
+    `Transactions page comparison: succeeded Stripe charges with a charge date in this range total ${formatCurrency(chargesInRange.amount)} (${chargesInRange.count} charge(s)). This can differ from invoice revenue when partial payments, refunds, retries, or non-invoice charges occur.`,
+    "Trend percentages compare the current range to the immediately preceding period of equal length (not calendar month-over-month).",
+    "MRR and subscriber metrics on other admin pages come from Firestore subscriptions, not from this Stripe revenue total.",
+  ];
+
+  return {
+    rangeLabel: formatDashboardRangeLabel(range),
+    invoiceRevenue: invoiceMetrics.total,
+    displayInvoiceRevenue: formatCurrency(invoiceMetrics.total),
+    paidInvoiceCount: invoiceMetrics.paidInvoices,
+    chartSeriesTotal,
+    displayChartSeriesTotal: formatCurrency(chartSeriesTotal),
+    totalsAligned,
+    transactionsSucceededAmount: chargesInRange.amount,
+    displayTransactionsSucceededAmount: formatCurrency(chargesInRange.amount),
+    transactionsSucceededCount: chargesInRange.count,
+    amountsAligned,
+    summary,
+    detailPoints,
   };
 }
 
@@ -367,70 +481,6 @@ function inRangeFromUnix(unixSeconds: number | null | undefined, range: Dashboar
   if (!unixSeconds) return false;
   const at = unixSeconds * 1000;
   return at >= range.from.getTime() && at <= range.to.getTime();
-}
-
-async function loadPaidInvoicesSummary(range: DashboardDateRange) {
-  const previous = previousRange(range);
-  const stripe = getStripeServer();
-  if (!stripe) {
-    return {
-      countInRange: 0,
-      countInPrevious: 0,
-      totalPaidAmountInRange: 0,
-      recent: [] as DashboardOverview["invoices"]["recent"],
-    };
-  }
-
-  const invoices = await listAllStripeInvoices(stripe);
-  const paidInvoices = invoices.filter((invoice) => invoice.status === "paid");
-  const paidInRange = paidInvoices.filter((invoice) =>
-    inRangeFromUnix(
-      invoice.status_transitions?.paid_at ?? invoice.effective_at ?? invoice.created,
-      range,
-    ),
-  );
-  const paidInPrevious = paidInvoices.filter((invoice) =>
-    inRangeFromUnix(
-      invoice.status_transitions?.paid_at ?? invoice.effective_at ?? invoice.created,
-      previous,
-    ),
-  );
-
-  const recent = paidInRange
-    .sort(
-      (a, b) =>
-        (b.status_transitions?.paid_at ?? b.effective_at ?? b.created) -
-        (a.status_transitions?.paid_at ?? a.effective_at ?? a.created),
-    )
-    .slice(0, 6)
-    .map((invoice) => {
-      const paidAtUnix =
-        invoice.status_transitions?.paid_at ?? invoice.effective_at ?? invoice.created;
-      const customerName =
-        typeof invoice.customer_name === "string" && invoice.customer_name.trim()
-          ? invoice.customer_name.trim()
-          : typeof invoice.customer_email === "string" && invoice.customer_email.trim()
-            ? invoice.customer_email.trim()
-            : "Unknown customer";
-      const amount = (invoice.amount_paid ?? 0) / 100;
-      return {
-        id: invoice.number ?? invoice.id ?? "—",
-        customerName,
-        amount,
-        displayAmount: formatCurrency(amount),
-        status: statusLabel(invoice.status ?? "unknown"),
-        date: formatDateTime(new Date(paidAtUnix * 1000)),
-      };
-    });
-
-  const totalPaidAmountInRange = paidInRange.reduce((sum, invoice) => sum + (invoice.amount_paid ?? 0) / 100, 0);
-
-  return {
-    countInRange: paidInRange.length,
-    countInPrevious: paidInPrevious.length,
-    totalPaidAmountInRange: Math.round(totalPaidAmountInRange * 100) / 100,
-    recent,
-  };
 }
 
 async function loadSubscriberData(range: DashboardDateRange) {
@@ -610,22 +660,29 @@ export async function loadAdminDashboardOverview(
   range: DashboardDateRange,
 ): Promise<DashboardOverview> {
   const [
-    customers,
-    revenue,
-    paidInvoices,
+    invoiceMetrics,
+    chargesInRange,
     subscriberData,
     failedPaymentsData,
   ] =
     await Promise.all([
-      loadCustomersList(),
-      loadStripeRevenue(range),
-      loadPaidInvoicesSummary(range),
+      loadPaidInvoiceMetrics(range),
+      loadSucceededChargesInRange(range),
       loadSubscriberData(range),
       loadFailedPayments(range),
     ]);
 
-  const paidInvoiceTrend = formatTrend(paidInvoices.countInRange, paidInvoices.countInPrevious);
-  const revenueTrend = formatTrend(revenue.total, revenue.previousTotal);
+  const revenueReconciliation = buildRevenueReconciliation(
+    range,
+    invoiceMetrics,
+    chargesInRange,
+  );
+
+  const paidInvoiceTrend = formatTrend(
+    invoiceMetrics.countInRange,
+    invoiceMetrics.countInPrevious,
+  );
+  const revenueTrend = formatTrend(invoiceMetrics.total, invoiceMetrics.previousTotal);
   const failedPaymentsTrend = formatTrend(failedPaymentsData.total, failedPaymentsData.previousTotal);
 
   return {
@@ -635,14 +692,14 @@ export async function loadAdminDashboardOverview(
     },
     kpis: {
       totalRevenue: {
-        value: revenue.total,
-        displayValue: formatCurrency(revenue.total),
+        value: invoiceMetrics.total,
+        displayValue: formatCurrency(invoiceMetrics.total),
         trendLabel: revenueTrend.label,
         trendPositive: revenueTrend.positive,
       },
       paidInvoices: {
-        value: paidInvoices.countInRange,
-        displayValue: formatCount(paidInvoices.countInRange),
+        value: invoiceMetrics.countInRange,
+        displayValue: formatCount(invoiceMetrics.countInRange),
         trendLabel: paidInvoiceTrend.label,
         trendPositive: paidInvoiceTrend.positive,
       },
@@ -672,24 +729,25 @@ export async function loadAdminDashboardOverview(
       },
     },
     revenue: {
-      total: revenue.total,
-      displayTotal: formatCurrency(revenue.total),
+      total: invoiceMetrics.total,
+      displayTotal: formatCurrency(invoiceMetrics.total),
       trendLabel: revenueTrend.label,
       trendPositive: revenueTrend.positive,
-      paidInvoices: revenue.paidInvoices,
-      averageInvoiceValue: revenue.averageInvoiceValue,
-      displayAverageInvoiceValue: formatCurrency(revenue.averageInvoiceValue),
-      collectionRatePct: revenue.collectionRatePct,
-      bestMonthRevenue: revenue.bestMonthRevenue,
-      displayBestMonthRevenue: formatCurrency(revenue.bestMonthRevenue),
-      chart: revenue.chart,
+      paidInvoices: invoiceMetrics.paidInvoices,
+      averageInvoiceValue: invoiceMetrics.averageInvoiceValue,
+      displayAverageInvoiceValue: formatCurrency(invoiceMetrics.averageInvoiceValue),
+      collectionRatePct: invoiceMetrics.collectionRatePct,
+      bestMonthRevenue: invoiceMetrics.bestMonthRevenue,
+      displayBestMonthRevenue: formatCurrency(invoiceMetrics.bestMonthRevenue),
+      chart: invoiceMetrics.chart,
     },
     invoices: {
-      totalPaidCount: paidInvoices.countInRange,
-      totalPaidAmount: paidInvoices.totalPaidAmountInRange,
-      displayTotalPaidAmount: formatCurrency(paidInvoices.totalPaidAmountInRange),
-      recent: paidInvoices.recent,
+      totalPaidCount: invoiceMetrics.countInRange,
+      totalPaidAmount: invoiceMetrics.totalPaidAmountInRange,
+      displayTotalPaidAmount: formatCurrency(invoiceMetrics.totalPaidAmountInRange),
+      recent: invoiceMetrics.recent,
     },
+    revenueReconciliation,
     subscribers: subscriberData.subscribers,
     trialUsers: subscriberData.trialUsers,
     expiredTrialUsers: subscriberData.expiredTrialUsers,

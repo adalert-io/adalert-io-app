@@ -1593,11 +1593,15 @@ export function AdminSupportView() {
             </div>
           ) : (
             <div className="overflow-hidden rounded-2xl border border-[#e5e5e5] bg-white">
-              <div className="overflow-x-auto">
+              <div
+                className={cn(
+                  isArchivedView ? "w-full overflow-hidden" : "overflow-x-auto",
+                )}
+              >
                 <table
                   className={cn(
-                    "w-full table-fixed text-[13px]",
-                    isArchivedView ? "min-w-[880px]" : "min-w-[1080px]",
+                    "w-full text-[13px]",
+                    isArchivedView ? "table-fixed" : "table-fixed min-w-[1080px]",
                   )}
                 >
                   <thead className="border-b bg-gray-50">
@@ -1609,13 +1613,28 @@ export function AdminSupportView() {
                           onCheckedChange={() => toggleHeader()}
                         />
                       </th>
-                      <th className="ps-2 pe-3 py-3 text-start font-semibold">
+                      <th
+                        className={cn(
+                          "py-3 text-start font-semibold",
+                          isArchivedView ? "w-[108px] ps-2 pe-2" : "ps-2 pe-3",
+                        )}
+                      >
                         Ticket ID
                       </th>
-                      <th className="min-w-[260px] py-3 text-start font-semibold">
+                      <th
+                        className={cn(
+                          "py-3 text-start font-semibold",
+                          isArchivedView ? "w-[28%]" : "min-w-[260px]",
+                        )}
+                      >
                         Subject
                       </th>
-                      <th className="min-w-[230px] py-3 text-start font-semibold">
+                      <th
+                        className={cn(
+                          "py-3 text-start font-semibold",
+                          isArchivedView ? "w-[24%]" : "min-w-[230px]",
+                        )}
+                      >
                         Customer
                       </th>
                       {!isArchivedView ? (
@@ -1628,10 +1647,20 @@ export function AdminSupportView() {
                           Priority
                         </th>
                       ) : null}
-                      <th className="w-[160px] py-3 text-start font-semibold">
+                      <th
+                        className={cn(
+                          "py-3 text-start font-semibold",
+                          isArchivedView ? "w-[132px]" : "w-[160px]",
+                        )}
+                      >
                         Last Updated
                       </th>
-                      <th className="w-[100px] py-3 text-center font-semibold">
+                      <th
+                        className={cn(
+                          "py-3 text-center font-semibold",
+                          isArchivedView ? "w-[148px]" : "w-[100px]",
+                        )}
+                      >
                         Actions
                       </th>
                     </tr>
@@ -1661,10 +1690,15 @@ export function AdminSupportView() {
                               onCheckedChange={() => toggleRow(t.id)}
                             />
                           </td>
-                          <td className="ps-2 pe-3 align-middle font-mono font-bold text-[#015AFD]">
+                          <td
+                            className={cn(
+                              "align-middle font-mono font-bold text-[#015AFD]",
+                              isArchivedView ? "truncate ps-2 pe-2" : "ps-2 pe-3",
+                            )}
+                          >
                             <button
                               type="button"
-                              className="text-start hover:underline"
+                              className="max-w-full truncate text-start hover:underline"
                               onClick={() => handleOpenTicket(t)}
                             >
                               {t.ticketCode}
@@ -1720,7 +1754,14 @@ export function AdminSupportView() {
                             className="py-3 text-center"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <div className="flex items-center justify-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                            <div
+                              className={cn(
+                                "flex items-center justify-center gap-1",
+                                isArchivedView
+                                  ? "flex-wrap"
+                                  : "opacity-0 transition-opacity group-hover:opacity-100",
+                              )}
+                            >
                               {!isArchivedView ? (
                                 <button
                                   type="button"
@@ -1733,14 +1774,14 @@ export function AdminSupportView() {
                                 <>
                                   <button
                                     type="button"
-                                    className="rounded-lg px-2 py-1 text-[12px] font-semibold text-blue-700 hover:bg-blue-100"
+                                    className="rounded-lg px-1.5 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-100"
                                     onClick={() => void updateArchiveState([t.id], false)}
                                   >
                                     Unarchive
                                   </button>
                                   <button
                                     type="button"
-                                    className="rounded-lg px-2 py-1 text-[12px] font-semibold text-rose-700 hover:bg-rose-100"
+                                    className="rounded-lg px-1.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-100"
                                     onClick={() => setDeleteTicketId(t.id)}
                                   >
                                     Delete

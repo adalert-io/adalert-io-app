@@ -125,6 +125,21 @@ interface DashboardOverviewDto {
       retryStatus: string;
     }>;
   };
+  revenueReconciliation: {
+    rangeLabel: string;
+    invoiceRevenue: number;
+    displayInvoiceRevenue: string;
+    paidInvoiceCount: number;
+    chartSeriesTotal: number;
+    displayChartSeriesTotal: string;
+    totalsAligned: boolean;
+    transactionsSucceededAmount: number;
+    displayTransactionsSucceededAmount: string;
+    transactionsSucceededCount: number;
+    amountsAligned: boolean;
+    summary: string;
+    detailPoints: string[];
+  };
 }
 
 function DashboardMetricCard({
@@ -213,14 +228,15 @@ function compactCurrency(value: number): string {
 }
 
 function rangeToQuery(range: DateRange | undefined): string {
-  if (!range?.from || !range?.to) return "";
-  const from = format(range.from, "yyyy-MM-dd");
-  const to = format(range.to, "yyyy-MM-dd");
+  const fallback = defaultAdminDashboardRange();
+  const active = range?.from && range?.to ? range : fallback;
+  const from = format(active.from!, "yyyy-MM-dd");
+  const to = format(active.to!, "yyyy-MM-dd");
   return `from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
 }
 
 export function AdminDashboardHome() {
-  const [range, setRange] = useState<DateRange | undefined>(defaultAdminDashboardRange);
+  const [range, setRange] = useState<DateRange | undefined>(() => defaultAdminDashboardRange());
   const [data, setData] = useState<DashboardOverviewDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -372,6 +388,71 @@ export function AdminDashboardHome() {
         <section>
           <SectionShell title="Revenue & Invoices" subtitle="Revenue summary and paid invoice performance">
             <div className="space-y-4">
+              {data?.revenueReconciliation ? (
+                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 text-sm text-slate-700">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-slate-900">Revenue reconciliation</p>
+                      <p className="mt-1 text-xs text-slate-500">{data.revenueReconciliation.rangeLabel}</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <span
+                        className={cn(
+                          "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold",
+                          data.revenueReconciliation.totalsAligned
+                            ? "bg-emerald-100 text-emerald-800"
+                            : "bg-amber-100 text-amber-800",
+                        )}
+                      >
+                        {data.revenueReconciliation.totalsAligned
+                          ? "KPI, chart, and invoices aligned"
+                          : "Review alignment"}
+                      </span>
+                      <span
+                        className={cn(
+                          "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold",
+                          data.revenueReconciliation.amountsAligned
+                            ? "bg-emerald-100 text-emerald-800"
+                            : "bg-slate-200 text-slate-700",
+                        )}
+                      >
+                        {data.revenueReconciliation.amountsAligned
+                          ? "Matches Transactions (same period)"
+                          : "Differs from Transactions (expected)"}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="mt-3 leading-relaxed">{data.revenueReconciliation.summary}</p>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+                      <p className="text-xs text-slate-500">Total Revenue (KPI)</p>
+                      <p className="mt-1 text-lg font-semibold text-slate-900">
+                        {data.revenueReconciliation.displayInvoiceRevenue}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+                      <p className="text-xs text-slate-500">Chart bars (sum)</p>
+                      <p className="mt-1 text-lg font-semibold text-slate-900">
+                        {data.revenueReconciliation.displayChartSeriesTotal}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+                      <p className="text-xs text-slate-500">Transactions (succeeded charges)</p>
+                      <p className="mt-1 text-lg font-semibold text-slate-900">
+                        {data.revenueReconciliation.displayTransactionsSucceededAmount}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {data.revenueReconciliation.transactionsSucceededCount} charge(s) in range
+                      </p>
+                    </div>
+                  </div>
+                  <ul className="mt-4 list-disc space-y-2 ps-5 text-[13px] leading-relaxed text-slate-600">
+                    {data.revenueReconciliation.detailPoints.map((point) => (
+                      <li key={point}>{point}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
               <div className="h-[340px] w-full rounded-xl border border-slate-200 bg-white p-3">
                 {isLoading ? (
                   <div className="flex h-full items-center justify-center text-sm text-slate-500">

@@ -394,6 +394,13 @@ export function AdminTransactionsView() {
           Transactions
         </h1>
         <p className="text-[15px] text-[#7A7D9C]">View and manage all payment transactions</p>
+        <p className="text-[13px] leading-relaxed text-[#64748b]">
+          Total Amount below is all succeeded Stripe charges (all time). For period revenue that
+          matches the dashboard KPI and chart, open{" "}
+          <span className="font-medium text-slate-800">Admin Dashboard → Revenue reconciliation</span>
+          —that view uses paid invoices by payment date in your selected 7 / 30 / 90 day or 1 year
+          range.
+        </p>
       </header>
 
       <section className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
