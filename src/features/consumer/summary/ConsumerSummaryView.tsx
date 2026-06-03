@@ -69,8 +69,8 @@ function SummaryMetricCard({
   accentClassName?: string;
 }) {
   return (
-    <Card className="flex min-h-[108px] justify-center gap-0 rounded-xl border border-slate-200 bg-white py-0 shadow-sm sm:min-h-[132px]">
-      <CardContent className="flex flex-1 items-center justify-between gap-2 px-3 py-3.5 sm:gap-4 sm:px-6 sm:py-5">
+    <Card className="flex justify-center gap-0 rounded-xl border border-slate-200 bg-white py-0 shadow-sm sm:min-h-[132px]">
+      <CardContent className="flex flex-1 items-center justify-between gap-2 px-3 py-3 sm:gap-4 sm:px-6 sm:py-5">
         <div className="min-w-0 space-y-0.5 sm:space-y-1">
           <p className="text-[11px] font-medium leading-tight text-muted-foreground sm:text-sm">
             {title}
@@ -78,7 +78,7 @@ function SummaryMetricCard({
           <p className="truncate text-[22px] font-bold leading-none tracking-tight text-slate-900 sm:text-[28px]">
             {value}
           </p>
-          <p className="line-clamp-2 text-[10px] font-medium leading-snug text-slate-500 sm:line-clamp-none sm:text-[13px]">
+          <p className="hidden text-[13px] font-medium leading-snug text-slate-500 sm:block">
             {subtitle}
           </p>
         </div>
@@ -123,6 +123,12 @@ function SummaryAccountMobileCard({
         <ShowingAdsBadge account={account} />
       </div>
 
+      <div className="flex items-center gap-3">
+        <ImpactCounts account={account} compact />
+        <div className="min-w-0 flex-1">
+          <BudgetPacingBar account={account} compact />
+        </div>
+      </div>
     </button>
   );
 }
@@ -145,13 +151,16 @@ function BudgetPacingBar({
     >
       <div
         className={cn(
-          "relative flex h-6 w-full items-center",
-          compact ? "min-w-0 flex-1" : "min-w-[140px]",
+          "relative flex w-full items-center",
+          compact ? "h-5 min-w-0 flex-1" : "h-6 min-w-[140px]",
         )}
       >
         <div className="absolute inset-y-0 left-0 w-full rounded-full border border-slate-200 bg-white" />
         <div
-          className="absolute left-0 top-0 h-6 rounded-full bg-[#015AFD]"
+          className={cn(
+            "absolute left-0 top-0 rounded-full bg-[#015AFD]",
+            compact ? "h-5" : "h-6",
+          )}
           style={{
             width: `${percent}%`,
             minWidth: percent > 0 ? 8 : 0,
@@ -159,21 +168,30 @@ function BudgetPacingBar({
         />
         {percent < 15 ? (
           <span
-            className="absolute top-0 flex h-6 items-center text-[11px] font-medium text-slate-800"
+            className={cn(
+              "absolute top-0 flex items-center font-medium text-slate-800",
+              compact ? "h-5 text-[10px]" : "h-6 text-[11px]",
+            )}
             style={{ left: `calc(${percent}% + 8px)` }}
           >
             {percentText.toFixed(1)}%
           </span>
         ) : (
           <span
-            className="absolute top-0 flex h-6 -translate-x-1/2 items-center text-[11px] font-medium text-white drop-shadow-sm"
+            className={cn(
+              "absolute top-0 -translate-x-1/2 flex items-center font-medium text-white drop-shadow-sm",
+              compact ? "h-5 text-[10px]" : "h-6 text-[11px]",
+            )}
             style={{ left: `${percent / 2}%` }}
           >
             {percentText.toFixed(1)}%
           </span>
         )}
         <div
-          className="absolute top-1 h-4 w-px bg-slate-500"
+          className={cn(
+            "absolute w-px bg-slate-500",
+            compact ? "top-0.5 h-4" : "top-1 h-4",
+          )}
           style={{ left: `calc(${dayPercent}% - 1px)` }}
         />
       </div>
@@ -204,24 +222,50 @@ function ShowingAdsBadge({ account }: { account: SummaryAdsAccount }) {
   return <Badge variant="destructive">No</Badge>;
 }
 
-function ImpactCounts({ account }: { account: SummaryAdsAccount }) {
+function ImpactCounts({
+  account,
+  compact = false,
+}: {
+  account: SummaryAdsAccount;
+  compact?: boolean;
+}) {
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <span className="inline-flex items-center gap-1.5 text-[13px] text-slate-700">
+    <div
+      className={cn(
+        "flex shrink-0 flex-wrap items-center",
+        compact ? "gap-2" : "gap-3",
+      )}
+    >
+      <span
+        className={cn(
+          "inline-flex items-center gap-1 text-slate-700",
+          compact ? "text-[12px]" : "gap-1.5 text-[13px]",
+        )}
+      >
         <span
           className="size-2.5 rounded-full"
           style={{ background: ALERT_SEVERITY_COLORS.CRITICAL }}
         />
         {account.impact.critical}
       </span>
-      <span className="inline-flex items-center gap-1.5 text-[13px] text-slate-700">
+      <span
+        className={cn(
+          "inline-flex items-center gap-1 text-slate-700",
+          compact ? "text-[12px]" : "gap-1.5 text-[13px]",
+        )}
+      >
         <span
           className="size-2.5 rounded-full"
           style={{ background: ALERT_SEVERITY_COLORS.MEDIUM }}
         />
         {account.impact.medium}
       </span>
-      <span className="inline-flex items-center gap-1.5 text-[13px] text-slate-700">
+      <span
+        className={cn(
+          "inline-flex items-center gap-1 text-slate-700",
+          compact ? "text-[12px]" : "gap-1.5 text-[13px]",
+        )}
+      >
         <span
           className="size-2.5 rounded-full"
           style={{ background: ALERT_SEVERITY_COLORS.LOW }}

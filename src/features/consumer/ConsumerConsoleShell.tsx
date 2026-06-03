@@ -306,11 +306,11 @@ export function ConsumerConsoleShell({ children }: ConsumerConsoleShellProps) {
   const pathname = usePathname() ?? "/consumer/summary";
   const router = useRouter();
   const crumbs = consumerBreadcrumbs(pathname);
+  const { user, userDoc, logout, isFullAccess } = useAuthStore();
+  const isSubscriptionExpired = !isFullAccess;
   const mobileBrandHref = isSubscriptionExpired
     ? CONSUMER_BILLING_HREF
     : (crumbs[0]?.href ?? CONSUMER_MISSION_CONTROL_HREF);
-  const { user, userDoc, logout, isFullAccess } = useAuthStore();
-  const isSubscriptionExpired = !isFullAccess;
   const {
     userAdsAccounts,
     selectedAdsAccount,
