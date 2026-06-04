@@ -106,30 +106,145 @@ function SummaryAccountMobileCard({
     <button
       type="button"
       onClick={() => onOpen(account)}
-      className="flex w-full flex-col gap-3 border-b border-slate-100 px-4 py-4 text-left outline-none transition-colors last:border-b-0 active:bg-slate-50/90 focus-visible:ring-2 focus-visible:ring-[#015AFD]/25 focus-visible:ring-inset"
+      className="flex w-full flex-col rounded-xl border border-slate-200/90 bg-white p-4 text-left shadow-sm outline-none transition-[box-shadow,background-color] hover:shadow-md active:bg-slate-50/80 focus-visible:ring-2 focus-visible:ring-[#015AFD]/25"
     >
       <div className="flex items-start gap-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-slate-50">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-slate-50 ring-1 ring-slate-100">
           <GoogleAdsMark className="size-7" />
         </span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[15px] font-semibold leading-tight text-slate-900">
+        <div className="min-w-0 flex-1 space-y-1">
+          <p className="line-clamp-2 text-[15px] font-semibold leading-snug text-slate-900">
             {account.accountName}
           </p>
-          <p className="mt-0.5 text-[12px] tabular-nums leading-none text-slate-500">
+          <p className="text-[12px] tabular-nums text-slate-500">
             {formatAccountNumber(account.Id)}
           </p>
         </div>
-        <ShowingAdsBadge account={account} />
+        <div className="shrink-0 pt-0.5">
+          <ShowingAdsBadge account={account} />
+        </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <ImpactCounts account={account} compact />
-        <div className="min-w-0 flex-1">
+      <div className="mt-4 space-y-4 border-t border-slate-100 pt-4">
+        <div className="space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            Impact
+          </p>
+          <ImpactCounts account={account} />
+        </div>
+        <div className="space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            Budget pacing
+          </p>
           <BudgetPacingBar account={account} compact />
         </div>
       </div>
     </button>
+  );
+}
+
+function SummaryAccountsFooter({
+  filteredCount,
+  sliceStart,
+  safePage,
+  pageSize,
+  totalPages,
+  slots,
+  onFirstPage,
+  onPrevPage,
+  onGoToPage,
+  onNextPage,
+  onLastPage,
+}: {
+  filteredCount: number;
+  sliceStart: number;
+  safePage: number;
+  pageSize: number;
+  totalPages: number;
+  slots: ReturnType<typeof paginationSlots>;
+  onFirstPage: () => void;
+  onPrevPage: () => void;
+  onGoToPage: (page: number) => void;
+  onNextPage: () => void;
+  onLastPage: () => void;
+}) {
+  return (
+    <footer className="flex flex-col items-center justify-between gap-4 border-t border-slate-100 px-4 py-4 sm:flex-row sm:px-6">
+      <p className="text-[13px] font-medium text-slate-600">
+        {filteredCount === 0
+          ? "No accounts to display."
+          : `Showing ${sliceStart + 1} to ${Math.min(safePage * pageSize, filteredCount)} of ${filteredCount} accounts`}
+      </p>
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={safePage <= 1}
+          onClick={onFirstPage}
+          className="h-9 w-9 p-0"
+          aria-label="First page"
+        >
+          <ChevronsLeft className="size-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={safePage <= 1}
+          onClick={onPrevPage}
+          className="h-9 w-9 p-0"
+          aria-label="Previous page"
+        >
+          <ChevronLeft className="size-4" />
+        </Button>
+        <div className="flex items-center gap-1">
+          {slots.map((item, idx) =>
+            item === "ellipsis" ? (
+              <span
+                key={`e-${idx}`}
+                className="px-1.5 text-[13px] text-slate-400"
+              >
+                …
+              </span>
+            ) : (
+              <Button
+                key={item}
+                variant="outline"
+                size="sm"
+                onClick={() => onGoToPage(item)}
+                aria-current={safePage === item ? "page" : undefined}
+                className={cn(
+                  "h-9 min-w-9 px-2 text-[13px] font-medium",
+                  safePage === item &&
+                    "border-[#0B1426] bg-[#0B1426] text-white hover:bg-[#152542]",
+                )}
+              >
+                {item}
+              </Button>
+            ),
+          )}
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={safePage >= totalPages}
+          onClick={onNextPage}
+          className="h-9 w-9 p-0"
+          aria-label="Next page"
+        >
+          <ChevronRight className="size-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={safePage >= totalPages}
+          onClick={onLastPage}
+          className="h-9 w-9 p-0"
+          aria-label="Last page"
+        >
+          <ChevronsRight className="size-4" />
+        </Button>
+      </div>
+    </footer>
   );
 }
 
@@ -464,26 +579,26 @@ export function ConsumerSummaryView() {
           </div>
         </div>
 
-        <Card className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white py-0 shadow-md">
-          <div className="lg:hidden">
-            {pagedRows.length === 0 ? (
+        <div className="flex flex-col gap-3 lg:hidden">
+          {pagedRows.length === 0 ? (
+            <Card className="rounded-2xl border border-slate-200/90 bg-white py-0 shadow-md">
               <p className="px-4 py-16 text-center text-[14px] text-slate-500">
                 No accounts match your search.
               </p>
-            ) : (
-              <div className="flex flex-col">
-                {pagedRows.map((row) => (
-                  <SummaryAccountMobileCard
-                    key={row.id}
-                    account={row}
-                    onOpen={handleRowClick}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+            </Card>
+          ) : (
+            pagedRows.map((row) => (
+              <SummaryAccountMobileCard
+                key={row.id}
+                account={row}
+                onOpen={handleRowClick}
+              />
+            ))
+          )}
+        </div>
 
-          <div className="hidden lg:block">
+        <Card className="hidden overflow-hidden rounded-2xl border border-slate-200/90 bg-white py-0 shadow-md lg:block">
+          <div>
             <div className="max-[1199px]:overflow-x-auto">
             <Table className="min-w-[980px]">
               <TableHeader>
@@ -567,82 +682,35 @@ export function ConsumerSummaryView() {
             </div>
           </div>
 
-          <footer className="flex flex-col items-center justify-between gap-4 border-t border-slate-100 px-4 py-4 sm:flex-row sm:px-6">
-            <p className="text-[13px] font-medium text-slate-600">
-              {filteredAccounts.length === 0
-                ? "No accounts to display."
-                : `Showing ${sliceStart + 1} to ${Math.min(safePage * pageSize, filteredAccounts.length)} of ${filteredAccounts.length} accounts`}
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={safePage <= 1}
-                onClick={() => setPage(1)}
-                className="h-9 w-9 p-0"
-                aria-label="First page"
-              >
-                <ChevronsLeft className="size-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={safePage <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="h-9 w-9 p-0"
-                aria-label="Previous page"
-              >
-                <ChevronLeft className="size-4" />
-              </Button>
-              <div className="flex items-center gap-1">
-                {slots.map((item, idx) =>
-                  item === "ellipsis" ? (
-                    <span
-                      key={`e-${idx}`}
-                      className="px-1.5 text-[13px] text-slate-400"
-                    >
-                      …
-                    </span>
-                  ) : (
-                    <Button
-                      key={item}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage(item)}
-                      aria-current={safePage === item ? "page" : undefined}
-                      className={cn(
-                        "h-9 min-w-9 px-2 text-[13px] font-medium",
-                        safePage === item &&
-                          "border-[#0B1426] bg-[#0B1426] text-white hover:bg-[#152542]",
-                      )}
-                    >
-                      {item}
-                    </Button>
-                  ),
-                )}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={safePage >= totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className="h-9 w-9 p-0"
-                aria-label="Next page"
-              >
-                <ChevronRight className="size-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={safePage >= totalPages}
-                onClick={() => setPage(totalPages)}
-                className="h-9 w-9 p-0"
-                aria-label="Last page"
-              >
-                <ChevronsRight className="size-4" />
-              </Button>
-            </div>
-          </footer>
+          <SummaryAccountsFooter
+            filteredCount={filteredAccounts.length}
+            sliceStart={sliceStart}
+            safePage={safePage}
+            pageSize={pageSize}
+            totalPages={totalPages}
+            slots={slots}
+            onFirstPage={() => setPage(1)}
+            onPrevPage={() => setPage((p) => Math.max(1, p - 1))}
+            onGoToPage={setPage}
+            onNextPage={() => setPage((p) => Math.min(totalPages, p + 1))}
+            onLastPage={() => setPage(totalPages)}
+          />
+        </Card>
+
+        <Card className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white py-0 shadow-md lg:hidden">
+          <SummaryAccountsFooter
+            filteredCount={filteredAccounts.length}
+            sliceStart={sliceStart}
+            safePage={safePage}
+            pageSize={pageSize}
+            totalPages={totalPages}
+            slots={slots}
+            onFirstPage={() => setPage(1)}
+            onPrevPage={() => setPage((p) => Math.max(1, p - 1))}
+            onGoToPage={setPage}
+            onNextPage={() => setPage((p) => Math.min(totalPages, p + 1))}
+            onLastPage={() => setPage(totalPages)}
+          />
         </Card>
       </section>
     </div>
