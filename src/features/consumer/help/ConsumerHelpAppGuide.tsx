@@ -1,10 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import Link from "next/link";
 import {
   BookOpen,
-  ChevronRight,
   Layers3,
   Monitor,
   Palette,
@@ -68,20 +66,9 @@ function PageGuideCard({ page }: { page: HelpGuidePage }) {
           <Icon className="size-5" aria-hidden />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <h3 className="text-base font-semibold text-slate-900 md:text-[17px]">
-              {page.title}
-            </h3>
-            {page.href ? (
-              <Link
-                href={page.href}
-                className="inline-flex items-center gap-0.5 rounded-md text-[13px] font-semibold text-[#015AFD] hover:bg-[#015AFD]/8 hover:underline md:px-2 md:py-0.5"
-              >
-                Open page
-                <ChevronRight className="size-3.5" aria-hidden />
-              </Link>
-            ) : null}
-          </div>
+          <h3 className="text-base font-semibold text-slate-900 md:text-[17px]">
+            {page.title}
+          </h3>
           <p className="mt-1.5 text-[14px] leading-relaxed text-slate-600">
             {page.description}
           </p>
@@ -128,10 +115,6 @@ export function ConsumerHelpAppGuide() {
             Dashboard, and Settings.
           </p>
         </div>
-        <p className="hidden text-[13px] text-slate-500 md:block md:max-w-xs md:text-end">
-          Scroll the sections below or jump into any page with{" "}
-          <span className="font-semibold text-[#015AFD]">Open page</span> links.
-        </p>
       </div>
 
       <GuideSection
