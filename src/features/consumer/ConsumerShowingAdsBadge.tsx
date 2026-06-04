@@ -36,7 +36,7 @@ export function ConsumerShowingAdsBadge({
     fullWidth &&
       "flex w-full justify-center rounded-lg px-3 py-1 text-[12px] font-semibold",
     inline &&
-      "shrink-0 whitespace-nowrap rounded-md px-1.5 py-0 text-[9px] font-semibold leading-tight",
+      "shrink-0 whitespace-nowrap rounded-md px-2 py-0.5 text-[11px] font-semibold leading-tight",
     compact && !fullWidth && !inline && "text-[10px]",
     className,
   );
