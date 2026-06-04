@@ -4,12 +4,19 @@ import moment from "moment";
 import { Calendar, FileText, Layers, Tag } from "lucide-react";
 
 import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
 import type { Alert } from "@/lib/store/dashboard-store";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 import { ConsumerAlertDescription } from "./alert-detail";
@@ -19,7 +26,6 @@ import {
   SeverityBadge,
 } from "./alert-ui";
 import { DASHBOARD_ALERT_SEVERITY_BORDER } from "./dashboard-theme";
-import { useResponsiveSheetSide } from "./use-responsive-sheet-side";
 
 export interface ConsumerAlertRow extends Alert {
   Type?: string;
@@ -89,6 +95,121 @@ function MetaTile({
   );
 }
 
+function AlertDetailHeader({
+  alert,
+  accountName,
+  severityAccent,
+  variant,
+}: {
+  alert: ConsumerAlertRow | null;
+  accountName?: string;
+  severityAccent: string;
+  variant: "drawer" | "sheet";
+}) {
+  const titleClass =
+    "text-[18px] font-bold leading-snug tracking-tight text-slate-900 sm:text-[19px]";
+  const titleText = alert?.Alert ?? "Alert details";
+
+  return (
+    <div
+      className="relative gap-0 border-b border-slate-200/90 bg-white px-5 py-5 text-start shadow-sm sm:px-6"
+      style={{ borderBottomColor: `${severityAccent}33` }}
+    >
+      <div
+        className="absolute inset-x-0 top-0 h-1 rounded-t-lg"
+        style={{ backgroundColor: severityAccent }}
+        aria-hidden
+      />
+      <div className="flex items-start gap-3.5 pe-8">
+        <AlertSeverityGlyph
+          severity={alert?.Severity}
+          className="size-11 rounded-xl shadow-sm"
+          iconClassName="size-6"
+        />
+        <div className="min-w-0 flex-1 space-y-2.5">
+          <SeverityBadge severity={alert?.Severity} />
+          {variant === "drawer" ? (
+            <DrawerTitle className={titleClass}>{titleText}</DrawerTitle>
+          ) : (
+            <SheetTitle className={titleClass}>{titleText}</SheetTitle>
+          )}
+          {accountName ? (
+            <p className="inline-flex max-w-full items-center rounded-lg bg-slate-100/90 px-2.5 py-1 text-[12px] font-medium text-slate-600 ring-1 ring-slate-200/80">
+              <span className="truncate">{accountName}</span>
+            </p>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AlertDetailBody({ alert }: { alert: ConsumerAlertRow | null }) {
+  const dateObj = alert?.["Date Found"]?.toDate?.();
+  const formattedDate = dateObj
+    ? moment(dateObj).format("DD MMM YYYY, HH:mm")
+    : "—";
+
+  return (
+    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6 sm:py-6">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+        <MetaTile
+          variant="found"
+          label="Found"
+          value={formattedDate}
+          icon={Calendar}
+        />
+        <MetaTile
+          variant="type"
+          label="Type"
+          value={alert?.Type ?? "—"}
+          icon={Tag}
+        />
+        <MetaTile
+          variant="level"
+          label="Level"
+          value={alert?.Level ?? "—"}
+          icon={Layers}
+        />
+      </div>
+
+      <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md ring-1 ring-slate-100/80">
+        <div className="flex items-center gap-3 border-b border-[#015AFD]/10 bg-gradient-to-r from-[#015AFD]/[0.08] via-slate-50 to-white px-4 py-3.5 sm:px-5">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#015AFD]/12 text-[#015AFD] ring-1 ring-[#015AFD]/20">
+            <FileText className="size-4" strokeWidth={2.25} aria-hidden />
+          </span>
+          <h3 className="text-[12px] font-bold uppercase tracking-wide text-slate-900">
+            Alert details
+          </h3>
+        </div>
+        <div
+          className={cn(
+            "border-l-[3px] border-l-[#015AFD]/25 bg-slate-50/50 px-4 py-4 sm:px-5 sm:py-5",
+            "[&_.prose]:max-w-none [&_.prose]:text-[14px] [&_.prose]:font-medium [&_.prose]:leading-[1.65] [&_.prose]:text-slate-800",
+            "[&_.prose_p]:mb-3 [&_.prose_p]:font-medium [&_.prose_p]:text-slate-800 [&_.prose_p:last-child]:mb-0",
+            "[&_.prose_div]:font-medium [&_.prose_div]:text-slate-800",
+            "[&_.prose_span]:font-medium [&_.prose_span]:text-slate-800",
+            "[&_.prose_strong]:font-bold [&_.prose_strong]:text-slate-950",
+            "[&_.prose_b]:font-bold [&_.prose_b]:text-slate-950",
+            "[&_.prose_a]:font-semibold [&_.prose_a]:text-[#015AFD] [&_.prose_a]:underline-offset-2 hover:[&_.prose_a]:underline",
+            "[&_.prose_ul]:my-2.5 [&_.prose_ul]:list-disc [&_.prose_ul]:pl-5 [&_.prose_ul]:font-medium",
+            "[&_.prose_ol]:my-2.5 [&_.prose_ol]:list-decimal [&_.prose_ol]:pl-5 [&_.prose_ol]:font-medium",
+            "[&_.prose_li]:mb-1.5 [&_.prose_li]:font-medium [&_.prose_li]:text-slate-800",
+            "[&_.prose_h1]:mb-2.5 [&_.prose_h1]:text-[17px] [&_.prose_h1]:font-bold [&_.prose_h1]:text-slate-950",
+            "[&_.prose_h2]:mb-2 [&_.prose_h2]:text-[16px] [&_.prose_h2]:font-bold [&_.prose_h2]:text-slate-950",
+            "[&_.prose_h3]:mb-2 [&_.prose_h3]:text-[15px] [&_.prose_h3]:font-bold [&_.prose_h3]:text-slate-900",
+            "[&_.prose_table]:my-3 [&_.prose_table]:w-full [&_.prose_table]:overflow-hidden [&_.prose_table]:rounded-lg [&_.prose_table]:border-collapse [&_.prose_table]:border [&_.prose_table]:border-slate-200",
+            "[&_.prose_th]:border [&_.prose_th]:border-slate-200 [&_.prose_th]:bg-slate-100/90 [&_.prose_th]:px-2.5 [&_.prose_th]:py-2 [&_.prose_th]:text-left [&_.prose_th]:text-[12px] [&_.prose_th]:font-bold [&_.prose_th]:text-slate-900",
+            "[&_.prose_td]:border [&_.prose_td]:border-slate-200 [&_.prose_td]:bg-white [&_.prose_td]:px-2.5 [&_.prose_td]:py-2 [&_.prose_td]:text-[13px] [&_.prose_td]:font-medium [&_.prose_td]:text-slate-800",
+          )}
+        >
+          <ConsumerAlertDescription html={alert?.["Long Description"]} />
+        </div>
+      </section>
+    </div>
+  );
+}
+
 interface ConsumerAlertDetailSheetProps {
   alert: ConsumerAlertRow | null;
   open: boolean;
@@ -102,108 +223,52 @@ export function ConsumerAlertDetailSheet({
   onOpenChange,
   accountName,
 }: ConsumerAlertDetailSheetProps) {
-  const side = useResponsiveSheetSide();
-  const dateObj = alert?.["Date Found"]?.toDate?.();
-  const formattedDate = dateObj
-    ? moment(dateObj).format("DD MMM YYYY, HH:mm")
-    : "—";
+  const isMobile = useIsMobile();
   const severityKey = getAlertSeverityKey(alert?.Severity);
   const severityAccent = DASHBOARD_ALERT_SEVERITY_BORDER[severityKey];
+
+  if (isMobile) {
+    return (
+      <Drawer
+        open={open}
+        onOpenChange={onOpenChange}
+        handleOnly
+        shouldScaleBackground
+      >
+        <DrawerContent className="max-h-[88dvh] gap-0 overflow-hidden bg-gradient-to-b from-[#f1f5f9] to-[#f8fafc] p-0 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+          <div className="flex min-h-0 flex-1 flex-col">
+            <DrawerHeader className="shrink-0 p-0">
+              <AlertDetailHeader
+                alert={alert}
+                accountName={accountName}
+                severityAccent={severityAccent}
+                variant="drawer"
+              />
+            </DrawerHeader>
+            <AlertDetailBody alert={alert} />
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
-        side={side}
+        side="right"
         showCloseButton
-        className={cn(
-          "gap-0 p-0",
-          side === "right" &&
-            "w-full sm:!max-w-[560px] lg:!max-w-[600px]",
-          side === "bottom" && "max-h-[88vh] rounded-t-2xl",
-        )}
+        className="w-full gap-0 p-0 sm:!max-w-[560px] lg:!max-w-[600px]"
       >
         <div className="flex h-full min-h-0 flex-col bg-gradient-to-b from-[#f1f5f9] to-[#f8fafc]">
-          <SheetHeader
-            className="relative gap-0 border-b border-slate-200/90 bg-white px-5 py-5 text-start shadow-sm sm:px-6"
-            style={{ borderBottomColor: `${severityAccent}33` }}
-          >
-            <div
-              className="absolute inset-x-0 top-0 h-1 rounded-t-lg"
-              style={{ backgroundColor: severityAccent }}
-              aria-hidden
+          <SheetHeader className="shrink-0 p-0">
+            <AlertDetailHeader
+              alert={alert}
+              accountName={accountName}
+              severityAccent={severityAccent}
+              variant="sheet"
             />
-            <div className="flex items-start gap-3.5 pe-8">
-              <AlertSeverityGlyph severity={alert?.Severity} className="size-11 rounded-xl shadow-sm" iconClassName="size-6" />
-              <div className="min-w-0 flex-1 space-y-2.5">
-                <SeverityBadge severity={alert?.Severity} />
-                <SheetTitle className="text-[18px] font-bold leading-snug tracking-tight text-slate-900 sm:text-[19px]">
-                  {alert?.Alert ?? "Alert details"}
-                </SheetTitle>
-                {accountName ? (
-                  <p className="inline-flex max-w-full items-center rounded-lg bg-slate-100/90 px-2.5 py-1 text-[12px] font-medium text-slate-600 ring-1 ring-slate-200/80">
-                    <span className="truncate">{accountName}</span>
-                  </p>
-                ) : null}
-              </div>
-            </div>
           </SheetHeader>
-
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-              <MetaTile
-                variant="found"
-                label="Found"
-                value={formattedDate}
-                icon={Calendar}
-              />
-              <MetaTile
-                variant="type"
-                label="Type"
-                value={alert?.Type ?? "—"}
-                icon={Tag}
-              />
-              <MetaTile
-                variant="level"
-                label="Level"
-                value={alert?.Level ?? "—"}
-                icon={Layers}
-              />
-            </div>
-
-            <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md ring-1 ring-slate-100/80">
-              <div className="flex items-center gap-3 border-b border-[#015AFD]/10 bg-gradient-to-r from-[#015AFD]/[0.08] via-slate-50 to-white px-4 py-3.5 sm:px-5">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#015AFD]/12 text-[#015AFD] ring-1 ring-[#015AFD]/20">
-                  <FileText className="size-4" strokeWidth={2.25} aria-hidden />
-                </span>
-                <h3 className="text-[12px] font-bold uppercase tracking-wide text-slate-900">
-                  Alert details
-                </h3>
-              </div>
-              <div
-                className={cn(
-                  "border-l-[3px] border-l-[#015AFD]/25 bg-slate-50/50 px-4 py-4 sm:px-5 sm:py-5",
-                  "[&_.prose]:max-w-none [&_.prose]:text-[14px] [&_.prose]:font-medium [&_.prose]:leading-[1.65] [&_.prose]:text-slate-800",
-                  "[&_.prose_p]:mb-3 [&_.prose_p]:font-medium [&_.prose_p]:text-slate-800 [&_.prose_p:last-child]:mb-0",
-                  "[&_.prose_div]:font-medium [&_.prose_div]:text-slate-800",
-                  "[&_.prose_span]:font-medium [&_.prose_span]:text-slate-800",
-                  "[&_.prose_strong]:font-bold [&_.prose_strong]:text-slate-950",
-                  "[&_.prose_b]:font-bold [&_.prose_b]:text-slate-950",
-                  "[&_.prose_a]:font-semibold [&_.prose_a]:text-[#015AFD] [&_.prose_a]:underline-offset-2 hover:[&_.prose_a]:underline",
-                  "[&_.prose_ul]:my-2.5 [&_.prose_ul]:list-disc [&_.prose_ul]:pl-5 [&_.prose_ul]:font-medium",
-                  "[&_.prose_ol]:my-2.5 [&_.prose_ol]:list-decimal [&_.prose_ol]:pl-5 [&_.prose_ol]:font-medium",
-                  "[&_.prose_li]:mb-1.5 [&_.prose_li]:font-medium [&_.prose_li]:text-slate-800",
-                  "[&_.prose_h1]:mb-2.5 [&_.prose_h1]:text-[17px] [&_.prose_h1]:font-bold [&_.prose_h1]:text-slate-950",
-                  "[&_.prose_h2]:mb-2 [&_.prose_h2]:text-[16px] [&_.prose_h2]:font-bold [&_.prose_h2]:text-slate-950",
-                  "[&_.prose_h3]:mb-2 [&_.prose_h3]:text-[15px] [&_.prose_h3]:font-bold [&_.prose_h3]:text-slate-900",
-                  "[&_.prose_table]:my-3 [&_.prose_table]:w-full [&_.prose_table]:overflow-hidden [&_.prose_table]:rounded-lg [&_.prose_table]:border-collapse [&_.prose_table]:border [&_.prose_table]:border-slate-200",
-                  "[&_.prose_th]:border [&_.prose_th]:border-slate-200 [&_.prose_th]:bg-slate-100/90 [&_.prose_th]:px-2.5 [&_.prose_th]:py-2 [&_.prose_th]:text-left [&_.prose_th]:text-[12px] [&_.prose_th]:font-bold [&_.prose_th]:text-slate-900",
-                  "[&_.prose_td]:border [&_.prose_td]:border-slate-200 [&_.prose_td]:bg-white [&_.prose_td]:px-2.5 [&_.prose_td]:py-2 [&_.prose_td]:text-[13px] [&_.prose_td]:font-medium [&_.prose_td]:text-slate-800",
-                )}
-              >
-                <ConsumerAlertDescription html={alert?.["Long Description"]} />
-              </div>
-            </section>
-          </div>
+          <AlertDetailBody alert={alert} />
         </div>
       </SheetContent>
     </Sheet>

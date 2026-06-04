@@ -7,7 +7,7 @@ export type ShowingAdsDisplayStatus = "checking" | "showing" | "not_showing";
 
 export function showingAdsStatusFromLabel(
   adsLabel: { "Is Showing Ads"?: boolean } | null | undefined,
-): ShowingAdsDisplayStatus | null {
+): ShowingAdsDisplayStatus {
   if (!adsLabel) return "checking";
   return adsLabel["Is Showing Ads"] ? "showing" : "not_showing";
 }

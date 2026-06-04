@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState, type FormEvent } from "react";
+import { useCallback, useState, type FormEvent } from "react";
 import { MessageSquarePlus, Send } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -11,15 +11,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -36,41 +36,8 @@ const EMPTY_FORM: NewSupportTicketForm = {
 };
 
 const TICKET_FORM_ID = "consumer-new-ticket-form";
-const SWIPE_CLOSE_THRESHOLD_PX = 56;
 
-function useSwipeDownToClose(onClose: () => void, enabled: boolean) {
-  const startYRef = useRef(0);
-  const draggingRef = useRef(false);
-
-  const onTouchStart = useCallback(
-    (event: React.TouchEvent) => {
-      if (!enabled) return;
-      draggingRef.current = true;
-      startYRef.current = event.touches[0]?.clientY ?? 0;
-    },
-    [enabled],
-  );
-
-  const onTouchEnd = useCallback(
-    (event: React.TouchEvent) => {
-      if (!enabled || !draggingRef.current) return;
-      draggingRef.current = false;
-      const endY = event.changedTouches[0]?.clientY ?? 0;
-      if (endY - startYRef.current >= SWIPE_CLOSE_THRESHOLD_PX) {
-        onClose();
-      }
-    },
-    [enabled, onClose],
-  );
-
-  const onTouchCancel = useCallback(() => {
-    draggingRef.current = false;
-  }, []);
-
-  return { onTouchStart, onTouchEnd, onTouchCancel };
-}
-
-function TicketFormHeader({ variant }: { variant: "dialog" | "sheet" }) {
+function TicketFormHeader({ variant }: { variant: "dialog" | "drawer" }) {
   return (
     <div className="flex items-center gap-3">
       <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#015AFD]/10 text-[#015AFD]">
@@ -88,12 +55,12 @@ function TicketFormHeader({ variant }: { variant: "dialog" | "sheet" }) {
           </>
         ) : (
           <>
-            <SheetTitle className="text-lg font-bold text-slate-900">
+            <DrawerTitle className="text-lg font-bold text-slate-900">
               Submit a ticket
-            </SheetTitle>
-            <SheetDescription className="text-[13px] text-slate-500">
+            </DrawerTitle>
+            <DrawerDescription className="text-[13px] text-slate-500">
               Describe your issue and our team will follow up by email.
-            </SheetDescription>
+            </DrawerDescription>
           </>
         )}
       </div>
@@ -271,8 +238,6 @@ export function ConsumerHelpNewTicketDialog({
     }
   }, [handleClose, isSubmitting]);
 
-  const swipeHandlers = useSwipeDownToClose(requestClose, open && isMobile);
-
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     await onSubmit(form);
@@ -281,30 +246,23 @@ export function ConsumerHelpNewTicketDialog({
 
   if (isMobile) {
     return (
-      <Sheet open={open} onOpenChange={handleClose}>
-        <SheetContent
-          side="bottom"
-          showCloseButton={false}
+      <Drawer
+        open={open}
+        onOpenChange={handleClose}
+        handleOnly
+        dismissible={!isSubmitting}
+        shouldScaleBackground
+      >
+        <DrawerContent
           className={cn(
-            "flex max-h-[min(92dvh,720px)] flex-col gap-0 rounded-t-[20px] border-slate-200/90 p-0",
+            "max-h-[min(92dvh,720px)] gap-0 p-0",
             "pb-[max(1rem,env(safe-area-inset-bottom))]",
           )}
           onOpenAutoFocus={(event) => event.preventDefault()}
         >
-          <div
-            className="shrink-0 touch-pan-y"
-            {...swipeHandlers}
-          >
-            <div
-              className="flex cursor-grab justify-center pt-2.5 pb-1 active:cursor-grabbing"
-              aria-hidden
-            >
-              <div className="h-1 w-10 rounded-full bg-slate-300" />
-            </div>
-            <SheetHeader className="border-b border-slate-100 px-5 py-4 text-start">
-              <TicketFormHeader variant="sheet" />
-            </SheetHeader>
-          </div>
+          <DrawerHeader className="shrink-0 border-b border-slate-100 py-4">
+            <TicketFormHeader variant="drawer" />
+          </DrawerHeader>
 
           <form
             id={TICKET_FORM_ID}
@@ -325,8 +283,8 @@ export function ConsumerHelpNewTicketDialog({
               />
             </div>
           </form>
-        </SheetContent>
-      </Sheet>
+        </DrawerContent>
+      </Drawer>
     );
   }
 

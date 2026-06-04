@@ -8,11 +8,11 @@ import * as React from "react";
 import { useAuthStore } from "@/lib/store/auth-store";
 
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import {
   CONSUMER_SUBSCRIPTION_EXPIRED_NAV_TITLE,
   isConsumerNavHrefDisabledWhenExpired,
@@ -158,19 +158,16 @@ function MobileMoreTab({
         </span>
       </button>
 
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent
-          side="bottom"
-          showCloseButton={false}
-          className="gap-0 rounded-t-[20px] border-slate-200/90 px-0 pb-[max(1rem,env(safe-area-inset-bottom))] pt-0"
+      <Drawer open={open} onOpenChange={setOpen} handleOnly shouldScaleBackground>
+        <DrawerContent
+          className="max-h-[min(70dvh,480px)] gap-0 px-0 pb-[max(1rem,env(safe-area-inset-bottom))]"
         >
-          <div className="mx-auto mt-2.5 h-1 w-10 shrink-0 rounded-full bg-slate-200" aria-hidden />
-          <SheetHeader className="border-b border-slate-100 px-5 pb-4 pt-3 text-start">
-            <SheetTitle className="text-base font-bold text-slate-900">
+          <DrawerHeader className="shrink-0 border-b border-slate-100 pb-4 pt-1">
+            <DrawerTitle className="text-base font-bold text-slate-900">
               More
-            </SheetTitle>
-          </SheetHeader>
-          <div className="max-h-[min(60vh,420px)] overflow-y-auto px-3 py-3">
+            </DrawerTitle>
+          </DrawerHeader>
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3">
             {tab.sections.map((section) => (
               <section key={section.title} className="mb-4 last:mb-0">
                 <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
@@ -247,8 +244,8 @@ function MobileMoreTab({
               Log out
             </button>
           </div>
-        </SheetContent>
-      </Sheet>
+        </DrawerContent>
+      </Drawer>
     </>
   );
 }
