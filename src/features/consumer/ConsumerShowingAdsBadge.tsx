@@ -12,41 +12,60 @@ export function showingAdsStatusFromLabel(
   return adsLabel["Is Showing Ads"] ? "showing" : "not_showing";
 }
 
+const SWITCHER_LABELS: Record<ShowingAdsDisplayStatus, string> = {
+  checking: "Checking",
+  showing: "Showing",
+  not_showing: "Not showing",
+};
+
 export function ConsumerShowingAdsBadge({
   status,
   className,
   compact = false,
   fullWidth = false,
+  inline = false,
 }: {
   status: ShowingAdsDisplayStatus;
   className?: string;
   compact?: boolean;
   fullWidth?: boolean;
+  /** Compact pill above account switcher chevron (mobile dashboard). */
+  inline?: boolean;
 }) {
   const sharedClass = cn(
     fullWidth &&
       "flex w-full justify-center rounded-lg px-3 py-1 text-[12px] font-semibold",
-    compact && !fullWidth && "text-[10px]",
+    inline &&
+      "shrink-0 whitespace-nowrap rounded-md px-1.5 py-0 text-[9px] font-semibold leading-tight",
+    compact && !fullWidth && !inline && "text-[10px]",
     className,
   );
+
+  const label = inline
+    ? SWITCHER_LABELS[status]
+    : status === "checking"
+      ? "Checking ads status"
+      : status === "showing"
+        ? "Showing ads"
+        : "Not showing ads";
 
   if (status === "checking") {
     return (
       <Badge variant="secondary" className={sharedClass}>
-        Checking ads status
+        {label}
       </Badge>
     );
   }
   if (status === "showing") {
     return (
       <Badge variant="success" className={sharedClass}>
-        Showing ads
+        {label}
       </Badge>
     );
   }
   return (
     <Badge variant="destructive" className={sharedClass}>
-      Not showing ads
+      {label}
     </Badge>
   );
 }

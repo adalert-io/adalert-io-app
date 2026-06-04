@@ -31,7 +31,12 @@ import {
 } from "@/features/consumer/consumer-console-nav";
 import { CONSUMER_BILLING_HREF } from "@/features/consumer/consumer-subscription-access";
 import { consumerPathForClassicRoute } from "@/lib/consumer-shell-preference";
+import {
+  ConsumerShowingAdsBadge,
+  showingAdsStatusFromLabel,
+} from "@/features/consumer/ConsumerShowingAdsBadge";
 import { useAuthStore } from "@/lib/store/auth-store";
+import { useDashboardStore } from "@/lib/store/dashboard-store";
 import type { AdsAccount } from "@/lib/store/user-ads-accounts-store";
 import { useUserAdsAccountsStore } from "@/lib/store/user-ads-accounts-store";
 import { cn, formatAccountNumber } from "@/lib/utils";
@@ -106,6 +111,10 @@ export function ConsumerAdsAccountSwitcher({
   }, [userDoc, loading, connectedCount, fetchUserAdsAccounts, isSubscriptionExpired]);
 
   const isOnDashboard = isConsumerDashboardPath(pathname);
+  const adsLabel = useDashboardStore((s) => s.adsLabel);
+  const showingAdsStatus = isOnDashboard
+    ? showingAdsStatusFromLabel(adsLabel)
+    : null;
 
   const activeAccount = useMemo(() => {
     if (!isOnDashboard) {
@@ -122,6 +131,9 @@ export function ConsumerAdsAccountSwitcher({
     }
     return null;
   }, [isOnDashboard, selectedAdsAccount, connectedCount, userAdsAccounts]);
+
+  const showInlineShowingAdsBadge =
+    isOnDashboard && isHeader && !!activeAccount && !!showingAdsStatus;
 
   const highlightedAccountId =
     isOnDashboard && selectedAdsAccount
@@ -273,15 +285,20 @@ export function ConsumerAdsAccountSwitcher({
               </span>
             ) : null}
           </span>
-          <ChevronDown
-            aria-hidden
-            className={cn(
-              "size-4 shrink-0 transition-transform duration-200",
-              isHeader ? "text-slate-400" : "text-[#64748b]",
-              open && (isHeader ? "rotate-180 text-[#015AFD]" : "rotate-180 text-[#94a3b8]"),
-              !open && "rotate-0",
-            )}
-          />
+          <span className="flex shrink-0 flex-col items-end justify-center gap-0.5 self-stretch">
+            {showInlineShowingAdsBadge && showingAdsStatus ? (
+              <ConsumerShowingAdsBadge status={showingAdsStatus} inline />
+            ) : null}
+            <ChevronDown
+              aria-hidden
+              className={cn(
+                "size-4 shrink-0 transition-transform duration-200",
+                isHeader ? "text-slate-400" : "text-[#64748b]",
+                open && (isHeader ? "rotate-180 text-[#015AFD]" : "rotate-180 text-[#94a3b8]"),
+                !open && "rotate-0",
+              )}
+            />
+          </span>
         </button>
   );
 
