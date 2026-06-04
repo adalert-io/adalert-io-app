@@ -712,21 +712,21 @@ export function ConsumerDashboardView() {
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_minmax(280px,520px)] lg:items-stretch">
           <div className="grid grid-cols-3 items-start gap-1.5 sm:items-stretch sm:gap-4">
             <ConsumerDashboardMetricCard
-              title="Critical alerts"
+              title="Critical"
               value={String(criticalCount)}
               subtitle="Requires immediate action"
               Icon={TriangleAlert}
               bottomBorderColor={DASHBOARD_ALERT_SEVERITY_BORDER.critical}
             />
             <ConsumerDashboardMetricCard
-              title="Medium alerts"
+              title="Medium"
               value={String(mediumCount)}
               subtitle="Review when possible"
               Icon={CircleAlert}
               bottomBorderColor={DASHBOARD_ALERT_SEVERITY_BORDER.medium}
             />
             <ConsumerDashboardMetricCard
-              title="Low alerts"
+              title="Low"
               value={String(lowCount)}
               subtitle="Informational items"
               Icon={Info}

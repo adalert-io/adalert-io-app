@@ -43,7 +43,7 @@ export function ConsumerDashboardMetricCard({
       )}
       style={bottomBorderColor ? { borderBottomColor: bottomBorderColor } : undefined}
     >
-      <CardContent className="flex items-center justify-between gap-1.5 px-2 py-2 sm:gap-4 sm:px-6 sm:py-5">
+      <CardContent className="flex items-center justify-between gap-1.5 px-2 py-3 sm:gap-4 sm:px-6 sm:py-6">
         <div className="min-w-0 flex-1 space-y-0.5 sm:space-y-1">
           <p className="text-[10px] font-medium leading-tight text-muted-foreground sm:text-sm">
             {title}
