@@ -673,7 +673,7 @@ export function ConsumerDashboardView() {
     <div className="min-h-0 flex-1">
       <main
         className={cn(
-          "mx-auto flex w-full max-w-[1480px] flex-1 flex-col gap-8 pb-8",
+          "mx-auto flex w-full max-w-[1480px] flex-1 flex-col gap-4 pb-8 md:gap-8",
           selectedAlerts.length > 0 && "pb-24 lg:pb-8",
         )}
       >
@@ -691,6 +691,7 @@ export function ConsumerDashboardView() {
                     : ""}
                 </p>
               </div>
+              <ConsumerShowingAdsBadge status={showingAdsStatus} />
             </div>
             {(spendMtdLoading ||
               spendMtdIndicatorLoading ||
@@ -708,8 +709,10 @@ export function ConsumerDashboardView() {
         </Card>
 
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_minmax(280px,520px)] lg:items-stretch">
-          <div className="flex min-w-0 flex-col gap-3">
-            <ConsumerShowingAdsBadge status={showingAdsStatus} fullWidth />
+          <div className="flex min-w-0 flex-col gap-1.5 md:gap-3">
+            <div className="md:hidden">
+              <ConsumerShowingAdsBadge status={showingAdsStatus} fullWidth />
+            </div>
             <div className="grid grid-cols-3 items-start gap-1.5 sm:items-stretch sm:gap-4">
             <ConsumerDashboardMetricCard
               title="Critical"

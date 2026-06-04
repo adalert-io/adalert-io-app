@@ -25,7 +25,7 @@ export function ConsumerShowingAdsBadge({
 }) {
   const sharedClass = cn(
     fullWidth &&
-      "flex w-full justify-center rounded-lg px-4 py-2 text-[13px] font-semibold",
+      "flex w-full justify-center rounded-lg px-3 py-1 text-[12px] font-semibold",
     compact && !fullWidth && "text-[10px]",
     className,
   );
