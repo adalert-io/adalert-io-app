@@ -7,13 +7,13 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ConsumerResponsiveModal,
+  ConsumerResponsiveModalBody,
+  ConsumerResponsiveModalDescription,
+  ConsumerResponsiveModalFooter,
+  ConsumerResponsiveModalHeader,
+  ConsumerResponsiveModalTitle,
+} from "@/features/consumer/ConsumerResponsiveModal";
 import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useAlertSettingsStore } from "@/lib/store/settings-store";
@@ -181,18 +181,20 @@ export function ConsumerEditUserDialog({
   const avatarSrc = avatarPreview || user?.Avatar || "/images/default-avatar.png";
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[min(92vh,880px)] gap-0 overflow-hidden rounded-2xl border-slate-200 p-0 sm:max-w-2xl">
-        <DialogHeader className="border-b border-slate-100 px-6 py-5 text-start">
-          <DialogTitle className="text-xl font-bold text-slate-900">
-            Edit user
-          </DialogTitle>
-          <DialogDescription className="text-sm text-slate-500">
-            Update profile, role, and ad account access for this teammate.
-          </DialogDescription>
-        </DialogHeader>
+    <ConsumerResponsiveModal
+      open={open}
+      onOpenChange={onOpenChange}
+      dismissible={!isSaving}
+      dialogClassName="max-w-2xl rounded-2xl border-slate-200"
+    >
+      <ConsumerResponsiveModalHeader>
+        <ConsumerResponsiveModalTitle>Edit user</ConsumerResponsiveModalTitle>
+        <ConsumerResponsiveModalDescription>
+          Update profile, role, and ad account access for this teammate.
+        </ConsumerResponsiveModalDescription>
+      </ConsumerResponsiveModalHeader>
 
-        <div className="max-h-[calc(92vh-180px)] overflow-y-auto px-6 py-5">
+      <ConsumerResponsiveModalBody>
           <div className="mb-6 flex flex-col items-center gap-3 sm:flex-row sm:items-start">
             <div className="relative shrink-0">
               <div className="size-24 overflow-hidden rounded-full border-2 border-slate-200 bg-slate-50">
@@ -379,35 +381,34 @@ export function ConsumerEditUserDialog({
             />
             <span className="text-sm text-slate-700">Notify the user about this update</span>
           </label>
-        </div>
+      </ConsumerResponsiveModalBody>
 
-        <DialogFooter className="border-t border-slate-100 px-6 py-4 sm:justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            className="rounded-xl"
-            onClick={() => onOpenChange(false)}
-            disabled={isSaving}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            className="rounded-xl bg-[#015AFD] font-semibold hover:bg-[#0146ca]"
-            onClick={handleSave}
-            disabled={isSaving || !name.trim()}
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
-                Saving…
-              </>
-            ) : (
-              "Save changes"
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <ConsumerResponsiveModalFooter>
+        <Button
+          type="button"
+          variant="outline"
+          className="rounded-xl"
+          onClick={() => onOpenChange(false)}
+          disabled={isSaving}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          className="rounded-xl bg-[#015AFD] font-semibold hover:bg-[#0146ca]"
+          onClick={handleSave}
+          disabled={isSaving || !name.trim()}
+        >
+          {isSaving ? (
+            <>
+              <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
+              Saving…
+            </>
+          ) : (
+            "Save changes"
+          )}
+        </Button>
+      </ConsumerResponsiveModalFooter>
+    </ConsumerResponsiveModal>
   );
 }

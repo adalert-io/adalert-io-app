@@ -4,24 +4,18 @@ import { useCallback, useState, type FormEvent } from "react";
 import { MessageSquarePlus, Send } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  ConsumerResponsiveModal,
+  ConsumerResponsiveModalBody,
+  ConsumerResponsiveModalDescription,
+  ConsumerResponsiveModalFooter,
+  ConsumerResponsiveModalHeader,
+  ConsumerResponsiveModalTitle,
+  useConsumerResponsiveModalVariant,
+} from "@/features/consumer/ConsumerResponsiveModal";
 import { cn } from "@/lib/utils";
 
 import { SUPPORT_CATEGORIES } from "./helpers";
@@ -37,32 +31,19 @@ const EMPTY_FORM: NewSupportTicketForm = {
 
 const TICKET_FORM_ID = "consumer-new-ticket-form";
 
-function TicketFormHeader({ variant }: { variant: "dialog" | "drawer" }) {
+function TicketFormHeader() {
   return (
     <div className="flex items-center gap-3">
       <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#015AFD]/10 text-[#015AFD]">
         <MessageSquarePlus className="size-4" aria-hidden />
       </div>
       <div className="min-w-0 pe-8">
-        {variant === "dialog" ? (
-          <>
-            <DialogTitle className="text-lg font-bold text-slate-900">
-              Submit a ticket
-            </DialogTitle>
-            <DialogDescription className="text-[13px] text-slate-500">
-              Describe your issue and our team will follow up by email.
-            </DialogDescription>
-          </>
-        ) : (
-          <>
-            <DrawerTitle className="text-lg font-bold text-slate-900">
-              Submit a ticket
-            </DrawerTitle>
-            <DrawerDescription className="text-[13px] text-slate-500">
-              Describe your issue and our team will follow up by email.
-            </DrawerDescription>
-          </>
-        )}
+        <ConsumerResponsiveModalTitle className="text-lg">
+          Submit a ticket
+        </ConsumerResponsiveModalTitle>
+        <ConsumerResponsiveModalDescription className="text-[13px]">
+          Describe your issue and our team will follow up by email.
+        </ConsumerResponsiveModalDescription>
       </div>
     </div>
   );
@@ -166,6 +147,25 @@ function NewSupportTicketFormFields({
   );
 }
 
+function TicketFormFooter({
+  isSubmitting,
+  onCancel,
+}: {
+  isSubmitting: boolean;
+  onCancel: () => void;
+}) {
+  const variant = useConsumerResponsiveModalVariant();
+  return (
+    <ConsumerResponsiveModalFooter>
+      <TicketFormActions
+        isSubmitting={isSubmitting}
+        onCancel={onCancel}
+        layout={variant === "drawer" ? "stacked" : "inline"}
+      />
+    </ConsumerResponsiveModalFooter>
+  );
+}
+
 function TicketFormActions({
   isSubmitting,
   onCancel,
@@ -220,7 +220,6 @@ export function ConsumerHelpNewTicketDialog({
   isSubmitting = false,
 }: ConsumerHelpNewTicketDialogProps) {
   const [form, setForm] = useState<NewSupportTicketForm>(EMPTY_FORM);
-  const isMobile = useIsMobile();
 
   const handleClose = useCallback(
     (nextOpen: boolean) => {
@@ -244,73 +243,35 @@ export function ConsumerHelpNewTicketDialog({
     setForm(EMPTY_FORM);
   };
 
-  if (isMobile) {
-    return (
-      <Drawer
-        open={open}
-        onOpenChange={handleClose}
-        handleOnly
-        dismissible={!isSubmitting}
-        shouldScaleBackground
-      >
-        <DrawerContent
-          className={cn(
-            "max-h-[min(92dvh,720px)] gap-0 p-0",
-            "pb-[max(1rem,env(safe-area-inset-bottom))]",
-          )}
-          onOpenAutoFocus={(event) => event.preventDefault()}
-        >
-          <DrawerHeader className="shrink-0 border-b border-slate-100 py-4">
-            <TicketFormHeader variant="drawer" />
-          </DrawerHeader>
-
-          <form
-            id={TICKET_FORM_ID}
-            className="flex min-h-0 flex-1 flex-col"
-            onSubmit={handleSubmit}
-          >
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
-              <div className="space-y-3">
-                <NewSupportTicketFormFields form={form} setForm={setForm} />
-              </div>
-            </div>
-
-            <div className="shrink-0 border-t border-slate-100 bg-white px-5 py-4">
-              <TicketFormActions
-                isSubmitting={isSubmitting}
-                onCancel={requestClose}
-                layout="stacked"
-              />
-            </div>
-          </form>
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent
-        showCloseButton
-        overlayClassName="bg-slate-900/40 backdrop-blur-sm"
-        className="gap-0 overflow-visible p-0 sm:max-w-lg"
-      >
-        <DialogHeader className="border-b border-slate-100 px-5 py-4 text-start">
-          <TicketFormHeader variant="dialog" />
-        </DialogHeader>
+    <ConsumerResponsiveModal
+      open={open}
+      onOpenChange={handleClose}
+      dismissible={!isSubmitting}
+      preventAutoFocus
+      dialogClassName="sm:max-w-lg"
+      drawerClassName="max-h-[min(92dvh,720px)]"
+    >
+      <ConsumerResponsiveModalHeader>
+        <TicketFormHeader />
+      </ConsumerResponsiveModalHeader>
 
-        <form
-          id={TICKET_FORM_ID}
-          className="space-y-3 px-5 py-4"
-          onSubmit={handleSubmit}
-        >
-          <NewSupportTicketFormFields form={form} setForm={setForm} />
-          <TicketFormActions
-            isSubmitting={isSubmitting}
-            onCancel={requestClose}
-          />
-        </form>
-      </DialogContent>
-    </Dialog>
+      <form
+        id={TICKET_FORM_ID}
+        className="flex min-h-0 flex-1 flex-col"
+        onSubmit={handleSubmit}
+      >
+        <ConsumerResponsiveModalBody>
+          <div className="space-y-3">
+            <NewSupportTicketFormFields form={form} setForm={setForm} />
+          </div>
+        </ConsumerResponsiveModalBody>
+
+        <TicketFormFooter
+          isSubmitting={isSubmitting}
+          onCancel={requestClose}
+        />
+      </form>
+    </ConsumerResponsiveModal>
   );
 }

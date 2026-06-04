@@ -3,14 +3,14 @@
 import { Plus } from "lucide-react";
 
 import { AddAdsAccountFlow } from "@/app/add-ads-account/AddAdsAccountFlow";
+import { useSummaryStore } from "@/app/summary/summary-store";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { useSummaryStore } from "@/app/summary/summary-store";
+  ConsumerResponsiveModal,
+  ConsumerResponsiveModalBody,
+  ConsumerResponsiveModalHeader,
+  ConsumerResponsiveModalTitle,
+} from "@/features/consumer/ConsumerResponsiveModal";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useUserAdsAccountsStore } from "@/lib/store/user-ads-accounts-store";
 import { cn } from "@/lib/utils";
@@ -42,27 +42,25 @@ export function ConsumerAddAdsAccountDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        showCloseButton
-        overlayClassName="bg-slate-900/40 backdrop-blur-md"
-        className="max-h-[min(90vh,880px)] max-w-2xl gap-0 overflow-y-auto p-0 sm:rounded-2xl"
-      >
-        <DialogHeader className="border-b border-slate-100 px-6 py-5 text-start">
-          <DialogTitle className="text-xl font-bold text-slate-900">
-            Add ad account
-          </DialogTitle>
-        </DialogHeader>
-        <div className="px-6 py-6">
-          <AddAdsAccountFlow
-            oauthContext="consumer"
-            onSuccess={() => {
-              void handleSuccess();
-            }}
-          />
-        </div>
-      </DialogContent>
-    </Dialog>
+    <ConsumerResponsiveModal
+      open={open}
+      onOpenChange={onOpenChange}
+      overlayClassName="bg-slate-900/40 backdrop-blur-md"
+      dialogClassName="max-w-2xl sm:rounded-2xl"
+      drawerClassName="max-h-[min(90dvh,720px)]"
+    >
+      <ConsumerResponsiveModalHeader>
+        <ConsumerResponsiveModalTitle>Add ad account</ConsumerResponsiveModalTitle>
+      </ConsumerResponsiveModalHeader>
+      <ConsumerResponsiveModalBody>
+        <AddAdsAccountFlow
+          oauthContext="consumer"
+          onSuccess={() => {
+            void handleSuccess();
+          }}
+        />
+      </ConsumerResponsiveModalBody>
+    </ConsumerResponsiveModal>
   );
 }
 

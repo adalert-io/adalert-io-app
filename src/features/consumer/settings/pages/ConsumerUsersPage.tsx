@@ -1,27 +1,22 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { collection, getDocs, query, where } from 'firebase/firestore';
 import {
   ChevronDown,
   Loader2,
-  Mail,
-  Plus,
   Edit2,
   RotateCcw,
   Search,
   Trash2,
   UserPlus,
-  XIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { db } from '@/lib/firebase/config';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { useAlertSettingsStore } from '@/lib/store/settings-store';
+import { ConsumerAddUserDialog } from '@/features/consumer/settings/ConsumerAddUserDialog';
+import { ConsumerDeleteUserDialog } from '@/features/consumer/settings/ConsumerDeleteUserDialog';
 import { ConsumerEditUserDialog } from '@/features/consumer/settings/ConsumerEditUserDialog';
 import { ConsumerSettingsListFooter } from '@/features/consumer/settings/ConsumerSettingsListFooter';
 import {
@@ -30,9 +25,6 @@ import {
   consumerSettingsTableShell,
 } from '@/features/consumer/settings/consumer-settings-styles';
 import { cn } from '@/lib/utils';
-
-const CHECKBOX_CLASS =
-  'data-[state=checked]:bg-[#015AFD] data-[state=checked]:border-[#015AFD]';
 
 interface ConsumerUsersPageProps {
   consumerShell?: boolean;
@@ -71,12 +63,6 @@ export default function ConsumerUsersPage({
   const [page, setPage] = useState(1);
 
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [role, setRole] = useState<'Admin' | 'Manager'>('Admin');
-  const [adsSearch, setAdsSearch] = useState('');
-  const [selectedAds, setSelectedAds] = useState<string[]>([]);
 
   const [resendingId, setResendingId] = useState<string | null>(null);
   const [deletingInvitationId, setDeletingInvitationId] = useState<string | null>(
@@ -164,54 +150,8 @@ export default function ConsumerUsersPage({
     setPage((p) => Math.min(p, totalPages));
   }, [totalPages]);
 
-  const filteredAdsAccounts = useMemo(() => {
-    const q = adsSearch.trim().toLowerCase();
-    if (!q) return adsAccounts;
-    return adsAccounts.filter((a) => String(a.name || '').toLowerCase().includes(q));
-  }, [adsAccounts, adsSearch]);
-
-  const handleToggleAd = (id: string) => {
-    setSelectedAds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
-  };
-
   const handleOpenAdd = () => {
-    setName('');
-    setEmail('');
-    setRole('Admin');
-    setSelectedAds([]);
-    setAdsSearch('');
     setIsAddOpen(true);
-  };
-
-  const handleCreateUser = async () => {
-    if (!email.trim()) {
-      toast.error('Email is required');
-      return;
-    }
-    if (!userDoc?.['Company Admin']) return;
-    setIsSubmitting(true);
-    try {
-      const usersRef = collection(db, 'users');
-      const emailQuery = query(usersRef, where('email', '==', email.toLowerCase()));
-      const snapshot = await getDocs(emailQuery);
-      if (!snapshot.empty) {
-        toast.error('A user with this email already exists');
-        return;
-      }
-
-      const adsToInvite =
-        role === 'Admin' ? adsAccounts.map((acc) => acc.id) : selectedAds;
-      await inviteUser(email.trim(), role, name.trim(), adsToInvite);
-      await refreshInvitations(userDoc['Company Admin']);
-      toast.success('Invitation sent successfully');
-      setIsAddOpen(false);
-    } catch (error: any) {
-      toast.error(error?.message || 'Failed to send invitation');
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
   const handleResendInvitation = async (invitationId: string) => {
@@ -534,106 +474,7 @@ export default function ConsumerUsersPage({
         />
       </div>
 
-      {isAddOpen && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4'>
-          <div className='w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-xl'>
-            <div className='mb-4 flex items-start justify-between'>
-              <div>
-                <h3 className='text-xl font-bold text-slate-900'>Add New User</h3>
-                <p className='text-sm text-slate-500'>Invite a new teammate with account access.</p>
-              </div>
-              <button className='rounded-lg p-1 text-slate-400 hover:bg-slate-100' onClick={() => setIsAddOpen(false)}>
-                <XIcon className='h-5 w-5' />
-              </button>
-            </div>
-
-            <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-              <div className='space-y-2'>
-                <label className='text-sm font-medium text-slate-700'>Name</label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder='Full name' />
-              </div>
-              <div className='space-y-2'>
-                <label className='text-sm font-medium text-slate-700'>Email</label>
-                <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder='Email address' />
-              </div>
-            </div>
-
-            <div className='mt-4 space-y-2'>
-              <label className='text-sm font-medium text-slate-700'>Role</label>
-              <div className='flex gap-2'>
-                {(['Admin', 'Manager'] as const).map((value) => (
-                  <button
-                    key={value}
-                    type='button'
-                    onClick={() => setRole(value)}
-                    className={cn(
-                      'rounded-xl border px-4 py-2 text-sm font-medium',
-                      role === value
-                        ? 'border-[#015AFD] bg-[#015AFD]/10 text-[#015AFD]'
-                        : 'border-slate-200 text-slate-600 hover:bg-slate-50',
-                    )}
-                  >
-                    {value}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {role === 'Manager' && (
-              <div className='mt-4 rounded-xl border border-slate-200 bg-slate-50/60 p-4'>
-                <div className='mb-3 flex items-center gap-2'>
-                  <Mail className='h-4 w-4 text-[#015AFD]' />
-                  <p className='text-sm font-semibold text-slate-800'>Ad account access</p>
-                </div>
-                <Input
-                  value={adsSearch}
-                  onChange={(e) => setAdsSearch(e.target.value)}
-                  placeholder='Search ad accounts'
-                  className='mb-3 bg-white'
-                />
-                <div className='max-h-52 space-y-2 overflow-auto'>
-                  {filteredAdsAccounts.map((acc) => (
-                    <label key={acc.id} className='flex items-center gap-3 rounded-lg bg-white px-3 py-2'>
-                      <Checkbox
-                        checked={selectedAds.includes(acc.id)}
-                        onCheckedChange={() => handleToggleAd(acc.id)}
-                        className={CHECKBOX_CLASS}
-                      />
-                      <span className='text-sm text-slate-700'>{acc.name}</span>
-                    </label>
-                  ))}
-                  {filteredAdsAccounts.length === 0 && (
-                    <p className='text-sm text-slate-500'>No accounts found.</p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <div className='mt-6 flex justify-end gap-2'>
-              <Button variant='outline' className='rounded-xl' onClick={() => setIsAddOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                className='rounded-xl bg-[#015AFD] font-semibold hover:bg-[#0146ca]'
-                onClick={handleCreateUser}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                    Sending...
-                  </>
-                ) : (
-                  <>
-                    <Plus className='mr-2 h-4 w-4' />
-                    Send Invitation
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConsumerAddUserDialog open={isAddOpen} onOpenChange={setIsAddOpen} />
 
       <ConsumerEditUserDialog
         open={isEditOpen}
@@ -644,40 +485,15 @@ export default function ConsumerUsersPage({
         user={editingUserRecord}
       />
 
-      {deletingUser && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4'>
-          <div className='w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6'>
-            <div className='mb-5 flex items-center justify-between'>
-              <h4 className='text-lg font-semibold text-slate-900'>Delete user</h4>
-              <button className='rounded-lg p-1 text-slate-400 hover:bg-slate-100' onClick={() => setDeletingUser(null)}>
-                <XIcon className='h-5 w-5' />
-              </button>
-            </div>
-            <p className='mb-6 text-sm text-slate-600'>
-              Are you sure you want to delete <span className='font-semibold text-slate-900'>{deletingUser.name}</span>?
-            </p>
-            <div className='flex justify-end gap-2'>
-              <Button variant='outline' className='rounded-xl' onClick={() => setDeletingUser(null)}>
-                Cancel
-              </Button>
-              <Button
-                className='rounded-xl bg-red-600 text-white hover:bg-red-700'
-                onClick={handleDeleteUser}
-                disabled={isDeletingUser}
-              >
-                {isDeletingUser ? (
-                  <>
-                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                    Deleting...
-                  </>
-                ) : (
-                  'Delete'
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConsumerDeleteUserDialog
+        open={!!deletingUser}
+        userName={deletingUser?.name ?? ""}
+        isDeleting={isDeletingUser}
+        onOpenChange={(open) => {
+          if (!open) setDeletingUser(null);
+        }}
+        onConfirm={handleDeleteUser}
+      />
     </div>
   );
 }
