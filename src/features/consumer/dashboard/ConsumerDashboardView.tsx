@@ -710,7 +710,7 @@ export function ConsumerDashboardView() {
 
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_minmax(280px,520px)] lg:items-stretch">
           <div className="flex min-w-0 flex-col gap-1.5 md:gap-3">
-            <div className="md:hidden">
+            <div className="md:hidden mb-4">
               <ConsumerShowingAdsBadge status={showingAdsStatus} fullWidth />
             </div>
             <div className="grid grid-cols-3 items-start gap-1.5 sm:items-stretch sm:gap-4">
