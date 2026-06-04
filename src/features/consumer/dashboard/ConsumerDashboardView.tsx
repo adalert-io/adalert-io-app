@@ -545,21 +545,8 @@ export function ConsumerDashboardView() {
     </div>
   ) : null;
 
-  const alertActionIconButtons = (
+  const alertToolbarActionButtons = (
     <>
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={() => setShowSearch((v) => !v)}
-        className={cn(
-          'size-10 rounded-xl border-slate-200 shadow-sm',
-          showSearch && 'border-[#015AFD]/40 bg-[#015AFD]/5',
-        )}
-        aria-label="Show search"
-      >
-        <Search className="size-4 text-[#015AFD]" />
-      </Button>
-
       <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -669,6 +656,47 @@ export function ConsumerDashboardView() {
     </>
   );
 
+  const alertSearchToggleButton = (
+    <Button
+      variant="outline"
+      size="icon"
+      onClick={() => {
+        setShowSearch((v) => {
+          const next = !v;
+          if (next) {
+            setMobileAlertActionsOpen(true);
+          }
+          return next;
+        });
+      }}
+      className={cn(
+        "size-10 shrink-0 rounded-xl border-slate-200 shadow-sm",
+        showSearch && "border-[#015AFD]/40 bg-[#015AFD]/5",
+      )}
+      aria-label={showSearch ? "Hide search" : "Show search"}
+      aria-expanded={showSearch}
+    >
+      <Search className="size-4 text-[#015AFD]" />
+    </Button>
+  );
+
+  const alertDesktopSearchToggleButton = (
+    <Button
+      variant="outline"
+      size="icon"
+      onClick={() => setShowSearch((v) => !v)}
+      className={cn(
+        "size-10 rounded-xl border-slate-200 shadow-sm",
+        showSearch && "border-[#015AFD]/40 bg-[#015AFD]/5",
+      )}
+      aria-label={showSearch ? "Hide search" : "Show search"}
+    >
+      <Search className="size-4 text-[#015AFD]" />
+    </Button>
+  );
+
+  const mobileAlertToolbarExpanded = mobileAlertActionsOpen || showSearch;
+
   return (
     <div className="min-h-0 flex-1">
       <main
@@ -765,7 +793,8 @@ export function ConsumerDashboardView() {
 
         <section className="space-y-4">
           <Card className="gap-0 overflow-hidden rounded-2xl border border-slate-200/90 bg-white py-0 shadow-md">
-            <div className="space-y-3 border-b border-slate-100 p-4 sm:space-y-4 sm:p-5">
+            <div className="max-lg:sticky max-lg:top-0 max-lg:z-20 max-lg:border-b max-lg:border-slate-100 max-lg:bg-white max-lg:shadow-sm">
+            <div className="space-y-3 p-4 sm:space-y-4 sm:p-5 lg:border-b lg:border-slate-100">
             <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-4">
               <div className="flex w-full items-center justify-between gap-2 lg:w-auto lg:flex-1">
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -855,39 +884,45 @@ export function ConsumerDashboardView() {
                 )}
                 </div>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className={cn(
-                    "size-10 shrink-0 rounded-xl border-slate-200 shadow-sm lg:hidden",
-                    mobileAlertActionsOpen && "border-[#015AFD]/40 bg-[#015AFD]/5",
-                  )}
-                  onClick={() => setMobileAlertActionsOpen((v) => !v)}
-                  aria-label={
-                    mobileAlertActionsOpen ? "Hide alert actions" : "Show alert actions"
-                  }
-                  aria-expanded={mobileAlertActionsOpen}
-                >
-                  <Menu className="size-4 text-[#015AFD]" />
-                </Button>
+                <div className="flex shrink-0 items-center gap-2 lg:hidden">
+                  {alertSearchToggleButton}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className={cn(
+                      "size-10 shrink-0 rounded-xl border-slate-200 shadow-sm",
+                      mobileAlertActionsOpen && "border-[#015AFD]/40 bg-[#015AFD]/5",
+                    )}
+                    onClick={() => setMobileAlertActionsOpen((v) => !v)}
+                    aria-label={
+                      mobileAlertActionsOpen ? "Hide alert actions" : "Show alert actions"
+                    }
+                    aria-expanded={mobileAlertActionsOpen}
+                  >
+                    <Menu className="size-4 text-[#015AFD]" />
+                  </Button>
+                </div>
               </div>
 
               <div
                 className={cn(
                   "flex flex-col gap-2 lg:hidden",
-                  !mobileAlertActionsOpen && "hidden",
+                  !mobileAlertToolbarExpanded && "hidden",
                 )}
               >
-                {alertSearchInput}
-                <div className="flex flex-wrap items-center gap-2">
-                  {alertActionIconButtons}
-                </div>
+                {showSearch ? alertSearchInput : null}
+                {mobileAlertActionsOpen ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {alertToolbarActionButtons}
+                  </div>
+                ) : null}
               </div>
 
               <div className="hidden flex-wrap items-center gap-2 lg:flex">
                 {alertSearchInput}
-                {alertActionIconButtons}
+                {alertDesktopSearchToggleButton}
+                {alertToolbarActionButtons}
 
                 <div className="relative">
                   <select
@@ -918,6 +953,7 @@ export function ConsumerDashboardView() {
                   </svg>
                 </div>
               </div>
+            </div>
             </div>
             </div>
 
