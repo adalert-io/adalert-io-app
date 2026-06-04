@@ -178,7 +178,7 @@ export function ConsumerHelpView() {
       </section>
 
       <section className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm">
-        <div className="flex flex-col gap-4 border-b border-slate-100 p-4 md:flex-row md:items-center md:justify-between md:gap-6 md:p-6 lg:p-7">
+        <div className="flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between md:gap-6 md:p-6 lg:p-7">
           <div className="shrink-0">
             <h2 className="text-lg font-bold text-slate-900 md:text-xl">Your tickets</h2>
             <p className="mt-0.5 text-[13px] text-slate-500 md:text-sm">
@@ -203,7 +203,7 @@ export function ConsumerHelpView() {
           </div>
         </div>
 
-        <div className="border-b border-slate-100 px-4 pb-3 md:overflow-visible md:px-6 md:pb-4 lg:px-7">
+        <div className="px-4 pb-3 md:overflow-visible md:px-6 md:pb-4 lg:px-7">
           <div className="flex gap-2 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible md:pb-0">
             {FILTER_OPTIONS.map((option) => (
               <button
