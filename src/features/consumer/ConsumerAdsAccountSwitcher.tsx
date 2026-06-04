@@ -31,12 +31,7 @@ import {
 } from "@/features/consumer/consumer-console-nav";
 import { CONSUMER_BILLING_HREF } from "@/features/consumer/consumer-subscription-access";
 import { consumerPathForClassicRoute } from "@/lib/consumer-shell-preference";
-import {
-  ConsumerShowingAdsBadge,
-  showingAdsStatusFromLabel,
-} from "@/features/consumer/ConsumerShowingAdsBadge";
 import { useAuthStore } from "@/lib/store/auth-store";
-import { useDashboardStore } from "@/lib/store/dashboard-store";
 import type { AdsAccount } from "@/lib/store/user-ads-accounts-store";
 import { useUserAdsAccountsStore } from "@/lib/store/user-ads-accounts-store";
 import { cn, formatAccountNumber } from "@/lib/utils";
@@ -111,10 +106,6 @@ export function ConsumerAdsAccountSwitcher({
   }, [userDoc, loading, connectedCount, fetchUserAdsAccounts, isSubscriptionExpired]);
 
   const isOnDashboard = isConsumerDashboardPath(pathname);
-  const adsLabel = useDashboardStore((s) => s.adsLabel);
-  const selectedShowingAdsStatus = isOnDashboard
-    ? showingAdsStatusFromLabel(adsLabel)
-    : null;
 
   const activeAccount = useMemo(() => {
     if (!isOnDashboard) {
@@ -270,33 +261,16 @@ export function ConsumerAdsAccountSwitcher({
               {triggerLabel}
             </span>
             {triggerSub ? (
-              isOnDashboard && selectedShowingAdsStatus && isHeader ? (
-                <span className="mt-0.5 flex min-w-0 flex-wrap items-center gap-1.5">
-                  <span
-                    className={cn(
-                      "truncate text-[11px] font-medium tabular-nums text-slate-500 group-hover:text-slate-600",
-                    )}
-                  >
-                    {triggerSub}
-                  </span>
-                  <ConsumerShowingAdsBadge
-                    status={selectedShowingAdsStatus}
-                    compact
-                    className="shrink-0"
-                  />
-                </span>
-              ) : (
-                <span
-                  className={cn(
-                    "mt-0.5 block truncate text-[11px] font-medium tabular-nums",
-                    isHeader
-                      ? "text-slate-500 group-hover:text-slate-600"
-                      : "text-[#64748b] group-hover:text-[#94a3b8]",
-                  )}
-                >
-                  {triggerSub}
-                </span>
-              )
+              <span
+                className={cn(
+                  "mt-0.5 block truncate text-[11px] font-medium tabular-nums",
+                  isHeader
+                    ? "text-slate-500 group-hover:text-slate-600"
+                    : "text-[#64748b] group-hover:text-[#94a3b8]",
+                )}
+              >
+                {triggerSub}
+              </span>
             ) : null}
           </span>
           <ChevronDown
@@ -417,14 +391,6 @@ export function ConsumerAdsAccountSwitcher({
                   <span className="mt-0.5 block truncate text-[11px] tabular-nums text-slate-500">
                     {number}
                   </span>
-                  {isOnDashboard && isSelected && selectedShowingAdsStatus ? (
-                    <span className="mt-1.5">
-                      <ConsumerShowingAdsBadge
-                        status={selectedShowingAdsStatus}
-                        compact
-                      />
-                    </span>
-                  ) : null}
                 </span>
                 {isSelected ? (
                   <Check className="size-4 shrink-0 text-[#015AFD]" aria-hidden />

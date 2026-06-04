@@ -46,8 +46,11 @@ import {
 import { saveAs } from 'file-saver';
 import type { Alert } from '@/lib/store/dashboard-store';
 import { GoogleAdsMark } from '@/components/GoogleAdsMark';
-import { Badge } from '@/components/ui/badge';
 import { cn, formatAccountNumber } from '@/lib/utils';
+import {
+  ConsumerShowingAdsBadge,
+  showingAdsStatusFromLabel,
+} from '@/features/consumer/ConsumerShowingAdsBadge';
 import { CONSUMER_MOBILE_TAB_BAR_HEIGHT } from '@/features/consumer/ConsumerMobileTabBar';
 import { ConsumerDashboardAlertsTable } from './ConsumerDashboardAlertsTable';
 import { ConsumerPpcActionPlanDialog } from './ppc-action-plan';
@@ -403,6 +406,8 @@ export function ConsumerDashboardView() {
     (a) => a.Severity === ALERT_SEVERITIES.LOW,
   ).length;
 
+  const showingAdsStatus = showingAdsStatusFromLabel(adsLabel);
+
   // Add a helper to format date
   function formatDate(date: any) {
     if (!date) return '';
@@ -686,13 +691,6 @@ export function ConsumerDashboardView() {
                     : ""}
                 </p>
               </div>
-              {!adsLabel ? (
-                <Badge variant="secondary">Checking ads status</Badge>
-              ) : adsLabel["Is Showing Ads"] ? (
-                <Badge variant="success">Showing ads</Badge>
-              ) : (
-                <Badge variant="destructive">Not showing ads</Badge>
-              )}
             </div>
             {(spendMtdLoading ||
               spendMtdIndicatorLoading ||
@@ -710,7 +708,9 @@ export function ConsumerDashboardView() {
         </Card>
 
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_minmax(280px,520px)] lg:items-stretch">
-          <div className="grid grid-cols-3 items-start gap-1.5 sm:items-stretch sm:gap-4">
+          <div className="flex min-w-0 flex-col gap-3">
+            <ConsumerShowingAdsBadge status={showingAdsStatus} fullWidth />
+            <div className="grid grid-cols-3 items-start gap-1.5 sm:items-stretch sm:gap-4">
             <ConsumerDashboardMetricCard
               title="Critical"
               value={String(criticalCount)}
@@ -732,6 +732,7 @@ export function ConsumerDashboardView() {
               Icon={Info}
               bottomBorderColor={DASHBOARD_ALERT_SEVERITY_BORDER.low}
             />
+            </div>
           </div>
 
           <div className="flex h-full w-full lg:max-w-[520px]">

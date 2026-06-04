@@ -16,27 +16,36 @@ export function ConsumerShowingAdsBadge({
   status,
   className,
   compact = false,
+  fullWidth = false,
 }: {
   status: ShowingAdsDisplayStatus;
   className?: string;
   compact?: boolean;
+  fullWidth?: boolean;
 }) {
+  const sharedClass = cn(
+    fullWidth &&
+      "flex w-full justify-center rounded-lg px-4 py-2 text-[13px] font-semibold",
+    compact && !fullWidth && "text-[10px]",
+    className,
+  );
+
   if (status === "checking") {
     return (
-      <Badge variant="secondary" className={cn(compact && "text-[10px]", className)}>
+      <Badge variant="secondary" className={sharedClass}>
         Checking ads status
       </Badge>
     );
   }
   if (status === "showing") {
     return (
-      <Badge variant="success" className={cn(compact && "text-[10px]", className)}>
+      <Badge variant="success" className={sharedClass}>
         Showing ads
       </Badge>
     );
   }
   return (
-    <Badge variant="destructive" className={cn(compact && "text-[10px]", className)}>
+    <Badge variant="destructive" className={sharedClass}>
       Not showing ads
     </Badge>
   );
