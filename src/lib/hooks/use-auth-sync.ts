@@ -2,9 +2,12 @@ import { useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase/config";
 import { useAuthStore } from "../store/auth-store";
+import { resetSessionStores } from "../store/reset-session-stores";
 
 export function useAuthSync() {
   const setUser = useAuthStore((state) => state.setUser);
+  const setUserDoc = useAuthStore((state) => state.setUserDoc);
+  const setSubscription = useAuthStore((state) => state.setSubscription);
   const setLoading = useAuthStore((state) => state.setLoading);
   const checkSubscriptionStatus = useAuthStore((state) => state.checkSubscriptionStatus);
   const handlePostAuthNavigation = useAuthStore((state) => state.handlePostAuthNavigation);
@@ -12,18 +15,37 @@ export function useAuthSync() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
+      const previousUid = useAuthStore.getState().user?.uid;
 
-      if (firebaseUser) {
-        await checkSubscriptionStatus(firebaseUser.uid);
-        await handlePostAuthNavigation();
+      if (!firebaseUser) {
+        resetSessionStores();
+        setUser(null);
+        setUserDoc(null);
+        setSubscription(null);
+        setLoading(false);
+        return;
       }
+
+      if (previousUid && previousUid !== firebaseUser.uid) {
+        resetSessionStores();
+      }
+
+      setUser(firebaseUser);
+      await checkSubscriptionStatus(firebaseUser.uid);
+      await handlePostAuthNavigation();
 
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [setUser, setLoading, checkSubscriptionStatus, handlePostAuthNavigation]);
+  }, [
+    setUser,
+    setUserDoc,
+    setSubscription,
+    setLoading,
+    checkSubscriptionStatus,
+    handlePostAuthNavigation,
+  ]);
 
   useEffect(() => {
     if (user) {

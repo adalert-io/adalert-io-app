@@ -142,20 +142,26 @@ interface DashboardState {
   generateAlertsPdf: (selectedAdsAccount: any) => Promise<void>;
   generateAnalysisContent: (selectedAdsAccount: any) => Promise<string>;
   addAdAccountsVarProps: () => Promise<void>;
+  reset: () => void;
 }
 
-export const useDashboardStore = create<DashboardState>((set, get) => ({
-  alerts: [],
-  dashboardDaily: null,
-  adsLabel: null,
+const initialDashboardState = {
+  alerts: [] as Alert[],
+  dashboardDaily: null as DashboardDaily | null,
+  adsLabel: null as any | null,
   loading: false,
   alertsLoading: false,
   spendMtdLoading: false,
   spendMtdIndicatorLoading: false,
   kpiDataLoading: false,
   currencySymbolLoading: false,
-  error: null,
-  lastFetchedAccountId: null,
+  error: null as string | null,
+  lastFetchedAccountId: null as string | null,
+};
+
+export const useDashboardStore = create<DashboardState>((set, get) => ({
+  ...initialDashboardState,
+  reset: () => set({ ...initialDashboardState }),
   setLastFetchedAccountId: (id) => set({ lastFetchedAccountId: id }),
 
   fetchAlerts: async (adsAccountId: string) => {

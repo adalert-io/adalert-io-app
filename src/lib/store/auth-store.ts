@@ -452,7 +452,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ loading: true, error: null });
       await signOut(auth);
-      set({ user: null, userDoc: null, subscription: null }); // Clear subscription on logout
+      // Dynamic import avoids a circular dependency with domain stores
+      const { resetSessionStores } = await import(
+        '@/lib/store/reset-session-stores'
+      );
+      resetSessionStores();
+      set({
+        user: null,
+        userDoc: null,
+        subscription: null,
+        isFullAccess: false,
+      });
 
       // Navigate to auth page after logout
       const { router } = get();

@@ -226,33 +226,45 @@ interface AlertSettingsState {
     data?: any;
     error?: string;
   }>;
+  reset: () => void;
 }
 
-export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
-  alertSettings: null,
+const initialAlertSettingsState = {
+  alertSettings: null as AlertSettings | null,
   loading: false,
-  error: null,
-  loadedUserId: null,
-  users: [],
+  error: null as string | null,
+  loadedUserId: null as string | null,
+  users: [] as UserRow[],
   usersLoaded: false,
-  invitations: [],
+  invitations: [] as Invitation[],
   invitationsLoaded: false,
-  adsAccounts: [],
+  adsAccounts: [] as AdsAccount[],
   adsAccountsLoaded: false,
-  adsAccountsForTab: [],
+  adsAccountsForTab: [] as AdsAccount[],
   adsAccountsForTabLoaded: false,
-  adsAccountsForTabUnsub: null,
-  stripeCompany: null,
+  adsAccountsForTabUnsub: null as (() => void) | null,
+  stripeCompany: null as any,
   stripeCompanyLoaded: false,
-  subscription: null,
+  subscription: null as any,
   subscriptionLoaded: false,
-  paymentMethods: null,
+  paymentMethods: null as any,
   paymentMethodsLoaded: false,
-  invoices: null,
-  receiptUrl: null,
-  lastChargeId: null,
-  lastChargeAmount: null,
-  lastChargeCurrency: null,
+  invoices: null as any,
+  receiptUrl: null as any,
+  lastChargeId: null as any,
+  lastChargeAmount: null as any,
+  lastChargeCurrency: null as any,
+};
+
+export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
+  ...initialAlertSettingsState,
+  reset: () => {
+    const unsub = get().adsAccountsForTabUnsub;
+    if (unsub) {
+      unsub();
+    }
+    set({ ...initialAlertSettingsState });
+  },
   fetchAlertSettings: async (userId: string) => {
     if (get().loadedUserId === userId && get().alertSettings) return;
     set({ loading: true, error: null });

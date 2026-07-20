@@ -22,6 +22,8 @@ interface UserAdsAccountsState {
   selectedAdsAccount: AdsAccount | null;
   loading: boolean;
   error: string | null;
+  /** uid whose ads accounts are currently in the store */
+  ownerUid: string | null;
   fetchUserAdsAccounts: (userDoc: UserDocument) => Promise<void>;
   setSelectedAdsAccount: (account: AdsAccount | null) => void;
   updateAdAccountCurrencySymbol: (
@@ -30,7 +32,10 @@ interface UserAdsAccountsState {
   ) => Promise<void>;
   updateAdAccount: (accountId: string, updates: Partial<AdsAccount>) => void;
   updateStripeSubscriptionQuantity: (userDoc: UserDocument) => Promise<void>;
+  reset: () => void;
 }
+
+let userAdsAccountsFetchGeneration = 0;
 
 export const useUserAdsAccountsStore = create<UserAdsAccountsState>(
   (set, get) => ({
@@ -38,6 +43,18 @@ export const useUserAdsAccountsStore = create<UserAdsAccountsState>(
     selectedAdsAccount: null,
     loading: false,
     error: null,
+    ownerUid: null,
+
+    reset: () => {
+      userAdsAccountsFetchGeneration += 1;
+      set({
+        userAdsAccounts: [],
+        selectedAdsAccount: null,
+        loading: false,
+        error: null,
+        ownerUid: null,
+      });
+    },
 
     setSelectedAdsAccount: (account) =>
       set((state) => {
@@ -82,6 +99,22 @@ export const useUserAdsAccountsStore = create<UserAdsAccountsState>(
     },
 
     fetchUserAdsAccounts: async (userDoc) => {
+      if (!userDoc?.uid) {
+        return;
+      }
+
+      const ownerUid = userDoc.uid;
+      const generation = ++userAdsAccountsFetchGeneration;
+
+      // Never keep another user's selection/list across sessions
+      if (get().ownerUid && get().ownerUid !== ownerUid) {
+        set({
+          userAdsAccounts: [],
+          selectedAdsAccount: null,
+          ownerUid: null,
+        });
+      }
+
       set({ loading: true, error: null });
       try {
         const adsAccountRef = collection(db, COLLECTIONS.ADS_ACCOUNTS);
@@ -110,8 +143,13 @@ export const useUserAdsAccountsStore = create<UserAdsAccountsState>(
           ...doc.data(),
         }));
 
-        // Preserve any previously selected account if it still exists
-        const existingSelected = get().selectedAdsAccount;
+        if (generation !== userAdsAccountsFetchGeneration) {
+          return;
+        }
+
+        // Preserve selection only when it still belongs to this user's account list
+        const existingSelected =
+          get().ownerUid === ownerUid ? get().selectedAdsAccount : null;
         let nextSelected: AdsAccount | null = null;
 
         if (existingSelected && accounts.some((a) => a.id === existingSelected.id)) {
@@ -124,8 +162,12 @@ export const useUserAdsAccountsStore = create<UserAdsAccountsState>(
           userAdsAccounts: accounts,
           selectedAdsAccount: nextSelected,
           loading: false,
+          ownerUid,
         });
       } catch (err: any) {
+        if (generation !== userAdsAccountsFetchGeneration) {
+          return;
+        }
         set({ error: err.message, loading: false });
       }
     },

@@ -48,8 +48,13 @@ interface SummaryStoreState {
   loading: boolean;
   error: string | null;
   isRefreshing: boolean;
+  /** uid whose data is currently in the store — used to avoid cross-account leaks */
+  ownerUid: string | null;
   fetchSummaryAccounts: (userDoc: any) => Promise<void>;
+  reset: () => void;
 }
+
+let summaryFetchGeneration = 0;
 
 export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
   accounts: [],
@@ -57,16 +62,45 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
   loading: false,
   error: null,
   isRefreshing: false,
+  ownerUid: null,
+
+  reset: () => {
+    summaryFetchGeneration += 1;
+    set({
+      accounts: [],
+      allAdsAccounts: [],
+      loading: false,
+      error: null,
+      isRefreshing: false,
+      ownerUid: null,
+    });
+  },
 
   fetchSummaryAccounts: async (userDoc) => {
-    // Check if we already have data - if so, this is a background refresh
-    const hasExistingData = get().accounts.length > 0;
+    if (!userDoc?.uid) {
+      return;
+    }
+
+    const ownerUid = userDoc.uid as string;
+    const generation = ++summaryFetchGeneration;
+
+    // Drop previous user's rows before loading another account
+    if (get().ownerUid && get().ownerUid !== ownerUid) {
+      set({
+        accounts: [],
+        allAdsAccounts: [],
+        ownerUid: null,
+        error: null,
+      });
+    }
+
+    // Background refresh only when we already have data for this same user
+    const hasExistingData =
+      get().accounts.length > 0 && get().ownerUid === ownerUid;
 
     if (hasExistingData) {
-      // Background refresh - don't show loading, just set refreshing flag
       set({ isRefreshing: true });
     } else {
-      // Initial load - show loading
       set({ loading: true, error: null });
     }
 
@@ -450,13 +484,22 @@ export const useSummaryStore = create<SummaryStoreState>((set, get) => ({
       // Filter out null values (failed accounts)
       const validAccounts = fetchAll.filter((account) => account !== null);
 
+      // Ignore stale responses from a previous user / superseded fetch
+      if (generation !== summaryFetchGeneration) {
+        return;
+      }
+
       set({
         accounts: validAccounts,
         allAdsAccounts: adsAccounts,
         loading: false,
         isRefreshing: false,
+        ownerUid,
       });
     } catch (err: any) {
+      if (generation !== summaryFetchGeneration) {
+        return;
+      }
       set({ error: err.message, loading: false, isRefreshing: false });
     }
   },
