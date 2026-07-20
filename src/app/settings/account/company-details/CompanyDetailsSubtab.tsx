@@ -81,10 +81,21 @@ export default function CompanyDetailsSubtab({
   }, [countryOptions, formData.country]);
 
   useEffect(() => {
-    if (userDoc?.uid) {
-      fetchStripeCompany(userDoc.uid);
+    const companyAdminRef = userDoc?.['Company Admin'];
+    if (!companyAdminRef) {
+      return;
     }
-  }, [userDoc?.uid, fetchStripeCompany]);
+    let companyAdminId: string | null = null;
+    if (typeof companyAdminRef === 'object' && companyAdminRef.id) {
+      companyAdminId = companyAdminRef.id;
+    } else if (typeof companyAdminRef === 'string') {
+      const match = companyAdminRef.match(/\/users\/([^/]+)$/);
+      companyAdminId = match?.[1] ?? companyAdminRef;
+    }
+    if (companyAdminId) {
+      fetchStripeCompany(companyAdminId);
+    }
+  }, [userDoc?.['Company Admin'], fetchStripeCompany]);
 
   useEffect(() => {
     if (stripeCompany) {

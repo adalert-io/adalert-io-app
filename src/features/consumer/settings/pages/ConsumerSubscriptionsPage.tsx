@@ -34,17 +34,17 @@ export default function SubscriptionsSubtab({
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    if (userDoc?.['Company Admin'] && !adsAccounts.length) {
+    if (userDoc?.['Company Admin']) {
       fetchAdsAccounts(userDoc['Company Admin']);
     }
-  }, [userDoc, adsAccounts.length, fetchAdsAccounts]);
+  }, [userDoc, fetchAdsAccounts]);
 
-  // Fetch subscription when component loads and subscription is empty
+  // Always load company subscription (scoped fetch skips only when already loaded for this company)
   useEffect(() => {
-    if (userDoc?.['Company Admin'] && !subscription) {
+    if (userDoc?.['Company Admin']) {
       fetchSubscription(userDoc['Company Admin']);
     }
-  }, [userDoc, subscription, fetchSubscription]);
+  }, [userDoc, fetchSubscription]);
 
   const connectedAccountsCount = adsAccounts.length;
 

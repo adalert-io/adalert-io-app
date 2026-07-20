@@ -88,6 +88,8 @@ interface AlertSettingsState {
   loading: boolean;
   error: string | null;
   loadedUserId: string | null;
+  /** Company Admin uid whose company-scoped billing/settings caches belong to */
+  loadedCompanyAdminId: string | null;
   users: UserRow[];
   usersLoaded: boolean;
   invitations: Invitation[]; // Add invitations array
@@ -229,11 +231,72 @@ interface AlertSettingsState {
   reset: () => void;
 }
 
+/** Resolve a Firestore user ref / path / id to a bare uid. */
+function getCompanyAdminId(companyAdminRef: any): string | null {
+  if (!companyAdminRef) {
+    return null;
+  }
+  if (typeof companyAdminRef === 'string') {
+    const match = companyAdminRef.match(/\/users\/([^/]+)$/);
+    return match?.[1] ?? companyAdminRef;
+  }
+  if (typeof companyAdminRef === 'object' && companyAdminRef.id) {
+    return companyAdminRef.id as string;
+  }
+  return null;
+}
+
+/** Drop company-scoped caches when the Company Admin context changes. */
+function clearCompanyScopedCachesIfNeeded(
+  companyAdminId: string | null,
+  get: () => AlertSettingsState,
+  set: (
+    partial:
+      | Partial<AlertSettingsState>
+      | ((state: AlertSettingsState) => Partial<AlertSettingsState>),
+  ) => void,
+): void {
+  if (!companyAdminId) {
+    return;
+  }
+  const loadedId = get().loadedCompanyAdminId;
+  if (loadedId && loadedId !== companyAdminId) {
+    const unsub = get().adsAccountsForTabUnsub;
+    if (unsub) {
+      unsub();
+    }
+    set({
+      users: [],
+      usersLoaded: false,
+      invitations: [],
+      invitationsLoaded: false,
+      adsAccounts: [],
+      adsAccountsLoaded: false,
+      adsAccountsForTab: [],
+      adsAccountsForTabLoaded: false,
+      adsAccountsForTabUnsub: null,
+      stripeCompany: null,
+      stripeCompanyLoaded: false,
+      subscription: null,
+      subscriptionLoaded: false,
+      paymentMethods: null,
+      paymentMethodsLoaded: false,
+      invoices: null,
+      receiptUrl: null,
+      lastChargeId: null,
+      lastChargeAmount: null,
+      lastChargeCurrency: null,
+      loadedCompanyAdminId: null,
+    });
+  }
+}
+
 const initialAlertSettingsState = {
   alertSettings: null as AlertSettings | null,
   loading: false,
   error: null as string | null,
   loadedUserId: null as string | null,
+  loadedCompanyAdminId: null as string | null,
   users: [] as UserRow[],
   usersLoaded: false,
   invitations: [] as Invitation[],
@@ -333,7 +396,14 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     }
   },
   fetchUsers: async (companyAdminRef: any) => {
-    if (get().usersLoaded) return;
+    const companyAdminId = getCompanyAdminId(companyAdminRef);
+    clearCompanyScopedCachesIfNeeded(companyAdminId, get, set);
+    if (
+      get().usersLoaded &&
+      get().loadedCompanyAdminId === companyAdminId
+    ) {
+      return;
+    }
     set({ loading: true, error: null });
     try {
       const usersRef = collection(db, 'users');
@@ -349,7 +419,12 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         'Is Google Sign Up': docSnap.data()['Is Google Sign Up'],
         'Company Admin': docSnap.data()['Company Admin'],
       }));
-      set({ users, usersLoaded: true, loading: false });
+      set({
+        users,
+        usersLoaded: true,
+        loading: false,
+        loadedCompanyAdminId: companyAdminId,
+      });
 
       // Also fetch invitations
       await get().fetchInvitations(companyAdminRef);
@@ -372,7 +447,12 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         'Avatar': docSnap.data()['Avatar'],
         'Is Google Sign Up': docSnap.data()['Is Google Sign Up'],
       }));
-      set({ users, usersLoaded: true, loading: false });
+      set({
+        users,
+        usersLoaded: true,
+        loading: false,
+        loadedCompanyAdminId: getCompanyAdminId(companyAdminRef),
+      });
 
       // Also refresh invitations
       await get().refreshInvitations(companyAdminRef);
@@ -381,7 +461,14 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     }
   },
   fetchInvitations: async (companyAdminRef: any) => {
-    if (get().invitationsLoaded) return;
+    const companyAdminId = getCompanyAdminId(companyAdminRef);
+    clearCompanyScopedCachesIfNeeded(companyAdminId, get, set);
+    if (
+      get().invitationsLoaded &&
+      get().loadedCompanyAdminId === companyAdminId
+    ) {
+      return;
+    }
     set({ loading: true, error: null });
     try {
       const invitationsRef = collection(db, 'invitations');
@@ -406,7 +493,12 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           companyAdmin: data.companyAdmin,
         };
       });
-      set({ invitations, invitationsLoaded: true, loading: false });
+      set({
+        invitations,
+        invitationsLoaded: true,
+        loading: false,
+        loadedCompanyAdminId: companyAdminId,
+      });
     } catch (error: any) {
       set({ error: error.message, loading: false });
     }
@@ -426,7 +518,14 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     }
   },
   fetchAdsAccounts: async (companyAdminRef: any) => {
-    if (get().adsAccountsLoaded) return;
+    const companyAdminId = getCompanyAdminId(companyAdminRef);
+    clearCompanyScopedCachesIfNeeded(companyAdminId, get, set);
+    if (
+      get().adsAccountsLoaded &&
+      get().loadedCompanyAdminId === companyAdminId
+    ) {
+      return;
+    }
     set({ loading: true, error: null });
     try {
       const adsAccountsRef = collection(db, 'adsAccounts');
@@ -444,7 +543,12 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           formatAccountNumber(docSnap.data()['Id']),
         'Selected Users': docSnap.data()['Selected Users'],
       }));
-      set({ adsAccounts, adsAccountsLoaded: true, loading: false });
+      set({
+        adsAccounts,
+        adsAccountsLoaded: true,
+        loading: false,
+        loadedCompanyAdminId: companyAdminId,
+      });
     } catch (error: any) {
       set({ error: error.message, loading: false });
     }
@@ -467,7 +571,12 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           formatAccountNumber(docSnap.data()['Id']),
         'Selected Users': docSnap.data()['Selected Users'],
       }));
-      set({ adsAccounts, adsAccountsLoaded: true, loading: false });
+      set({
+        adsAccounts,
+        adsAccountsLoaded: true,
+        loading: false,
+        loadedCompanyAdminId: getCompanyAdminId(companyAdminRef),
+      });
     } catch (error: any) {
       set({ error: error.message, loading: false });
     }
@@ -1476,7 +1585,14 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     }
   },
   fetchStripeCompany: async (userId: string) => {
-    if (get().stripeCompanyLoaded && get().stripeCompany) return;
+    clearCompanyScopedCachesIfNeeded(userId, get, set);
+    if (
+      get().stripeCompanyLoaded &&
+      get().stripeCompany &&
+      get().loadedCompanyAdminId === userId
+    ) {
+      return;
+    }
     set({ loading: true, error: null });
     try {
       const stripeCompaniesRef = collection(db, 'stripeCompanies');
@@ -1490,9 +1606,15 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           stripeCompany: { id: docSnap.id, ...docSnap.data() },
           stripeCompanyLoaded: true,
           loading: false,
+          loadedCompanyAdminId: userId,
         });
       } else {
-        set({ stripeCompany: null, stripeCompanyLoaded: true, loading: false });
+        set({
+          stripeCompany: null,
+          stripeCompanyLoaded: true,
+          loading: false,
+          loadedCompanyAdminId: userId,
+        });
       }
     } catch (error: any) {
       set({ error: error.message, loading: false });
@@ -1529,7 +1651,15 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
     }
   },
   fetchSubscription: async (companyAdminRef: any) => {
-    if (get().subscriptionLoaded && get().subscription) return;
+    const companyAdminId = getCompanyAdminId(companyAdminRef);
+    clearCompanyScopedCachesIfNeeded(companyAdminId, get, set);
+    if (
+      get().subscriptionLoaded &&
+      get().subscription &&
+      get().loadedCompanyAdminId === companyAdminId
+    ) {
+      return;
+    }
     set({ loading: true, error: null });
     try {
       const subscriptionsRef = collection(db, 'subscriptions');
@@ -1541,20 +1671,39 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           subscription: { id: docSnap.id, ...docSnap.data() },
           subscriptionLoaded: true,
           loading: false,
+          loadedCompanyAdminId: companyAdminId,
         });
       } else {
-        set({ subscription: null, subscriptionLoaded: true, loading: false });
+        set({
+          subscription: null,
+          subscriptionLoaded: true,
+          loading: false,
+          loadedCompanyAdminId: companyAdminId,
+        });
       }
     } catch (error: any) {
       set({ error: error.message, loading: false });
     }
   },
   fetchPaymentMethod: async (companyAdminRef: any) => {
-    if (get().paymentMethodsLoaded && get().paymentMethods) return;
+    const companyAdminId = getCompanyAdminId(companyAdminRef);
+    clearCompanyScopedCachesIfNeeded(companyAdminId, get, set);
+    if (
+      get().paymentMethodsLoaded &&
+      get().paymentMethods &&
+      get().loadedCompanyAdminId === companyAdminId
+    ) {
+      return;
+    }
     set({ loading: true, error: null });
     try {
       const paymentMethodsRef = collection(db, 'paymentMethods');
-      const userRef = doc(db, 'users', companyAdminRef.uid);
+      const userId =
+        companyAdminId ||
+        companyAdminRef?.id ||
+        companyAdminRef?.uid ||
+        '';
+      const userRef = doc(db, 'users', userId);
       const q = query(paymentMethodsRef, where('User', '==', userRef));
       const snap = await getDocs(q);
       if (!snap.empty) {
@@ -1563,12 +1712,14 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
           paymentMethods: { id: docSnap.id, ...docSnap.data() },
           paymentMethodsLoaded: true,
           loading: false,
+          loadedCompanyAdminId: companyAdminId,
         });
       } else {
         set({
           paymentMethods: null,
           paymentMethodsLoaded: true,
           loading: false,
+          loadedCompanyAdminId: companyAdminId,
         });
       }
     } catch (error: any) {
