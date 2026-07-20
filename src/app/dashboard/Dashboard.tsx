@@ -361,6 +361,8 @@ export default function Dashboard({ embedded = false }: DashboardProps) {
 
   useEffect(() => {
     if (selectedAdsAccount && selectedAdsAccount.id !== lastFetchedAccountId) {
+      // Mark active account first so in-flight fetches for the previous account are ignored
+      setLastFetchedAccountId(selectedAdsAccount.id);
       fetchAlerts(selectedAdsAccount.id);
       fetchOrCreateDashboardDaily(selectedAdsAccount.id);
       triggerShowingAdsLabel(selectedAdsAccount);
@@ -368,7 +370,6 @@ export default function Dashboard({ embedded = false }: DashboardProps) {
         fetchCurrencySymbol(selectedAdsAccount);
       }
 
-      setLastFetchedAccountId(selectedAdsAccount.id);
       // Reset the first alerts flag when switching accounts
       setHasFetchedFirstAlerts(false);
     }

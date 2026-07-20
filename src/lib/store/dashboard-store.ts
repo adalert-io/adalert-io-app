@@ -159,10 +159,71 @@ const initialDashboardState = {
   lastFetchedAccountId: null as string | null,
 };
 
+/** Resolve the ads-account id from a dashboardDaily `Ads Account` ref. */
+function getDashboardDailyAdsAccountId(
+  dashboardDaily: DashboardDaily | null,
+): string | null {
+  if (!dashboardDaily) {
+    return null;
+  }
+  const adsAccountRef = dashboardDaily['Ads Account'] as
+    | DocumentReference
+    | string
+    | null
+    | undefined;
+  if (!adsAccountRef) {
+    return null;
+  }
+  if (typeof adsAccountRef === 'string') {
+    return adsAccountRef;
+  }
+  if (typeof adsAccountRef === 'object' && 'id' in adsAccountRef) {
+    return adsAccountRef.id;
+  }
+  return null;
+}
+
+function doesDashboardDailyBelongToAccount(
+  dashboardDaily: DashboardDaily | null,
+  adsAccountId: string,
+): boolean {
+  return getDashboardDailyAdsAccountId(dashboardDaily) === adsAccountId;
+}
+
+/** True when this response is still for the account the UI is showing. */
+function isActiveAdsAccount(
+  adsAccountId: string,
+  lastFetchedAccountId: string | null,
+): boolean {
+  // Allow writes during the brief window before lastFetchedAccountId is set
+  return !lastFetchedAccountId || lastFetchedAccountId === adsAccountId;
+}
+
+let dashboardDailyFetchGeneration = 0;
+
 export const useDashboardStore = create<DashboardState>((set, get) => ({
   ...initialDashboardState,
-  reset: () => set({ ...initialDashboardState }),
-  setLastFetchedAccountId: (id) => set({ lastFetchedAccountId: id }),
+  reset: () => {
+    dashboardDailyFetchGeneration += 1;
+    set({ ...initialDashboardState });
+  },
+  setLastFetchedAccountId: (id) => {
+    const previousId = get().lastFetchedAccountId;
+    if (previousId && previousId !== id) {
+      // Drop previous account's daily immediately so spend can't flash/write cross-account
+      dashboardDailyFetchGeneration += 1;
+      set({
+        lastFetchedAccountId: id,
+        dashboardDaily: null,
+        adsLabel: null,
+        spendMtdLoading: false,
+        spendMtdIndicatorLoading: false,
+        kpiDataLoading: false,
+      });
+      return;
+    }
+    set({ lastFetchedAccountId: id });
+  },
 
   fetchAlerts: async (adsAccountId: string) => {
     // console.log('useDashboardStore - adsAccountId: ', adsAccountId);
@@ -189,8 +250,17 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
       // console.log('alerts from useDashboardStore: ', alerts);
 
+      if (!isActiveAdsAccount(adsAccountId, get().lastFetchedAccountId)) {
+        set({ alertsLoading: false });
+        return;
+      }
+
       set({ alerts, alertsLoading: false });
     } catch (err: any) {
+      if (!isActiveAdsAccount(adsAccountId, get().lastFetchedAccountId)) {
+        set({ alertsLoading: false });
+        return;
+      }
       set({ error: err.message, alertsLoading: false });
     }
   },
@@ -358,6 +428,22 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   },
 
   fetchOrCreateDashboardDaily: async (adsAccountId: string) => {
+    const generation = ++dashboardDailyFetchGeneration;
+
+    // Clear another account's daily so the spend widget cannot show/write cross-account data
+    const existingDaily = get().dashboardDaily;
+    if (
+      existingDaily &&
+      !doesDashboardDailyBelongToAccount(existingDaily, adsAccountId)
+    ) {
+      set({
+        dashboardDaily: null,
+        spendMtdLoading: false,
+        spendMtdIndicatorLoading: false,
+        kpiDataLoading: false,
+      });
+    }
+
     try {
       // console.log(
       //   'Fetching or creating dashboardDaily for adsAccountId:',
@@ -382,6 +468,13 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       );
 
       const dashboardDailySnap = await getDocs(dashboardDailyQuery);
+
+      if (generation !== dashboardDailyFetchGeneration) {
+        return;
+      }
+      if (!isActiveAdsAccount(adsAccountId, get().lastFetchedAccountId)) {
+        return;
+      }
 
       if (!dashboardDailySnap.empty) {
         // Document exists, use the first one
@@ -409,16 +502,34 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
         await setDoc(newDashboardDailyRef, newDashboardDailyData);
 
+        if (generation !== dashboardDailyFetchGeneration) {
+          return;
+        }
+        if (!isActiveAdsAccount(adsAccountId, get().lastFetchedAccountId)) {
+          return;
+        }
+
         // console.log('Created new dashboardDaily:', newDashboardDailyData);
         set({ dashboardDaily: newDashboardDailyData });
       }
     } catch (error: any) {
       console.error('Error fetching or creating dashboardDaily:', error);
+      if (generation !== dashboardDailyFetchGeneration) {
+        return;
+      }
+      if (!isActiveAdsAccount(adsAccountId, get().lastFetchedAccountId)) {
+        return;
+      }
       set({ error: error.message });
     }
   },
 
   fetchSpendMtd: async (adsAccount: any) => {
+    const requestedAdsAccountId = adsAccount?.id as string | undefined;
+    if (!requestedAdsAccountId) {
+      return;
+    }
+
     try {
       // console.log('Fetching spend MTD for adsAccount:', adsAccount);
       set({ spendMtdLoading: true, error: null });
@@ -444,38 +555,65 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       const result = await response.json();
       // console.log('Spend MTD result:', result);
 
-      // Update the dashboardDaily state with the spendMtd value
+      // Only write when the UI is still on this account and daily matches it
       const currentDashboardDaily = get().dashboardDaily;
-      if (currentDashboardDaily) {
-        const updatedDashboardDaily = {
-          ...currentDashboardDaily,
-          'Spend MTD': result.spendMtd,
-        };
-
-        // console.log(
-        //   'Updated dashboardDaily with spend MTD:',
-        //   updatedDashboardDaily,
-        // );
-
-        // Update the Firestore document
-        const dashboardDailyRef = doc(
-          db,
-          COLLECTIONS.DASHBOARD_DAILIES,
-          currentDashboardDaily.id,
-        );
-        await updateDoc(dashboardDailyRef, {
-          'Spend MTD': result.spendMtd,
-          'Modified Date': Timestamp.now(),
-        });
-
-        set({ dashboardDaily: updatedDashboardDaily, spendMtdLoading: false });
-      } else {
+      if (
+        !isActiveAdsAccount(requestedAdsAccountId, get().lastFetchedAccountId) ||
+        !doesDashboardDailyBelongToAccount(
+          currentDashboardDaily,
+          requestedAdsAccountId,
+        ) ||
+        !currentDashboardDaily
+      ) {
         set({ spendMtdLoading: false });
+        return;
       }
+
+      const updatedDashboardDaily = {
+        ...currentDashboardDaily,
+        'Spend MTD': result.spendMtd,
+      };
+
+      // console.log(
+      //   'Updated dashboardDaily with spend MTD:',
+      //   updatedDashboardDaily,
+      // );
+
+      // Update the Firestore document
+      const dashboardDailyRef = doc(
+        db,
+        COLLECTIONS.DASHBOARD_DAILIES,
+        currentDashboardDaily.id,
+      );
+      await updateDoc(dashboardDailyRef, {
+        'Spend MTD': result.spendMtd,
+        'Modified Date': Timestamp.now(),
+      });
+
+      // Re-check after the await — user may have switched accounts mid-write
+      if (
+        !isActiveAdsAccount(requestedAdsAccountId, get().lastFetchedAccountId) ||
+        !doesDashboardDailyBelongToAccount(
+          get().dashboardDaily,
+          requestedAdsAccountId,
+        )
+      ) {
+        set({ spendMtdLoading: false });
+        return;
+      }
+
+      set({ dashboardDaily: updatedDashboardDaily, spendMtdLoading: false });
     } catch (error: any) {
       console.error('Error fetching spend MTD:', error);
       const currentDashboardDaily = get().dashboardDaily;
-      if (currentDashboardDaily) {
+      if (
+        isActiveAdsAccount(requestedAdsAccountId, get().lastFetchedAccountId) &&
+        doesDashboardDailyBelongToAccount(
+          currentDashboardDaily,
+          requestedAdsAccountId,
+        ) &&
+        currentDashboardDaily
+      ) {
         set({
           dashboardDaily: { ...currentDashboardDaily, 'Spend MTD': null },
           error: error.message,
@@ -488,6 +626,11 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   },
 
   fetchSpendMtdIndicator: async (adsAccount: any) => {
+    const requestedAdsAccountId = adsAccount?.id as string | undefined;
+    if (!requestedAdsAccountId) {
+      return;
+    }
+
     set({ spendMtdIndicatorLoading: true, error: null });
     try {
       // Ensure alertOptionSets are loaded before proceeding
@@ -529,35 +672,61 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       // console.log('indicatorAlert:', indicatorAlert);
 
       const currentDashboardDaily = get().dashboardDaily;
-      if (currentDashboardDaily) {
-        const updatedDashboardDaily = {
-          ...currentDashboardDaily,
-          'Spend MTD Indicator Alert': indicatorAlert || null,
-          'Last Fetch Spend MTD': Timestamp.now(),
-        };
-        // Update the Firestore document
-        const dashboardDailyRef = doc(
-          db,
-          COLLECTIONS.DASHBOARD_DAILIES,
-          currentDashboardDaily.id,
-        );
-        await updateDoc(dashboardDailyRef, {
-          'Spend MTD Indicator Alert': indicatorAlert || null,
-          'Last Fetch Spend MTD': Timestamp.now(),
-          'Modified Date': Timestamp.now(),
-        });
-
-        set({
-          dashboardDaily: updatedDashboardDaily,
-          spendMtdIndicatorLoading: false,
-        });
-      } else {
+      if (
+        !isActiveAdsAccount(requestedAdsAccountId, get().lastFetchedAccountId) ||
+        !doesDashboardDailyBelongToAccount(
+          currentDashboardDaily,
+          requestedAdsAccountId,
+        ) ||
+        !currentDashboardDaily
+      ) {
         set({ spendMtdIndicatorLoading: false });
+        return;
       }
+
+      const updatedDashboardDaily = {
+        ...currentDashboardDaily,
+        'Spend MTD Indicator Alert': indicatorAlert || null,
+        'Last Fetch Spend MTD': Timestamp.now(),
+      };
+      // Update the Firestore document
+      const dashboardDailyRef = doc(
+        db,
+        COLLECTIONS.DASHBOARD_DAILIES,
+        currentDashboardDaily.id,
+      );
+      await updateDoc(dashboardDailyRef, {
+        'Spend MTD Indicator Alert': indicatorAlert || null,
+        'Last Fetch Spend MTD': Timestamp.now(),
+        'Modified Date': Timestamp.now(),
+      });
+
+      if (
+        !isActiveAdsAccount(requestedAdsAccountId, get().lastFetchedAccountId) ||
+        !doesDashboardDailyBelongToAccount(
+          get().dashboardDaily,
+          requestedAdsAccountId,
+        )
+      ) {
+        set({ spendMtdIndicatorLoading: false });
+        return;
+      }
+
+      set({
+        dashboardDaily: updatedDashboardDaily,
+        spendMtdIndicatorLoading: false,
+      });
     } catch (error: any) {
       console.error('Error fetching spend MTD indicator:', error);
       const currentDashboardDaily = get().dashboardDaily;
-      if (currentDashboardDaily) {
+      if (
+        isActiveAdsAccount(requestedAdsAccountId, get().lastFetchedAccountId) &&
+        doesDashboardDailyBelongToAccount(
+          currentDashboardDaily,
+          requestedAdsAccountId,
+        ) &&
+        currentDashboardDaily
+      ) {
         set({
           dashboardDaily: {
             ...currentDashboardDaily,
@@ -574,6 +743,11 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   },
 
   fetchKpiData: async (adsAccount: any) => {
+    const requestedAdsAccountId = adsAccount?.id as string | undefined;
+    if (!requestedAdsAccountId) {
+      return;
+    }
+
     set({ kpiDataLoading: true, error: null });
     try {
       const path = getFirebaseFnPath('dashboard-kpi-fb');
@@ -598,35 +772,61 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       // console.log('KPI data result:', result);
 
       const currentDashboardDaily = get().dashboardDaily;
-      if (currentDashboardDaily) {
-        const updatedDashboardDaily = {
-          ...currentDashboardDaily,
-          ...result,
-          'Is KPI Fetched': true,
-        };
-        // Update the Firestore document
-        const dashboardDailyRef = doc(
-          db,
-          COLLECTIONS.DASHBOARD_DAILIES,
-          currentDashboardDaily.id,
-        );
-        await updateDoc(dashboardDailyRef, {
-          ...result,
-          'Is KPI Fetched': true,
-          'Modified Date': Timestamp.now(),
-        });
-
-        set({
-          dashboardDaily: updatedDashboardDaily,
-          kpiDataLoading: false,
-        });
-      } else {
+      if (
+        !isActiveAdsAccount(requestedAdsAccountId, get().lastFetchedAccountId) ||
+        !doesDashboardDailyBelongToAccount(
+          currentDashboardDaily,
+          requestedAdsAccountId,
+        ) ||
+        !currentDashboardDaily
+      ) {
         set({ kpiDataLoading: false });
+        return;
       }
+
+      const updatedDashboardDaily = {
+        ...currentDashboardDaily,
+        ...result,
+        'Is KPI Fetched': true,
+      };
+      // Update the Firestore document
+      const dashboardDailyRef = doc(
+        db,
+        COLLECTIONS.DASHBOARD_DAILIES,
+        currentDashboardDaily.id,
+      );
+      await updateDoc(dashboardDailyRef, {
+        ...result,
+        'Is KPI Fetched': true,
+        'Modified Date': Timestamp.now(),
+      });
+
+      if (
+        !isActiveAdsAccount(requestedAdsAccountId, get().lastFetchedAccountId) ||
+        !doesDashboardDailyBelongToAccount(
+          get().dashboardDaily,
+          requestedAdsAccountId,
+        )
+      ) {
+        set({ kpiDataLoading: false });
+        return;
+      }
+
+      set({
+        dashboardDaily: updatedDashboardDaily,
+        kpiDataLoading: false,
+      });
     } catch (error: any) {
       console.error('Error fetching KPI data:', error);
       const currentDashboardDaily = get().dashboardDaily;
-      if (currentDashboardDaily) {
+      if (
+        isActiveAdsAccount(requestedAdsAccountId, get().lastFetchedAccountId) &&
+        doesDashboardDailyBelongToAccount(
+          currentDashboardDaily,
+          requestedAdsAccountId,
+        ) &&
+        currentDashboardDaily
+      ) {
         set({
           dashboardDaily: {
             ...currentDashboardDaily,
@@ -642,6 +842,11 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   },
 
   fetchCurrencySymbol: async (adsAccount: any) => {
+    const requestedAdsAccountId = adsAccount?.id as string | undefined;
+    if (!requestedAdsAccountId) {
+      return;
+    }
+
     // console.log('Fetching currency symbol for adsAccount:', adsAccount);
     set({ currencySymbolLoading: true, error: null });
     try {
@@ -674,6 +879,11 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
       const result = await response.json();
       // console.log('Currency symbol result:', result);
+
+      if (!isActiveAdsAccount(requestedAdsAccountId, get().lastFetchedAccountId)) {
+        set({ currencySymbolLoading: false });
+        return;
+      }
 
       // Update the state in the other store
       useUserAdsAccountsStore

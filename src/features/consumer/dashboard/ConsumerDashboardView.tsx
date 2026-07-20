@@ -172,6 +172,8 @@ export function ConsumerDashboardView() {
 
   useEffect(() => {
     if (selectedAdsAccount && selectedAdsAccount.id !== lastFetchedAccountId) {
+      // Mark active account first so in-flight fetches for the previous account are ignored
+      setLastFetchedAccountId(selectedAdsAccount.id);
       fetchAlerts(selectedAdsAccount.id);
       fetchOrCreateDashboardDaily(selectedAdsAccount.id);
       triggerShowingAdsLabel(selectedAdsAccount);
@@ -179,7 +181,6 @@ export function ConsumerDashboardView() {
         fetchCurrencySymbol(selectedAdsAccount);
       }
 
-      setLastFetchedAccountId(selectedAdsAccount.id);
       // Reset the first alerts flag when switching accounts
       setHasFetchedFirstAlerts(false);
     }
