@@ -7,10 +7,12 @@ import {
   CheckCheck,
   DollarSign,
   Loader2,
+  Search,
   ShieldCheck,
+  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   arrayUnion,
   deleteDoc,
@@ -55,6 +57,25 @@ function formatAccountId(id: string) {
   return id.replace(/(\d{3})(\d{3})(\d{4})/, "$1-$2-$3");
 }
 
+function accountMatchesSearch(account: AdsAccount, query: string) {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) return true;
+
+  const name = (account["Account Name Editable"] || "").toLowerCase();
+  const originalName = (account["Account Name Original"] || "").toLowerCase();
+  const id = (account.Id || "").toLowerCase();
+  const formattedId = formatAccountId(account.Id || "").toLowerCase();
+  const digitsOnlyQuery = normalizedQuery.replace(/[-\s]/g, "");
+
+  return (
+    name.includes(normalizedQuery) ||
+    originalName.includes(normalizedQuery) ||
+    id.includes(normalizedQuery) ||
+    id.includes(digitsOnlyQuery) ||
+    formattedId.includes(normalizedQuery)
+  );
+}
+
 /**
  * Google OAuth redirect_uri must match an entry in Google Cloud Console exactly.
  * Consumer uses the same `page` as classic; return routing uses sessionStorage
@@ -91,10 +112,19 @@ export function AddAdsAccountFlow({
   const [authTracker, setAuthTracker] = useState<AuthTracker | null>(null);
   const [_subscription, setSubscription] = useState<Subscription | null>(null);
   const [adsAccounts, setAdsAccounts] = useState<AdsAccount[] | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [editingValue, setEditingValue] = useState<string>("");
+
+  const filteredAdsAccounts = useMemo(() => {
+    if (!adsAccounts) return [];
+
+    return adsAccounts
+      .map((account, originalIndex) => ({ account, originalIndex }))
+      .filter(({ account }) => accountMatchesSearch(account, searchQuery));
+  }, [adsAccounts, searchQuery]);
 
   const fetchUserAdsAccounts = useUserAdsAccountsStore(
     (state) => state.fetchUserAdsAccounts,
@@ -108,6 +138,7 @@ export function AddAdsAccountFlow({
       if (!user) return;
       setIsLoading(true);
       setAdsAccounts(null);
+      setSearchQuery("");
 
       try {
         if (!userDoc) {
@@ -380,83 +411,114 @@ export function AddAdsAccountFlow({
       ) : null}
 
       {adsAccounts && adsAccounts.length > 0 && !isLoading ? (
-        <div className="thin-scrollbar mb-6 flex max-h-96 w-full flex-col gap-4 overflow-y-auto overflow-x-hidden rounded-2xl border border-slate-200 p-2 md:mb-8">
-          {adsAccounts.map((acc, idx) => {
-            const isSelected = acc["Is Selected"];
-            const isConnected = acc["Is Connected"];
-            const isInvalid =
-              isSelected &&
-              (!acc["Monthly Budget"] || Number(acc["Monthly Budget"]) <= 0);
-            const showRaw = editingIdx === idx;
-            const inputValue = showRaw
-              ? editingValue
-              : acc["Monthly Budget"]
-                ? Number(acc["Monthly Budget"]).toLocaleString()
-                : "";
-
-            return (
-              <div
-                key={acc.id || String(idx)}
-                role="button"
-                tabIndex={0}
-                className={`flex cursor-pointer flex-col rounded-xl border bg-white p-4 transition-all md:flex-row ${
-                  isSelected || isConnected
-                    ? "border-[#015AFD]"
-                    : "border-slate-200"
-                }`}
-                onClick={() => handleCardClick(idx)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    handleCardClick(idx);
-                  }
-                }}
+        <div className="mb-6 flex w-full flex-col gap-3 md:mb-8">
+          <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-[#015AFD]/20">
+            <Search className="size-5 shrink-0 text-[#015AFD]" aria-hidden />
+            <input
+              className="min-w-0 flex-1 border-none bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
+              placeholder="Search by account name or ID…"
+              value={searchQuery}
+              aria-label="Search ad accounts"
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery ? (
+              <button
+                type="button"
+                aria-label="Clear search"
+                className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                onClick={() => setSearchQuery("")}
               >
-                <div className="mb-2 flex w-full flex-col md:mb-0 md:w-1/2">
-                  {acc["Is Connected"] ? (
-                    <span className="mb-2 flex w-fit items-center gap-1 rounded-lg bg-green-50 px-2 py-1 text-xs font-medium text-green-700">
-                      <CheckCheck className="size-4 text-green-600" />
-                      Connected
-                    </span>
-                  ) : null}
-                  <div className="text-sm font-semibold text-slate-800">
-                    Google Ads Account ID: {formatAccountId(acc.Id)}
-                  </div>
-                  <div className="text-sm text-slate-500">
-                    {acc["Account Name Editable"]}
-                  </div>
-                </div>
+                <X className="size-4" />
+              </button>
+            ) : null}
+          </div>
 
-                <div className="mt-2 w-full md:mt-0 md:w-1/2">
-                  <div className="mb-2 text-left text-sm font-semibold text-slate-800 md:text-right">
-                    Monthly Budget
-                  </div>
-                  <div className="mt-2 flex items-center gap-2">
-                    <span className="inline-flex size-8 items-center justify-center rounded-full bg-[#015AFD]/10">
-                      <DollarSign className="size-5 text-[#015AFD]" />
-                    </span>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      min={0}
-                      className={`flex-1 truncate rounded-lg border px-2 py-2 text-right text-base font-semibold outline-none transition-all md:text-lg ${
-                        isInvalid
-                          ? "border-red-500 focus:border-red-500"
-                          : "border-slate-200"
-                      }`}
-                      value={inputValue}
-                      onFocus={() =>
-                        handleBudgetFocus(idx, acc["Monthly Budget"] || "")
+          {filteredAdsAccounts.length > 0 ? (
+            <div className="thin-scrollbar flex max-h-96 w-full flex-col gap-4 overflow-y-auto overflow-x-hidden rounded-2xl border border-slate-200 p-2">
+              {filteredAdsAccounts.map(({ account: acc, originalIndex: idx }) => {
+                const isSelected = acc["Is Selected"];
+                const isConnected = acc["Is Connected"];
+                const isInvalid =
+                  isSelected &&
+                  (!acc["Monthly Budget"] || Number(acc["Monthly Budget"]) <= 0);
+                const showRaw = editingIdx === idx;
+                const inputValue = showRaw
+                  ? editingValue
+                  : acc["Monthly Budget"]
+                    ? Number(acc["Monthly Budget"]).toLocaleString()
+                    : "";
+
+                return (
+                  <div
+                    key={acc.id || acc._id || acc.Id || String(idx)}
+                    role="button"
+                    tabIndex={0}
+                    className={`flex cursor-pointer flex-col rounded-xl border bg-white p-4 transition-all md:flex-row ${
+                      isSelected || isConnected
+                        ? "border-[#015AFD]"
+                        : "border-slate-200"
+                    }`}
+                    onClick={() => handleCardClick(idx)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleCardClick(idx);
                       }
-                      onBlur={handleBudgetBlur}
-                      onChange={(e) => handleBudgetChange(idx, e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
+                    }}
+                  >
+                    <div className="mb-2 flex w-full flex-col md:mb-0 md:w-1/2">
+                      {acc["Is Connected"] ? (
+                        <span className="mb-2 flex w-fit items-center gap-1 rounded-lg bg-green-50 px-2 py-1 text-xs font-medium text-green-700">
+                          <CheckCheck className="size-4 text-green-600" />
+                          Connected
+                        </span>
+                      ) : null}
+                      <div className="text-sm font-semibold text-slate-800">
+                        Google Ads Account ID: {formatAccountId(acc.Id)}
+                      </div>
+                      <div className="text-sm text-slate-500">
+                        {acc["Account Name Editable"]}
+                      </div>
+                    </div>
+
+                    <div className="mt-2 w-full md:mt-0 md:w-1/2">
+                      <div className="mb-2 text-left text-sm font-semibold text-slate-800 md:text-right">
+                        Monthly Budget
+                      </div>
+                      <div className="mt-2 flex items-center gap-2">
+                        <span className="inline-flex size-8 items-center justify-center rounded-full bg-[#015AFD]/10">
+                          <DollarSign className="size-5 text-[#015AFD]" />
+                        </span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          min={0}
+                          className={`flex-1 truncate rounded-lg border px-2 py-2 text-right text-base font-semibold outline-none transition-all md:text-lg ${
+                            isInvalid
+                              ? "border-red-500 focus:border-red-500"
+                              : "border-slate-200"
+                          }`}
+                          value={inputValue}
+                          onFocus={() =>
+                            handleBudgetFocus(idx, acc["Monthly Budget"] || "")
+                          }
+                          onBlur={handleBudgetBlur}
+                          onChange={(e) =>
+                            handleBudgetChange(idx, e.target.value)
+                          }
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+              No ad accounts match your search.
+            </div>
+          )}
         </div>
       ) : null}
 
