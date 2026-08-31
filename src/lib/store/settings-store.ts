@@ -1043,7 +1043,8 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
       );
       await Promise.all(deleteVariablePromises);
 
-      // 2. Remove cronitor monitors for ads account
+      // 2. Remove local landing-page monitors for ads account
+      // (API path kept for compatibility; backend deletes Firestore landingPageMonitors only)
       try {
         const path = getFirebaseFnPath(
           'remove-cronitor-monitors-for-ads-account-fb',
@@ -1482,7 +1483,8 @@ export const useAlertSettingsStore = create<AlertSettingsState>((set, get) => ({
         }
       }
 
-      // 13. Remove cronitor monitors
+      // 13. Remove local landing-page monitors for this subscription
+      // (API path kept for compatibility; backend deletes Firestore landingPageMonitors only)
       try {
         // Fetch the admin user document to get the email
         const adminUserDoc = await getDocs(
