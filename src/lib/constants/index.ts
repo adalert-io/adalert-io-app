@@ -36,6 +36,7 @@ export const COLLECTIONS = {
   DASHBOARD_DAILIES: "dashboardDailies",
   ALERT_OPTION_SETS: "alertOptionSets",
   DASHBOARD_SHOWING_ADS: "dashboardShowingAds",
+  LANDING_PAGE_MONITORS: "landingPageMonitors",
 } as const;
 
 export const FIREBASE_FN_DOMAINS = {

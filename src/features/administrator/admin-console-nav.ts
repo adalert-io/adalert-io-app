@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  Activity,
   CircleHelp,
   CreditCard,
   LayoutDashboard,
@@ -55,6 +56,11 @@ export const adminConsoleNavGroups: AdminNavGroup[] = [
         title: "Users",
         href: "/administrator/users",
         icon: UsersRound,
+      },
+      {
+        title: "Monitoring",
+        href: "/administrator/monitoring",
+        icon: Activity,
       },
       { title: "Support", href: "/administrator/support", icon: CircleHelp },
     ],
